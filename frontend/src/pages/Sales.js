@@ -30,7 +30,7 @@ const Sales = ({ user }) => {
   });
   const [editFormData, setEditFormData] = useState({
     commission: "",
-    status: "",
+    status: "Pendente",
     requisition: "",
   });
 
