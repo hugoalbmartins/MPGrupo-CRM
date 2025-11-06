@@ -133,7 +133,7 @@ const Sales = ({ user }) => {
   const handleEdit = (sale) => {
     setEditingSale(sale);
     setEditFormData({
-      commission: sale.commission || "",
+      commission: sale.commission ? sale.commission.toString() : "",
       status: sale.status || "Pendente",
       requisition: sale.requisition || "",
     });
