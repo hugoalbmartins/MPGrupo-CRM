@@ -332,7 +332,7 @@ const Sales = ({ user }) => {
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a1c] border-[#C9A961]/20">
-                <SelectItem value="" className="text-white">Todas</SelectItem>
+                <SelectItem value="all" className="text-white">Todas</SelectItem>
                 {operators.map(op => (
                   <SelectItem key={op.id} value={op.id} className="text-white">{op.name}</SelectItem>
                 ))}
