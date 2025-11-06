@@ -150,8 +150,8 @@ const Sales = ({ user }) => {
   };
 
   const filteredSales = sales.filter(sale => {
-    if (filterOperator && sale.operator_id !== filterOperator) return false;
-    if (filterStatus && sale.status !== filterStatus) return false;
+    if (filterOperator && filterOperator !== 'all' && sale.operator_id !== filterOperator) return false;
+    if (filterStatus && filterStatus !== 'all' && sale.status !== filterStatus) return false;
     return true;
   });
 
