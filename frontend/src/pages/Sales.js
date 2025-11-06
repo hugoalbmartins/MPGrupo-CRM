@@ -17,8 +17,8 @@ const Sales = ({ user }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
-  const [filterOperator, setFilterOperator] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterOperator, setFilterOperator] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     value: "",
