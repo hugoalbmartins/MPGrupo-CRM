@@ -423,7 +423,7 @@ const Sales = ({ user }) => {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20">
+        <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 pointer-events-auto">
           <DialogHeader>
             <DialogTitle className="text-[#C9A961] text-2xl">Editar Venda</DialogTitle>
           </DialogHeader>
