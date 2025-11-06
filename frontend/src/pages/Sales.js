@@ -194,7 +194,7 @@ const Sales = ({ user }) => {
                 Nova Venda
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto">
               <DialogHeader>
                 <DialogTitle className="text-[#C9A961] text-2xl">Nova Venda</DialogTitle>
               </DialogHeader>
