@@ -346,7 +346,7 @@ const Sales = ({ user }) => {
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a1c] border-[#C9A961]/20">
-                <SelectItem value="" className="text-white">Todos</SelectItem>
+                <SelectItem value="all" className="text-white">Todos</SelectItem>
                 <SelectItem value="Pendente" className="text-white">Pendente</SelectItem>
                 <SelectItem value="Aprovada" className="text-white">Aprovada</SelectItem>
                 <SelectItem value="Rejeitada" className="text-white">Rejeitada</SelectItem>
