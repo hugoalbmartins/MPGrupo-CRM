@@ -22,10 +22,10 @@ const Sales = ({ user }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     value: "",
-    operator_id: "",
-    partner_id: "",
+    operator_id: "default",
+    partner_id: "default",
     final_client: "",
-    sale_type: "",
+    sale_type: "eletricidade",
     cpe: "",
   });
   const [editFormData, setEditFormData] = useState({
