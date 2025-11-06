@@ -118,13 +118,14 @@ const Sales = ({ user }) => {
   };
 
   const resetForm = () => {
+    const defaultPartnerId = user?.role === 'partner' && partners.length > 0 ? partners[0].id : operators.length > 0 ? operators[0].id : "default";
     setFormData({
       date: new Date().toISOString().split('T')[0],
       value: "",
-      operator_id: "",
-      partner_id: user?.role === 'partner' && partners.length > 0 ? partners[0].id : "",
+      operator_id: operators.length > 0 ? operators[0].id : "default",
+      partner_id: user?.role === 'partner' && partners.length > 0 ? partners[0].id : (partners.length > 0 ? partners[0].id : "default"),
       final_client: "",
-      sale_type: "",
+      sale_type: "eletricidade",
       cpe: "",
     });
   };
