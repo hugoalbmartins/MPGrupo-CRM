@@ -315,7 +315,7 @@ async def update_sale(sale_id: str, sale_data: SaleUpdate, current_user: dict = 
     
     # Only admin can update commission
     if 'commission' in update_dict and current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Only admins can update commission")
+        del update_dict['commission']
     
     await db.sales.update_one({"id": sale_id}, {"$set": update_dict})
     
