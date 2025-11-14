@@ -452,7 +452,7 @@ const Sales = ({ user }) => {
             <tbody>
               {filteredSales.length === 0 ? (
                 <tr>
-                  <td colSpan={canEdit ? (user?.role !== 'bo' ? 9 : 8) : (user?.role !== 'bo' ? 8 : 7)} className="text-center py-8 text-gray-400">
+                  <td colSpan={canEdit ? (user?.role !== 'bo' ? 10 : 9) : (user?.role !== 'bo' ? 9 : 8)} className="text-center py-8 text-gray-400">
                     Nenhuma venda encontrada
                   </td>
                 </tr>
@@ -474,6 +474,20 @@ const Sales = ({ user }) => {
                       <span className={`status-badge status-${sale.status.toLowerCase()}`}>
                         {sale.status}
                       </span>
+                    </td>
+                    <td className="text-center">
+                      <Button
+                        onClick={() => handleViewDocuments(sale)}
+                        size="sm"
+                        variant="ghost"
+                        data-testid={`view-docs-${sale.id}`}
+                        className="text-blue-400 hover:bg-blue-400/10"
+                      >
+                        <FileText className="w-4 h-4" />
+                        {sale.documents?.length > 0 && (
+                          <span className="ml-1 text-xs">({sale.documents.length})</span>
+                        )}
+                      </Button>
                     </td>
                     {canEdit && (
                       <td className="text-center">
