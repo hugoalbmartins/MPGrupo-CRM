@@ -576,6 +576,99 @@ const Sales = ({ user }) => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Documents Dialog */}
+      <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
+        <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-2xl pointer-events-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[#C9A961] text-2xl">Documentos da Venda</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {/* Upload section */}
+            <div className="border-2 border-dashed border-[#C9A961]/30 rounded-lg p-6 text-center">
+              <Upload className="w-12 h-12 mx-auto mb-4 text-[#C9A961]" />
+              <p className="text-gray-400 mb-4">Anexar documento à venda</p>
+              <input
+                type="file"
+                onChange={handleUploadDocument}
+                disabled={uploadingFile}
+                data-testid="upload-document-input"
+                className="hidden"
+                id="file-upload"
+              />
+              <label htmlFor="file-upload">
+                <Button
+                  type="button"
+                  disabled={uploadingFile}
+                  data-testid="upload-document-button"
+                  className="bg-gradient-to-r from-[#C9A961] to-[#B8944E] text-[#0f0f10] cursor-pointer"
+                  onClick={() => document.getElementById('file-upload').click()}
+                >
+                  {uploadingFile ? "A carregar..." : "Selecionar Ficheiro"}
+                </Button>
+              </label>
+            </div>
+
+            {/* Documents list */}
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-300 mb-2">Documentos anexados:</h3>
+              {selectedSale?.documents && selectedSale.documents.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedSale.documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      data-testid={`document-${doc.id}`}
+                      className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-[#C9A961]" />
+                        <div>
+                          <p className="font-medium">{doc.filename}</p>
+                          <p className="text-xs text-gray-400">
+                            Por {doc.uploaded_by} • {new Date(doc.uploaded_at).toLocaleString('pt-PT')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleDownloadDocument(doc.id, doc.filename)}
+                          size="sm"
+                          variant="ghost"
+                          data-testid={`download-doc-${doc.id}`}
+                          className="text-green-400 hover:bg-green-400/10"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        {user?.role !== 'partner' && (
+                          <Button
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            size="sm"
+                            variant="ghost"
+                            data-testid={`delete-doc-${doc.id}`}
+                            className="text-red-400 hover:bg-red-400/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-400 py-4">Nenhum documento anexado</p>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end mt-6">
+            <Button
+              onClick={() => setDocumentsDialogOpen(false)}
+              className="bg-gradient-to-r from-[#C9A961] to-[#B8944E] text-[#0f0f10]"
+            >
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
