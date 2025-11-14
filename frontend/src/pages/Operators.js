@@ -101,7 +101,7 @@ const Operators = ({ user }) => {
               Adicionar Operadora
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20">
+          <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 pointer-events-auto">
             <DialogHeader>
               <DialogTitle className="text-[#C9A961] text-2xl">
                 {editingOperator ? "Editar Operadora" : "Nova Operadora"}
