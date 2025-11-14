@@ -100,7 +100,7 @@ const Sales = ({ user }) => {
   const handleExport = async () => {
     try {
       const params = new URLSearchParams();
-      if (filterOperator) params.append('operator_id', filterOperator);
+      if (filterOperator && filterOperator !== 'all') params.append('operator_id', filterOperator);
       
       const response = await axios.get(`${API}/sales/export/excel?${params.toString()}`, {
         responseType: 'blob',
@@ -117,6 +117,77 @@ const Sales = ({ user }) => {
       toast.success("Exportação concluída!");
     } catch (error) {
       toast.error("Erro ao exportar vendas");
+    }
+  };
+
+  const handleViewDocuments = (sale) => {
+    setSelectedSale(sale);
+    setDocumentsDialogOpen(true);
+  };
+
+  const handleUploadDocument = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedSale) return;
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await axios.post(`${API}/sales/${selectedSale.id}/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      toast.success("Documento anexado com sucesso!");
+      fetchData();
+      
+      // Refresh selected sale
+      const response = await axios.get(`${API}/sales/${selectedSale.id}`);
+      setSelectedSale(response.data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Erro ao anexar documento");
+    } finally {
+      setUploadingFile(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleDownloadDocument = async (documentId, filename) => {
+    try {
+      const response = await axios.get(
+        `${API}/sales/${selectedSale.id}/documents/${documentId}`,
+        { responseType: 'blob' }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      toast.success("Download concluído!");
+    } catch (error) {
+      toast.error("Erro ao fazer download");
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!window.confirm("Tem certeza que deseja eliminar este documento?")) return;
+
+    try {
+      await axios.delete(`${API}/sales/${selectedSale.id}/documents/${documentId}`);
+      toast.success("Documento eliminado com sucesso!");
+      
+      // Refresh selected sale
+      const response = await axios.get(`${API}/sales/${selectedSale.id}`);
+      setSelectedSale(response.data);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Erro ao eliminar documento");
     }
   };
 
