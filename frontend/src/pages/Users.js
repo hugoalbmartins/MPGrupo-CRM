@@ -119,7 +119,7 @@ const Users = ({ user }) => {
               Adicionar Utilizador
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-2xl">
+          <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-2xl pointer-events-auto">
             <DialogHeader>
               <DialogTitle className="text-[#C9A961] text-2xl">Novo Utilizador</DialogTitle>
             </DialogHeader>
