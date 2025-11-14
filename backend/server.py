@@ -122,6 +122,12 @@ class SaleCreate(BaseModel):
     cpe: Optional[str] = None
 
 class SaleUpdate(BaseModel):
+    date: Optional[str] = None
+    value: Optional[float] = None
+    operator_id: Optional[str] = None
+    final_client: Optional[str] = None
+    sale_type: Optional[str] = None
+    cpe: Optional[str] = None
     commission: Optional[float] = None
     status: Optional[str] = None
     requisition: Optional[str] = None
