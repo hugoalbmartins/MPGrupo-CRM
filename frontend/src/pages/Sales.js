@@ -17,6 +17,9 @@ const Sales = ({ user }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [filterOperator, setFilterOperator] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [formData, setFormData] = useState({
