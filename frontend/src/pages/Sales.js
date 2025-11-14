@@ -445,6 +445,7 @@ const Sales = ({ user }) => {
                 <th>Valor</th>
                 {user?.role !== 'bo' && <th>Comissão</th>}
                 <th>Status</th>
+                <th className="text-center">Docs</th>
                 {canEdit && <th className="text-center">Ações</th>}
               </tr>
             </thead>
