@@ -478,6 +478,114 @@ async def get_users(current_user: dict = Depends(get_current_user)):
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
     return [User(**u) for u in users]
 
+# Document upload/download endpoints
+UPLOAD_DIR = Path("/app/uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+@api_router.post("/sales/{sale_id}/upload")
+async def upload_document(sale_id: str, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    # Check if sale exists
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    
+    # Check permissions
+    if current_user['role'] == 'partner':
+        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+        if not partner or sale['partner_id'] != partner['id']:
+            raise HTTPException(status_code=403, detail="You can only upload documents to your own sales")
+    
+    # Create unique filename
+    file_id = str(uuid.uuid4())
+    file_extension = Path(file.filename).suffix
+    file_path = UPLOAD_DIR / f"{file_id}{file_extension}"
+    
+    # Save file
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Add document to sale
+    document = {
+        "id": file_id,
+        "filename": file.filename,
+        "uploaded_by": current_user['name'],
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        "file_path": str(file_path)
+    }
+    
+    await db.sales.update_one(
+        {"id": sale_id},
+        {"$push": {"documents": document}}
+    )
+    
+    return {"message": "Document uploaded successfully", "document": document}
+
+@api_router.get("/sales/{sale_id}/documents/{document_id}")
+async def download_document(sale_id: str, document_id: str, current_user: dict = Depends(get_current_user)):
+    # Check if sale exists
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    
+    # Check permissions
+    if current_user['role'] == 'partner':
+        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+        if not partner or sale['partner_id'] != partner['id']:
+            raise HTTPException(status_code=403, detail="You can only download documents from your own sales")
+    
+    # Find document
+    document = None
+    for doc in sale.get('documents', []):
+        if doc['id'] == document_id:
+            document = doc
+            break
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    file_path = Path(document['file_path'])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on server")
+    
+    return FileResponse(
+        path=file_path,
+        filename=document['filename'],
+        media_type='application/octet-stream'
+    )
+
+@api_router.delete("/sales/{sale_id}/documents/{document_id}")
+async def delete_document(sale_id: str, document_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user['role'] not in ['admin', 'bo']:
+        raise HTTPException(status_code=403, detail="Only admins and BO can delete documents")
+    
+    # Check if sale exists
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    
+    # Find and remove document
+    document = None
+    for doc in sale.get('documents', []):
+        if doc['id'] == document_id:
+            document = doc
+            break
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Delete file from disk
+    file_path = Path(document['file_path'])
+    if file_path.exists():
+        file_path.unlink()
+    
+    # Remove from database
+    await db.sales.update_one(
+        {"id": sale_id},
+        {"$pull": {"documents": {"id": document_id}}}
+    )
+    
+    return {"message": "Document deleted successfully"}
+
 app.include_router(api_router)
 
 app.add_middleware(
