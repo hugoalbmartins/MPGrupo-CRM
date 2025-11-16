@@ -32,10 +32,18 @@ const Sales = ({ user }) => {
     cpe: "",
   });
   const [editFormData, setEditFormData] = useState({
+    date: "",
+    value: "",
+    operator_id: "",
+    final_client: "",
+    sale_type: "",
+    cpe: "",
     commission: "",
     status: "Pendente",
     requisition: "",
   });
+  const [newNote, setNewNote] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
 
   useEffect(() => {
     fetchData();
