@@ -596,6 +596,52 @@ async def delete_document(sale_id: str, document_id: str, current_user: dict = D
     
     return {"message": "Document deleted successfully"}
 
+# Notes endpoints
+@api_router.post("/sales/{sale_id}/notes")
+async def add_note(sale_id: str, note_data: NoteCreate, current_user: dict = Depends(get_current_user)):
+    # Check if sale exists
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    
+    # Check permissions - partners can only add notes to their own sales
+    if current_user['role'] == 'partner':
+        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+        if not partner or sale['partner_id'] != partner['id']:
+            raise HTTPException(status_code=403, detail="You can only add notes to your own sales")
+    
+    # Create note
+    note = {
+        "id": str(uuid.uuid4()),
+        "content": note_data.content,
+        "author": current_user['name'],
+        "author_role": current_user['role'],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Add note to sale
+    await db.sales.update_one(
+        {"id": sale_id},
+        {"$push": {"notes": note}}
+    )
+    
+    return {"message": "Note added successfully", "note": note}
+
+@api_router.get("/sales/{sale_id}/notes")
+async def get_notes(sale_id: str, current_user: dict = Depends(get_current_user)):
+    # Check if sale exists
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+    
+    # Check permissions
+    if current_user['role'] == 'partner':
+        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+        if not partner or sale['partner_id'] != partner['id']:
+            raise HTTPException(status_code=403, detail="You can only view notes from your own sales")
+    
+    return {"notes": sale.get('notes', [])}
+
 app.include_router(api_router)
 
 app.add_middleware(
