@@ -109,6 +109,7 @@ class Sale(BaseModel):
     cpe: Optional[str] = None
     requisition: Optional[str] = None
     documents: List[dict] = Field(default_factory=list)  # Lista de documentos anexados
+    notes: List[dict] = Field(default_factory=list)  # Notas/comentários
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
