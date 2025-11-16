@@ -215,6 +215,12 @@ const Sales = ({ user }) => {
   const handleEdit = (sale) => {
     setEditingSale(sale);
     setEditFormData({
+      date: sale.date || "",
+      value: sale.value ? sale.value.toString() : "",
+      operator_id: sale.operator_id || "",
+      final_client: sale.final_client || "",
+      sale_type: sale.sale_type || "",
+      cpe: sale.cpe || "",
       commission: sale.commission ? sale.commission.toString() : "",
       status: sale.status || "Pendente",
       requisition: sale.requisition || "",
