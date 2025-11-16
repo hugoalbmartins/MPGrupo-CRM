@@ -133,6 +133,9 @@ class SaleUpdate(BaseModel):
     status: Optional[str] = None
     requisition: Optional[str] = None
 
+class NoteCreate(BaseModel):
+    content: str
+
 class DashboardStats(BaseModel):
     total_sales: int
     total_value: float
