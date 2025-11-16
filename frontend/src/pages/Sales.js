@@ -91,6 +91,12 @@ const Sales = ({ user }) => {
     e.preventDefault();
     try {
       const updateData = {};
+      if (editFormData.date) updateData.date = editFormData.date;
+      if (editFormData.value) updateData.value = parseFloat(editFormData.value);
+      if (editFormData.operator_id) updateData.operator_id = editFormData.operator_id;
+      if (editFormData.final_client) updateData.final_client = editFormData.final_client;
+      if (editFormData.sale_type) updateData.sale_type = editFormData.sale_type;
+      if (editFormData.cpe) updateData.cpe = editFormData.cpe;
       if (editFormData.commission) updateData.commission = parseFloat(editFormData.commission);
       if (editFormData.status) updateData.status = editFormData.status;
       if (editFormData.requisition) updateData.requisition = editFormData.requisition;
@@ -102,6 +108,29 @@ const Sales = ({ user }) => {
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || "Erro ao atualizar venda");
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !selectedSale) return;
+
+    setAddingNote(true);
+    try {
+      await axios.post(`${API}/sales/${selectedSale.id}/notes`, {
+        content: newNote,
+      });
+
+      toast.success("Nota adicionada com sucesso!");
+      setNewNote("");
+      
+      // Refresh selected sale
+      const response = await axios.get(`${API}/sales/${selectedSale.id}`);
+      setSelectedSale(response.data);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Erro ao adicionar nota");
+    } finally {
+      setAddingNote(false);
     }
   };
 
