@@ -775,6 +775,62 @@ const Sales = ({ user }) => {
               )}
             </div>
           </div>
+
+            {/* Notes Section */}
+            <div className="border-t border-[#C9A961]/20 pt-6 mt-6">
+              <h3 className="font-semibold text-gray-300 mb-4 text-lg">Notas e Comentários</h3>
+              
+              {/* Add Note */}
+              <div className="mb-4">
+                <div className="flex gap-2">
+                  <Input
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder="Adicionar uma nota..."
+                    data-testid="note-input"
+                    className="bg-white/5 border-[#C9A961]/20 text-white flex-1"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddNote()}
+                  />
+                  <Button
+                    onClick={handleAddNote}
+                    disabled={addingNote || !newNote.trim()}
+                    data-testid="add-note-button"
+                    className="bg-gradient-to-r from-[#C9A961] to-[#B8944E] text-[#0f0f10]"
+                  >
+                    {addingNote ? "A adicionar..." : "Adicionar"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Notes List */}
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {selectedSale?.notes && selectedSale.notes.length > 0 ? (
+                  selectedSale.notes.map((note) => (
+                    <div
+                      key={note.id}
+                      data-testid={`note-${note.id}`}
+                      className="p-4 rounded-lg bg-white/5 border border-[#C9A961]/10"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-[#C9A961]">{note.author}</span>
+                          <span className="text-xs px-2 py-1 rounded bg-white/10 text-gray-400">
+                            {note.author_role === 'admin' ? 'Admin' : note.author_role === 'bo' ? 'BO' : 'Parceiro'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {new Date(note.created_at).toLocaleString('pt-PT')}
+                        </span>
+                      </div>
+                      <p className="text-gray-300">{note.content}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-400 py-4">Nenhuma nota adicionada</p>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="flex justify-end mt-6">
             <Button
               onClick={() => setDocumentsDialogOpen(false)}
