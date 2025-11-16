@@ -555,50 +555,123 @@ const Sales = ({ user }) => {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 pointer-events-auto">
+        <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-3xl max-h-[90vh] overflow-y-auto pointer-events-auto">
           <DialogHeader>
             <DialogTitle className="text-[#C9A961] text-2xl">Editar Venda</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="status" className="text-gray-300">Status</Label>
-              <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}>
-                <SelectTrigger data-testid="edit-status-select" className="bg-white/5 border-[#C9A961]/20 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1a1a1c] border-[#C9A961]/20">
-                  <SelectItem value="Pendente" className="text-white">Pendente</SelectItem>
-                  <SelectItem value="Aprovada" className="text-white">Aprovada</SelectItem>
-                  <SelectItem value="Rejeitada" className="text-white">Rejeitada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {user?.role === 'admin' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="commission" className="text-gray-300">Comissão (€)</Label>
+                <Label htmlFor="edit-date" className="text-gray-300">Data</Label>
                 <Input
-                  id="commission"
+                  id="edit-date"
+                  type="date"
+                  value={editFormData.date}
+                  onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+                  data-testid="edit-date-input"
+                  className="bg-white/5 border-[#C9A961]/20 text-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-value" className="text-gray-300">Valor (€)</Label>
+                <Input
+                  id="edit-value"
                   type="number"
                   step="0.01"
-                  value={editFormData.commission}
-                  onChange={(e) => setEditFormData({ ...editFormData, commission: e.target.value })}
-                  data-testid="edit-commission-input"
+                  value={editFormData.value}
+                  onChange={(e) => setEditFormData({ ...editFormData, value: e.target.value })}
+                  data-testid="edit-value-input"
                   className="bg-white/5 border-[#C9A961]/20 text-white"
                 />
               </div>
-            )}
-            {editingSale?.sale_type === 'telecomunicacoes' && (
               <div>
-                <Label htmlFor="requisition" className="text-gray-300">Requisição</Label>
+                <Label htmlFor="edit-operator" className="text-gray-300">Operadora</Label>
+                <Select value={editFormData.operator_id} onValueChange={(value) => setEditFormData({ ...editFormData, operator_id: value })}>
+                  <SelectTrigger data-testid="edit-operator-select" className="bg-white/5 border-[#C9A961]/20 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a1a1c] border-[#C9A961]/20">
+                    {operators.map(op => (
+                      <SelectItem key={op.id} value={op.id} className="text-white">{op.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-sale-type" className="text-gray-300">Tipo de Venda</Label>
+                <Select value={editFormData.sale_type} onValueChange={(value) => setEditFormData({ ...editFormData, sale_type: value })}>
+                  <SelectTrigger data-testid="edit-sale-type-select" className="bg-white/5 border-[#C9A961]/20 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a1a1c] border-[#C9A961]/20">
+                    <SelectItem value="eletricidade" className="text-white">Eletricidade</SelectItem>
+                    <SelectItem value="telecomunicacoes" className="text-white">Telecomunicações</SelectItem>
+                    <SelectItem value="solar" className="text-white">Solar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="edit-final-client" className="text-gray-300">Cliente Final</Label>
                 <Input
-                  id="requisition"
-                  value={editFormData.requisition}
-                  onChange={(e) => setEditFormData({ ...editFormData, requisition: e.target.value })}
-                  data-testid="edit-requisition-input"
+                  id="edit-final-client"
+                  value={editFormData.final_client}
+                  onChange={(e) => setEditFormData({ ...editFormData, final_client: e.target.value })}
+                  data-testid="edit-client-input"
                   className="bg-white/5 border-[#C9A961]/20 text-white"
                 />
               </div>
-            )}
+              {(editFormData.sale_type === 'eletricidade' || editFormData.sale_type === 'solar') && (
+                <div>
+                  <Label htmlFor="edit-cpe" className="text-gray-300">CPE</Label>
+                  <Input
+                    id="edit-cpe"
+                    value={editFormData.cpe}
+                    onChange={(e) => setEditFormData({ ...editFormData, cpe: e.target.value })}
+                    data-testid="edit-cpe-input"
+                    className="bg-white/5 border-[#C9A961]/20 text-white"
+                  />
+                </div>
+              )}
+              {editFormData.sale_type === 'telecomunicacoes' && (
+                <div>
+                  <Label htmlFor="edit-requisition" className="text-gray-300">Requisição</Label>
+                  <Input
+                    id="edit-requisition"
+                    value={editFormData.requisition}
+                    onChange={(e) => setEditFormData({ ...editFormData, requisition: e.target.value })}
+                    data-testid="edit-requisition-input"
+                    className="bg-white/5 border-[#C9A961]/20 text-white"
+                  />
+                </div>
+              )}
+              <div>
+                <Label htmlFor="edit-status" className="text-gray-300">Status</Label>
+                <Select value={editFormData.status} onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}>
+                  <SelectTrigger data-testid="edit-status-select" className="bg-white/5 border-[#C9A961]/20 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a1a1c] border-[#C9A961]/20">
+                    <SelectItem value="Pendente" className="text-white">Pendente</SelectItem>
+                    <SelectItem value="Aprovada" className="text-white">Aprovada</SelectItem>
+                    <SelectItem value="Rejeitada" className="text-white">Rejeitada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {user?.role === 'admin' && (
+                <div>
+                  <Label htmlFor="edit-commission" className="text-gray-300">Comissão (€)</Label>
+                  <Input
+                    id="edit-commission"
+                    type="number"
+                    step="0.01"
+                    value={editFormData.commission}
+                    onChange={(e) => setEditFormData({ ...editFormData, commission: e.target.value })}
+                    data-testid="edit-commission-input"
+                    className="bg-white/5 border-[#C9A961]/20 text-white"
+                  />
+                </div>
+              )}
+            </div>
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 type="button"
