@@ -695,11 +695,11 @@ const Sales = ({ user }) => {
 
       {/* Documents Dialog */}
       <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
-        <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-2xl pointer-events-auto">
+        <DialogContent className="bg-[#1a1a1c] border-[#C9A961]/20 max-w-3xl max-h-[90vh] overflow-y-auto pointer-events-auto">
           <DialogHeader>
-            <DialogTitle className="text-[#C9A961] text-2xl">Documentos da Venda</DialogTitle>
+            <DialogTitle className="text-[#C9A961] text-2xl">Documentos e Notas da Venda</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
+          <div className="space-y-6 mt-4">
             {/* Upload section */}
             <div className="border-2 border-dashed border-[#C9A961]/30 rounded-lg p-6 text-center">
               <Upload className="w-12 h-12 mx-auto mb-4 text-[#C9A961]" />
