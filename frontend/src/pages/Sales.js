@@ -774,7 +774,6 @@ const Sales = ({ user }) => {
                 <p className="text-center text-gray-400 py-4">Nenhum documento anexado</p>
               )}
             </div>
-          </div>
 
             {/* Notes Section */}
             <div className="border-t border-[#C9A961]/20 pt-6 mt-6">
