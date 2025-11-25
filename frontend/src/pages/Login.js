@@ -90,7 +90,7 @@ const Login = ({ onLogin }) => {
         </div>
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          © 2025 MDM Grupo. Todos os direitos reservados.
+          © 2025 MP Grupo. Todos os direitos reservados.
         </p>
       </div>
     </div>
