@@ -24,8 +24,8 @@ const Layout = ({ children, user, onLogout }) => {
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex md:flex-col w-64 glass-card m-4 p-6">
         <div className="flex items-center mb-8">
-          <img src="/logo.png" alt="MDM Grupo" className="h-12 w-12 object-contain" />
-          <h1 className="logo-text text-xl ml-3">MDM GRUPO</h1>
+          <img src="/logo.png" alt="MP Grupo" className="h-12 w-12 object-contain" />
+          <h1 className="logo-text text-xl ml-3">MP GRUPO - CRM</h1>
         </div>
 
         <nav className="flex-1 space-y-2">
