@@ -30,9 +30,9 @@ const Login = ({ onLogin }) => {
       <div className="w-full max-w-md">
         <div className="glass-card p-8">
           <div className="flex flex-col items-center mb-8">
-            <img src="/logo.png" alt="MDM Grupo" className="h-20 w-20 object-contain mb-4" />
-            <h1 className="logo-text text-3xl">MDM GRUPO</h1>
-            <p className="text-gray-400 mt-2">Sistema de Gestão de Vendas</p>
+            <img src="/logo.png" alt="MP Grupo" className="h-20 w-20 object-contain mb-4" />
+            <h1 className="logo-text text-3xl">MP GRUPO</h1>
+            <p className="text-gray-400 mt-2">CRM - Sistema de Gestão de Vendas</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
