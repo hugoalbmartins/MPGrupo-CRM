@@ -662,6 +662,10 @@ async def get_bo_dashboard(year: int, month: int):
             stats['by_partner'][partner_id] = {"count": 0}
         stats['by_partner'][partner_id]['count'] += 1
     
+    stats['selected_month'] = month
+    stats['selected_year'] = year
+    stats['last_12_months'] = last_12_months
+    
     return stats
 
 async def get_partner_dashboard(partner_id: str, year: int, month: int):
