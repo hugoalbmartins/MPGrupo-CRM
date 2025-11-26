@@ -409,33 +409,58 @@ async def download_sale_document(sale_id: str, document_id: str, current_user: d
 # DASHBOARD ENDPOINTS
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    query = {}
+    role = current_user['role']
     
-    if current_user['role'] == 'partner':
+    # Admin Dashboard - Full global metrics
+    if role == 'admin':
+        return await get_admin_dashboard()
+    
+    # Backoffice Dashboard - Sales metrics without commissions
+    elif role == 'bo':
+        return await get_bo_dashboard()
+    
+    # Partner Dashboard - Own sales with commissions
+    elif role == 'partner':
         partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        if partner:
-            query["partner_id"] = partner['id']
-    elif current_user['role'] == 'partner_commercial':
-        query["created_by_user_id"] = current_user['id']
+        if not partner:
+            return {"error": "Partner not found"}
+        return await get_partner_dashboard(partner['id'])
     
-    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
+    # Partner Commercial - Own registered sales without commissions
+    elif role == 'partner_commercial':
+        return await get_commercial_dashboard(current_user['id'])
     
-    # Calculate stats based on user role
+    return {"total_sales": 0}
+
+async def get_admin_dashboard():
+    """Admin sees everything including all commissions"""
+    sales = await db.sales.find({}, {"_id": 0}).to_list(10000)
+    partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
+    operators = await db.operators.find({}, {"_id": 0}).to_list(1000)
+    
     stats = {
         "total_sales": len(sales),
+        "total_partners": len(partners),
         "telecomunicacoes": {"count": 0, "monthly_total": 0},
         "energia": {"count": 0},
         "solar": {"count": 0},
         "dual": {"count": 0},
         "by_status": {},
+        "by_partner": {},
         "by_operator": {},
+        "total_commission": 0,
+        "commission_to_pay": 0,
+        "paid_by_operator": 0,
+        "unpaid_by_operator": 0,
         "daily_evolution": [],
-        "monthly_evolution": [],
-        "paid_by_operator": 0
+        "commission_by_type": {}
     }
     
     for sale in sales:
         scope = sale.get('scope', '')
+        commission = sale.get('commission', 0) or 0
+        
+        # By scope
         if scope == 'telecomunicacoes':
             stats['telecomunicacoes']['count'] += 1
             stats['telecomunicacoes']['monthly_total'] += sale.get('monthly_value', 0) or 0
@@ -450,20 +475,154 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         status = sale.get('status', 'Para registo')
         stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
         
+        # By partner
+        partner_id = sale.get('partner_id')
+        if partner_id not in stats['by_partner']:
+            stats['by_partner'][partner_id] = {"count": 0, "commission": 0}
+        stats['by_partner'][partner_id]['count'] += 1
+        stats['by_partner'][partner_id]['commission'] += commission
+        
         # By operator
         op_id = sale.get('operator_id')
         if op_id:
             stats['by_operator'][op_id] = stats['by_operator'].get(op_id, 0) + 1
         
-        # Paid by operator
+        # Commissions
+        stats['total_commission'] += commission
         if sale.get('paid_by_operator'):
             stats['paid_by_operator'] += 1
+        else:
+            stats['unpaid_by_operator'] += 1
+            stats['commission_to_pay'] += commission
         
-        # Add commission if allowed
-        if current_user['role'] not in ['partner_commercial', 'bo']:
-            if 'total_commission' not in stats:
-                stats['total_commission'] = 0
-            stats['total_commission'] += sale.get('commission', 0) or 0
+        # Commission by type
+        if scope not in stats['commission_by_type']:
+            stats['commission_by_type'][scope] = 0
+        stats['commission_by_type'][scope] += commission
+    
+    return stats
+
+async def get_bo_dashboard():
+    """BO sees all sales quantities without commission values"""
+    sales = await db.sales.find({}, {"_id": 0}).to_list(10000)
+    partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
+    
+    stats = {
+        "total_sales": len(sales),
+        "telecomunicacoes": {"count": 0, "monthly_total": 0},
+        "energia": {"count": 0},
+        "solar": {"count": 0},
+        "dual": {"count": 0},
+        "by_status": {},
+        "by_partner": {},
+        "daily_evolution": []
+    }
+    
+    for sale in sales:
+        scope = sale.get('scope', '')
+        
+        if scope == 'telecomunicacoes':
+            stats['telecomunicacoes']['count'] += 1
+            stats['telecomunicacoes']['monthly_total'] += sale.get('monthly_value', 0) or 0
+        elif scope == 'energia':
+            stats['energia']['count'] += 1
+        elif scope == 'solar':
+            stats['solar']['count'] += 1
+        elif scope == 'dual':
+            stats['dual']['count'] += 1
+        
+        status = sale.get('status', 'Para registo')
+        stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
+        
+        partner_id = sale.get('partner_id')
+        if partner_id not in stats['by_partner']:
+            stats['by_partner'][partner_id] = {"count": 0}
+        stats['by_partner'][partner_id]['count'] += 1
+    
+    return stats
+
+async def get_partner_dashboard(partner_id: str):
+    """Partner sees only their own sales with commission details"""
+    sales = await db.sales.find({"partner_id": partner_id}, {"_id": 0}).to_list(10000)
+    
+    stats = {
+        "total_sales": len(sales),
+        "telecomunicacoes": {"count": 0, "monthly_total": 0},
+        "energia": {"count": 0},
+        "solar": {"count": 0},
+        "dual": {"count": 0},
+        "by_status": {},
+        "total_commission": 0,
+        "commission_pending": 0,
+        "commission_paid": 0,
+        "commission_by_status": {},
+        "commission_by_type": {},
+        "monthly_evolution": []
+    }
+    
+    for sale in sales:
+        scope = sale.get('scope', '')
+        commission = sale.get('commission', 0) or 0
+        status = sale.get('status', 'Para registo')
+        
+        if scope == 'telecomunicacoes':
+            stats['telecomunicacoes']['count'] += 1
+            stats['telecomunicacoes']['monthly_total'] += sale.get('monthly_value', 0) or 0
+        elif scope == 'energia':
+            stats['energia']['count'] += 1
+        elif scope == 'solar':
+            stats['solar']['count'] += 1
+        elif scope == 'dual':
+            stats['dual']['count'] += 1
+        
+        stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
+        
+        # Commission tracking
+        stats['total_commission'] += commission
+        
+        if sale.get('paid_by_operator'):
+            stats['commission_paid'] += commission
+        else:
+            stats['commission_pending'] += commission
+        
+        if status not in stats['commission_by_status']:
+            stats['commission_by_status'][status] = 0
+        stats['commission_by_status'][status] += commission
+        
+        if scope not in stats['commission_by_type']:
+            stats['commission_by_type'][scope] = 0
+        stats['commission_by_type'][scope] += commission
+    
+    return stats
+
+async def get_commercial_dashboard(user_id: str):
+    """Commercial sees only their own registered sales without commissions"""
+    sales = await db.sales.find({"created_by_user_id": user_id}, {"_id": 0}).to_list(10000)
+    
+    stats = {
+        "total_sales": len(sales),
+        "telecomunicacoes": {"count": 0, "monthly_total": 0},
+        "energia": {"count": 0},
+        "solar": {"count": 0},
+        "dual": {"count": 0},
+        "by_status": {}
+    }
+    
+    for sale in sales:
+        scope = sale.get('scope', '')
+        
+        if scope == 'telecomunicacoes':
+            stats['telecomunicacoes']['count'] += 1
+            stats['telecomunicacoes']['monthly_total'] += sale.get('monthly_value', 0) or 0
+        elif scope == 'energia':
+            stats['energia']['count'] += 1
+        elif scope == 'solar':
+            stats['solar']['count'] += 1
+        elif scope == 'dual':
+            stats['dual']['count'] += 1
+        
+        status = sale.get('status', 'Para registo')
+        stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
     
     return stats
 
