@@ -83,3 +83,55 @@ def validate_cpe(cpe: str) -> bool:
 def validate_cui(cui: str) -> bool:
     """PT16 + 15 digits + 2 letters"""
     return bool(re.match(r'^PT16\d{15}[A-Z]{2}$', cui.upper()))
+
+async def calculate_commission(operator, sale_data, db) -> float:
+    """Calculate commission based on operator config and sale data"""
+    commission_config = operator.get('commission_config', {})
+    client_type = sale_data.get('client_type', 'particular')
+    scope = sale_data.get('scope')
+    
+    # Get client type config
+    client_config = commission_config.get(client_type, {})
+    if not client_config:
+        return 0.0
+    
+    # For telecomunicacoes, check service type (M3/M4)
+    if scope == 'telecomunicacoes':
+        service_type = sale_data.get('service_type', 'M3')
+        service_config = client_config.get(service_type, {})
+        if not service_config:
+            service_config = client_config.get('default', {})
+    else:
+        service_config = client_config
+    
+    # Get tiers
+    tiers = service_config.get('tiers', [])
+    if not tiers:
+        return 0.0
+    
+    # Count sales for this operator by partner
+    partner_id = sale_data.get('partner_id')
+    query = {'operator_id': operator['id'], 'partner_id': partner_id}
+    
+    # For telecomunicacoes, count by service type
+    if scope == 'telecomunicacoes':
+        query['service_type'] = sale_data.get('service_type')
+    
+    sales_count = await db.sales.count_documents(query)
+    
+    # Find applicable tier
+    applicable_tier = tiers[0]
+    for tier in sorted(tiers, key=lambda x: x.get('min_sales', 0), reverse=True):
+        if sales_count >= tier.get('min_sales', 0):
+            applicable_tier = tier
+            break
+    
+    # Calculate commission
+    if scope == 'telecomunicacoes':
+        # Multiplier × monthly value
+        multiplier = applicable_tier.get('multiplier', 0)
+        monthly_value = sale_data.get('monthly_value', 0) or 0
+        return multiplier * monthly_value
+    else:
+        # Fixed commission value
+        return applicable_tier.get('commission_value', 0)
