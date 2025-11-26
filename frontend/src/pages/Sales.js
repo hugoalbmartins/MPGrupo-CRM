@@ -480,6 +480,20 @@ const Sales = ({ user }) => {
                         {sale.commission ? `€${sale.commission.toFixed(2)}` : '-'}
                       </td>
                     )}
+                    {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
+                      <td className="text-center">
+                        <div className="flex gap-2 justify-center">
+                          {(user?.role === 'admin' || user?.role === 'bo') && (
+                            <Button onClick={() => openEditDialog(sale)} size="sm" variant="ghost" className="text-blue-600">
+                              Editar
+                            </Button>
+                          )}
+                          <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600">
+                            Notas ({sale.notes?.length || 0})
+                          </Button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
