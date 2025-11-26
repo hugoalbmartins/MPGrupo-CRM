@@ -769,6 +769,10 @@ async def get_commercial_dashboard(user_id: str, year: int, month: int):
         status = sale.get('status', 'Para registo')
         stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
     
+    stats['selected_month'] = month
+    stats['selected_year'] = year
+    stats['last_12_months'] = last_12_months
+    
     return stats
 
 # EXPORT ENDPOINT
