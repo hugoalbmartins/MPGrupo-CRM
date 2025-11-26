@@ -534,9 +534,21 @@ async def get_last_12_months_data():
 
 async def get_admin_dashboard(year: int, month: int):
     """Admin sees everything including all commissions"""
-    sales = await db.sales.find({}, {"_id": 0}).to_list(10000)
+    start_date, end_date = get_month_range(year, month)
+    
+    # Get sales for selected month
+    sales = await db.sales.find({
+        "date": {
+            "$gte": start_date.isoformat(),
+            "$lt": end_date.isoformat()
+        }
+    }, {"_id": 0}).to_list(10000)
+    
     partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
     operators = await db.operators.find({}, {"_id": 0}).to_list(1000)
+    
+    # Get 12 months data for chart
+    last_12_months = await get_last_12_months_data()
     
     stats = {
         "total_sales": len(sales),
