@@ -670,7 +670,15 @@ async def get_bo_dashboard(year: int, month: int):
 
 async def get_partner_dashboard(partner_id: str, year: int, month: int):
     """Partner sees only their own sales with commission details"""
-    sales = await db.sales.find({"partner_id": partner_id}, {"_id": 0}).to_list(10000)
+    start_date, end_date = get_month_range(year, month)
+    
+    sales = await db.sales.find({
+        "partner_id": partner_id,
+        "date": {
+            "$gte": start_date.isoformat(),
+            "$lt": end_date.isoformat()
+        }
+    }, {"_id": 0}).to_list(10000)
     
     # Get 12 months data for chart
     last_12_months = await get_last_12_months_data()
