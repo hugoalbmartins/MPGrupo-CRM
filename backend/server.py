@@ -730,9 +730,19 @@ async def get_partner_dashboard(partner_id: str, year: int, month: int):
     
     return stats
 
-async def get_commercial_dashboard(user_id: str):
+async def get_commercial_dashboard(user_id: str, year: int, month: int):
     """Commercial sees only their own registered sales without commissions"""
-    sales = await db.sales.find({"created_by_user_id": user_id}, {"_id": 0}).to_list(10000)
+    start_date, end_date = get_month_range(year, month)
+    
+    sales = await db.sales.find({
+        "created_by_user_id": user_id,
+        "date": {
+            "$gte": start_date.isoformat(),
+            "$lt": end_date.isoformat()
+        }
+    }, {"_id": 0}).to_list(10000)
+    
+    last_12_months = await get_last_12_months_data()
     
     stats = {
         "total_sales": len(sales),
