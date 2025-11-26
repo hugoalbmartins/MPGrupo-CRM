@@ -190,6 +190,10 @@ const Sales = ({ user }) => {
                   <Label>IBAN Cliente</Label>
                   <Input value={formData.client_iban} onChange={(e) => setFormData({...formData, client_iban: e.target.value})} />
                 </div>
+                <div className="col-span-2">
+                  <Label>Morada de Instalação/Fornecimento</Label>
+                  <Input value={formData.installation_address} onChange={(e) => setFormData({...formData, installation_address: e.target.value})} />
+                </div>
                 <div>
                   <Label>Operadora *</Label>
                   <Select value={formData.operator_id} onValueChange={(v) => setFormData({...formData, operator_id: v})}>
