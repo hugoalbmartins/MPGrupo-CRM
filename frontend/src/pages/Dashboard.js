@@ -8,20 +8,36 @@ import { API } from "../App";
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API}/dashboard/stats`);
+      const response = await axios.get(`${API}/dashboard/stats?year=${selectedYear}&month=${selectedMonth}`);
       setStats(response.data);
     } catch (error) {
       toast.error("Erro ao carregar estatísticas");
     } finally {
       setLoading(false);
     }
+  };
+
+  const months = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+
+  const getAvailableYears = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear; i >= currentYear - 5; i--) {
+      years.push(i);
+    }
+    return years;
   };
 
   if (loading) {
