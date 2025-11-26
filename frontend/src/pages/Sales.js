@@ -172,6 +172,16 @@ const Sales = ({ user }) => {
                   </Select>
                 </div>
                 <div>
+                  <Label>Tipo de Cliente *</Label>
+                  <Select value={formData.client_type} onValueChange={(v) => setFormData({...formData, client_type: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="particular">Particular</SelectItem>
+                      <SelectItem value="empresarial">Empresarial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>Nome Cliente *</Label>
                   <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} required />
                 </div>
