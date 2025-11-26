@@ -93,6 +93,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard user={user} />} />
             <Route path="/partners" element={<Partners user={user} />} />
             <Route path="/sales" element={<Sales user={user} />} />
+            <Route path="/profile" element={<Profile user={user} />} />
             {user?.role === "admin" && (
               <>
                 <Route path="/operators" element={<Operators user={user} />} />
