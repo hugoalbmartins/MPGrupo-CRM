@@ -187,6 +187,13 @@ async def update_partner(partner_id: str, partner_data: PartnerCreate, current_u
     if current_user['role'] != 'admin':
         raise HTTPException(status_code=403)
     
+    # Validate NIF
+    if not validate_nif(partner_data.nif):
+        if partner_data.nif.startswith('5'):
+            raise HTTPException(status_code=400, detail="NIF inválido: dígito de controlo CRC incorreto")
+        else:
+            raise HTTPException(status_code=400, detail="NIF inválido: formato incorreto")
+    
     # Get current partner to check email change
     old_partner = await db.partners.find_one({"id": partner_id}, {"_id": 0})
     if not old_partner:
