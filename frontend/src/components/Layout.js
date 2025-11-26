@@ -60,11 +60,11 @@ const Layout = ({ children, user, onLogout }) => {
         </nav>
 
         <div className="border-t border-gray-200 p-4">
-          <div className="px-4 py-2 mb-2">
+          <Link to="/profile" className="block px-4 py-2 mb-2 rounded-lg hover:bg-gray-50 transition-all">
             <p className="text-xs text-gray-500">Conectado como</p>
             <p className="font-semibold text-gray-900 text-sm">{user?.name}</p>
             <p className="text-xs text-gray-500">{user?.position}</p>
-          </div>
+          </Link>
           <button
             onClick={onLogout}
             data-testid="logout-button"
