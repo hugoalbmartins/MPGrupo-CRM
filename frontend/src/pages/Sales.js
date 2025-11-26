@@ -167,10 +167,52 @@ const Sales = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Vendas</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Nova Venda</Button>
-          </DialogTrigger>
+        <div className="flex gap-3">
+          <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-green-500 text-green-600 hover:bg-green-50">
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Excel
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Exportar Vendas para Excel</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div>
+                  <Label>Data Início (opcional)</Label>
+                  <Input 
+                    type="date" 
+                    value={exportStartDate}
+                    onChange={(e) => setExportStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Data Fim (opcional)</Label>
+                  <Input 
+                    type="date" 
+                    value={exportEndDate}
+                    onChange={(e) => setExportEndDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="outline" onClick={() => setExportDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleExportExcel} className="btn-primary">
+                    <Download className="w-4 h-4 mr-2" />
+                    Exportar
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Nova Venda</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle className="text-2xl">Nova Venda</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
