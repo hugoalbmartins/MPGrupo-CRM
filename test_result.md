@@ -97,3 +97,32 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "Issue 2 (Dashboard by User Role) completed successfully. Backend has 4 distinct dashboard functions, frontend conditionally renders based on role. Admin tested via screenshot (full metrics), BO tested via curl (no commissions). Ready for Issue 3 (Code generation) and Issue 4 (Frontend validations)."
+
+backend:
+  - task: "Automatic partner code generation"
+    implemented: true
+    working: true
+    file: "backend/utils.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Function generate_partner_code() creates sequential codes by type. Tested: D2D1001, D2D1002 (sequential), Rev+1001 (first Rev+), Rev1001. Format: [TYPE][1001+count]. Handles special characters (Rev+)."
+
+  - task: "Automatic sale code generation"
+    implemented: true
+    working: true
+    file: "backend/utils.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Function generate_sale_code() creates codes with format: [3 letters from partner name][4-digit sequential per month][2-digit month]. Tested: ALB000111-ALB000511 (5 sales for Alberto in Nov), JOÃ000111 (first for João). Handles special characters (Ã). Resets counter per month per partner."
+
+agent_communication:
+  - agent: "main"
+    message: "Issue 3 (Automatic Code Generation) completed and validated. Both partner and sale codes working perfectly. Partner codes: D2D1001, D2D1002, Rev+1001, Rev1001. Sale codes: ALB000111-511, JOÃ000111. Ready for Issue 4 (NIF validation with CRC)."
