@@ -268,14 +268,301 @@ async def delete_operator(operator_id: str, current_user: dict = Depends(get_cur
     return {"message": "Deleted"}
 
 # SALES ENDPOINTS
-@api_router.post(\"/sales\", response_model=Sale)
+@api_router.post("/sales", response_model=Sale)
 async def create_sale(sale_data: SaleCreate, current_user: dict = Depends(get_current_user)):
     # Validate date not future
     sale_date = datetime.fromisoformat(sale_data.date.replace('Z', '+00:00'))
     if sale_date > datetime.now(timezone.utc):
-        raise HTTPException(status_code=400, detail=\"Cannot create sales with future dates\")\n    
+        raise HTTPException(status_code=400, detail="Cannot create sales with future dates")
+    
     # Validate CPE if provided
     if sale_data.cpe:
         if not validate_cpe(sale_data.cpe):
-            raise HTTPException(status_code=400, detail=\"CPE invalid format\")\n        sale_data.cpe = sale_data.cpe.upper()\n    \    # Validate CUI if provided
-    if sale_data.cui:\n        if not validate_cui(sale_data.cui):\n            raise HTTPException(status_code=400, detail=\"CUI invalid format\")\n        sale_data.cui = sale_data.cui.upper()\n    \n    # Generate sale code\n    sale_code = await generate_sale_code(sale_data.partner_id, sale_data.date, db)\n    \n    # Determine initial status\n    if current_user['role'] in ['partner', 'partner_commercial']:\n        status = \"Para registo\"\n    else:\n        status = \"Pendente\"\n    \n    sale_dict = sale_data.model_dump()\n    sale_dict['sale_code'] = sale_code\n    sale_dict['created_by_user_id'] = current_user['id']\n    sale_dict['status'] = status\n    sale_dict['status_date'] = datetime.now(timezone.utc).isoformat()\n    \n    sale_obj = Sale(**sale_dict)\n    await db.sales.insert_one(sale_obj.model_dump())\n    \n    return sale_obj\n\n@api_router.get(\"/sales\")\nasync def get_sales(current_user: dict = Depends(get_current_user), status: Optional[str] = None):\n    query = {}\n    \n    if current_user['role'] == 'partner':\n        partner = await db.partners.find_one({\"user_id\": current_user['id']}, {\"_id\": 0})\n        if partner:\n            query[\"partner_id\"] = partner['id']\n    elif current_user['role'] == 'partner_commercial':\n        query[\"created_by_user_id\"] = current_user['id']\n    \n    if status:\n        query[\"status\"] = status\n    \n    sales = await db.sales.find(query, {\"_id\": 0}).sort(\"date\", -1).to_list(10000)\n    return sales\n\n@api_router.get(\"/sales/{sale_id}\")\nasync def get_sale(sale_id: str, current_user: dict = Depends(get_current_user)):\n    sale = await db.sales.find_one({\"id\": sale_id}, {\"_id\": 0})\n    if not sale:\n        raise HTTPException(status_code=404)\n    return sale\n\n@api_router.put(\"/sales/{sale_id}\")\nasync def update_sale(sale_id: str, sale_data: SaleUpdate, current_user: dict = Depends(get_current_user)):\n    if current_user['role'] not in ['admin', 'bo']:\n        raise HTTPException(status_code=403)\n    \n    update_dict = {k: v for k, v in sale_data.model_dump().items() if v is not None}\n    update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()\n    \n    await db.sales.update_one({\"id\": sale_id}, {\"$set\": update_dict})\n    sale = await db.sales.find_one({\"id\": sale_id}, {\"_id\": 0})\n    return sale\n\n@api_router.post(\"/sales/{sale_id}/notes\")\nasync def add_note(sale_id: str, note_data: NoteCreate, current_user: dict = Depends(get_current_user)):\n    note = {\n        \"id\": str(uuid.uuid4()),\n        \"content\": note_data.content,\n        \"author\": current_user['name'],\n        \"author_role\": current_user['role'],\n        \"created_at\": datetime.now(timezone.utc).isoformat()\n    }\n    await db.sales.update_one({\"id\": sale_id}, {\"$push\": {\"notes\": note}})\n    return note\n\n@api_router.post(\"/sales/{sale_id}/documents\")\nasync def upload_sale_document(sale_id: str, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):\n    file_id = str(uuid.uuid4())\n    file_extension = Path(file.filename).suffix\n    file_path = UPLOAD_DIR / f\"sale_{file_id}{file_extension}\"\n    \n    with file_path.open(\"wb\") as buffer:\n        shutil.copyfileobj(file.file, buffer)\n    \n    document = {\n        \"id\": file_id,\n        \"filename\": file.filename,\n        \"uploaded_by\": current_user['name'],\n        \"uploaded_at\": datetime.now(timezone.utc).isoformat(),\n        \"file_path\": str(file_path)\n    }\n    \n    await db.sales.update_one({\"id\": sale_id}, {\"$push\": {\"documents\": document}})\n    return document\n\n@api_router.get(\"/sales/{sale_id}/documents/{document_id}\")\nasync def download_sale_document(sale_id: str, document_id: str, current_user: dict = Depends(get_current_user)):\n    sale = await db.sales.find_one({\"id\": sale_id}, {\"_id\": 0})\n    if not sale:\n        raise HTTPException(status_code=404)\n    \n    document = next((d for d in sale.get('documents', []) if d['id'] == document_id), None)\n    if not document:\n        raise HTTPException(status_code=404)\n    \n    return FileResponse(path=document['file_path'], filename=document['filename'])\n\n# DASHBOARD ENDPOINTS\n@api_router.get(\"/dashboard/stats\")\nasync def get_dashboard_stats(current_user: dict = Depends(get_current_user)):\n    query = {}\n    \n    if current_user['role'] == 'partner':\n        partner = await db.partners.find_one({\"user_id\": current_user['id']}, {\"_id\": 0})\n        if partner:\n            query[\"partner_id\"] = partner['id']\n    elif current_user['role'] == 'partner_commercial':\n        query[\"created_by_user_id\"] = current_user['id']\n    \n    sales = await db.sales.find(query, {\"_id\": 0}).to_list(10000)\n    \n    # Calculate stats based on user role\n    stats = {\n        \"total_sales\": len(sales),\n        \"telecomunicacoes\": {\"count\": 0, \"monthly_total\": 0},\n        \"energia\": {\"count\": 0},\n        \"solar\": {\"count\": 0},\n        \"dual\": {\"count\": 0},\n        \"by_status\": {},\n        \"by_operator\": {},\n        \"daily_evolution\": [],\n        \"monthly_evolution\": [],\n        \"paid_by_operator\": 0\n    }\n    \n    for sale in sales:\n        scope = sale.get('scope', '')\n        if scope == 'telecomunicacoes':\n            stats['telecomunicacoes']['count'] += 1\n            stats['telecomunicacoes']['monthly_total'] += sale.get('monthly_value', 0) or 0\n        elif scope == 'energia':\n            stats['energia']['count'] += 1\n        elif scope == 'solar':\n            stats['solar']['count'] += 1\n        elif scope == 'dual':\n            stats['dual']['count'] += 1\n        \n        # By status\n        status = sale.get('status', 'Para registo')\n        stats['by_status'][status] = stats['by_status'].get(status, 0) + 1\n        \n        # By operator\n        op_id = sale.get('operator_id')\n        if op_id:\n            stats['by_operator'][op_id] = stats['by_operator'].get(op_id, 0) + 1\n        \n        # Paid by operator\n        if sale.get('paid_by_operator'):\n            stats['paid_by_operator'] += 1\n        \n        # Add commission if allowed\n        if current_user['role'] not in ['partner_commercial', 'bo']:\n            if 'total_commission' not in stats:\n                stats['total_commission'] = 0\n            stats['total_commission'] += sale.get('commission', 0) or 0\n    \n    return stats\n\n# EXPORT ENDPOINT\n@api_router.get(\"/sales/export/excel\")\nasync def export_sales(\n    start_date: Optional[str] = None,\n    end_date: Optional[str] = None,\n    current_user: dict = Depends(get_current_user)\n):\n    if current_user['role'] not in ['admin', 'bo']:\n        raise HTTPException(status_code=403)\n    \n    # Default to current month\n    if not start_date:\n        now = datetime.now(timezone.utc)\n        start_date = now.replace(day=1, hour=0, minute=0, second=0).isoformat()\n    if not end_date:\n        end_date = datetime.now(timezone.utc).isoformat()\n    \n    query = {\n        \"date\": {\n            \"$gte\": start_date,\n            \"$lte\": end_date\n        }\n    }\n    \n    sales = await db.sales.find(query, {\"_id\": 0}).to_list(10000)\n    \n    export_data = []\n    for sale in sales:\n        partner = await db.partners.find_one({\"id\": sale['partner_id']}, {\"_id\": 0})\n        operator = await db.operators.find_one({\"id\": sale['operator_id']}, {\"_id\": 0})\n        \n        row = {\n            'Código Venda': sale.get('sale_code', ''),\n            'Data': sale.get('date', ''),\n            'Parceiro': partner.get('name', '') if partner else '',\n            'Código Parceiro': partner.get('partner_code', '') if partner else '',\n            'Âmbito': sale.get('scope', ''),\n            'Cliente': sale.get('client_name', ''),\n            'NIF Cliente': sale.get('client_nif', ''),\n            'Contacto': sale.get('client_contact', ''),\n            'Operadora': operator.get('name', '') if operator else '',\n            'Status': sale.get('status', ''),\n            'Comissão': sale.get('commission', 0) if current_user['role'] == 'admin' else '',\n            'Pago Operador': 'Sim' if sale.get('paid_by_operator') else 'Não',\n        }\n        \n        if sale.get('cpe'):\n            row['CPE'] = sale['cpe']\n        if sale.get('cui'):\n            row['CUI'] = sale['cui']\n        if sale.get('monthly_value'):\n            row['Mensalidade'] = sale['monthly_value']\n        if sale.get('requisition'):\n            row['Requisição'] = sale['requisition']\n        \n        export_data.append(row)\n    \n    df = pd.DataFrame(export_data)\n    \n    output = BytesIO()\n    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:\n        df.to_excel(writer, index=False, sheet_name='Vendas')\n    \n    output.seek(0)\n    \n    return StreamingResponse(\n        output,\n        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',\n        headers={'Content-Disposition': 'attachment; filename=vendas.xlsx'}\n    )\n\n# USERS ENDPOINT\n@api_router.get(\"/users\", response_model=List[User])\nasync def get_users(current_user: dict = Depends(get_current_user)):\n    if current_user['role'] != 'admin':\n        raise HTTPException(status_code=403)\n    \n    users = await db.users.find({}, {\"_id\": 0, \"password_hash\": 0}).to_list(1000)\n    return [User(**u) for u in users]\n\napp.include_router(api_router)\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_credentials=True,\n    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\nlogging.basicConfig(\n    level=logging.INFO,\n    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'\n)\nlogger = logging.getLogger(__name__)\n\n@app.on_event(\"startup\")\nasync def startup_db():\n    # Create initial admin\n    existing = await db.users.find_one({\"email\": \"hugoalbmartins@gmail.com\"}, {\"_id\": 0})\n    if not existing:\n        from utils import hash_password\n        admin_user = User(\n            name=\"Hugo Martins\",\n            email=\"hugoalbmartins@gmail.com\",\n            role=\"admin\",\n            position=\"Gestor de parceiros\",\n            must_change_password=False\n        )\n        doc = admin_user.model_dump()\n        doc['password_hash'] = hash_password(\"12345Hm\")\n        await db.users.insert_one(doc)\n        logger.info(\"Initial admin created\")\n    \n    logger.info(\"Database initialized\")\n\n@app.on_event(\"shutdown\")\nasync def shutdown_db_client():\n    client.close()"
+            raise HTTPException(status_code=400, detail="CPE invalid format")
+        sale_data.cpe = sale_data.cpe.upper()
+    \    # Validate CUI if provided
+    if sale_data.cui:
+        if not validate_cui(sale_data.cui):
+            raise HTTPException(status_code=400, detail="CUI invalid format")
+        sale_data.cui = sale_data.cui.upper()
+    
+    # Generate sale code
+    sale_code = await generate_sale_code(sale_data.partner_id, sale_data.date, db)
+    
+    # Determine initial status
+    if current_user['role'] in ['partner', 'partner_commercial']:
+        status = "Para registo"
+    else:
+        status = "Pendente"
+    
+    sale_dict = sale_data.model_dump()
+    sale_dict['sale_code'] = sale_code
+    sale_dict['created_by_user_id'] = current_user['id']
+    sale_dict['status'] = status
+    sale_dict['status_date'] = datetime.now(timezone.utc).isoformat()
+    
+    sale_obj = Sale(**sale_dict)
+    await db.sales.insert_one(sale_obj.model_dump())
+    
+    return sale_obj
+
+@api_router.get("/sales")
+async def get_sales(current_user: dict = Depends(get_current_user), status: Optional[str] = None):
+    query = {}
+    
+    if current_user['role'] == 'partner':
+        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+        if partner:
+            query["partner_id"] = partner['id']
+    elif current_user['role'] == 'partner_commercial':
+        query["created_by_user_id"] = current_user['id']
+    
+    if status:
+        query["status"] = status
+    
+    sales = await db.sales.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
+    return sales
+
+@api_router.get("/sales/{sale_id}")
+async def get_sale(sale_id: str, current_user: dict = Depends(get_current_user)):
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404)
+    return sale
+
+@api_router.put("/sales/{sale_id}")
+async def update_sale(sale_id: str, sale_data: SaleUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user['role'] not in ['admin', 'bo']:
+        raise HTTPException(status_code=403)
+    
+    update_dict = {k: v for k, v in sale_data.model_dump().items() if v is not None}
+    update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.sales.update_one({"id": sale_id}, {"$set": update_dict})
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    return sale
+
+@api_router.post("/sales/{sale_id}/notes")
+async def add_note(sale_id: str, note_data: NoteCreate, current_user: dict = Depends(get_current_user)):
+    note = {
+        "id": str(uuid.uuid4()),
+        "content": note_data.content,
+        "author": current_user['name'],
+        "author_role": current_user['role'],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.sales.update_one({"id": sale_id}, {"$push": {"notes": note}})
+    return note
+
+@api_router.post("/sales/{sale_id}/documents")
+async def upload_sale_document(sale_id: str, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    file_id = str(uuid.uuid4())
+    file_extension = Path(file.filename).suffix
+    file_path = UPLOAD_DIR / f"sale_{file_id}{file_extension}"
+    
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    document = {
+        "id": file_id,
+        "filename": file.filename,
+        "uploaded_by": current_user['name'],
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        "file_path": str(file_path)
+    }
+    
+    await db.sales.update_one({"id": sale_id}, {"$push": {"documents": document}})
+    return document
+
+@api_router.get("/sales/{sale_id}/documents/{document_id}")
+async def download_sale_document(sale_id: str, document_id: str, current_user: dict = Depends(get_current_user)):
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404)
+    
+    document = next((d for d in sale.get('documents', []) if d['id'] == document_id), None)
+    if not document:
+        raise HTTPException(status_code=404)
+    
+    return FileResponse(path=document['file_path'], filename=document['filename'])
+
+# DASHBOARD ENDPOINTS
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+    query = {}
+    
+    if current_user['role'] == 'partner':
+        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+        if partner:
+            query["partner_id"] = partner['id']
+    elif current_user['role'] == 'partner_commercial':
+        query["created_by_user_id"] = current_user['id']
+    
+    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
+    
+    # Calculate stats based on user role
+    stats = {
+        "total_sales": len(sales),
+        "telecomunicacoes": {"count": 0, "monthly_total": 0},
+        "energia": {"count": 0},
+        "solar": {"count": 0},
+        "dual": {"count": 0},
+        "by_status": {},
+        "by_operator": {},
+        "daily_evolution": [],
+        "monthly_evolution": [],
+        "paid_by_operator": 0
+    }
+    
+    for sale in sales:
+        scope = sale.get('scope', '')
+        if scope == 'telecomunicacoes':
+            stats['telecomunicacoes']['count'] += 1
+            stats['telecomunicacoes']['monthly_total'] += sale.get('monthly_value', 0) or 0
+        elif scope == 'energia':
+            stats['energia']['count'] += 1
+        elif scope == 'solar':
+            stats['solar']['count'] += 1
+        elif scope == 'dual':
+            stats['dual']['count'] += 1
+        
+        # By status
+        status = sale.get('status', 'Para registo')
+        stats['by_status'][status] = stats['by_status'].get(status, 0) + 1
+        
+        # By operator
+        op_id = sale.get('operator_id')
+        if op_id:
+            stats['by_operator'][op_id] = stats['by_operator'].get(op_id, 0) + 1
+        
+        # Paid by operator
+        if sale.get('paid_by_operator'):
+            stats['paid_by_operator'] += 1
+        
+        # Add commission if allowed
+        if current_user['role'] not in ['partner_commercial', 'bo']:
+            if 'total_commission' not in stats:
+                stats['total_commission'] = 0
+            stats['total_commission'] += sale.get('commission', 0) or 0
+    
+    return stats
+
+# EXPORT ENDPOINT
+@api_router.get("/sales/export/excel")
+async def export_sales(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user['role'] not in ['admin', 'bo']:
+        raise HTTPException(status_code=403)
+    
+    # Default to current month
+    if not start_date:
+        now = datetime.now(timezone.utc)
+        start_date = now.replace(day=1, hour=0, minute=0, second=0).isoformat()
+    if not end_date:
+        end_date = datetime.now(timezone.utc).isoformat()
+    
+    query = {
+        "date": {
+            "$gte": start_date,
+            "$lte": end_date
+        }
+    }
+    
+    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
+    
+    export_data = []
+    for sale in sales:
+        partner = await db.partners.find_one({"id": sale['partner_id']}, {"_id": 0})
+        operator = await db.operators.find_one({"id": sale['operator_id']}, {"_id": 0})
+        
+        row = {
+            'Código Venda': sale.get('sale_code', ''),
+            'Data': sale.get('date', ''),
+            'Parceiro': partner.get('name', '') if partner else '',
+            'Código Parceiro': partner.get('partner_code', '') if partner else '',
+            'Âmbito': sale.get('scope', ''),
+            'Cliente': sale.get('client_name', ''),
+            'NIF Cliente': sale.get('client_nif', ''),
+            'Contacto': sale.get('client_contact', ''),
+            'Operadora': operator.get('name', '') if operator else '',
+            'Status': sale.get('status', ''),
+            'Comissão': sale.get('commission', 0) if current_user['role'] == 'admin' else '',
+            'Pago Operador': 'Sim' if sale.get('paid_by_operator') else 'Não',
+        }
+        
+        if sale.get('cpe'):
+            row['CPE'] = sale['cpe']
+        if sale.get('cui'):
+            row['CUI'] = sale['cui']
+        if sale.get('monthly_value'):
+            row['Mensalidade'] = sale['monthly_value']
+        if sale.get('requisition'):
+            row['Requisição'] = sale['requisition']
+        
+        export_data.append(row)
+    
+    df = pd.DataFrame(export_data)
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Vendas')
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename=vendas.xlsx'}
+    )
+
+# USERS ENDPOINT
+@api_router.get("/users", response_model=List[User])
+async def get_users(current_user: dict = Depends(get_current_user)):
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403)
+    
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    return [User(**u) for u in users]
+
+app.include_router(api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+@app.on_event("startup")
+async def startup_db():
+    # Create initial admin
+    existing = await db.users.find_one({"email": "hugoalbmartins@gmail.com"}, {"_id": 0})
+    if not existing:
+        from utils import hash_password
+        admin_user = User(
+            name="Hugo Martins",
+            email="hugoalbmartins@gmail.com",
+            role="admin",
+            position="Gestor de parceiros",
+            must_change_password=False
+        )
+        doc = admin_user.model_dump()
+        doc['password_hash'] = hash_password("12345Hm")
+        await db.users.insert_one(doc)
+        logger.info("Initial admin created")
+    
+    logger.info("Database initialized")
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()"
