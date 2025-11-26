@@ -346,7 +346,7 @@ const Partners = ({ user }) => {
             </thead>
             <tbody>
               {filteredPartners.length === 0 ? (
-                <tr><td colSpan={user?.role === 'admin' ? 7 : 6} className="text-center py-8 text-gray-400">Nenhum parceiro encontrado</td></tr>
+                <tr><td colSpan={user?.role === 'admin' ? 8 : 6} className="text-center py-8 text-gray-400">Nenhum parceiro encontrado</td></tr>
               ) : (
                 filteredPartners.map((partner) => (
                   <tr key={partner.id}>
