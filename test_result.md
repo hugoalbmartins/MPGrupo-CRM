@@ -67,3 +67,33 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "Issue 1 (Commission System) completed successfully. All components tested: backend calculation, frontend UI, integration. Ready to proceed with next priority tasks."
+
+backend:
+  - task: "Role-based dashboard endpoints"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Created 4 separate dashboard functions: get_admin_dashboard (full metrics with commissions), get_bo_dashboard (all sales without commissions), get_partner_dashboard (own sales with commission details), get_commercial_dashboard (own registered sales without commissions). Tested via curl - Admin shows 4 sales €210 commission, BO shows 4 sales with NO commission field."
+
+frontend:
+  - task: "Role-specific dashboard UI"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Dashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Created 4 rendering functions: renderAdminDashboard (8 cards with commission tracking), renderBODashboard (4 cards, no commission), renderPartnerDashboard (8 cards with own commission details), renderCommercialDashboard (4 cards, no commission). Tested via screenshot - Admin dashboard displays correctly with all metrics."
+
+agent_communication:
+  - agent: "main"
+    message: "Issue 2 (Dashboard by User Role) completed successfully. Backend has 4 distinct dashboard functions, frontend conditionally renders based on role. Admin tested via screenshot (full metrics), BO tested via curl (no commissions). Ready for Issue 3 (Code generation) and Issue 4 (Frontend validations)."
