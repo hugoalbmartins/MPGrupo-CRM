@@ -245,14 +245,27 @@ const Partners = ({ user }) => {
                   </div>
                   <div>
                     <Label>NIF *</Label>
-                    <Input value={formData.nif} onChange={(e) => setFormData({...formData, nif: e.target.value})} required />
+                    <Input 
+                      value={formData.nif} 
+                      onChange={(e) => setFormData({...formData, nif: e.target.value})} 
+                      required 
+                      maxLength={9}
+                      placeholder="9 dígitos"
+                    />
+                    {formData.nif.length === 9 && (
+                      <p className={`text-xs mt-1 ${
+                        validateNIF(formData.nif).valid 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>
+                        {validateNIF(formData.nif).valid ? (
+                          <>✓ NIF válido{formData.nif.startsWith('5') && ' (CRC correto)'}</>
+                        ) : (
+                          <>✗ {validateNIF(formData.nif).message}</>
+                        )}
+                      </p>
+                    )}
                   </div>
-                  {formData.nif.startsWith('5') && (
-                    <div>
-                      <Label>Código CRC</Label>
-                      <Input value={formData.crc} onChange={(e) => setFormData({...formData, crc: e.target.value})} />
-                    </div>
-                  )}
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-2">
