@@ -383,6 +383,71 @@ const Partners = ({ user }) => {
           </table>
         </div>
       </div>
+
+      {/* Documents Dialog */}
+      <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Documentos - {selectedPartnerForDocs?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {/* Upload Section */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <input
+                type="file"
+                id="doc-upload"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files[0]) {
+                    handleUploadDocument(selectedPartnerForDocs.id, e.target.files[0]);
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <label htmlFor="doc-upload" className="cursor-pointer">
+                <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600">
+                  {uploadingDoc ? 'A carregar...' : 'Clique para selecionar um ficheiro'}
+                </p>
+              </label>
+            </div>
+
+            {/* Documents List */}
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Documentos anexados:</h3>
+              {(!selectedPartnerForDocs?.documents || selectedPartnerForDocs.documents.length === 0) ? (
+                <p className="text-gray-500 text-sm py-4 text-center">Nenhum documento anexado</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedPartnerForDocs.documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <File className="w-5 h-5 text-blue-500" />
+                        <div>
+                          <p className="font-medium text-sm">{doc.filename}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(doc.uploaded_at).toLocaleDateString('pt-PT')}
+                          </p>
+                        </div>
+                      </div>
+                      <a 
+                        href={`${API}/partners/${selectedPartnerForDocs.id}/documents/${doc.id}`}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button size="sm" variant="ghost">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
