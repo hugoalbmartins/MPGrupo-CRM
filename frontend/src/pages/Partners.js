@@ -156,7 +156,7 @@ const Partners = ({ user }) => {
               <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Parceiro</Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle className="text-2xl">Novo Parceiro</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="text-2xl">{editingPartner ? "Editar Parceiro" : "Novo Parceiro"}</DialogTitle></DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
