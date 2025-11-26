@@ -263,7 +263,7 @@ const Partners = ({ user }) => {
             </thead>
             <tbody>
               {filteredPartners.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-gray-400">Nenhum parceiro encontrado</td></tr>
+                <tr><td colSpan={user?.role === 'admin' ? 7 : 6} className="text-center py-8 text-gray-400">Nenhum parceiro encontrado</td></tr>
               ) : (
                 filteredPartners.map((partner) => (
                   <tr key={partner.id}>
@@ -273,6 +273,13 @@ const Partners = ({ user }) => {
                     <td>{partner.email}</td>
                     <td>{partner.phone}</td>
                     <td>{partner.contact_person}</td>
+                    {user?.role === 'admin' && (
+                      <td className="text-center">
+                        <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-blue-600">
+                          Editar
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
