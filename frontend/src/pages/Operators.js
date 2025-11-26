@@ -156,6 +156,27 @@ const Operators = ({ user }) => {
           </div>
         ))}
       </div>
+
+      {/* Commission Configuration Dialog */}
+      <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              Configurar Comissões - {selectedOperator?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOperator && (
+            <CommissionConfig
+              operator={selectedOperator}
+              onSave={handleSaveCommission}
+              onCancel={() => {
+                setConfigDialogOpen(false);
+                setSelectedOperator(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
