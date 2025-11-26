@@ -464,7 +464,7 @@ const Sales = ({ user }) => {
             </thead>
             <tbody>
               {filteredSales.length === 0 ? (
-                <tr><td colSpan={user?.role !== 'bo' && user?.role !== 'partner_commercial' ? 8 : 7} className="text-center py-8 text-gray-400">Nenhuma venda encontrada</td></tr>
+                <tr><td colSpan={user?.role === 'partner_commercial' ? 7 : 9} className="text-center py-8 text-gray-400">Nenhuma venda encontrada</td></tr>
               ) : (
                 filteredSales.map((sale) => (
                   <tr key={sale.id}>
