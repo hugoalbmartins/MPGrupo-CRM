@@ -127,6 +127,13 @@ async def create_partner(partner_data: PartnerCreate, current_user: dict = Depen
     if current_user['role'] != 'admin':
         raise HTTPException(status_code=403, detail="Only admins can create partners")
     
+    # Validate NIF
+    if not validate_nif(partner_data.nif):
+        if partner_data.nif.startswith('5'):
+            raise HTTPException(status_code=400, detail="NIF inválido: dígito de controlo CRC incorreto")
+        else:
+            raise HTTPException(status_code=400, detail="NIF inválido: formato incorreto")
+    
     partner_code = await generate_partner_code(partner_data.partner_type, db)
     
     partner_dict = partner_data.model_dump()
