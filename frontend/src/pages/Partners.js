@@ -61,8 +61,49 @@ const Partners = ({ user }) => {
     }
   }, [formData.email]);
 
+  const validateNIF = (nif) => {
+    // Remove spaces and non-digits
+    const cleanNif = nif.replace(/\D/g, '');
+    
+    // Must be 9 digits
+    if (cleanNif.length !== 9) {
+      return { valid: false, message: "NIF deve ter 9 dígitos" };
+    }
+    
+    // If starts with 5, validate check digit
+    if (cleanNif[0] === '5') {
+      const multipliers = [9, 8, 7, 6, 5, 4, 3, 2];
+      let sum = 0;
+      
+      for (let i = 0; i < 8; i++) {
+        sum += parseInt(cleanNif[i]) * multipliers[i];
+      }
+      
+      const remainder = sum % 11;
+      let checkDigit = 11 - remainder;
+      
+      if (checkDigit >= 10) {
+        checkDigit = 0;
+      }
+      
+      if (checkDigit !== parseInt(cleanNif[8])) {
+        return { valid: false, message: "NIF inválido: dígito de controlo CRC incorreto" };
+      }
+    }
+    
+    return { valid: true };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate NIF
+    const nifValidation = validateNIF(formData.nif);
+    if (!nifValidation.valid) {
+      toast.error(nifValidation.message);
+      return;
+    }
+    
     try {
       const submitData = { ...formData };
       submitData.communication_emails = formData.communication_emails.filter(e => e.trim());
