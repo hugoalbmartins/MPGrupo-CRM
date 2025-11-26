@@ -96,6 +96,7 @@ class Sale(BaseModel):
     partner_id: str
     created_by_user_id: str
     scope: str  # telecomunicacoes, energia, dual, solar
+    client_type: str  # particular, empresarial
     client_name: str
     client_nif: str
     client_contact: str
