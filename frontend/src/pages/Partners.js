@@ -110,6 +110,8 @@ const Partners = ({ user }) => {
   };
 
   const resetForm = () => {
+    setEditingPartner(null);
+    setGeneratedPassword("");
     setFormData({
       partner_type: "D2D",
       name: "",
