@@ -147,16 +147,19 @@ async def calculate_commission(operator, sale_data, db) -> float:
     if not tiers:
         return 0.0
     
-    # Count ALL sales for this PARTNER (not just this operator)
-    # This is the total number of sales the partner has made
+    # Count sales for THIS PARTNER at THIS OPERATOR
+    # Each operator has its own tier progression per partner
     partner_id = sale_data.get('partner_id')
-    partner_sales_count = await db.sales.count_documents({'partner_id': partner_id})
+    partner_sales_at_operator = await db.sales.count_documents({
+        'partner_id': partner_id,
+        'operator_id': operator['id']
+    })
     
-    # Find applicable tier based on partner's total sales count
+    # Find applicable tier based on partner's sales count at this operator
     # Sort tiers by min_sales descending, find the first one that matches
     applicable_tier = tiers[0]  # Default to first tier
     for tier in sorted(tiers, key=lambda x: x.get('min_sales', 0), reverse=True):
-        if partner_sales_count >= tier.get('min_sales', 0):
+        if partner_sales_at_operator >= tier.get('min_sales', 0):
             applicable_tier = tier
             break
     
