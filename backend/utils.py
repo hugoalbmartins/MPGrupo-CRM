@@ -84,6 +84,44 @@ def validate_cui(cui: str) -> bool:
     """PT16 + 15 digits + 2 letters"""
     return bool(re.match(r'^PT16\d{15}[A-Z]{2}$', cui.upper()))
 
+def validate_nif(nif: str) -> bool:
+    """Validate Portuguese NIF with check digit"""
+    # Remove any spaces or non-digits
+    nif = re.sub(r'\D', '', nif)
+    
+    # Must be exactly 9 digits
+    if len(nif) != 9 or not nif.isdigit():
+        return False
+    
+    # If starts with 5, validate check digit (CRC)
+    if nif[0] == '5':
+        return validate_nif_check_digit(nif)
+    
+    # For other NIFs, just check format
+    return True
+
+def validate_nif_check_digit(nif: str) -> bool:
+    """Validate NIF check digit (CRC) for NIFs starting with 5"""
+    if len(nif) != 9:
+        return False
+    
+    # Multipliers for the first 8 digits
+    multipliers = [9, 8, 7, 6, 5, 4, 3, 2]
+    
+    # Calculate sum
+    total = sum(int(nif[i]) * multipliers[i] for i in range(8))
+    
+    # Calculate check digit
+    remainder = total % 11
+    check_digit = 11 - remainder
+    
+    # If check digit is 10 or 11, it becomes 0
+    if check_digit >= 10:
+        check_digit = 0
+    
+    # Compare with the 9th digit
+    return check_digit == int(nif[8])
+
 async def calculate_commission(operator, sale_data, db) -> float:
     """Calculate commission based on operator config and sale data"""
     commission_config = operator.get('commission_config', {})
