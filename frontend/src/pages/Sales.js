@@ -29,6 +29,7 @@ const Sales = ({ user }) => {
     client_contact: "",
     client_email: "",
     client_iban: "",
+    installation_address: "",
     operator_id: "",
     service_type: "",
     monthly_value: "",
