@@ -172,6 +172,50 @@ const Sales = ({ user }) => {
     }
   };
 
+  const openEditDialog = (sale) => {
+    setEditingSale(sale);
+    setEditFormData({
+      status: sale.status || "",
+      requisition: sale.requisition || "",
+      paid_by_operator: sale.paid_by_operator || false,
+      paid_date: sale.paid_date ? sale.paid_date.split('T')[0] : ""
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateSale = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/sales/${editingSale.id}`, editFormData);
+      toast.success("Venda atualizada com sucesso!");
+      setEditDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error("Erro ao atualizar venda");
+    }
+  };
+
+  const openNotesDialog = (sale) => {
+    setSelectedSaleForNotes(sale);
+    setNewNote("");
+    setNotesDialogOpen(true);
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    
+    try {
+      await axios.post(`${API}/sales/${selectedSaleForNotes.id}/notes`, {
+        content: newNote
+      });
+      toast.success("Nota adicionada!");
+      setNewNote("");
+      fetchData();
+    } catch (error) {
+      toast.error("Erro ao adicionar nota");
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
   return (
