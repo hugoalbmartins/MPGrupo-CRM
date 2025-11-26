@@ -459,6 +459,7 @@ const Sales = ({ user }) => {
                 <th>Operadora</th>
                 <th>Status</th>
                 {user?.role !== 'bo' && user?.role !== 'partner_commercial' && <th>Comissão</th>}
+                {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && <th className="text-center">Ações</th>}
               </tr>
             </thead>
             <tbody>
