@@ -655,7 +655,7 @@ async def get_bo_dashboard():
     
     return stats
 
-async def get_partner_dashboard(partner_id: str):
+async def get_partner_dashboard(partner_id: str, year: int, month: int):
     """Partner sees only their own sales with commission details"""
     sales = await db.sales.find({"partner_id": partner_id}, {"_id": 0}).to_list(10000)
     
