@@ -358,6 +358,19 @@ const Partners = ({ user }) => {
                     <td>{partner.contact_person}</td>
                     {user?.role === 'admin' && (
                       <td className="text-center">
+                        <Button 
+                          onClick={() => openDocumentsDialog(partner)} 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-purple-600"
+                        >
+                          <File className="w-4 h-4 mr-1" />
+                          {partner.documents?.length || 0}
+                        </Button>
+                      </td>
+                    )}
+                    {user?.role === 'admin' && (
+                      <td className="text-center">
                         <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-blue-600">
                           Editar
                         </Button>
