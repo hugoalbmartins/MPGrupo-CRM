@@ -340,6 +340,7 @@ const Partners = ({ user }) => {
                 <th>Email</th>
                 <th>Telefone</th>
                 <th>Contacto</th>
+                {user?.role === 'admin' && <th className="text-center">Documentos</th>}
                 {user?.role === 'admin' && <th className="text-center">Ações</th>}
               </tr>
             </thead>
