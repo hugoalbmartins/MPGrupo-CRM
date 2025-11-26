@@ -326,7 +326,7 @@ const Sales = ({ user }) => {
             </thead>
             <tbody>
               {filteredSales.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">Nenhuma venda encontrada</td></tr>
+                <tr><td colSpan={user?.role !== 'bo' && user?.role !== 'partner_commercial' ? 8 : 7} className="text-center py-8 text-gray-400">Nenhuma venda encontrada</td></tr>
               ) : (
                 filteredSales.map((sale) => (
                   <tr key={sale.id}>
@@ -337,6 +337,11 @@ const Sales = ({ user }) => {
                     <td>{sale.client_name}</td>
                     <td>{operators.find(o => o.id === sale.operator_id)?.name}</td>
                     <td><span className={`status-badge status-${sale.status.toLowerCase().replace(' ', '-')}`}>{sale.status}</span></td>
+                    {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
+                      <td className="font-semibold text-green-600">
+                        {sale.commission ? `€${sale.commission.toFixed(2)}` : '-'}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
