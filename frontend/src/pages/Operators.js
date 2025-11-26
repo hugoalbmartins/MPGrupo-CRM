@@ -14,6 +14,8 @@ const Operators = ({ user }) => {
   const [operators, setOperators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [selectedOperator, setSelectedOperator] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     scope: "telecomunicacoes",
