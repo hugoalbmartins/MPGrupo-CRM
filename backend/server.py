@@ -457,7 +457,82 @@ async def get_dashboard_stats(
     
     return {"total_sales": 0}
 
-async def get_admin_dashboard():
+def get_month_range(year: int, month: int):
+    """Get start and end datetime for a specific month"""
+    start_date = datetime(year, month, 1, 0, 0, 0, tzinfo=timezone.utc)
+    
+    # Calculate end date (first day of next month)
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    else:
+        end_date = datetime(year, month + 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    
+    return start_date, end_date
+
+async def get_last_12_months_data():
+    """Get sales data for last 12 months grouped by month and scope"""
+    now = datetime.now(timezone.utc)
+    
+    # Calculate date 12 months ago
+    twelve_months_ago = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    for _ in range(11):
+        if twelve_months_ago.month == 1:
+            twelve_months_ago = twelve_months_ago.replace(year=twelve_months_ago.year - 1, month=12)
+        else:
+            twelve_months_ago = twelve_months_ago.replace(month=twelve_months_ago.month - 1)
+    
+    sales = await db.sales.find({
+        "date": {"$gte": twelve_months_ago.isoformat()}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Group by month and scope
+    monthly_data = {}
+    for sale in sales:
+        sale_date = datetime.fromisoformat(sale['date'].replace('Z', '+00:00'))
+        month_key = f"{sale_date.year}-{sale_date.month:02d}"
+        
+        if month_key not in monthly_data:
+            monthly_data[month_key] = {
+                "month": month_key,
+                "year": sale_date.year,
+                "month_num": sale_date.month,
+                "telecomunicacoes": 0,
+                "energia": 0,
+                "solar": 0,
+                "dual": 0
+            }
+        
+        scope = sale.get('scope', '')
+        if scope in monthly_data[month_key]:
+            monthly_data[month_key][scope] += 1
+    
+    # Convert to sorted list (last 12 months)
+    result = []
+    current = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    for i in range(12):
+        month_key = f"{current.year}-{current.month:02d}"
+        if month_key in monthly_data:
+            result.append(monthly_data[month_key])
+        else:
+            result.append({
+                "month": month_key,
+                "year": current.year,
+                "month_num": current.month,
+                "telecomunicacoes": 0,
+                "energia": 0,
+                "solar": 0,
+                "dual": 0
+            })
+        
+        # Go back one month
+        if current.month == 1:
+            current = current.replace(year=current.year - 1, month=12)
+        else:
+            current = current.replace(month=current.month - 1)
+    
+    return list(reversed(result))
+
+async def get_admin_dashboard(year: int, month: int):
     """Admin sees everything including all commissions"""
     sales = await db.sales.find({}, {"_id": 0}).to_list(10000)
     partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
