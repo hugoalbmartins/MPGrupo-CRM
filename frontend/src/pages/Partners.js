@@ -222,9 +222,17 @@ const Partners = ({ user }) => {
                     <Input key={idx} type="email" value={email} onChange={(e) => updateEmail(idx, e.target.value)} className="mb-2" placeholder="email@exemplo.com" />
                   ))}
                 </div>
+                {!editingPartner && formData.email && generatedPassword && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm font-semibold text-blue-900 mb-2">👤 Utilizador a criar:</p>
+                    <p className="text-sm text-blue-800"><strong>Email:</strong> {formData.email}</p>
+                    <p className="text-sm text-blue-800"><strong>Password:</strong> <span className="font-mono">{generatedPassword}</span></p>
+                    <p className="text-xs text-blue-600 mt-2">O utilizador será criado automaticamente com estes dados</p>
+                  </div>
+                )}
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
-                  <Button type="submit" className="btn-primary">Criar Parceiro</Button>
+                  <Button type="submit" className="btn-primary">{editingPartner ? "Atualizar" : "Criar"} Parceiro</Button>
                 </div>
               </form>
             </DialogContent>
