@@ -605,7 +605,9 @@ async def get_admin_dashboard(year: int, month: int):
             stats['paid_by_operator'] += 1
         else:
             stats['unpaid_by_operator'] += 1
-            stats['commission_to_pay'] += commission
+            # Commission to pay only for "Ativo" status
+            if status == 'Ativo':
+                stats['commission_to_pay'] += commission
         
         # Commission by type
         if scope not in stats['commission_by_type']:
