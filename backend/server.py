@@ -308,11 +308,18 @@ async def create_sale(sale_data: SaleCreate, current_user: dict = Depends(get_cu
     else:
         status = "Pendente"
     
+    # Calculate commission
+    operator = await db.operators.find_one({"id": sale_data.operator_id}, {"_id": 0})
+    commission = 0.0
+    if operator:
+        commission = await calculate_commission(operator, sale_data.model_dump(), db)
+    
     sale_dict = sale_data.model_dump()
     sale_dict['sale_code'] = sale_code
     sale_dict['created_by_user_id'] = current_user['id']
     sale_dict['status'] = status
     sale_dict['status_date'] = datetime.now(timezone.utc).isoformat()
+    sale_dict['commission'] = commission
     
     sale_obj = Sale(**sale_dict)
     await db.sales.insert_one(sale_obj.model_dump())
