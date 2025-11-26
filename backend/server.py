@@ -614,6 +614,11 @@ async def get_admin_dashboard(year: int, month: int):
             stats['commission_by_type'][scope] = 0
         stats['commission_by_type'][scope] += commission
     
+    # Add selected month info and 12 months data
+    stats['selected_month'] = month
+    stats['selected_year'] = year
+    stats['last_12_months'] = last_12_months
+    
     return stats
 
 async def get_bo_dashboard(year: int, month: int):
