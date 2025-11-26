@@ -127,6 +127,7 @@ class SaleCreate(BaseModel):
     date: str
     partner_id: str
     scope: str
+    client_type: str
     client_name: str
     client_nif: str
     client_contact: str
