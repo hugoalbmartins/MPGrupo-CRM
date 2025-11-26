@@ -501,6 +501,116 @@ const Sales = ({ user }) => {
           </table>
         </div>
       </div>
+
+      {/* Edit Sale Dialog (Admin/BO) */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Venda - {editingSale?.sale_code}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
+            <div>
+              <Label>Status *</Label>
+              <Select value={editFormData.status} onValueChange={(v) => setEditFormData({...editFormData, status: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Para registo">Para registo</SelectItem>
+                  <SelectItem value="Pendente">Pendente</SelectItem>
+                  <SelectItem value="Concluido">Concluído</SelectItem>
+                  <SelectItem value="Ativo">Ativo</SelectItem>
+                  <SelectItem value="Cancelado">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Requisição (REQ)</Label>
+              <Input 
+                value={editFormData.requisition}
+                onChange={(e) => setEditFormData({...editFormData, requisition: e.target.value})}
+                placeholder="Número de requisição"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input 
+                type="checkbox"
+                id="paid_by_operator"
+                checked={editFormData.paid_by_operator}
+                onChange={(e) => setEditFormData({...editFormData, paid_by_operator: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="paid_by_operator">Paga pelo Operador</Label>
+            </div>
+
+            {editFormData.paid_by_operator && (
+              <div>
+                <Label>Data de Pagamento</Label>
+                <Input 
+                  type="date"
+                  value={editFormData.paid_date}
+                  onChange={(e) => setEditFormData({...editFormData, paid_date: e.target.value})}
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="btn-primary">
+                Guardar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Notes Dialog */}
+      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {/* Add Note */}
+            <div className="space-y-2">
+              <Label>Adicionar Nota</Label>
+              <Textarea 
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Escreva uma nota..."
+                rows={3}
+              />
+              <Button onClick={handleAddNote} size="sm" className="btn-primary">
+                Adicionar Nota
+              </Button>
+            </div>
+
+            {/* Notes List */}
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-900">Histórico de Notas:</h3>
+              {(!selectedSaleForNotes?.notes || selectedSaleForNotes.notes.length === 0) ? (
+                <p className="text-gray-500 text-sm py-4 text-center">Nenhuma nota ainda</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {selectedSaleForNotes.notes.map((note) => (
+                    <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-medium text-sm">{note.author}</span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(note.created_at).toLocaleString('pt-PT')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700">{note.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
