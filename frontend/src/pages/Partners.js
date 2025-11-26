@@ -14,6 +14,8 @@ const Partners = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPartner, setEditingPartner] = useState(null);
+  const [generatedPassword, setGeneratedPassword] = useState("");
   const [formData, setFormData] = useState({
     partner_type: "D2D",
     name: "",
