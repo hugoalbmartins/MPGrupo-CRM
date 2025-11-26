@@ -153,6 +153,31 @@ const Partners = ({ user }) => {
     setDialogOpen(true);
   };
 
+  const handleUploadDocument = async (partnerId, file) => {
+    try {
+      setUploadingDoc(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      await axios.post(`${API}/partners/${partnerId}/documents`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      toast.success("Documento carregado com sucesso!");
+      fetchPartners(); // Refresh to get updated documents
+    } catch (error) {
+      toast.error("Erro ao carregar documento");
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const openDocumentsDialog = (partner) => {
+    setSelectedPartnerForDocs(partner);
+    setDocumentsDialogOpen(true);
+  };
+
+
   const resetForm = () => {
     setEditingPartner(null);
     setGeneratedPassword("");
