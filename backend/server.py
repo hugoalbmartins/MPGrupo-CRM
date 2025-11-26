@@ -659,6 +659,9 @@ async def get_partner_dashboard(partner_id: str, year: int, month: int):
     """Partner sees only their own sales with commission details"""
     sales = await db.sales.find({"partner_id": partner_id}, {"_id": 0}).to_list(10000)
     
+    # Get 12 months data for chart
+    last_12_months = await get_last_12_months_data()
+    
     stats = {
         "total_sales": len(sales),
         "telecomunicacoes": {"count": 0, "monthly_total": 0},
