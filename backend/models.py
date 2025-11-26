@@ -131,6 +131,7 @@ class SaleCreate(BaseModel):
     client_contact: str
     client_email: Optional[str] = None
     client_iban: Optional[str] = None
+    installation_address: Optional[str] = None
     operator_id: str
     service_type: Optional[str] = None
     monthly_value: Optional[float] = None
