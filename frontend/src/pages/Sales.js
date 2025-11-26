@@ -262,6 +262,15 @@ const Sales = ({ user }) => {
                       <Input value={formData.cpe} onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})} placeholder="PT0002XXXXXXXXXXXX" required />
                     </div>
                     <div>
+                      <Label>Potência *</Label>
+                      <Select value={formData.power} onValueChange={(v) => setFormData({...formData, power: v})}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
                       <Label>CUI * (PT16...)</Label>
                       <Input value={formData.cui} onChange={(e) => setFormData({...formData, cui: e.target.value.toUpperCase()})} placeholder="PT16XXXXXXXXXXXXXXXXX" required />
                     </div>
