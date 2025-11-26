@@ -31,13 +31,220 @@ const Dashboard = ({ user }) => {
   const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4'];
   const statusData = Object.entries(stats?.by_status || {}).map(([name, value]) => ({ name, value }));
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Bem-vindo, {user?.name}</p>
+  // Render different dashboards based on role
+  const renderAdminDashboard = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Total Vendas</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats?.total_partners || 0} parceiros</p>
+            </div>
+            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Comissões Totais</p>
+              <p className="text-2xl font-bold color-purple">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">A Pagar</p>
+              <p className="text-2xl font-bold color-orange">€{stats?.commission_to_pay?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats?.unpaid_by_operator || 0} vendas</p>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Pagas Operador</p>
+              <p className="text-2xl font-bold color-green">{stats?.paid_by_operator || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Telecomunicações</p>
+              <p className="text-2xl font-bold color-cyan">{stats?.telecomunicacoes?.count || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">€{stats?.telecomunicacoes?.monthly_total?.toFixed(2) || '0.00'}/mês</p>
+            </div>
+            <div className="w-12 h-12 bg-cyan rounded-full flex items-center justify-center">
+              <Phone className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Energia</p>
+              <p className="text-2xl font-bold color-orange">{stats?.energia?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Solar</p>
+              <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <Sun className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Dual</p>
+              <p className="text-2xl font-bold text-gray-700">{stats?.dual?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderPartnerDashboard = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Comissões Totais</p>
+              <p className="text-2xl font-bold color-purple">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Pendentes</p>
+              <p className="text-2xl font-bold color-orange">€{stats?.commission_pending?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Pagas</p>
+              <p className="text-2xl font-bold color-green">€{stats?.commission_paid?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Telecomunicações</p>
+              <p className="text-2xl font-bold color-cyan">{stats?.telecomunicacoes?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-cyan rounded-full flex items-center justify-center">
+              <Phone className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Energia</p>
+              <p className="text-2xl font-bold color-orange">{stats?.energia?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Solar</p>
+              <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <Sun className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Dual</p>
+              <p className="text-2xl font-bold text-gray-700">{stats?.dual?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderBODashboard = () => (
+    <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="stat-card">
           <div className="flex items-center justify-between">
@@ -56,7 +263,6 @@ const Dashboard = ({ user }) => {
             <div>
               <p className="text-sm text-gray-600 mb-1">Telecomunicações</p>
               <p className="text-2xl font-bold color-cyan">{stats?.telecomunicacoes?.count || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">€{stats?.telecomunicacoes?.monthly_total?.toFixed(2) || '0.00'}</p>
             </div>
             <div className="w-12 h-12 bg-cyan rounded-full flex items-center justify-center">
               <Phone className="w-6 h-6 text-white" />
@@ -88,35 +294,74 @@ const Dashboard = ({ user }) => {
           </div>
         </div>
       </div>
+    </>
+  );
 
-      {user?.role !== 'partner_commercial' && stats?.total_commission !== undefined && user?.role !== 'bo' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Comissões Totais</p>
-                <p className="text-3xl font-bold color-purple">€{stats.total_commission?.toFixed(2) || '0.00'}</p>
-              </div>
-              <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
-                <Award className="w-6 h-6 text-white" />
-              </div>
+  const renderCommercialDashboard = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-white" />
             </div>
           </div>
-          {user?.role === 'admin' && (
-            <div className="stat-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Pagas Operador</p>
-                  <p className="text-3xl font-bold color-green">{stats?.paid_by_operator || 0}</p>
-                </div>
-                <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      )}
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Telecomunicações</p>
+              <p className="text-2xl font-bold color-cyan">{stats?.telecomunicacoes?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-cyan rounded-full flex items-center justify-center">
+              <Phone className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Energia</p>
+              <p className="text-2xl font-bold color-orange">{stats?.energia?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Solar</p>
+              <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <Sun className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600 mt-1">Bem-vindo, {user?.name}</p>
+      </div>
+
+      {user?.role === 'admin' && renderAdminDashboard()}
+      {user?.role === 'bo' && renderBODashboard()}
+      {user?.role === 'partner' && renderPartnerDashboard()}
+      {user?.role === 'partner_commercial' && renderCommercialDashboard()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {statusData.length > 0 && (
