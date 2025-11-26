@@ -126,3 +126,69 @@ backend:
 agent_communication:
   - agent: "main"
     message: "Issue 3 (Automatic Code Generation) completed and validated. Both partner and sale codes working perfectly. Partner codes: D2D1001, D2D1002, Rev+1001, Rev1001. Sale codes: ALB000111-511, JOÃ000111. Ready for Issue 4 (NIF validation with CRC)."
+
+backend:
+  - task: "Monthly dashboard with date filtering"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added year/month parameters to all dashboard functions (get_admin_dashboard, get_bo_dashboard, get_partner_dashboard, get_commercial_dashboard). Created get_month_range() to calculate date ranges. Sales filtered by selected month. Defaults to current month. Tested: Nov 2025 returns 6 sales correctly."
+
+  - task: "Commission to pay only for Ativo status"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Updated commission_to_pay calculation to only include sales with status='Ativo'. Logic: if sale.get('paid_by_operator') is False AND status=='Ativo', add to commission_to_pay. Tested: 6 sales with Pendente status = €0.00 to pay (correct)."
+
+  - task: "Last 12 months data for chart"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Created get_last_12_months_data() function. Groups sales by month and scope. Returns 12 months array with telecomunicacoes, energia, solar, dual counts per month. Sorted chronologically. Added to all dashboard functions. Tested: returns 12 months (Dez/24-Nov/25) with Nov/25 showing 3 telecom, 3 energia."
+
+frontend:
+  - task: "Month/Year selector in dashboard"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Dashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added selectedYear and selectedMonth state (defaults to current). Created month dropdown (Janeiro-Dezembro) and year dropdown (current year - 5 years). Positioned in top right corner. fetchStats() includes year/month params. Reloads dashboard on selection change. Tested via screenshot - selector visible and working."
+
+  - task: "12 months bar chart visualization"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Dashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Created prepare12MonthsData() to format data for recharts. Added BarChart component with 4 bars (Telecom cyan, Energia orange, Solar green, Dual gray). Shows last 12 months with CartesianGrid, XAxis (month labels like Nov/25), YAxis, Tooltip, Legend. Tested via screenshot - chart displays perfectly with Nov/25 showing 3 bars."
+
+agent_communication:
+  - agent: "main"
+    message: "Dashboard improvements complete: (1) Monthly filtering with year/month selector, defaults to current month (2) Commission to pay only counts Ativo status sales (3) 12-month bar chart showing scope evolution. All tested via screenshot - dashboard beautiful and functional. Ready for user testing."
