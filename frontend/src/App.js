@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import axios from "axios";
 import { Toaster } from "@/components/ui/sonner";
 import Login from "./pages/Login";
+import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
 import Partners from "./pages/Partners";
 import Sales from "./pages/Sales";
@@ -19,6 +20,7 @@ export { API };
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [user, setUser] = useState(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -31,15 +33,17 @@ function App() {
     try {
       const response = await axios.get(`${API}/auth/me`);
       setUser(response.data);
+      setMustChangePassword(response.data.must_change_password);
     } catch (error) {
       console.error("Failed to fetch user", error);
       handleLogout();
     }
   };
 
-  const handleLogin = (newToken, userData) => {
+  const handleLogin = (newToken, userData, mustChange) => {
     setToken(newToken);
     setUser(userData);
+    setMustChangePassword(mustChange);
     localStorage.setItem("token", newToken);
     axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
   };
@@ -47,8 +51,13 @@ function App() {
   const handleLogout = () => {
     setToken(null);
     setUser(null);
+    setMustChangePassword(false);
     localStorage.removeItem("token");
     delete axios.defaults.headers.common["Authorization"];
+  };
+
+  const handlePasswordChanged = () => {
+    setMustChangePassword(false);
   };
 
   if (!token) {
@@ -60,6 +69,15 @@ function App() {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </BrowserRouter>
+        <Toaster position="top-right" richColors />
+      </div>
+    );
+  }
+
+  if (mustChangePassword) {
+    return (
+      <div className="App">
+        <ChangePassword onPasswordChanged={handlePasswordChanged} onLogout={handleLogout} />
         <Toaster position="top-right" richColors />
       </div>
     );
@@ -79,6 +97,9 @@ function App() {
                 <Route path="/operators" element={<Operators user={user} />} />
                 <Route path="/users" element={<Users user={user} />} />
               </>
+            )}
+            {user?.role === "bo" && (
+              <Route path="/operators" element={<Operators user={user} />} />
             )}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
