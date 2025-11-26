@@ -280,7 +280,8 @@ async def create_sale(sale_data: SaleCreate, current_user: dict = Depends(get_cu
         if not validate_cpe(sale_data.cpe):
             raise HTTPException(status_code=400, detail="CPE invalid format")
         sale_data.cpe = sale_data.cpe.upper()
-    \    # Validate CUI if provided
+    
+    # Validate CUI if provided
     if sale_data.cui:
         if not validate_cui(sale_data.cui):
             raise HTTPException(status_code=400, detail="CUI invalid format")
