@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -16,6 +16,10 @@ from io import BytesIO
 import pandas as pd
 from fastapi.responses import StreamingResponse, FileResponse
 import shutil
+import re
+import secrets
+import string
+import calendar
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -26,125 +30,33 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # JWT Secret
-JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
+JWT_SECRET = os.environ.get('JWT_SECRET', 'mp-grupo-crm-secret-2025')
 JWT_ALGORITHM = 'HS256'
 
-# Create the main app
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
-# Models
-class User(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    email: EmailStr
-    role: str  # admin, bo, partner
-    position: str
-    partner_id: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    role: str
-    position: str
-    partner_id: Optional[str] = None
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-class LoginResponse(BaseModel):
-    token: str
-    user: User
-
-class Partner(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    email: EmailStr
-    phone: str
-    address: str
-    nif: str
-    iban: str
-    bank_details: str
-    user_id: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
-class PartnerCreate(BaseModel):
-    name: str
-    email: EmailStr
-    phone: str
-    address: str
-    nif: str
-    iban: str
-    bank_details: str
-
-class Operator(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    type: str  # telecom, energy
-    active: bool = True
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
-class OperatorCreate(BaseModel):
-    name: str
-    type: str
-
-class Sale(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    date: str
-    value: float
-    operator_id: str
-    partner_id: str
-    commission: Optional[float] = None
-    status: str = "Pendente"  # Pendente, Aprovada, Rejeitada
-    final_client: str
-    sale_type: str  # eletricidade, telecomunicacoes, solar
-    cpe: Optional[str] = None
-    requisition: Optional[str] = None
-    documents: List[dict] = Field(default_factory=list)  # Lista de documentos anexados
-    notes: List[dict] = Field(default_factory=list)  # Notas/comentários
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
-class SaleCreate(BaseModel):
-    date: str
-    value: float
-    operator_id: str
-    partner_id: str
-    final_client: str
-    sale_type: str
-    cpe: Optional[str] = None
-
-class SaleUpdate(BaseModel):
-    date: Optional[str] = None
-    value: Optional[float] = None
-    operator_id: Optional[str] = None
-    final_client: Optional[str] = None
-    sale_type: Optional[str] = None
-    cpe: Optional[str] = None
-    commission: Optional[float] = None
-    status: Optional[str] = None
-    requisition: Optional[str] = None
-
-class NoteCreate(BaseModel):
-    content: str
-
-class DashboardStats(BaseModel):
-    total_sales: int
-    total_value: float
-    total_commission: float
-    sales_by_operator: List[dict]
-    sales_by_status: List[dict]
-    sales_timeline: List[dict]
+# Upload directory
+UPLOAD_DIR = Path("/app/uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 # Helper functions
+def generate_strong_password(length: int = 8) -> str:
+    uppercase = string.ascii_uppercase
+    lowercase = string.ascii_lowercase
+    digits = string.digits
+    special = '!@#$%^&*'
+    password = [
+        secrets.choice(uppercase),
+        secrets.choice(digits),
+        secrets.choice(special),
+    ]
+    all_chars = uppercase + lowercase + digits + special
+    password += [secrets.choice(all_chars) for _ in range(length - 3)]
+    secrets.SystemRandom().shuffle(password)
+    return ''.join(password)
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -173,6 +85,192 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+async def generate_partner_code(partner_type: str) -> str:
+    """Generate partner code: D2D1001, Rev1002, Rev+1003"""
+    prefix = partner_type
+    # Count existing partners of this type
+    count = await db.partners.count_documents({"partner_type": partner_type})
+    number = 1001 + count
+    return f"{prefix}{number}"
+
+async def generate_sale_code(partner_id: str, sale_date: str) -> str:
+    """Generate sale code: ALB000311 (3 letters + 4 digits + month)"""
+    partner = await db.partners.find_one({"id": partner_id}, {"_id": 0})
+    if not partner:
+        return "XXX00010"
+    
+    # Get first 3 letters of partner name
+    name_prefix = partner['name'][:3].upper()
+    
+    # Get month from date
+    date_obj = datetime.fromisoformat(sale_date.replace('Z', '+00:00'))
+    month = date_obj.strftime('%m')
+    
+    # Count sales for this partner in this month
+    start_of_month = date_obj.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if date_obj.month == 12:
+        end_of_month = start_of_month.replace(year=start_of_month.year + 1, month=1)
+    else:
+        end_of_month = start_of_month.replace(month=start_of_month.month + 1)
+    
+    count = await db.sales.count_documents({
+        "partner_id": partner_id,
+        "date": {
+            "$gte": start_of_month.isoformat(),
+            "$lt": end_of_month.isoformat()
+        }
+    })
+    
+    sequence = str(count + 1).zfill(4)
+    return f"{name_prefix}{sequence}{month}"
+
+# Models
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: EmailStr
+    role: str
+    position: str
+    partner_id: Optional[str] = None
+    must_change_password: bool = True
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: Optional[str] = None
+    role: str
+    position: str
+    partner_id: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class LoginResponse(BaseModel):
+    token: str
+    user: User
+    must_change_password: bool
+    suggested_password: Optional[str] = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+class Partner(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    partner_code: str
+    partner_type: str
+    name: str
+    email: EmailStr
+    communication_emails: List[str] = Field(default_factory=list)
+    phone: str
+    contact_person: str
+    street: str
+    door_number: str
+    postal_code: str
+    locality: str
+    nif: str
+    crc: Optional[str] = None
+    documents: List[dict] = Field(default_factory=list)
+    user_id: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class PartnerCreate(BaseModel):
+    partner_type: str
+    name: str
+    email: EmailStr
+    communication_emails: List[str] = Field(default_factory=list)
+    phone: str
+    contact_person: str
+    street: str
+    door_number: str
+    postal_code: str
+    locality: str
+    nif: str
+    crc: Optional[str] = None
+
+class Operator(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    scope: str
+    active: bool = True
+    hidden: bool = False
+    commission_config: dict = Field(default_factory=dict)
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class OperatorCreate(BaseModel):
+    name: str
+    scope: str
+    commission_config: dict = Field(default_factory=dict)
+
+class Sale(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    sale_code: str
+    date: str
+    partner_id: str
+    created_by_user_id: str
+    scope: str
+    client_name: str
+    client_nif: str
+    client_contact: str
+    client_email: Optional[str] = None
+    client_iban: Optional[str] = None
+    operator_id: str
+    service_type: Optional[str] = None
+    monthly_value: Optional[float] = None
+    requisition: Optional[str] = None
+    cpe: Optional[str] = None
+    power: Optional[str] = None
+    entry_type: Optional[str] = None
+    cui: Optional[str] = None
+    tier: Optional[str] = None
+    status: str = "Para registo"
+    status_date: Optional[str] = None
+    paid_by_operator: bool = False
+    payment_date: Optional[str] = None
+    commission: Optional[float] = None
+    observations: Optional[str] = None
+    notes: List[dict] = Field(default_factory=list)
+    documents: List[dict] = Field(default_factory=list)
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class SaleCreate(BaseModel):
+    date: str
+    partner_id: str
+    scope: str
+    client_name: str
+    client_nif: str
+    client_contact: str
+    client_email: Optional[str] = None
+    client_iban: Optional[str] = None
+    operator_id: str
+    service_type: Optional[str] = None
+    monthly_value: Optional[float] = None
+    cpe: Optional[str] = None
+    power: Optional[str] = None
+    entry_type: Optional[str] = None
+    cui: Optional[str] = None
+    tier: Optional[str] = None
+    observations: Optional[str] = None
+
+class SaleUpdate(BaseModel):
+    status: Optional[str] = None
+    status_date: Optional[str] = None
+    requisition: Optional[str] = None
+    paid_by_operator: Optional[bool] = None
+    payment_date: Optional[str] = None
+    observations: Optional[str] = None
+
+class NoteCreate(BaseModel):
+    content: str
+
 # Auth endpoints
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserCreate, current_user: dict = Depends(get_current_user)):
@@ -183,11 +281,18 @@ async def register(user_data: UserCreate, current_user: dict = Depends(get_curre
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Generate password if not provided
+    password = user_data.password if user_data.password else generate_strong_password()
+    
+    # Validate password strength
+    if not re.match(r'^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$', password):
+        raise HTTPException(status_code=400, detail="Password must be 8+ chars with 1 uppercase, 1 digit, 1 special")
+    
     user_dict = user_data.model_dump(exclude={'password'})
     user_obj = User(**user_dict)
     
     doc = user_obj.model_dump()
-    doc['password_hash'] = hash_password(user_data.password)
+    doc['password_hash'] = hash_password(password)
     
     await db.users.insert_one(doc)
     return user_obj
@@ -201,32 +306,88 @@ async def login(login_data: LoginRequest):
     token = create_token(user['id'], user['email'], user['role'])
     user_obj = User(**user)
     
-    return LoginResponse(token=token, user=user_obj)
+    return LoginResponse(
+        token=token,
+        user=user_obj,
+        must_change_password=user.get('must_change_password', False),
+        suggested_password=generate_strong_password() if user.get('must_change_password') else None
+    )
+
+@api_router.post("/auth/change-password")
+async def change_password(password_data: PasswordChange, current_user: dict = Depends(get_current_user)):
+    if password_data.new_password != password_data.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+    
+    if not re.match(r'^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$', password_data.new_password):
+        raise HTTPException(status_code=400, detail="Password must be 8+ chars with 1 uppercase, 1 digit, 1 special")
+    
+    if not verify_password(password_data.current_password, current_user['password_hash']):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    new_hash = hash_password(password_data.new_password)
+    await db.users.update_one(
+        {"id": current_user['id']},
+        {"$set": {"password_hash": new_hash, "must_change_password": False}}
+    )
+    
+    return {"message": "Password changed successfully"}
 
 @api_router.get("/auth/me", response_model=User)
 async def get_me(current_user: dict = Depends(get_current_user)):
     return User(**current_user)
 
+@api_router.get("/auth/generate-password")
+async def get_generated_password(current_user: dict = Depends(get_current_user)):
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403)
+    return {"password": generate_strong_password()}
+
 # Partners endpoints
 @api_router.post("/partners", response_model=Partner)
 async def create_partner(partner_data: PartnerCreate, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] not in ['admin', 'bo']:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can create partners")
+    
+    # Generate partner code
+    partner_code = await generate_partner_code(partner_data.partner_type)
     
     partner_dict = partner_data.model_dump()
+    partner_dict['partner_code'] = partner_code
     partner_obj = Partner(**partner_dict)
     
-    doc = partner_obj.model_dump()
-    await db.partners.insert_one(doc)
-    return partner_obj
+    # Create associated user
+    user_password = generate_strong_password()
+    user_data = {
+        "id": str(uuid.uuid4()),
+        "name": partner_data.name,
+        "email": partner_data.email,
+        "role": "partner",
+        "position": "Parceiro",
+        "partner_id": partner_obj.id,
+        "must_change_password": True,
+        "password_hash": hash_password(user_password),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user_data)
+    
+    partner_dict = partner_obj.model_dump()
+    partner_dict['user_id'] = user_data['id']
+    
+    await db.partners.insert_one(partner_dict)
+    
+    return Partner(**partner_dict)
 
 @api_router.get("/partners", response_model=List[Partner])
 async def get_partners(current_user: dict = Depends(get_current_user)):
-    if current_user['role'] == 'partner':
-        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        return [Partner(**partner)] if partner else []
+    if current_user['role'] in ['partner', 'partner_commercial']:
+        if current_user['role'] == 'partner':
+            partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+            return [Partner(**partner)] if partner else []
+        else:
+            partner = await db.partners.find_one({"id": current_user['partner_id']}, {"_id": 0})
+            return [Partner(**partner)] if partner else []
     
-    partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
+    partners = await db.partners.find({}, {"_id": 0}).sort("partner_code", 1).to_list(1000)
     return [Partner(**p) for p in partners]
 
 @api_router.get("/partners/{partner_id}", response_model=Partner)
@@ -238,460 +399,13 @@ async def get_partner(partner_id: str, current_user: dict = Depends(get_current_
 
 @api_router.put("/partners/{partner_id}", response_model=Partner)
 async def update_partner(partner_id: str, partner_data: PartnerCreate, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] not in ['admin', 'bo']:
-        raise HTTPException(status_code=403, detail="Unauthorized")
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403)
     
-    update_dict = partner_data.model_dump()
+    update_dict = partner_data.model_dump(exclude={'partner_type'})
     await db.partners.update_one({"id": partner_id}, {"$set": update_dict})
     
     partner = await db.partners.find_one({"id": partner_id}, {"_id": 0})
     return Partner(**partner)
 
-# Operators endpoints
-@api_router.post("/operators", response_model=Operator)
-async def create_operator(operator_data: OperatorCreate, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Only admins can create operators")
-    
-    operator_dict = operator_data.model_dump()
-    operator_obj = Operator(**operator_dict)
-    
-    doc = operator_obj.model_dump()
-    await db.operators.insert_one(doc)
-    return operator_obj
-
-@api_router.get("/operators", response_model=List[Operator])
-async def get_operators(current_user: dict = Depends(get_current_user)):
-    operators = await db.operators.find({"active": True}, {"_id": 0}).to_list(1000)
-    return [Operator(**o) for o in operators]
-
-@api_router.put("/operators/{operator_id}", response_model=Operator)
-async def update_operator(operator_id: str, operator_data: OperatorCreate, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Only admins can update operators")
-    
-    update_dict = operator_data.model_dump()
-    await db.operators.update_one({"id": operator_id}, {"$set": update_dict})
-    
-    operator = await db.operators.find_one({"id": operator_id}, {"_id": 0})
-    return Operator(**operator)
-
-@api_router.delete("/operators/{operator_id}")
-async def delete_operator(operator_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Only admins can delete operators")
-    
-    await db.operators.update_one({"id": operator_id}, {"$set": {"active": False}})
-    return {"message": "Operator deleted"}
-
-# Sales endpoints
-@api_router.post("/sales", response_model=Sale)
-async def create_sale(sale_data: SaleCreate, current_user: dict = Depends(get_current_user)):
-    sale_dict = sale_data.model_dump()
-    sale_obj = Sale(**sale_dict)
-    
-    doc = sale_obj.model_dump()
-    await db.sales.insert_one(doc)
-    return sale_obj
-
-@api_router.get("/sales", response_model=List[Sale])
-async def get_sales(current_user: dict = Depends(get_current_user)):
-    query = {}
-    
-    if current_user['role'] == 'partner':
-        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        if partner:
-            query = {"partner_id": partner['id']}
-        else:
-            return []
-    
-    sales = await db.sales.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
-    return [Sale(**s) for s in sales]
-
-@api_router.get("/sales/{sale_id}", response_model=Sale)
-async def get_sale(sale_id: str, current_user: dict = Depends(get_current_user)):
-    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
-    return Sale(**sale)
-
-@api_router.put("/sales/{sale_id}", response_model=Sale)
-async def update_sale(sale_id: str, sale_data: SaleUpdate, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] == 'partner':
-        raise HTTPException(status_code=403, detail="Partners cannot update sales")
-    
-    update_dict = {k: v for k, v in sale_data.model_dump().items() if v is not None}
-    update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
-    
-    # Only admin can update commission
-    if 'commission' in update_dict and current_user['role'] != 'admin':
-        del update_dict['commission']
-    
-    await db.sales.update_one({"id": sale_id}, {"$set": update_dict})
-    
-    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
-    return Sale(**sale)
-
-# Dashboard endpoint
-@api_router.get("/dashboard/stats", response_model=DashboardStats)
-async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    query = {}
-    
-    if current_user['role'] == 'partner':
-        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        if partner:
-            query = {"partner_id": partner['id']}
-        else:
-            return DashboardStats(
-                total_sales=0,
-                total_value=0,
-                total_commission=0,
-                sales_by_operator=[],
-                sales_by_status=[],
-                sales_timeline=[]
-            )
-    
-    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
-    
-    total_sales = len(sales)
-    total_value = sum(s.get('value', 0) for s in sales)
-    
-    # Hide commission for BO users
-    if current_user['role'] == 'bo':
-        total_commission = 0
-    else:
-        total_commission = sum(s.get('commission', 0) or 0 for s in sales)
-    
-    # Sales by operator
-    operators_dict = {}
-    for sale in sales:
-        op_id = sale.get('operator_id')
-        if op_id:
-            if op_id not in operators_dict:
-                operator = await db.operators.find_one({"id": op_id}, {"_id": 0})
-                if operator:
-                    operators_dict[op_id] = {'name': operator['name'], 'count': 0, 'value': 0}
-            if op_id in operators_dict:
-                operators_dict[op_id]['count'] += 1
-                operators_dict[op_id]['value'] += sale.get('value', 0)
-    
-    sales_by_operator = [{'name': v['name'], 'count': v['count'], 'value': v['value']} for v in operators_dict.values()]
-    
-    # Sales by status
-    status_dict = {}
-    for sale in sales:
-        status = sale.get('status', 'Pendente')
-        if status not in status_dict:
-            status_dict[status] = {'name': status, 'count': 0}
-        status_dict[status]['count'] += 1
-    
-    sales_by_status = list(status_dict.values())
-    
-    # Sales timeline (last 12 months)
-    timeline_dict = {}
-    for sale in sales:
-        try:
-            date_str = sale.get('date', '')
-            if date_str:
-                month = date_str[:7]  # YYYY-MM
-                if month not in timeline_dict:
-                    timeline_dict[month] = {'month': month, 'count': 0, 'value': 0}
-                timeline_dict[month]['count'] += 1
-                timeline_dict[month]['value'] += sale.get('value', 0)
-        except:
-            pass
-    
-    sales_timeline = sorted(timeline_dict.values(), key=lambda x: x['month'])
-    
-    return DashboardStats(
-        total_sales=total_sales,
-        total_value=total_value,
-        total_commission=total_commission,
-        sales_by_operator=sales_by_operator,
-        sales_by_status=sales_by_status,
-        sales_timeline=sales_timeline
-    )
-
-# Export endpoint
-@api_router.get("/sales/export/excel")
-async def export_sales(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    operator_id: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
-):
-    if current_user['role'] == 'partner':
-        raise HTTPException(status_code=403, detail="Partners cannot export sales")
-    
-    query = {}
-    if start_date:
-        query['date'] = {'$gte': start_date}
-    if end_date:
-        if 'date' in query:
-            query['date']['$lte'] = end_date
-        else:
-            query['date'] = {'$lte': end_date}
-    if operator_id:
-        query['operator_id'] = operator_id
-    
-    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
-    
-    # Enrich with partner and operator data
-    export_data = []
-    for sale in sales:
-        partner = await db.partners.find_one({"id": sale['partner_id']}, {"_id": 0})
-        operator = await db.operators.find_one({"id": sale['operator_id']}, {"_id": 0})
-        
-        row = {
-            'Data': sale.get('date', ''),
-            'Parceiro': partner.get('name', '') if partner else '',
-            'NIF': partner.get('nif', '') if partner else '',
-            'Operadora': operator.get('name', '') if operator else '',
-            'Tipo': sale.get('sale_type', ''),
-            'Cliente Final': sale.get('final_client', ''),
-            'Valor': sale.get('value', 0),
-            'Status': sale.get('status', ''),
-        }
-        
-        # Add CPE or Requisition
-        if sale.get('cpe'):
-            row['CPE'] = sale['cpe']
-        if sale.get('requisition'):
-            row['Requisição'] = sale['requisition']
-        
-        # Hide commission for BO
-        if current_user['role'] != 'bo':
-            row['Comissão'] = sale.get('commission', 0) or 0
-        
-        export_data.append(row)
-    
-    df = pd.DataFrame(export_data)
-    
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Vendas')
-    
-    output.seek(0)
-    
-    return StreamingResponse(
-        output,
-        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        headers={'Content-Disposition': 'attachment; filename=vendas.xlsx'}
-    )
-
-# Users management (admin only)
-@api_router.get("/users", response_model=List[User])
-async def get_users(current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Only admins can view users")
-    
-    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
-    return [User(**u) for u in users]
-
-# Document upload/download endpoints
-UPLOAD_DIR = Path("/app/uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
-
-@api_router.post("/sales/{sale_id}/upload")
-async def upload_document(sale_id: str, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    # Check if sale exists
-    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
-    
-    # Check permissions
-    if current_user['role'] == 'partner':
-        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        if not partner or sale['partner_id'] != partner['id']:
-            raise HTTPException(status_code=403, detail="You can only upload documents to your own sales")
-    
-    # Create unique filename
-    file_id = str(uuid.uuid4())
-    file_extension = Path(file.filename).suffix
-    file_path = UPLOAD_DIR / f"{file_id}{file_extension}"
-    
-    # Save file
-    with file_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Add document to sale
-    document = {
-        "id": file_id,
-        "filename": file.filename,
-        "uploaded_by": current_user['name'],
-        "uploaded_at": datetime.now(timezone.utc).isoformat(),
-        "file_path": str(file_path)
-    }
-    
-    await db.sales.update_one(
-        {"id": sale_id},
-        {"$push": {"documents": document}}
-    )
-    
-    return {"message": "Document uploaded successfully", "document": document}
-
-@api_router.get("/sales/{sale_id}/documents/{document_id}")
-async def download_document(sale_id: str, document_id: str, current_user: dict = Depends(get_current_user)):
-    # Check if sale exists
-    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
-    
-    # Check permissions
-    if current_user['role'] == 'partner':
-        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        if not partner or sale['partner_id'] != partner['id']:
-            raise HTTPException(status_code=403, detail="You can only download documents from your own sales")
-    
-    # Find document
-    document = None
-    for doc in sale.get('documents', []):
-        if doc['id'] == document_id:
-            document = doc
-            break
-    
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    
-    file_path = Path(document['file_path'])
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found on server")
-    
-    return FileResponse(
-        path=file_path,
-        filename=document['filename'],
-        media_type='application/octet-stream'
-    )
-
-@api_router.delete("/sales/{sale_id}/documents/{document_id}")
-async def delete_document(sale_id: str, document_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] not in ['admin', 'bo']:
-        raise HTTPException(status_code=403, detail="Only admins and BO can delete documents")
-    
-    # Check if sale exists
-    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
-    
-    # Find and remove document
-    document = None
-    for doc in sale.get('documents', []):
-        if doc['id'] == document_id:
-            document = doc
-            break
-    
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    
-    # Delete file from disk
-    file_path = Path(document['file_path'])
-    if file_path.exists():
-        file_path.unlink()
-    
-    # Remove from database
-    await db.sales.update_one(
-        {"id": sale_id},
-        {"$pull": {"documents": {"id": document_id}}}
-    )
-    
-    return {"message": "Document deleted successfully"}
-
-# Notes endpoints
-@api_router.post("/sales/{sale_id}/notes")
-async def add_note(sale_id: str, note_data: NoteCreate, current_user: dict = Depends(get_current_user)):
-    # Check if sale exists
-    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
-    
-    # Check permissions - partners can only add notes to their own sales
-    if current_user['role'] == 'partner':
-        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        if not partner or sale['partner_id'] != partner['id']:
-            raise HTTPException(status_code=403, detail="You can only add notes to your own sales")
-    
-    # Create note
-    note = {
-        "id": str(uuid.uuid4()),
-        "content": note_data.content,
-        "author": current_user['name'],
-        "author_role": current_user['role'],
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    # Add note to sale
-    await db.sales.update_one(
-        {"id": sale_id},
-        {"$push": {"notes": note}}
-    )
-    
-    return {"message": "Note added successfully", "note": note}
-
-@api_router.get("/sales/{sale_id}/notes")
-async def get_notes(sale_id: str, current_user: dict = Depends(get_current_user)):
-    # Check if sale exists
-    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
-    if not sale:
-        raise HTTPException(status_code=404, detail="Sale not found")
-    
-    # Check permissions
-    if current_user['role'] == 'partner':
-        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
-        if not partner or sale['partner_id'] != partner['id']:
-            raise HTTPException(status_code=403, detail="You can only view notes from your own sales")
-    
-    return {"notes": sale.get('notes', [])}
-
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("startup")
-async def startup_db():
-    # Create initial admin user
-    existing = await db.users.find_one({"email": "hugoalbmartins@gmail.com"}, {"_id": 0})
-    if not existing:
-        admin_user = User(
-            name="Hugo Martins",
-            email="hugoalbmartins@gmail.com",
-            role="admin",
-            position="Gestor de parceiros"
-        )
-        doc = admin_user.model_dump()
-        doc['password_hash'] = hash_password("12345Hm")
-        await db.users.insert_one(doc)
-        logger.info("Initial admin user created")
-    
-    # Create default operators
-    operators_to_create = [
-        {"name": "Vodafone", "type": "telecom"},
-        {"name": "MEO", "type": "telecom"},
-        {"name": "NOS", "type": "telecom"},
-        {"name": "EDP", "type": "energy"},
-        {"name": "Galp", "type": "energy"},
-        {"name": "Endesa", "type": "energy"},
-    ]
-    
-    for op_data in operators_to_create:
-        existing_op = await db.operators.find_one({"name": op_data["name"]}, {"_id": 0})
-        if not existing_op:
-            operator = Operator(**op_data)
-            await db.operators.insert_one(operator.model_dump())
-    
-    logger.info("Database initialized")
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Continua no próximo ficheiro devido ao tamanho...
