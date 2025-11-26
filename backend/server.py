@@ -710,6 +710,11 @@ async def get_partner_dashboard(partner_id: str, year: int, month: int):
             stats['commission_by_type'][scope] = 0
         stats['commission_by_type'][scope] += commission
     
+    # Add selected month info and 12 months data
+    stats['selected_month'] = month
+    stats['selected_year'] = year
+    stats['last_12_months'] = last_12_months
+    
     return stats
 
 async def get_commercial_dashboard(user_id: str):
