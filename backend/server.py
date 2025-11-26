@@ -557,9 +557,17 @@ async def startup_db():
             must_change_password=False
         )
         doc = admin_user.model_dump()
-        doc['password_hash'] = hash_password("12345Hm")
+        doc['password_hash'] = hash_password("12345Hm*")
         await db.users.insert_one(doc)
         logger.info("Initial admin created")
+    else:
+        # Update existing admin password
+        from utils import hash_password
+        await db.users.update_one(
+            {"email": "hugoalbmartins@gmail.com"},
+            {"$set": {"password_hash": hash_password("12345Hm*"), "must_change_password": False}}
+        )
+        logger.info("Admin password updated")
     
     logger.info("Database initialized")
 
