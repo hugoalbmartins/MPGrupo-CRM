@@ -22,6 +22,17 @@ const Sales = ({ user }) => {
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingSale, setEditingSale] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    status: "",
+    requisition: "",
+    paid_by_operator: false,
+    paid_date: ""
+  });
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
+  const [newNote, setNewNote] = useState("");
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
