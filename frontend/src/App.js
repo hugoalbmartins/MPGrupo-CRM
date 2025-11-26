@@ -9,6 +9,7 @@ import Partners from "./pages/Partners";
 import Sales from "./pages/Sales";
 import Operators from "./pages/Operators";
 import Users from "./pages/Users";
+import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
 import "@/App.css";
 
