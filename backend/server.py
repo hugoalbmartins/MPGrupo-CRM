@@ -420,6 +420,129 @@ async def download_sale_document(sale_id: str, document_id: str, current_user: d
     
     return FileResponse(path=document['file_path'], filename=document['filename'])
 
+@api_router.get("/sales/export/excel")
+async def export_sales_to_excel(
+    current_user: dict = Depends(get_current_user),
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Export sales to Excel file with optional date filtering"""
+    import pandas as pd
+    from io import BytesIO
+    
+    # Build query
+    query = {}
+    
+    # Role-based filtering
+    if current_user['role'] == 'partner':
+        partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
+        if partner:
+            query["partner_id"] = partner['id']
+    elif current_user['role'] == 'partner_commercial':
+        query["created_by_user_id"] = current_user['id']
+    
+    # Date filtering
+    if start_date or end_date:
+        query["date"] = {}
+        if start_date:
+            query["date"]["$gte"] = start_date
+        if end_date:
+            query["date"]["$lte"] = end_date
+    
+    # Get sales
+    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
+    
+    # Get related data
+    partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
+    operators = await db.operators.find({}, {"_id": 0}).to_list(1000)
+    
+    # Create dictionaries for lookups
+    partner_dict = {p['id']: p['name'] for p in partners}
+    operator_dict = {o['id']: o['name'] for o in operators}
+    
+    # Prepare data for Excel
+    export_data = []
+    for sale in sales:
+        row = {
+            'Código': sale.get('sale_code', ''),
+            'Data': sale.get('date', '')[:10] if sale.get('date') else '',
+            'Parceiro': partner_dict.get(sale.get('partner_id', ''), ''),
+            'Âmbito': sale.get('scope', ''),
+            'Tipo Cliente': sale.get('client_type', ''),
+            'Nome Cliente': sale.get('client_name', ''),
+            'NIF Cliente': sale.get('client_nif', ''),
+            'Contacto Cliente': sale.get('client_contact', ''),
+            'Operadora': operator_dict.get(sale.get('operator_id', ''), ''),
+            'Status': sale.get('status', ''),
+            'Requisição': sale.get('requisition', ''),
+        }
+        
+        # Add commission if user has permission
+        if current_user['role'] not in ['partner_commercial', 'bo']:
+            row['Comissão (€)'] = sale.get('commission', 0)
+        
+        # Add scope-specific fields
+        if sale.get('scope') == 'telecomunicacoes':
+            row['Tipo Serviço'] = sale.get('service_type', '')
+            row['Valor Mensalidade (€)'] = sale.get('monthly_value', 0)
+        elif sale.get('scope') in ['energia', 'solar']:
+            row['CPE'] = sale.get('cpe', '')
+            row['Potência'] = sale.get('power', '')
+        elif sale.get('scope') == 'dual':
+            row['CPE'] = sale.get('cpe', '')
+            row['Potência'] = sale.get('power', '')
+            row['CUI'] = sale.get('cui', '')
+            row['Escalão'] = sale.get('tier', '')
+        
+        row['Paga Operador'] = 'Sim' if sale.get('paid_by_operator') else 'Não'
+        if sale.get('paid_date'):
+            row['Data Pagamento'] = sale.get('paid_date', '')[:10]
+        
+        row['Observações'] = sale.get('observations', '')
+        
+        export_data.append(row)
+    
+    # Create DataFrame
+    df = pd.DataFrame(export_data)
+    
+    # Create Excel file in memory
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Vendas', index=False)
+        
+        # Get workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets['Vendas']
+        
+        # Format header
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#4F46E5',
+            'font_color': 'white',
+            'border': 1
+        })
+        
+        # Apply header format
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+        
+        # Auto-adjust column width
+        for i, col in enumerate(df.columns):
+            max_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
+            worksheet.set_column(i, i, min(max_len, 50))
+    
+    output.seek(0)
+    
+    # Generate filename
+    filename = f"vendas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    return Response(
+        content=output.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 # DASHBOARD ENDPOINTS
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(
