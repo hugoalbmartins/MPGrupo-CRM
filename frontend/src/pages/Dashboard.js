@@ -367,11 +367,52 @@ const Dashboard = ({ user }) => {
     </>
   );
 
+  // Prepare 12 months chart data
+  const prepare12MonthsData = () => {
+    if (!stats?.last_12_months) return [];
+    
+    return stats.last_12_months.map(item => ({
+      name: `${months[item.month_num - 1].substring(0, 3)}/${item.year.toString().substring(2)}`,
+      Telecom: item.telecomunicacoes,
+      Energia: item.energia,
+      Solar: item.solar,
+      Dual: item.dual
+    }));
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Bem-vindo, {user?.name}</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Bem-vindo, {user?.name}</p>
+        </div>
+        
+        {/* Month/Year Selector */}
+        <div className="flex gap-3 items-center">
+          <div>
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {months.map((month, index) => (
+                <option key={index} value={index + 1}>{month}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {getAvailableYears().map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {user?.role === 'admin' && renderAdminDashboard()}
