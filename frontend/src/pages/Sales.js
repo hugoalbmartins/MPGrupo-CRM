@@ -24,6 +24,7 @@ const Sales = ({ user }) => {
     date: new Date().toISOString().split('T')[0],
     partner_id: "",
     scope: "telecomunicacoes",
+    client_type: "particular",
     client_name: "",
     client_nif: "",
     client_contact: "",
