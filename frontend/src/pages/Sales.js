@@ -135,6 +135,32 @@ const Sales = ({ user }) => {
 
   const filteredSales = selectedStatus ? sales.filter(s => s.status === selectedStatus) : sales;
 
+  const handleExportExcel = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (exportStartDate) params.append('start_date', exportStartDate);
+      if (exportEndDate) params.append('end_date', exportEndDate);
+      
+      const response = await axios.get(`${API}/sales/export/excel?${params.toString()}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `vendas_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success("Excel exportado com sucesso!");
+      setExportDialogOpen(false);
+    } catch (error) {
+      toast.error("Erro ao exportar Excel");
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
   return (
