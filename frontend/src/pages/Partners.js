@@ -46,29 +46,67 @@ const Partners = ({ user }) => {
     }
   };
 
+  const generatePassword = async () => {
+    try {
+      const response = await axios.get(`${API}/auth/generate-password`);
+      setGeneratedPassword(response.data.password);
+    } catch (error) {
+      console.error("Erro ao gerar password");
+    }
+  };
+
+  useEffect(() => {
+    if (formData.email && !editingPartner) {
+      generatePassword();
+    }
+  }, [formData.email]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const submitData = { ...formData };
       submitData.communication_emails = formData.communication_emails.filter(e => e.trim());
       
-      const response = await axios.post(`${API}/partners`, submitData);
-      
-      if (response.data.initial_password) {
-        toast.success(
-          `Parceiro criado! Password: ${response.data.initial_password}`,
-          { duration: 10000 }
-        );
+      if (editingPartner) {
+        await axios.put(`${API}/partners/${editingPartner.id}`, submitData);
+        toast.success("Parceiro atualizado com sucesso!");
       } else {
-        toast.success("Parceiro criado com sucesso!");
+        const response = await axios.post(`${API}/partners`, submitData);
+        if (response.data.initial_password) {
+          toast.success(
+            `Parceiro criado! Password: ${response.data.initial_password}`,
+            { duration: 10000 }
+          );
+        } else {
+          toast.success("Parceiro criado com sucesso!");
+        }
       }
       
       setDialogOpen(false);
       resetForm();
       fetchPartners();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Erro ao criar parceiro");
+      toast.error(error.response?.data?.detail || "Erro ao salvar parceiro");
     }
+  };
+
+  const handleEdit = (partner) => {
+    setEditingPartner(partner);
+    setFormData({
+      partner_type: partner.partner_type,
+      name: partner.name,
+      email: partner.email,
+      communication_emails: partner.communication_emails.length > 0 ? partner.communication_emails : [""],
+      phone: partner.phone,
+      contact_person: partner.contact_person,
+      street: partner.street,
+      door_number: partner.door_number,
+      postal_code: partner.postal_code,
+      locality: partner.locality,
+      nif: partner.nif,
+      crc: partner.crc || "",
+    });
+    setDialogOpen(true);
   };
 
   const resetForm = () => {
