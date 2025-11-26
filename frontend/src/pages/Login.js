@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock } from "lucide-react";
 import { API } from "../App";
 
 const Login = ({ onLogin }) => {
@@ -17,7 +17,7 @@ const Login = ({ onLogin }) => {
     try {
       const response = await axios.post(`${API}/auth/login`, { email, password });
       toast.success("Login bem-sucedido!");
-      onLogin(response.data.token, response.data.user);
+      onLogin(response.data.token, response.data.user, response.data.must_change_password);
     } catch (error) {
       toast.error(error.response?.data?.detail || "Erro ao fazer login");
     } finally {
@@ -26,18 +26,18 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #0f0f10 0%, #1a1a1c 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="w-full max-w-md">
-        <div className="glass-card p-8">
+        <div className="professional-card p-8">
           <div className="flex flex-col items-center mb-8">
             <img src="/logo.png" alt="MP Grupo" className="h-20 w-20 object-contain mb-4" />
-            <h1 className="logo-text text-3xl">MP GRUPO</h1>
-            <p className="text-gray-400 mt-2">CRM - Sistema de Gestão de Vendas</p>
+            <h1 className="text-3xl font-bold text-gray-900">MP GRUPO</h1>
+            <p className="text-gray-600 mt-2">CRM - Sistema de Gestão</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-700">
                 Email
               </label>
               <input
@@ -53,7 +53,7 @@ const Login = ({ onLogin }) => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2 text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium mb-2 text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -70,7 +70,7 @@ const Login = ({ onLogin }) => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   data-testid="toggle-password"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -89,7 +89,7 @@ const Login = ({ onLogin }) => {
           </form>
         </div>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-gray-600 text-sm mt-6">
           © 2025 MP Grupo. Todos os direitos reservados.
         </p>
       </div>
