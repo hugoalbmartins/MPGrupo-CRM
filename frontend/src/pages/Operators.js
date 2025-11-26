@@ -64,6 +64,27 @@ const Operators = ({ user }) => {
     setFormData({ name: "", scope: "telecomunicacoes", commission_config: {} });
   };
 
+  const openCommissionConfig = (operator) => {
+    setSelectedOperator(operator);
+    setConfigDialogOpen(true);
+  };
+
+  const handleSaveCommission = async (commissionConfig) => {
+    try {
+      await axios.put(`${API}/operators/${selectedOperator.id}`, {
+        name: selectedOperator.name,
+        scope: selectedOperator.scope,
+        commission_config: commissionConfig
+      });
+      toast.success("Configuração de comissões guardada!");
+      setConfigDialogOpen(false);
+      setSelectedOperator(null);
+      fetchOperators();
+    } catch (error) {
+      toast.error("Erro ao guardar configuração");
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
   return (
