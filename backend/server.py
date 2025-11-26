@@ -422,27 +422,38 @@ async def download_sale_document(sale_id: str, document_id: str, current_user: d
 
 # DASHBOARD ENDPOINTS
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+async def get_dashboard_stats(
+    current_user: dict = Depends(get_current_user),
+    year: Optional[int] = None,
+    month: Optional[int] = None
+):
     role = current_user['role']
+    
+    # Default to current month/year
+    now = datetime.now(timezone.utc)
+    if year is None:
+        year = now.year
+    if month is None:
+        month = now.month
     
     # Admin Dashboard - Full global metrics
     if role == 'admin':
-        return await get_admin_dashboard()
+        return await get_admin_dashboard(year, month)
     
     # Backoffice Dashboard - Sales metrics without commissions
     elif role == 'bo':
-        return await get_bo_dashboard()
+        return await get_bo_dashboard(year, month)
     
     # Partner Dashboard - Own sales with commissions
     elif role == 'partner':
         partner = await db.partners.find_one({"user_id": current_user['id']}, {"_id": 0})
         if not partner:
             return {"error": "Partner not found"}
-        return await get_partner_dashboard(partner['id'])
+        return await get_partner_dashboard(partner['id'], year, month)
     
     # Partner Commercial - Own registered sales without commissions
     elif role == 'partner_commercial':
-        return await get_commercial_dashboard(current_user['id'])
+        return await get_commercial_dashboard(current_user['id'], year, month)
     
     return {"total_sales": 0}
 
