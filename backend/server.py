@@ -180,8 +180,20 @@ async def update_partner(partner_id: str, partner_data: PartnerCreate, current_u
     if current_user['role'] != 'admin':
         raise HTTPException(status_code=403)
     
+    # Get current partner to check email change
+    old_partner = await db.partners.find_one({"id": partner_id}, {"_id": 0})
+    if not old_partner:
+        raise HTTPException(status_code=404)
+    
     update_dict = partner_data.model_dump(exclude={'partner_type'})
     await db.partners.update_one({"id": partner_id}, {"$set": update_dict})
+    
+    # If email changed, update associated user
+    if old_partner.get('email') != partner_data.email and old_partner.get('user_id'):
+        await db.users.update_one(
+            {"id": old_partner['user_id']},
+            {"$set": {"email": partner_data.email}}
+        )
     
     partner = await db.partners.find_one({"id": partner_id}, {"_id": 0})
     return Partner(**partner)
