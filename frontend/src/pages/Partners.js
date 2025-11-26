@@ -16,6 +16,9 @@ const Partners = ({ user }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState(null);
   const [generatedPassword, setGeneratedPassword] = useState("");
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [selectedPartnerForDocs, setSelectedPartnerForDocs] = useState(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [formData, setFormData] = useState({
     partner_type: "D2D",
     name: "",
