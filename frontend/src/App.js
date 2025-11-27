@@ -97,6 +97,8 @@ function App() {
             <Route path="/sales" element={<Sales user={user} />} />
             <Route path="/alerts" element={<Alerts user={user} />} />
             <Route path="/profile" element={<Profile user={user} />} />
+            <Route path="/forms" element={<Forms user={user} />} />
+            <Route path="/forms/:operatorId" element={<Forms user={user} />} />
             {user?.role === "admin" && (
               <>
                 <Route path="/operators" element={<Operators user={user} />} />
