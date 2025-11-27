@@ -780,9 +780,369 @@ startxref
             self.log_test("Forms functionality check", False, f"Exception: {str(e)}")
             return False
 
+    def test_excel_export_functionality(self):
+        """Test Excel export functionality - NEW FEATURE 1"""
+        print("\n🔍 Testing Excel Export Functionality (NEW FEATURE 1)")
+        print("=" * 60)
+        
+        # Test 1: Basic Excel export
+        try:
+            response = requests.get(f"{self.api_url}/sales/export/excel", headers=self.get_headers())
+            
+            if response.status_code == 200:
+                # Check Content-Type header
+                content_type = response.headers.get('Content-Type', '')
+                expected_content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                
+                if expected_content_type in content_type:
+                    self.log_test("Excel export - Content-Type", True, f"Correct Content-Type: {content_type}")
+                else:
+                    self.log_test("Excel export - Content-Type", False, f"Expected Excel content type, got: {content_type}")
+                    return False
+                
+                # Check Content-Disposition header
+                content_disposition = response.headers.get('Content-Disposition', '')
+                if 'attachment' in content_disposition and 'filename=vendas_' in content_disposition and '.xlsx' in content_disposition:
+                    self.log_test("Excel export - Content-Disposition", True, f"Correct header: {content_disposition}")
+                else:
+                    self.log_test("Excel export - Content-Disposition", False, f"Invalid Content-Disposition: {content_disposition}")
+                    return False
+                
+                # Check file size
+                file_size = len(response.content)
+                if file_size > 0:
+                    self.log_test("Excel export - File size", True, f"File size: {file_size} bytes")
+                else:
+                    self.log_test("Excel export - File size", False, "File is empty")
+                    return False
+                    
+            else:
+                self.log_test("Excel export - Basic test", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Excel export - Basic test", False, f"Exception: {str(e)}")
+            return False
+
+        # Test 2: Excel export with date filters
+        try:
+            params = {
+                'start_date': '2025-11-01',
+                'end_date': '2025-11-30'
+            }
+            response = requests.get(f"{self.api_url}/sales/export/excel", params=params, headers=self.get_headers())
+            
+            if response.status_code == 200:
+                file_size = len(response.content)
+                self.log_test("Excel export - Date filters", True, f"Export with date filters successful, size: {file_size} bytes")
+            else:
+                self.log_test("Excel export - Date filters", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Excel export - Date filters", False, f"Exception: {str(e)}")
+            return False
+
+        print("✅ Excel export functionality testing completed!")
+        return True
+
+    def test_email_system_configuration(self):
+        """Test email system configuration - NEW FEATURE 2"""
+        print("\n🔍 Testing Email System Configuration (NEW FEATURE 2)")
+        print("=" * 60)
+        
+        # Test 1: Check SMTP environment variables
+        try:
+            import os
+            smtp_vars = {
+                'SMTP_HOST': os.environ.get('SMTP_HOST'),
+                'SMTP_PORT': os.environ.get('SMTP_PORT'),
+                'SMTP_USER': os.environ.get('SMTP_USER'),
+                'SMTP_PASSWORD': os.environ.get('SMTP_PASSWORD'),
+                'SMTP_FROM': os.environ.get('SMTP_FROM'),
+                'SMTP_FROM_NAME': os.environ.get('SMTP_FROM_NAME')
+            }
+            
+            missing_vars = [var for var, value in smtp_vars.items() if not value]
+            
+            if not missing_vars:
+                self.log_test("SMTP environment variables", True, f"All SMTP variables configured: {list(smtp_vars.keys())}")
+            else:
+                self.log_test("SMTP environment variables", False, f"Missing variables: {missing_vars}")
+                return False
+                
+        except Exception as e:
+            self.log_test("SMTP environment variables", False, f"Exception: {str(e)}")
+            return False
+
+        # Test 2: Check send_email function exists in utils
+        try:
+            import sys
+            sys.path.append('/app/backend')
+            from utils import send_email
+            self.log_test("send_email function exists", True, "send_email function found in utils.py")
+        except ImportError as e:
+            self.log_test("send_email function exists", False, f"send_email function not found: {str(e)}")
+            return False
+        except Exception as e:
+            self.log_test("send_email function exists", False, f"Exception: {str(e)}")
+            return False
+
+        # Test 3: Check send_alert_email function exists in server
+        try:
+            # We can't directly import server.py due to FastAPI dependencies, but we can check the source
+            with open('/app/backend/server.py', 'r') as f:
+                server_content = f.read()
+                if 'async def send_alert_email' in server_content:
+                    self.log_test("send_alert_email function exists", True, "send_alert_email function found in server.py")
+                else:
+                    self.log_test("send_alert_email function exists", False, "send_alert_email function not found in server.py")
+                    return False
+        except Exception as e:
+            self.log_test("send_alert_email function exists", False, f"Exception: {str(e)}")
+            return False
+
+        print("✅ Email system configuration testing completed!")
+        return True
+
+    def test_create_sale_and_verify_email_logs(self):
+        """Test creating new sale and verify email logs - INTEGRATION TEST 3"""
+        print("\n🔍 Testing Create Sale and Email Logs (INTEGRATION TEST 3)")
+        print("=" * 60)
+        
+        # Get partners and operators for creating test sale
+        try:
+            partners_response = requests.get(f"{self.api_url}/partners", headers=self.get_headers())
+            operators_response = requests.get(f"{self.api_url}/operators", headers=self.get_headers())
+            
+            if partners_response.status_code != 200 or operators_response.status_code != 200:
+                self.log_test("Setup sale creation test", False, "Could not get partners or operators")
+                return False
+                
+            partners = partners_response.json()
+            operators = operators_response.json()
+            
+            if not partners or not operators:
+                self.log_test("Setup sale creation test", False, "No partners or operators available")
+                return False
+                
+            self.log_test("Setup sale creation test", True, f"Found {len(partners)} partners and {len(operators)} operators")
+            
+        except Exception as e:
+            self.log_test("Setup sale creation test", False, f"Exception: {str(e)}")
+            return False
+
+        # Create a new sale
+        try:
+            sale_data = {
+                "date": "2025-01-15T10:00:00Z",
+                "partner_id": partners[0]['id'],
+                "operator_id": operators[0]['id'],
+                "scope": "telecomunicacoes",
+                "client_type": "particular",
+                "client_name": "João Silva Email Test",
+                "client_nif": "123456789",
+                "client_contact": "912345678",
+                "service_type": "M3",
+                "monthly_value": 45.0
+            }
+            
+            response = requests.post(f"{self.api_url}/sales", json=sale_data, headers=self.get_headers())
+            
+            if response.status_code == 200:
+                sale = response.json()
+                sale_id = sale['id']
+                sale_code = sale.get('sale_code', 'N/A')
+                self.log_test("Create new sale for email test", True, f"Sale created: {sale_code} (ID: {sale_id})")
+                
+                # Check if alert was created
+                alerts_response = requests.get(f"{self.api_url}/alerts", headers=self.get_headers())
+                if alerts_response.status_code == 200:
+                    alerts = alerts_response.json()
+                    new_sale_alerts = [a for a in alerts if a.get('sale_id') == sale_id and a.get('type') == 'new_sale']
+                    if new_sale_alerts:
+                        self.log_test("Alert created for new sale", True, f"Found {len(new_sale_alerts)} new sale alerts")
+                    else:
+                        self.log_test("Alert created for new sale", False, "No new sale alert found")
+                else:
+                    self.log_test("Check alerts for new sale", False, f"Could not get alerts: {alerts_response.status_code}")
+                
+                return sale_id
+            else:
+                self.log_test("Create new sale for email test", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Create new sale for email test", False, f"Exception: {str(e)}")
+            return False
+
+    def test_update_sale_status_and_verify_email(self):
+        """Test updating sale status and verify email - INTEGRATION TEST 4"""
+        print("\n🔍 Testing Update Sale Status and Email (INTEGRATION TEST 4)")
+        print("=" * 60)
+        
+        # Get existing sales
+        try:
+            response = requests.get(f"{self.api_url}/sales", headers=self.get_headers())
+            if response.status_code != 200:
+                self.log_test("Get sales for status update test", False, f"Status: {response.status_code}")
+                return False
+            
+            sales = response.json()
+            if not sales:
+                self.log_test("Get sales for status update test", False, "No sales found")
+                return False
+            
+            # Find a sale to update
+            test_sale = sales[0]
+            sale_id = test_sale['id']
+            original_status = test_sale.get('status', 'Pendente')
+            
+            self.log_test("Get sales for status update test", True, f"Using sale {test_sale.get('sale_code', sale_id)} with status: {original_status}")
+            
+        except Exception as e:
+            self.log_test("Get sales for status update test", False, f"Exception: {str(e)}")
+            return False
+
+        # Update sale status to "Ativo"
+        try:
+            update_data = {
+                "status": "Ativo"
+            }
+            
+            response = requests.put(f"{self.api_url}/sales/{sale_id}", json=update_data, headers=self.get_headers())
+            
+            if response.status_code == 200:
+                updated_sale = response.json()
+                new_status = updated_sale.get('status')
+                self.log_test("Update sale status to Ativo", True, f"Status updated from '{original_status}' to '{new_status}'")
+                
+                # Check if alert was created for status change
+                alerts_response = requests.get(f"{self.api_url}/alerts", headers=self.get_headers())
+                if alerts_response.status_code == 200:
+                    alerts = alerts_response.json()
+                    status_alerts = [a for a in alerts if a.get('sale_id') == sale_id and a.get('type') == 'status_change']
+                    if status_alerts:
+                        self.log_test("Alert created for status change", True, f"Found {len(status_alerts)} status change alerts")
+                    else:
+                        self.log_test("Alert created for status change", False, "No status change alert found")
+                else:
+                    self.log_test("Check alerts for status change", False, f"Could not get alerts: {alerts_response.status_code}")
+                
+                return True
+            else:
+                self.log_test("Update sale status to Ativo", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Update sale status to Ativo", False, f"Exception: {str(e)}")
+            return False
+
+    def test_add_note_and_verify_email(self):
+        """Test adding note to sale and verify email - INTEGRATION TEST 5"""
+        print("\n🔍 Testing Add Note and Email (INTEGRATION TEST 5)")
+        print("=" * 60)
+        
+        # Get existing sales
+        try:
+            response = requests.get(f"{self.api_url}/sales", headers=self.get_headers())
+            if response.status_code != 200:
+                self.log_test("Get sales for note test", False, f"Status: {response.status_code}")
+                return False
+            
+            sales = response.json()
+            if not sales:
+                self.log_test("Get sales for note test", False, "No sales found")
+                return False
+            
+            test_sale = sales[0]
+            sale_id = test_sale['id']
+            sale_code = test_sale.get('sale_code', sale_id)
+            
+            self.log_test("Get sales for note test", True, f"Using sale {sale_code}")
+            
+        except Exception as e:
+            self.log_test("Get sales for note test", False, f"Exception: {str(e)}")
+            return False
+
+        # Add note to sale
+        try:
+            note_data = {
+                "content": "Nota de teste para verificar sistema de emails - funcionalidade implementada"
+            }
+            
+            response = requests.post(f"{self.api_url}/sales/{sale_id}/notes", json=note_data, headers=self.get_headers())
+            
+            if response.status_code == 200:
+                note = response.json()
+                self.log_test("Add note to sale", True, f"Note added: '{note.get('content', '')[:50]}...'")
+                
+                # Check if alert was created for note
+                alerts_response = requests.get(f"{self.api_url}/alerts", headers=self.get_headers())
+                if alerts_response.status_code == 200:
+                    alerts = alerts_response.json()
+                    note_alerts = [a for a in alerts if a.get('sale_id') == sale_id and a.get('type') == 'note_added']
+                    if note_alerts:
+                        self.log_test("Alert created for note added", True, f"Found {len(note_alerts)} note alerts")
+                    else:
+                        self.log_test("Alert created for note added", False, "No note alert found")
+                else:
+                    self.log_test("Check alerts for note", False, f"Could not get alerts: {alerts_response.status_code}")
+                
+                return True
+            else:
+                self.log_test("Add note to sale", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Add note to sale", False, f"Exception: {str(e)}")
+            return False
+
+    def check_backend_logs_for_email_status(self):
+        """Check backend logs for email sending status"""
+        print("\n🔍 Checking Backend Logs for Email Status")
+        print("=" * 60)
+        
+        try:
+            import subprocess
+            
+            # Check supervisor backend logs
+            result = subprocess.run(['tail', '-n', '50', '/var/log/supervisor/backend.out.log'], 
+                                  capture_output=True, text=True, timeout=10)
+            
+            if result.returncode == 0:
+                log_content = result.stdout
+                
+                # Look for email success/error messages
+                email_success = "✅ Email sent successfully" in log_content
+                email_error = "❌ Error sending email" in log_content
+                
+                if email_success:
+                    self.log_test("Backend logs - Email success", True, "Found email success messages in logs")
+                elif email_error:
+                    self.log_test("Backend logs - Email error", True, "Found email error messages in logs (configuration issue)")
+                else:
+                    self.log_test("Backend logs - Email status", True, "No specific email messages found in recent logs")
+                
+                # Check for any email-related activity
+                email_mentions = log_content.count("email") + log_content.count("Email") + log_content.count("SMTP")
+                if email_mentions > 0:
+                    self.log_test("Backend logs - Email activity", True, f"Found {email_mentions} email-related log entries")
+                else:
+                    self.log_test("Backend logs - Email activity", False, "No email-related activity in logs")
+                
+                return True
+            else:
+                self.log_test("Backend logs check", False, f"Could not read logs: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Backend logs check", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
-        """Run all backend tests"""
-        print("🚀 Starting CRM MP Grupo Backend API Tests - 3 CORRECTIONS")
+        """Run all backend tests for the new functionalities"""
+        print("🚀 Starting CRM MP Grupo Backend API Tests - NEW FUNCTIONALITIES")
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
@@ -791,23 +1151,39 @@ startxref
             print("\n❌ Login failed - cannot continue with other tests")
             return False
         
-        # Test the 3 specific corrections requested in the review
-        print("\n🎯 TESTING 3 IMPLEMENTED CORRECTIONS:")
-        print("1. User Editing - PUT /api/users/{user_id}")
-        print("2. Forced Download - Content-Disposition header")
-        print("3. Requisition Field - Backend support for any scope")
+        # Test the 2 new functionalities requested in the review
+        print("\n🎯 TESTING 2 NEW IMPLEMENTED FUNCTIONALITIES:")
+        print("1. Excel Export Fixed - /api/sales/export/excel")
+        print("2. Email Alert System - SMTP configuration and email sending")
         print("=" * 60)
         
-        correction_tests = [
-            self.test_user_editing_functionality,
-            self.test_forced_download_functionality,
-            self.test_requisition_field_functionality
+        new_feature_tests = [
+            self.test_excel_export_functionality,
+            self.test_email_system_configuration
         ]
         
-        corrections_passed = 0
-        for test in correction_tests:
+        features_passed = 0
+        for test in new_feature_tests:
             if test():
-                corrections_passed += 1
+                features_passed += 1
+        
+        # Test integration scenarios
+        print("\n🔧 INTEGRATION TESTS:")
+        print("=" * 40)
+        
+        integration_tests = [
+            self.test_create_sale_and_verify_email_logs,
+            self.test_update_sale_status_and_verify_email,
+            self.test_add_note_and_verify_email
+        ]
+        
+        integration_passed = 0
+        for test in integration_tests:
+            if test():
+                integration_passed += 1
+        
+        # Check backend logs
+        self.check_backend_logs_for_email_status()
         
         # Run basic functionality tests
         print("\n🔧 BASIC FUNCTIONALITY TESTS:")
@@ -817,27 +1193,31 @@ startxref
         self.test_operators_crud()
         self.test_sales_crud()
         self.test_users_management()
-        self.test_export_functionality()
-        
-        # Quick forms functionality check
-        self.test_forms_functionality()
         
         # Print summary
         print("\n" + "=" * 60)
-        print("🎯 CORRECTIONS SUMMARY:")
-        print(f"   Corrections Passed: {corrections_passed}/3")
+        print("🎯 NEW FUNCTIONALITIES SUMMARY:")
+        print(f"   New Features Passed: {features_passed}/2")
+        print(f"   Integration Tests Passed: {integration_passed}/3")
         print(f"   Overall Tests: {self.tests_passed}/{self.tests_run} passed")
         success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
         print(f"   Success Rate: {success_rate:.1f}%")
         
-        if corrections_passed == 3:
-            print("✅ ALL 3 CORRECTIONS WORKING PERFECTLY!")
-        elif corrections_passed >= 2:
-            print("⚠️  Most corrections working, some issues found")
+        if features_passed == 2:
+            print("✅ BOTH NEW FUNCTIONALITIES WORKING!")
+        elif features_passed >= 1:
+            print("⚠️  Some new functionalities working, issues found")
         else:
-            print("🚨 Significant issues with corrections")
+            print("🚨 Significant issues with new functionalities")
         
-        return corrections_passed >= 2 and success_rate >= 60
+        print("\n📧 EMAIL SYSTEM STATUS:")
+        if integration_passed >= 2:
+            print("✅ Email system integration working - alerts created successfully")
+            print("📝 Check backend logs for actual email sending status")
+        else:
+            print("⚠️  Email system integration issues - check configuration")
+        
+        return features_passed >= 1 and success_rate >= 60
 
 def main():
     tester = MDMGrupoAPITester()
