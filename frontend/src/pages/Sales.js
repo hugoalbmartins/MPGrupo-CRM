@@ -436,6 +436,21 @@ const Sales = ({ user }) => {
                   </>
                 )}
                 
+                {/* Tipo de Entrada - para todas as operadoras de energia */}
+                {formData.scope === 'energia' && (
+                  <div className="col-span-2">
+                    <Label>Tipo de Entrada *</Label>
+                    <Select value={formData.entry_type} onValueChange={(v) => setFormData({...formData, entry_type: v})}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
+                        <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
+                        <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
                 <div className="col-span-2">
                   <Label>Observações</Label>
                   <Textarea value={formData.observations} onChange={(e) => setFormData({...formData, observations: e.target.value})} rows={3} />
