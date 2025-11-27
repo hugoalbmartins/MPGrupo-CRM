@@ -380,11 +380,26 @@ async def update_sale(sale_id: str, sale_data: SaleUpdate, current_user: dict = 
     if current_user['role'] not in ['admin', 'bo']:
         raise HTTPException(status_code=403)
     
+    # Get old sale to check status change
+    old_sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    
     update_dict = {k: v for k, v in sale_data.model_dump().items() if v is not None}
     update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     await db.sales.update_one({"id": sale_id}, {"$set": update_dict})
     sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    
+    # Create alert if status changed to Concluído or Ativo
+    if sale_data.status and old_sale['status'] != sale_data.status:
+        if sale_data.status in ['Concluido', 'Ativo']:
+            await create_alert(
+                "status_change",
+                sale_id,
+                sale['sale_code'],
+                f"Status alterado para {sale_data.status}: {sale['sale_code']}",
+                current_user
+            )
+    
     return sale
 
 @api_router.post("/sales/{sale_id}/notes")
