@@ -113,7 +113,8 @@ class Sale(BaseModel):
     date: str
     partner_id: str
     created_by_user_id: str
-    scope: str  # telecomunicacoes, energia, dual, solar
+    scope: str  # telecomunicacoes, energia, solar
+    energy_type: Optional[str] = None  # eletricidade, gas, dual (only for energia scope)
     client_type: str  # particular, empresarial
     client_name: str
     client_nif: str
