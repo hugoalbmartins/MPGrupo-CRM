@@ -200,6 +200,13 @@ const Operators = ({ user }) => {
                 <div key={op.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
                   <div>
                     <span className="font-medium block">{op.name}</span>
+                    {op.scope === 'energia' && op.energy_type && (
+                      <span className="text-xs text-gray-500 block">
+                        {op.energy_type === 'eletricidade' ? '⚡ Eletricidade' : 
+                         op.energy_type === 'gas' ? '🔥 Gás' : 
+                         '⚡🔥 Dual'}
+                      </span>
+                    )}
                     {op.commission_config && Object.keys(op.commission_config).length > 0 && (
                       <span className="text-xs text-green-600 block">✓ Comissões configuradas</span>
                     )}
