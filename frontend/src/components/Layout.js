@@ -32,6 +32,7 @@ const Layout = ({ children, user, onLogout }) => {
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "bo", "partner", "partner_commercial"] },
     { path: "/partners", label: "Parceiros", icon: Users, roles: ["admin", "bo", "partner"] },
     { path: "/sales", label: "Vendas", icon: ShoppingCart, roles: ["admin", "bo", "partner", "partner_commercial"] },
+    { path: "/forms", label: "Formulários", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial"] },
   ];
 
   if (user?.role === "admin") {
