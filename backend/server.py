@@ -707,7 +707,7 @@ async def mark_alert_read(alert_id: str, current_user: dict = Depends(get_curren
     return {"message": "Alert marked as read"}
 
 async def create_alert(alert_type: str, sale_id: str, sale_code: str, message: str, created_by: dict):
-    """Helper function to create alerts"""
+    """Helper function to create alerts and send emails"""
     # Get sale to find partner and commercial
     sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
     if not sale:
@@ -750,6 +750,102 @@ async def create_alert(alert_type: str, sale_id: str, sale_code: str, message: s
     )
     
     await db.alerts.insert_one(alert.model_dump())
+    
+    # Send emails to notified users
+    users_to_notify = await db.users.find(
+        {"id": {"$in": user_ids}},
+        {"_id": 0, "email": 1, "name": 1}
+    ).to_list(1000)
+    
+    if users_to_notify:
+        emails = [u['email'] for u in users_to_notify]
+        await send_alert_email(alert_type, sale, created_by, emails)
+    
+
+async def send_alert_email(alert_type: str, sale: dict, created_by: dict, emails: list):
+    """Send email notification for alerts"""
+    sale_code = sale.get('sale_code', 'N/A')
+    partner_id = sale.get('partner_id', '')
+    
+    # Get partner name
+    partner = await db.partners.find_one({"id": partner_id}, {"_id": 0})
+    partner_name = partner['name'] if partner else 'Desconhecido'
+    
+    # Get operator name
+    operator = await db.operators.find_one({"id": sale.get('operator_id', '')}, {"_id": 0})
+    operator_name = operator['name'] if operator else 'Desconhecida'
+    
+    # Build email content based on alert type
+    if alert_type == 'new_sale':
+        subject = f"🆕 Nova Venda Registada: {sale_code}"
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background-color: #4F46E5; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">Nova Venda Registada</h1>
+            </div>
+            <div style="padding: 20px; background-color: #f5f5f5;">
+                <p>Uma nova venda foi registada no sistema:</p>
+                <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <p><strong>Código da Venda:</strong> {sale_code}</p>
+                    <p><strong>Parceiro:</strong> {partner_name}</p>
+                    <p><strong>Operadora:</strong> {operator_name}</p>
+                    <p><strong>Cliente:</strong> {sale.get('client_name', 'N/A')}</p>
+                    <p><strong>Âmbito:</strong> {sale.get('scope', 'N/A')}</p>
+                    <p><strong>Status:</strong> {sale.get('status', 'N/A')}</p>
+                    <p><strong>Registado por:</strong> {created_by['name']}</p>
+                </div>
+                <p style="color: #666; font-size: 12px;">Aceda ao CRM para mais detalhes.</p>
+            </div>
+        </body>
+        </html>
+        """
+    elif alert_type == 'status_change':
+        subject = f"📝 Alteração de Estado: {sale_code}"
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background-color: #10B981; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">Estado da Venda Alterado</h1>
+            </div>
+            <div style="padding: 20px; background-color: #f5f5f5;">
+                <p>O estado de uma venda foi alterado:</p>
+                <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <p><strong>Código da Venda:</strong> {sale_code}</p>
+                    <p><strong>Parceiro:</strong> {partner_name}</p>
+                    <p><strong>Novo Estado:</strong> <span style="color: #10B981; font-weight: bold;">{sale.get('status', 'N/A')}</span></p>
+                    <p><strong>Alterado por:</strong> {created_by['name']}</p>
+                </div>
+                <p style="color: #666; font-size: 12px;">Aceda ao CRM para mais detalhes.</p>
+            </div>
+        </body>
+        </html>
+        """
+    elif alert_type == 'note_added':
+        subject = f"💬 Nova Nota Adicionada: {sale_code}"
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background-color: #F59E0B; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">Nova Nota Adicionada</h1>
+            </div>
+            <div style="padding: 20px; background-color: #f5f5f5;">
+                <p>Uma nova nota foi adicionada a uma venda:</p>
+                <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <p><strong>Código da Venda:</strong> {sale_code}</p>
+                    <p><strong>Parceiro:</strong> {partner_name}</p>
+                    <p><strong>Adicionado por:</strong> {created_by['name']}</p>
+                </div>
+                <p style="color: #666; font-size: 12px;">Aceda ao CRM para ver a nota completa.</p>
+            </div>
+        </body>
+        </html>
+        """
+    else:
+        return
+    
+    # Send email
+    await send_email(emails, subject, html_content)
 
 
 # DASHBOARD ENDPOINTS
