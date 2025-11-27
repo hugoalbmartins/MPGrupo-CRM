@@ -1,6 +1,8 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell } from "lucide-react";
+import axios from "axios";
+import { API } from "../App";
 
 const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
