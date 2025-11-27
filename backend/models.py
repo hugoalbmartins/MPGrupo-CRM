@@ -4,6 +4,21 @@ from datetime import datetime, timezone
 import uuid
 import re
 
+class Alert(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    type: str  # new_sale, status_change, note_added
+    sale_id: str
+    sale_code: str
+    message: str
+    user_ids: List[str]  # Users who should see this alert
+    read_by: List[str] = []  # Users who have read this alert
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_by: str
+    created_by_name: str
+
+
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
