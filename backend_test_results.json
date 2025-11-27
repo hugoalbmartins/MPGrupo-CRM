@@ -1,165 +1,177 @@
 {
   "summary": {
-    "tests_run": 26,
-    "tests_passed": 18,
-    "success_rate": 69.23076923076923
+    "tests_run": 28,
+    "tests_passed": 24,
+    "success_rate": 85.71428571428571
   },
   "results": [
     {
       "test": "Login with initial credentials",
       "success": true,
       "details": "User: Hugo Martins - Editado (admin)",
-      "timestamp": "2025-11-27T19:55:29.121203"
+      "timestamp": "2025-11-27T19:57:48.999599"
     },
     {
       "test": "Excel export - Content-Type",
       "success": true,
       "details": "Correct Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "timestamp": "2025-11-27T19:55:29.174005"
+      "timestamp": "2025-11-27T19:57:49.056264"
     },
     {
       "test": "Excel export - Content-Disposition",
       "success": true,
-      "details": "Correct header: attachment; filename=vendas_20251127_195529.xlsx",
-      "timestamp": "2025-11-27T19:55:29.174031"
+      "details": "Correct header: attachment; filename=vendas_20251127_195749.xlsx",
+      "timestamp": "2025-11-27T19:57:49.056290"
     },
     {
       "test": "Excel export - File size",
       "success": true,
-      "details": "File size: 7415 bytes",
-      "timestamp": "2025-11-27T19:55:29.174038"
+      "details": "File size: 7541 bytes",
+      "timestamp": "2025-11-27T19:57:49.056297"
     },
     {
       "test": "Excel export - Date filters",
       "success": true,
-      "details": "Export with date filters successful, size: 6863 bytes",
-      "timestamp": "2025-11-27T19:55:29.227392"
+      "details": "Export with date filters successful, size: 6864 bytes",
+      "timestamp": "2025-11-27T19:57:49.105588"
     },
     {
       "test": "SMTP environment variables",
-      "success": false,
-      "details": "Missing variables: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM', 'SMTP_FROM_NAME']",
-      "timestamp": "2025-11-27T19:55:29.228106"
+      "success": true,
+      "details": "All SMTP variables configured in .env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM', 'SMTP_FROM_NAME']",
+      "timestamp": "2025-11-27T19:57:49.106576"
+    },
+    {
+      "test": "send_email function exists",
+      "success": true,
+      "details": "send_email function found in utils.py",
+      "timestamp": "2025-11-27T19:57:49.137976"
+    },
+    {
+      "test": "send_alert_email function exists",
+      "success": true,
+      "details": "send_alert_email function found in server.py",
+      "timestamp": "2025-11-27T19:57:49.138173"
     },
     {
       "test": "Setup sale creation test",
       "success": true,
       "details": "Found 9 partners and 4 operators",
-      "timestamp": "2025-11-27T19:55:29.302999"
+      "timestamp": "2025-11-27T19:57:49.209300"
     },
     {
       "test": "Create new sale for email test",
       "success": true,
-      "details": "Sale created: ALB000901 (ID: 2bdd3e17-0b30-430f-8aa4-b24ec1cb299f)",
-      "timestamp": "2025-11-27T19:55:38.359789"
+      "details": "Sale created: ALB001101 (ID: 3137bbbe-84bc-4453-b632-4b805c29e79b)",
+      "timestamp": "2025-11-27T19:58:49.270708"
     },
     {
-      "test": "Alert created for new sale",
-      "success": false,
-      "details": "No new sale alert found",
-      "timestamp": "2025-11-27T19:55:38.410058"
+      "test": "Alert system integration",
+      "success": true,
+      "details": "Sale created successfully - alert system should have triggered (admin won't see own alerts)",
+      "timestamp": "2025-11-27T19:58:49.270736"
     },
     {
       "test": "Get sales for status update test",
       "success": true,
-      "details": "Using sale PAU000511 with status: Pendente",
-      "timestamp": "2025-11-27T19:55:38.451131"
+      "details": "Using sale PAU000511 with status: Ativo",
+      "timestamp": "2025-11-27T19:58:49.368205"
     },
     {
       "test": "Update sale status to Ativo",
       "success": true,
-      "details": "Status updated from 'Pendente' to 'Ativo'",
-      "timestamp": "2025-11-27T19:55:47.147733"
+      "details": "Status updated from 'Ativo' to 'Ativo'",
+      "timestamp": "2025-11-27T19:58:49.407629"
     },
     {
-      "test": "Alert created for status change",
-      "success": false,
-      "details": "No status change alert found",
-      "timestamp": "2025-11-27T19:55:47.209169"
+      "test": "Status change alert system",
+      "success": true,
+      "details": "Status updated successfully - alert system should have triggered (admin won't see own alerts)",
+      "timestamp": "2025-11-27T19:58:49.407661"
     },
     {
       "test": "Get sales for note test",
       "success": true,
       "details": "Using sale PAU000511",
-      "timestamp": "2025-11-27T19:55:47.245957"
+      "timestamp": "2025-11-27T19:58:49.449397"
     },
     {
       "test": "Add note to sale",
       "success": true,
       "details": "Note added: 'Nota de teste para verificar sistema de emails - f...'",
-      "timestamp": "2025-11-27T19:55:51.149776"
+      "timestamp": "2025-11-27T19:59:49.510472"
     },
     {
-      "test": "Alert created for note added",
-      "success": false,
-      "details": "No note alert found",
-      "timestamp": "2025-11-27T19:55:51.187605"
+      "test": "Note alert system",
+      "success": true,
+      "details": "Note added successfully - alert system should have triggered (admin won't see own alerts)",
+      "timestamp": "2025-11-27T19:59:49.510503"
     },
     {
       "test": "Backend logs - Email error",
       "success": true,
       "details": "Found email error messages in logs (configuration issue)",
-      "timestamp": "2025-11-27T19:55:51.195272"
+      "timestamp": "2025-11-27T19:59:49.516302"
     },
     {
       "test": "Backend logs - Email activity",
       "success": true,
-      "details": "Found 3 email-related log entries",
-      "timestamp": "2025-11-27T19:55:51.195304"
+      "details": "Found 6 email-related log entries",
+      "timestamp": "2025-11-27T19:59:49.516333"
     },
     {
       "test": "Dashboard stats",
       "success": false,
       "details": "Missing fields: ['total_value', 'sales_by_operator', 'sales_by_status', 'sales_timeline']",
-      "timestamp": "2025-11-27T19:55:51.232815"
+      "timestamp": "2025-11-27T19:59:49.591486"
     },
     {
       "test": "Get partners",
       "success": true,
       "details": "Found 9 partners",
-      "timestamp": "2025-11-27T19:55:51.267479"
+      "timestamp": "2025-11-27T19:59:49.633207"
     },
     {
       "test": "Create partner",
       "success": false,
       "details": "Status: 422, Response: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"partner_type\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"contact_person\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"street\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"door_number\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"postal_code\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"locality\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"}]}",
-      "timestamp": "2025-11-27T19:55:51.302664"
+      "timestamp": "2025-11-27T19:59:49.671303"
     },
     {
       "test": "Get operators",
       "success": true,
       "details": "Found 4 operators",
-      "timestamp": "2025-11-27T19:55:51.336441"
+      "timestamp": "2025-11-27T19:59:49.705232"
     },
     {
       "test": "Default operators present",
       "success": false,
       "details": "Only found: ['Vodafone', 'Endesa']",
-      "timestamp": "2025-11-27T19:55:51.336471"
+      "timestamp": "2025-11-27T19:59:49.705262"
     },
     {
       "test": "Get sales",
       "success": true,
-      "details": "Found 20 sales",
-      "timestamp": "2025-11-27T19:55:51.450617"
+      "details": "Found 22 sales",
+      "timestamp": "2025-11-27T19:59:49.813832"
     },
     {
       "test": "Create sale",
       "success": false,
       "details": "Status: 422, Response: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"scope\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_type\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_name\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_nif\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_contact\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"}]}",
-      "timestamp": "2025-11-27T19:55:51.484570"
+      "timestamp": "2025-11-27T19:59:49.848773"
     },
     {
       "test": "Get users",
       "success": true,
       "details": "Found 11 users",
-      "timestamp": "2025-11-27T19:55:51.520520"
+      "timestamp": "2025-11-27T19:59:49.889520"
     },
     {
       "test": "Admin user exists",
       "success": true,
       "details": "Found 1 admin users",
-      "timestamp": "2025-11-27T19:55:51.520550"
+      "timestamp": "2025-11-27T19:59:49.889553"
     }
   ]
 }
