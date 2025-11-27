@@ -159,16 +159,28 @@ const Operators = ({ user }) => {
                 </div>
                 <div>
                   <Label>Âmbito *</Label>
-                  <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v})}>
+                  <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: v === 'energia' ? 'eletricidade' : ''})}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
                       <SelectItem value="energia">Energia</SelectItem>
                       <SelectItem value="solar">Solar</SelectItem>
-                      <SelectItem value="dual">Dual</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                {formData.scope === 'energia' && (
+                  <div>
+                    <Label>Tipo de Energia *</Label>
+                    <Select value={formData.energy_type} onValueChange={(v) => setFormData({...formData, energy_type: v})}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="eletricidade">Apenas Eletricidade</SelectItem>
+                        <SelectItem value="gas">Apenas Gás</SelectItem>
+                        <SelectItem value="dual">Dual (Eletricidade + Gás)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
                   <Button type="submit" className="btn-primary">Criar</Button>
