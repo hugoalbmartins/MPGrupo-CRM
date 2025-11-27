@@ -1,0 +1,63 @@
+{
+  "summary": {
+    "tests_run": 8,
+    "tests_passed": 8,
+    "success_rate": 100.0
+  },
+  "results": [
+    {
+      "step": "Login",
+      "success": true,
+      "details": "Logged in as Hugo Martins (admin)",
+      "timestamp": "2025-11-27T18:12:06.455735"
+    },
+    {
+      "step": "List operators",
+      "success": true,
+      "details": "Found 10 operators including: Vodafone, Endesa, MEO, EDP",
+      "timestamp": "2025-11-27T18:12:06.497995"
+    },
+    {
+      "step": "Upload document",
+      "success": true,
+      "details": "Uploaded to Vodafone: 1 document(s) uploaded",
+      "timestamp": "2025-11-27T18:12:06.677539"
+    },
+    {
+      "step": "Verify document added",
+      "success": true,
+      "details": "Document found in operator. Total documents: 1",
+      "timestamp": "2025-11-27T18:12:06.721961"
+    },
+    {
+      "step": "Download document",
+      "success": true,
+      "details": "Valid PDF downloaded. Size: 429 bytes, Type: application/pdf",
+      "timestamp": "2025-11-27T18:12:06.758540"
+    },
+    {
+      "step": "Delete document",
+      "success": true,
+      "details": "Document deleted",
+      "timestamp": "2025-11-27T18:12:06.800094"
+    },
+    {
+      "step": "Verify document removed",
+      "success": true,
+      "details": "Document successfully removed. Remaining documents: 0",
+      "timestamp": "2025-11-27T18:12:06.838410"
+    },
+    {
+      "step": "Access control",
+      "success": true,
+      "details": "Admin access verified. Upload/Delete endpoints require admin role (enforced in backend)",
+      "timestamp": "2025-11-27T18:12:06.839164"
+    },
+    {
+      "step": "Cleanup",
+      "success": true,
+      "details": "Test files cleaned up",
+      "timestamp": "2025-11-27T18:12:06.839655"
+    }
+  ]
+}
