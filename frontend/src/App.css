@@ -161,6 +161,21 @@ input::placeholder, textarea::placeholder {
 @media (max-width: 1024px) {
   .table-container {
     overflow-x: scroll;
+    position: relative;
+  }
+  
+  .table-container::after {
+    content: '← Deslize para ver mais →';
+    position: sticky;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, #F8FAFC 20%, #F8FAFC);
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    color: #64748B;
+    text-align: right;
+    pointer-events: none;
+    display: block;
   }
   
   table {
