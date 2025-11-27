@@ -96,6 +96,7 @@ class Operator(BaseModel):
     active: bool = True
     hidden: bool = False
     commission_config: dict = Field(default_factory=dict)
+    documents: List[dict] = Field(default_factory=list)
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class OperatorCreate(BaseModel):
