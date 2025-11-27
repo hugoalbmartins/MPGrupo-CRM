@@ -33,6 +33,7 @@ const Sales = ({ user }) => {
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
   const [newNote, setNewNote] = useState("");
+  const [uploadFiles, setUploadFiles] = useState([]);
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
