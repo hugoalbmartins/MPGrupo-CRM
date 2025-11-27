@@ -478,7 +478,6 @@ const Sales = ({ user }) => {
             </form>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
 
       <div className="flex gap-2 mb-4">
