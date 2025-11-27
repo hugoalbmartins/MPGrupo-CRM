@@ -543,6 +543,84 @@ async def export_sales_to_excel(
     )
 
 
+
+# ALERTS ENDPOINTS
+@api_router.get("/alerts")
+async def get_alerts(current_user: dict = Depends(get_current_user)):
+    """Get all alerts for current user"""
+    alerts = await db.alerts.find(
+        {"user_ids": current_user['id']},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return alerts
+
+@api_router.get("/alerts/unread/count")
+async def get_unread_count(current_user: dict = Depends(get_current_user)):
+    """Get count of unread alerts for current user"""
+    count = await db.alerts.count_documents({
+        "user_ids": current_user['id'],
+        "read_by": {"$ne": current_user['id']}
+    })
+    
+    return {"count": count}
+
+@api_router.post("/alerts/{alert_id}/mark-read")
+async def mark_alert_read(alert_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark alert as read"""
+    await db.alerts.update_one(
+        {"id": alert_id},
+        {"$addToSet": {"read_by": current_user['id']}}
+    )
+    
+    return {"message": "Alert marked as read"}
+
+async def create_alert(alert_type: str, sale_id: str, sale_code: str, message: str, created_by: dict):
+    """Helper function to create alerts"""
+    # Get sale to find partner and commercial
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        return
+    
+    # Build list of users to notify
+    user_ids = []
+    
+    # Get partner user
+    partner = await db.partners.find_one({"id": sale['partner_id']}, {"_id": 0})
+    if partner and partner.get('user_id'):
+        user_ids.append(partner['user_id'])
+    
+    # Get commercial user if exists
+    if sale.get('created_by_user_id'):
+        user_ids.append(sale['created_by_user_id'])
+    
+    # Get all admins and backoffice
+    admin_bo_users = await db.users.find(
+        {"role": {"$in": ["admin", "bo"]}},
+        {"_id": 0, "id": 1}
+    ).to_list(1000)
+    
+    user_ids.extend([u['id'] for u in admin_bo_users])
+    
+    # Remove duplicates and creator
+    user_ids = list(set(user_ids))
+    if created_by['id'] in user_ids:
+        user_ids.remove(created_by['id'])
+    
+    # Create alert
+    alert = Alert(
+        type=alert_type,
+        sale_id=sale_id,
+        sale_code=sale_code,
+        message=message,
+        user_ids=user_ids,
+        created_by=created_by['id'],
+        created_by_name=created_by['name']
+    )
+    
+    await db.alerts.insert_one(alert.model_dump())
+
+
 # DASHBOARD ENDPOINTS
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(
