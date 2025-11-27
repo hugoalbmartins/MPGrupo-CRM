@@ -1,15 +1,135 @@
 {
   "summary": {
-    "tests_run": 1,
-    "tests_passed": 0,
-    "success_rate": 0.0
+    "tests_run": 21,
+    "tests_passed": 16,
+    "success_rate": 76.19047619047619
   },
   "results": [
     {
       "test": "Login with initial credentials",
+      "success": true,
+      "details": "User: Hugo Martins (admin)",
+      "timestamp": "2025-11-27T18:10:21.647638"
+    },
+    {
+      "test": "Dashboard stats",
       "success": false,
-      "details": "Status: 401, Response: {\"detail\":\"Invalid credentials\"}",
-      "timestamp": "2025-11-27T18:10:10.786438"
+      "details": "Missing fields: ['total_value', 'sales_by_operator', 'sales_by_status', 'sales_timeline']",
+      "timestamp": "2025-11-27T18:10:21.690145"
+    },
+    {
+      "test": "Get partners",
+      "success": true,
+      "details": "Found 9 partners",
+      "timestamp": "2025-11-27T18:10:21.726836"
+    },
+    {
+      "test": "Create partner",
+      "success": false,
+      "details": "Status: 422, Response: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"partner_type\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"contact_person\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"street\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"door_number\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"postal_code\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"locality\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"}]}",
+      "timestamp": "2025-11-27T18:10:21.763856"
+    },
+    {
+      "test": "Get operators",
+      "success": true,
+      "details": "Found 4 operators",
+      "timestamp": "2025-11-27T18:10:21.801609"
+    },
+    {
+      "test": "Default operators present",
+      "success": false,
+      "details": "Only found: ['Vodafone', 'Endesa']",
+      "timestamp": "2025-11-27T18:10:21.801642"
+    },
+    {
+      "test": "Get sales",
+      "success": true,
+      "details": "Found 11 sales",
+      "timestamp": "2025-11-27T18:10:21.918323"
+    },
+    {
+      "test": "Create sale",
+      "success": false,
+      "details": "Status: 422, Response: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"scope\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_type\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_name\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_nif\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_contact\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"}]}",
+      "timestamp": "2025-11-27T18:10:21.954967"
+    },
+    {
+      "test": "Get users",
+      "success": true,
+      "details": "Found 11 users",
+      "timestamp": "2025-11-27T18:10:21.991378"
+    },
+    {
+      "test": "Admin user exists",
+      "success": true,
+      "details": "Found 1 admin users",
+      "timestamp": "2025-11-27T18:10:21.991413"
+    },
+    {
+      "test": "Excel export",
+      "success": false,
+      "details": "Status: 500",
+      "timestamp": "2025-11-27T18:10:22.109532"
+    },
+    {
+      "test": "Get operators for forms testing",
+      "success": true,
+      "details": "Found 10 operators",
+      "timestamp": "2025-11-27T18:10:22.145556"
+    },
+    {
+      "test": "Select test operator",
+      "success": true,
+      "details": "Using operator: Vodafone (ID: b3ae4835-485c-4f2f-bc0d-17449e186ffb)",
+      "timestamp": "2025-11-27T18:10:22.145582"
+    },
+    {
+      "test": "Create test PDF file",
+      "success": true,
+      "details": "Created test PDF: /tmp/tmpbibjum6a.pdf",
+      "timestamp": "2025-11-27T18:10:22.146791"
+    },
+    {
+      "test": "Upload PDF document",
+      "success": true,
+      "details": "Upload successful: 1 document(s) uploaded",
+      "timestamp": "2025-11-27T18:10:22.189509"
+    },
+    {
+      "test": "Verify document added to operator",
+      "success": true,
+      "details": "Operator now has 1 document(s)",
+      "timestamp": "2025-11-27T18:10:22.229737"
+    },
+    {
+      "test": "Download PDF document",
+      "success": true,
+      "details": "Download successful, Content-Type: application/pdf, Size: 468 bytes",
+      "timestamp": "2025-11-27T18:10:22.278185"
+    },
+    {
+      "test": "Delete PDF document",
+      "success": true,
+      "details": "Delete successful: Document deleted",
+      "timestamp": "2025-11-27T18:10:22.315695"
+    },
+    {
+      "test": "Verify document removed",
+      "success": true,
+      "details": "Document successfully removed. Operator now has 0 document(s)",
+      "timestamp": "2025-11-27T18:10:22.351950"
+    },
+    {
+      "test": "Access control validation",
+      "success": true,
+      "details": "Upload/Delete endpoints require admin role (verified in code)",
+      "timestamp": "2025-11-27T18:10:22.351983"
+    },
+    {
+      "test": "Cleanup test files",
+      "success": true,
+      "details": "Test PDF file cleaned up",
+      "timestamp": "2025-11-27T18:10:22.352323"
     }
   ]
 }
