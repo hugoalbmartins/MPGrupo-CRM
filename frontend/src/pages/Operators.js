@@ -188,14 +188,22 @@ const Operators = ({ user }) => {
                   <div>
                     <span className="font-medium block">{op.name}</span>
                     {op.commission_config && Object.keys(op.commission_config).length > 0 && (
-                      <span className="text-xs text-green-600">✓ Comissões configuradas</span>
+                      <span className="text-xs text-green-600 block">✓ Comissões configuradas</span>
+                    )}
+                    {op.documents && op.documents.length > 0 && (
+                      <span className="text-xs text-blue-600 block">📄 {op.documents.length} formulário(s)</span>
                     )}
                   </div>
                   <div className="flex gap-2">
                     {user?.role === 'admin' && (
-                      <Button onClick={() => openCommissionConfig(op)} size="sm" variant="ghost" title="Configurar Comissões">
-                        <Settings className="w-4 h-4" />
-                      </Button>
+                      <>
+                        <Button onClick={() => openCommissionConfig(op)} size="sm" variant="ghost" title="Configurar Comissões">
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                        <Button onClick={() => openUploadDialog(op)} size="sm" variant="ghost" title="Gerir Formulários">
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                     {(user?.role === 'admin' || user?.role === 'bo') && (
                       <Button onClick={() => toggleVisibility(op.id)} size="sm" variant="ghost" title={op.hidden ? "Mostrar" : "Ocultar"}>
