@@ -376,7 +376,8 @@ const Sales = ({ user }) => {
                   </>
                 )}
                 
-                {(formData.scope === 'energia' || formData.scope === 'solar') && (
+                {/* Solar - CPE + Potência */}
+                {formData.scope === 'solar' && (
                   <>
                     <div>
                       <Label>CPE * (PT0002...)</Label>
@@ -394,46 +395,42 @@ const Sales = ({ user }) => {
                   </>
                 )}
                 
+                {/* Energia - Campos baseados no energy_type da operadora */}
                 {formData.scope === 'energia' && (
-                  <div className="col-span-2">
-                    <Label>Tipo de Entrada *</Label>
-                    <Select value={formData.entry_type} onValueChange={(v) => setFormData({...formData, entry_type: v})}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
-                        <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
-                        <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                
-                {formData.scope === 'dual' && (
                   <>
-                    <div>
-                      <Label>CPE * (PT0002...)</Label>
-                      <Input value={formData.cpe} onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})} placeholder="PT0002XXXXXXXXXXXX" required />
-                    </div>
-                    <div>
-                      <Label>Potência *</Label>
-                      <Select value={formData.power} onValueChange={(v) => setFormData({...formData, power: v})}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                        <SelectContent>
-                          {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>CUI * (PT16...)</Label>
-                      <Input value={formData.cui} onChange={(e) => setFormData({...formData, cui: e.target.value.toUpperCase()})} placeholder="PT16XXXXXXXXXXXXXXXXX" required />
-                    </div>
-                    <div>
-                      <Label>Escalão *</Label>
-                      <Select value={formData.tier} onValueChange={(v) => setFormData({...formData, tier: v})}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                        <SelectContent>
-                          {["1", "2", "3", "4"].map(t => <SelectItem key={t} value={t}>Escalão {t}</SelectItem>)}
-                        </SelectContent>
+                    {/* Eletricidade ou Dual - CPE + Potência */}
+                    {(operatorEnergyType === 'eletricidade' || operatorEnergyType === 'dual') && (
+                      <>
+                        <div>
+                          <Label>CPE * (PT0002...)</Label>
+                          <Input value={formData.cpe} onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})} placeholder="PT0002XXXXXXXXXXXX" required />
+                        </div>
+                        <div>
+                          <Label>Potência *</Label>
+                          <Select value={formData.power} onValueChange={(v) => setFormData({...formData, power: v})}>
+                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                            <SelectContent>
+                              {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Gás ou Dual - CUI + Escalão */}
+                    {(operatorEnergyType === 'gas' || operatorEnergyType === 'dual') && (
+                      <>
+                        <div>
+                          <Label>CUI * (PT16...)</Label>
+                          <Input value={formData.cui} onChange={(e) => setFormData({...formData, cui: e.target.value.toUpperCase()})} placeholder="PT16XXXXXXXXXXXXXXXXX" required />
+                        </div>
+                        <div>
+                          <Label>Escalão *</Label>
+                          <Select value={formData.tier} onValueChange={(v) => setFormData({...formData, tier: v})}>
+                            <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                            <SelectContent>
+                              {["1", "2", "3", "4"].map(t => <SelectItem key={t} value={t}>Escalão {t}</SelectItem>)}
+                            </SelectContent>
                       </Select>
                     </div>
                   </>
