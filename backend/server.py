@@ -404,6 +404,10 @@ async def update_sale(sale_id: str, sale_data: SaleUpdate, current_user: dict = 
 
 @api_router.post("/sales/{sale_id}/notes")
 async def add_note(sale_id: str, note_data: NoteCreate, current_user: dict = Depends(get_current_user)):
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404)
+    
     note = {
         "id": str(uuid.uuid4()),
         "content": note_data.content,
@@ -412,6 +416,16 @@ async def add_note(sale_id: str, note_data: NoteCreate, current_user: dict = Dep
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.sales.update_one({"id": sale_id}, {"$push": {"notes": note}})
+    
+    # Create alert for new note
+    await create_alert(
+        "note_added",
+        sale_id,
+        sale['sale_code'],
+        f"Nova nota adicionada em {sale['sale_code']} por {current_user['name']}",
+        current_user
+    )
+    
     return note
 
 @api_router.post("/sales/{sale_id}/documents")
