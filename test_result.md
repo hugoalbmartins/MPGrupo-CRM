@@ -270,3 +270,20 @@ agent_communication:
     message: "COMPREHENSIVE END-TO-END TESTING COMPLETED SUCCESSFULLY. Fixed JSX syntax error in Sales.js (extra closing div tag). All requested flows tested with admin credentials (hugoalbmartins@gmail.com). Results: ✅ Login & Dashboard (metrics, month/year selector, 12-month chart) ✅ Partners (list, new partner dialog, NIF validation 501234560 working, edit/documents buttons) ✅ Operators (commission config interface, tabs Particular/Empresarial, Adicionar Patamar button) ✅ Sales (commission column visible, Exportar Excel button, Nova Venda dialog with Tipo de Cliente field, Edit/Notes buttons) ✅ Navigation (sidebar, profile area showing Hugo Martins, logout button). Application is fully functional and ready for production use."
   - agent: "testing"
     message: "ALERTS SYSTEM TESTING COMPLETED SUCCESSFULLY. Tested new alerts system for MP Grupo CRM with admin credentials (hugoalbmartins@gmail.com). Results: ✅ Bell icon in header with unread count functionality ✅ Alerts page (/alerts) accessible and functional ✅ 'Nova Venda' dialog includes 'Documentos (opcional)' field ✅ Alert interface shows '0 não lidos' correctly ✅ Dialog colors are clear and readable ✅ Navigation between pages working properly. Alert system is fully implemented and ready for use. Note: No active alerts during testing, but interface is complete and functional."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Operator document upload endpoint"
+    - "Operator document download endpoint"
+    - "Operator document delete endpoint"
+    - "Forms page for document viewing"
+    - "Operators page document management UI"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
