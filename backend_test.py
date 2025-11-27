@@ -546,6 +546,9 @@ startxref
         self.test_users_management()
         self.test_export_functionality()
         
+        # Test the new Forms functionality (main focus of this review)
+        self.test_forms_functionality()
+        
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
