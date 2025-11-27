@@ -279,7 +279,6 @@ const Sales = ({ user }) => {
               </div>
             </DialogContent>
           </Dialog>
-          
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Nova Venda</Button>
