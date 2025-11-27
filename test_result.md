@@ -386,3 +386,5 @@ test_plan:
     - "User editing endpoint - PUT /api/users/{user_id}"
     - "Forced download with Content-Disposition header"
     - "Requisition field backend support"
+    - "Excel export functionality - /api/sales/export/excel"
+    - "Email alert system - SMTP configuration and sending"
