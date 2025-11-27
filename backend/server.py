@@ -338,6 +338,17 @@ async def create_sale(sale_data: SaleCreate, current_user: dict = Depends(get_cu
     sale_obj = Sale(**sale_dict)
     await db.sales.insert_one(sale_obj.model_dump())
     
+    # Create alert for new sale
+    partner = await db.partners.find_one({"id": sale_data.partner_id}, {"_id": 0})
+    partner_name = partner['name'] if partner else 'Desconhecido'
+    await create_alert(
+        "new_sale",
+        sale_obj.id,
+        sale_obj.sale_code,
+        f"Nova venda registada: {sale_obj.sale_code} - {partner_name}",
+        current_user
+    )
+    
     return sale_obj
 
 @api_router.get("/sales")
