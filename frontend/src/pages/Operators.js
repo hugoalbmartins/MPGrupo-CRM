@@ -238,6 +238,79 @@ const Operators = ({ user }) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Upload Documents Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              Gerir Formulários - {selectedOperator?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            {/* Upload Section */}
+            <div>
+              <Label>Adicionar Novos Formulários (PDF)</Label>
+              <Input
+                type="file"
+                accept=".pdf"
+                multiple
+                onChange={(e) => setUploadFiles(Array.from(e.target.files))}
+                className="mt-2"
+              />
+              {uploadFiles.length > 0 && (
+                <p className="text-sm text-gray-600 mt-2">
+                  {uploadFiles.length} ficheiro(s) selecionado(s)
+                </p>
+              )}
+              <Button
+                onClick={handleUpload}
+                disabled={uploading || uploadFiles.length === 0}
+                className="mt-3 btn-primary"
+              >
+                {uploading ? "A enviar..." : "Enviar Ficheiros"}
+              </Button>
+            </div>
+
+            {/* Existing Documents */}
+            <div>
+              <Label>Formulários Existentes</Label>
+              {selectedOperator?.documents && selectedOperator.documents.length > 0 ? (
+                <div className="space-y-2 mt-2">
+                  {selectedOperator.documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-600">📄</span>
+                        <span className="font-medium">{doc.filename}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDownloadDocument(selectedOperator.id, doc.id, doc.filename)}
+                          title="Descarregar"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteDocument(selectedOperator.id, doc.id)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 mt-2">Nenhum formulário disponível</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
