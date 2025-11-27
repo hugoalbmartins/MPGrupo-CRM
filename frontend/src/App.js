@@ -10,6 +10,7 @@ import Sales from "./pages/Sales";
 import Operators from "./pages/Operators";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile";
+import Alerts from "./pages/Alerts";
 import Layout from "./components/Layout";
 import "@/App.css";
 
