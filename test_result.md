@@ -143,6 +143,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "OPERATORS DOCUMENT MANAGEMENT UI VERIFIED. Code review confirms complete implementation: Upload dialog with file input (PDF only, multiple files), existing documents list with download/delete buttons, proper admin-only access controls, toast notifications for success/error states, FormData handling for multipart uploads. UI shows document count per operator. All CRUD operations properly integrated with backend endpoints."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE UI TESTING COMPLETED. Operators document management working perfectly: ✅ Upload buttons (📤 icon) visible for each operator ✅ Upload dialogs open correctly with proper titles (Gerir Formulários - [Operator]) ✅ File input accepts PDF files ✅ Upload functionality working with success toasts ✅ Document count display (📄 X formulário(s)) ✅ Existing documents section with download/delete buttons ✅ Admin-only access controls enforced ✅ Professional dialog styling with clear sections. All requested Portuguese UI flows tested and confirmed working."
 
 agent_communication:
   - agent: "main"
