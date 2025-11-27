@@ -164,13 +164,21 @@ const Users = ({ user }) => {
                   </div>
                 )}
                 <div className="col-span-2">
-                  <Label>Password *</Label>
+                  <Label>Password {editMode ? '(deixar vazio para não alterar)' : '*'}</Label>
                   <div className="flex gap-2">
-                    <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required className="flex-1" />
+                    <Input 
+                      value={formData.password} 
+                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                      required={!editMode}
+                      className="flex-1" 
+                    />
                     <Button type="button" onClick={generatePassword} variant="outline">Gerar</Button>
                   </div>
                   {suggestedPassword && (
                     <p className="text-sm text-gray-600 mt-1">Password gerada: <span className="font-mono font-semibold">{suggestedPassword}</span></p>
+                  )}
+                  {editMode && (
+                    <p className="text-xs text-gray-500 mt-1">Se alterar a password, o utilizador terá que mudar na próxima vez que fizer login</p>
                   )}
                 </div>
               </div>
