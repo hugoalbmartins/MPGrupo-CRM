@@ -92,7 +92,8 @@ class Operator(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
-    scope: str  # telecomunicacoes, energia, solar, dual
+    scope: str  # telecomunicacoes, energia, solar
+    energy_type: Optional[str] = None  # eletricidade, gas, dual (only for energia scope)
     active: bool = True
     hidden: bool = False
     commission_config: dict = Field(default_factory=dict)
@@ -102,6 +103,7 @@ class Operator(BaseModel):
 class OperatorCreate(BaseModel):
     name: str
     scope: str
+    energy_type: Optional[str] = None
     commission_config: dict = Field(default_factory=dict)
 
 class Sale(BaseModel):
