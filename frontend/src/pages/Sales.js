@@ -108,7 +108,20 @@ const Sales = ({ user }) => {
       const submitData = { ...formData };
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
       
-      await axios.post(`${API}/sales`, submitData);
+      const response = await axios.post(`${API}/sales`, submitData);
+      const saleId = response.data.id;
+      
+      // Upload documents if any
+      if (uploadFiles.length > 0) {
+        for (const file of uploadFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          await axios.post(`${API}/sales/${saleId}/documents`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+        }
+      }
+      
       toast.success("Venda criada com sucesso!");
       setDialogOpen(false);
       resetForm();
