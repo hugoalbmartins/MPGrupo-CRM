@@ -65,7 +65,7 @@ const Operators = ({ user }) => {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", scope: "telecomunicacoes", commission_config: {} });
+    setFormData({ name: "", scope: "telecomunicacoes", energy_type: "", commission_config: {} });
   };
 
   const openCommissionConfig = (operator) => {
