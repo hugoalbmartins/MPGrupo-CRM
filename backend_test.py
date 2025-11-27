@@ -649,7 +649,7 @@ startxref
                 "client_name": "Empresa Energia Lda",
                 "client_nif": "987654321",
                 "client_contact": "213456789",
-                "cpe": "PT0001000000000000000000AA",
+                "cpe": "PT0002123456789012AA",  # Correct CPE format: PT0002 + 12 digits + 2 letters
                 "power": "10.35 kVA",
                 "requisition": "REQ-ENERGIA-001"  # Backend should accept this even for energia
             }
