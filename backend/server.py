@@ -380,7 +380,8 @@ async def download_operator_document(operator_id: str, doc_id: str, current_user
     return FileResponse(
         path=file_path,
         filename=doc['filename'],
-        media_type='application/pdf'
+        media_type='application/pdf',
+        headers={"Content-Disposition": f"attachment; filename={doc['filename']}"}
     )
 
 # SALES ENDPOINTS
