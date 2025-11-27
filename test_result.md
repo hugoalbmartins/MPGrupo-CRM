@@ -64,6 +64,68 @@ frontend:
         agent: "main"
         comment: "Added commission column to sales table. Only visible for admin and partner users. Tested via screenshot - €60.00 and €50.00 displayed correctly."
 
+backend:
+  - task: "Operator document upload endpoint"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /api/operators/{operator_id}/upload endpoint implemented for PDF document upload. Supports multiple files, admin-only access, file validation."
+
+  - task: "Operator document download endpoint"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "GET /api/operators/{operator_id}/documents/{doc_id}/download endpoint implemented for PDF document download. Returns FileResponse with proper headers."
+
+  - task: "Operator document delete endpoint"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "DELETE /api/operators/{operator_id}/documents/{doc_id} endpoint implemented for document deletion. Admin-only access, removes file from disk and database."
+
+frontend:
+  - task: "Forms page for document viewing"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/Forms.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Forms.js page implemented with operator selection, document listing, and download functionality. Responsive design with proper navigation."
+
+  - task: "Operators page document management UI"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/Operators.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Document management UI added to Operators.js with upload dialog, document listing, download and delete functionality. Admin-only access."
+
 agent_communication:
   - agent: "main"
     message: "Issue 1 (Commission System) completed successfully. All components tested: backend calculation, frontend UI, integration. Ready to proceed with next priority tasks."
