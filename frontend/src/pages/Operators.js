@@ -15,7 +15,10 @@ const Operators = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState(null);
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     scope: "telecomunicacoes",
