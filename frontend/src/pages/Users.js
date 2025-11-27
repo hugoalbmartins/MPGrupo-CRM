@@ -125,7 +125,7 @@ const Users = ({ user }) => {
             <Button onClick={() => { resetForm(); generatePassword(); }} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Utilizador</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle className="text-2xl">Novo Utilizador</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="text-2xl">{editMode ? 'Editar Utilizador' : 'Novo Utilizador'}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
