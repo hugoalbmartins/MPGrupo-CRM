@@ -554,14 +554,16 @@ const Sales = ({ user }) => {
               </Select>
             </div>
             
-            <div>
-              <Label>Requisição (REQ)</Label>
-              <Input 
-                value={editFormData.requisition}
-                onChange={(e) => setEditFormData({...editFormData, requisition: e.target.value})}
-                placeholder="Número de requisição"
-              />
-            </div>
+            {editingSale?.scope === 'telecomunicacoes' && (
+              <div>
+                <Label>Requisição (REQ)</Label>
+                <Input 
+                  value={editFormData.requisition}
+                  onChange={(e) => setEditFormData({...editFormData, requisition: e.target.value})}
+                  placeholder="Número de requisição"
+                />
+              </div>
+            )}
 
             <div className="flex items-center gap-2">
               <input 
