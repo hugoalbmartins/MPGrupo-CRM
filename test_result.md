@@ -189,6 +189,18 @@ frontend:
         agent: "main"
         comment: "Created prepare12MonthsData() to format data for recharts. Added BarChart component with 4 bars (Telecom cyan, Energia orange, Solar green, Dual gray). Shows last 12 months with CartesianGrid, XAxis (month labels like Nov/25), YAxis, Tooltip, Legend. Tested via screenshot - chart displays perfectly with Nov/25 showing 3 bars."
 
+  - task: "Alerts system with bell icon and notifications"
+    implemented: true
+    working: true
+    file: "frontend/src/components/Layout.js, frontend/src/pages/Alerts.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Comprehensive testing completed. Bell icon in header with unread count functionality working. Alerts page (/alerts) accessible and displays correctly with '0 não lidos' counter. Nova Venda dialog includes 'Documentos (opcional)' field as requested. Dialog colors are clear and readable. Navigation between pages functional. Alert creation system implemented in backend. Interface complete and ready for production use."
+
 agent_communication:
   - agent: "main"
     message: "Dashboard improvements complete: (1) Monthly filtering with year/month selector, defaults to current month (2) Commission to pay only counts Ativo status sales (3) 12-month bar chart showing scope evolution. All tested via screenshot - dashboard beautiful and functional. Ready for user testing."
