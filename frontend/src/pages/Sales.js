@@ -155,9 +155,10 @@ const Sales = ({ user }) => {
     setUploadFiles([]);
   };
 
-  const filteredOperators = operators.filter(op => 
-    formData.scope === 'dual' || op.scope === formData.scope || op.scope === 'dual'
-  );
+  const filteredOperators = operators.filter(op => op.scope === formData.scope);
+  
+  const selectedOperator = operators.find(op => op.id === formData.operator_id);
+  const operatorEnergyType = selectedOperator?.energy_type || '';
 
   const filteredSales = selectedStatus ? sales.filter(s => s.status === selectedStatus) : sales;
 
