@@ -38,7 +38,7 @@ class MDMGrupoAPITester:
         try:
             response = requests.post(f"{self.api_url}/auth/login", json={
                 "email": "hugoalbmartins@gmail.com",
-                "password": "12345Hm"
+                "password": "12345Hm*"
             })
             
             if response.status_code == 200:
