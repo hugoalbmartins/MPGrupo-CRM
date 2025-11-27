@@ -184,7 +184,7 @@ const Users = ({ user }) => {
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
-                <Button type="submit" className="btn-primary">Criar Utilizador</Button>
+                <Button type="submit" className="btn-primary">{editMode ? 'Atualizar' : 'Criar Utilizador'}</Button>
               </div>
             </form>
           </DialogContent>
