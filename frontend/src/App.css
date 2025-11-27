@@ -349,9 +349,18 @@ tbody td {
 [role="dialog"] .bg-gray-800,
 [role="dialog"] .bg-gray-900,
 [role="dialog"] [class*="bg-gray-8"],
-[role="dialog"] [class*="bg-gray-9"] {
+[role="dialog"] [class*="bg-gray-9"],
+[role="dialog"] > div > div > div[class*="bg-"],
+[role="dialog"] div[class*="Card"] {
+  background: #FFFFFF !important;
+}
+
+/* Forçar cards Shadcn dentro de diálogos serem claros */
+[role="dialog"] [class*="Card"],
+[role="dialog"] [class*="card"] {
   background: #FFFFFF !important;
   border: 2px solid #E2E8F0 !important;
+  color: #1E293B !important;
 }
 
 [role="dialog"] .bg-blue-50 {
