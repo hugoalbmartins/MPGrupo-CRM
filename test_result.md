@@ -355,3 +355,6 @@ test_plan:
     - "Operator document delete endpoint"
     - "Forms page for document viewing"
     - "Operators page document management UI"
+    - "User editing endpoint - PUT /api/users/{user_id}"
+    - "Forced download with Content-Disposition header"
+    - "Requisition field backend support"
