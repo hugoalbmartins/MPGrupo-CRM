@@ -88,6 +88,56 @@ const Operators = ({ user }) => {
     }
   };
 
+  const openUploadDialog = (operator) => {
+    setSelectedOperator(operator);
+    setUploadFiles([]);
+    setUploadDialogOpen(true);
+  };
+
+  const handleUpload = async () => {
+    if (uploadFiles.length === 0) {
+      toast.error("Selecione pelo menos um ficheiro PDF");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      uploadFiles.forEach(file => {
+        formData.append('files', file);
+      });
+
+      await axios.post(`${API}/operators/${selectedOperator.id}/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success(`${uploadFiles.length} documento(s) enviado(s) com sucesso!`);
+      setUploadDialogOpen(false);
+      setUploadFiles([]);
+      fetchOperators();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Erro ao enviar documentos");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (operatorId, docId) => {
+    if (!window.confirm("Tem a certeza que deseja eliminar este documento?")) return;
+
+    try {
+      await axios.delete(`${API}/operators/${operatorId}/documents/${docId}`);
+      toast.success("Documento eliminado com sucesso!");
+      fetchOperators();
+    } catch (error) {
+      toast.error("Erro ao eliminar documento");
+    }
+  };
+
+  const handleDownloadDocument = (operatorId, docId, filename) => {
+    window.open(`${API}/operators/${operatorId}/documents/${docId}/download`, '_blank');
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
   return (
