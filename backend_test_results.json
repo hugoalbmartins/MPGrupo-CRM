@@ -1,87 +1,15 @@
 {
   "summary": {
-    "tests_run": 13,
-    "tests_passed": 13,
-    "success_rate": 100.0
+    "tests_run": 1,
+    "tests_passed": 0,
+    "success_rate": 0.0
   },
   "results": [
     {
       "test": "Login with initial credentials",
-      "success": true,
-      "details": "User: Hugo Martins (admin)",
-      "timestamp": "2025-11-06T12:20:12.081096"
-    },
-    {
-      "test": "Dashboard stats",
-      "success": true,
-      "details": "Total sales: 0, Total value: \u20ac0.0",
-      "timestamp": "2025-11-06T12:20:12.124224"
-    },
-    {
-      "test": "Get partners",
-      "success": true,
-      "details": "Found 0 partners",
-      "timestamp": "2025-11-06T12:20:12.166291"
-    },
-    {
-      "test": "Create partner",
-      "success": true,
-      "details": "Created partner with ID: e75022cd-78ed-45c7-b8c0-59e5bd0f31ba",
-      "timestamp": "2025-11-06T12:20:12.221780"
-    },
-    {
-      "test": "Get specific partner",
-      "success": true,
-      "details": "Retrieved partner: Test Partner",
-      "timestamp": "2025-11-06T12:20:12.263159"
-    },
-    {
-      "test": "Get operators",
-      "success": true,
-      "details": "Found 6 operators",
-      "timestamp": "2025-11-06T12:20:12.301061"
-    },
-    {
-      "test": "Default operators present",
-      "success": true,
-      "details": "Found: ['Vodafone', 'MEO', 'NOS', 'EDP', 'Galp', 'Endesa']",
-      "timestamp": "2025-11-06T12:20:12.301092"
-    },
-    {
-      "test": "Get sales",
-      "success": true,
-      "details": "Found 0 sales",
-      "timestamp": "2025-11-06T12:20:12.425738"
-    },
-    {
-      "test": "Create sale",
-      "success": true,
-      "details": "Created sale with ID: a3f2b751-a265-4d16-a038-1fd5bda8554b, Value: \u20ac1500.0",
-      "timestamp": "2025-11-06T12:20:12.489742"
-    },
-    {
-      "test": "Update sale",
-      "success": true,
-      "details": "Updated status: Aprovada, Commission: \u20ac150.0",
-      "timestamp": "2025-11-06T12:20:12.528499"
-    },
-    {
-      "test": "Get users",
-      "success": true,
-      "details": "Found 1 users",
-      "timestamp": "2025-11-06T12:20:12.568386"
-    },
-    {
-      "test": "Admin user exists",
-      "success": true,
-      "details": "Found 1 admin users",
-      "timestamp": "2025-11-06T12:20:12.568415"
-    },
-    {
-      "test": "Excel export",
-      "success": true,
-      "details": "Export successful, Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "timestamp": "2025-11-06T12:20:12.718509"
+      "success": false,
+      "details": "Status: 401, Response: {\"detail\":\"Invalid credentials\"}",
+      "timestamp": "2025-11-27T18:10:10.786438"
     }
   ]
 }
