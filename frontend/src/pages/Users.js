@@ -14,6 +14,8 @@ const Users = ({ user }) => {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingUserId, setEditingUserId] = useState(null);
   const [suggestedPassword, setSuggestedPassword] = useState("");
   const [formData, setFormData] = useState({
     name: "",
