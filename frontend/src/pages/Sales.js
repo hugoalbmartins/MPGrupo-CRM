@@ -162,7 +162,43 @@ const Sales = ({ user }) => {
   const selectedOperator = operators.find(op => op.id === formData.operator_id);
   const operatorEnergyType = selectedOperator?.energy_type || '';
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
   const filteredSales = selectedStatus ? sales.filter(s => s.status === selectedStatus) : sales;
+  
+  const sortedSales = [...filteredSales].sort((a, b) => {
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+    
+    // Handle nested values
+    if (sortField === 'partner_name') {
+      aValue = partners.find(p => p.id === a.partner_id)?.name || '';
+      bValue = partners.find(p => p.id === b.partner_id)?.name || '';
+    }
+    if (sortField === 'operator_name') {
+      aValue = operators.find(o => o.id === a.operator_id)?.name || '';
+      bValue = operators.find(o => o.id === b.operator_id)?.name || '';
+    }
+    
+    // Handle null/undefined
+    if (aValue == null) aValue = '';
+    if (bValue == null) bValue = '';
+    
+    // Sort
+    if (typeof aValue === 'string') {
+      return sortDirection === 'asc' 
+        ? aValue.localeCompare(bValue) 
+        : bValue.localeCompare(aValue);
+    }
+    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+  });
 
   const handleExportExcel = async () => {
     try {
