@@ -435,6 +435,8 @@ const Sales = ({ user }) => {
                     </div>
                   </>
                 )}
+                  </>
+                )}
                 
                 {/* Tipo de Entrada - para todas as operadoras de energia */}
                 {formData.scope === 'energia' && (
