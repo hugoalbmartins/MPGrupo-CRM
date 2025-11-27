@@ -146,6 +146,7 @@ class SaleCreate(BaseModel):
     date: str
     partner_id: str
     scope: str
+    energy_type: Optional[str] = None
     client_type: str  # particular, empresarial
     client_name: str
     client_nif: str
