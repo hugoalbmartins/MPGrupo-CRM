@@ -153,6 +153,7 @@ class SaleCreate(BaseModel):
     operator_id: str
     service_type: Optional[str] = None
     monthly_value: Optional[float] = None
+    requisition: Optional[str] = None
     cpe: Optional[str] = None
     power: Optional[str] = None
     entry_type: Optional[str] = None
