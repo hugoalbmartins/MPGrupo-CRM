@@ -477,6 +477,8 @@ const Sales = ({ user }) => {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+      </div>
 
       <div className="flex gap-2 mb-4">
         <Button onClick={() => setSelectedStatus("")} variant={selectedStatus === "" ? "default" : "outline"} size="sm">Todas</Button>
