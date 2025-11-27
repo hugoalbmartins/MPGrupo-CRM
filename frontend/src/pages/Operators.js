@@ -22,6 +22,7 @@ const Operators = ({ user }) => {
   const [formData, setFormData] = useState({
     name: "",
     scope: "telecomunicacoes",
+    energy_type: "",
     commission_config: {}
   });
 
