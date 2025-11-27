@@ -192,3 +192,5 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "Dashboard improvements complete: (1) Monthly filtering with year/month selector, defaults to current month (2) Commission to pay only counts Ativo status sales (3) 12-month bar chart showing scope evolution. All tested via screenshot - dashboard beautiful and functional. Ready for user testing."
+  - agent: "testing"
+    message: "COMPREHENSIVE END-TO-END TESTING COMPLETED SUCCESSFULLY. Fixed JSX syntax error in Sales.js (extra closing div tag). All requested flows tested with admin credentials (hugoalbmartins@gmail.com). Results: ✅ Login & Dashboard (metrics, month/year selector, 12-month chart) ✅ Partners (list, new partner dialog, NIF validation 501234560 working, edit/documents buttons) ✅ Operators (commission config interface, tabs Particular/Empresarial, Adicionar Patamar button) ✅ Sales (commission column visible, Exportar Excel button, Nova Venda dialog with Tipo de Cliente field, Edit/Notes buttons) ✅ Navigation (sidebar, profile area showing Hugo Martins, logout button). Application is fully functional and ready for production use."
