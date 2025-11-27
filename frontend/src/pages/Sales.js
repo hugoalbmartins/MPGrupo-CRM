@@ -152,6 +152,7 @@ const Sales = ({ user }) => {
       tier: "",
       observations: ""
     });
+    setUploadFiles([]);
   };
 
   const filteredOperators = operators.filter(op => 
