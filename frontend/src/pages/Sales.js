@@ -531,14 +531,48 @@ const Sales = ({ user }) => {
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Data</th>
-                <th>Parceiro</th>
-                <th>Âmbito</th>
-                <th>Cliente</th>
-                <th>Operadora</th>
-                <th>Status</th>
-                {user?.role !== 'bo' && user?.role !== 'partner_commercial' && <th>Comissão</th>}
+                <th onClick={() => handleSort('sale_code')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Código <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('date')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Data <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('partner_name')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Parceiro <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('scope')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Âmbito <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('client_name')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Cliente <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('operator_name')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Operadora <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('status')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Status <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
+                  <th onClick={() => handleSort('commission')} className="cursor-pointer hover:bg-gray-50">
+                    <div className="flex items-center gap-1">
+                      Comissão <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                )}
                 {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && <th className="text-center">Ações</th>}
               </tr>
             </thead>
