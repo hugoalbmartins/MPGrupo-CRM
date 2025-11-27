@@ -159,6 +159,33 @@ const Layout = ({ children, user, onLogout }) => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
+        {/* Header with Alerts */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+          <div></div>
+          <div className="flex items-center gap-4">
+            {/* Alerts Bell */}
+            <button
+              onClick={() => navigate('/alerts')}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Bell className="w-5 h-5 text-gray-600" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+            
+            {/* User Profile */}
+            <Link to="/profile" className="flex items-center gap-2 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                {user?.name?.charAt(0) || 'U'}
+              </div>
+              <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+            </Link>
+          </div>
+        </div>
+        
         <div className="max-w-7xl mx-auto p-6">{children}</div>
       </main>
     </div>
