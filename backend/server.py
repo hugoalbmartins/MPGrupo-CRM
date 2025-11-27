@@ -413,13 +413,22 @@ async def create_sale(sale_data: SaleCreate, current_user: dict = Depends(get_cu
     else:
         status = "Pendente"
     
-    # Calculate commission
+    # Get operator and set energy_type if applicable
     operator = await db.operators.find_one({"id": sale_data.operator_id}, {"_id": 0})
+    if not operator:
+        raise HTTPException(status_code=404, detail="Operator not found")
+    
+    # Calculate commission
     commission = 0.0
     if operator:
         commission = await calculate_commission(operator, sale_data.model_dump(), db)
     
     sale_dict = sale_data.model_dump()
+    
+    # Set energy_type from operator if scope is energia
+    if operator.get('scope') == 'energia':
+        sale_dict['energy_type'] = operator.get('energy_type', 'eletricidade')
+    
     sale_dict['sale_code'] = sale_code
     sale_dict['created_by_user_id'] = current_user['id']
     sale_dict['status'] = status
