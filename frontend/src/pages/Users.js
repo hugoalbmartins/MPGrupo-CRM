@@ -58,19 +58,40 @@ const Users = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/auth/register`, formData);
-      toast.success(`Utilizador criado! Password: ${formData.password}`, { duration: 10000 });
+      if (editMode) {
+        await axios.put(`${API}/users/${editingUserId}`, formData);
+        toast.success("Utilizador atualizado com sucesso!");
+      } else {
+        await axios.post(`${API}/auth/register`, formData);
+        toast.success(`Utilizador criado! Password: ${formData.password}`, { duration: 10000 });
+      }
       setDialogOpen(false);
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Erro ao criar utilizador");
+      toast.error(error.response?.data?.detail || `Erro ao ${editMode ? 'atualizar' : 'criar'} utilizador`);
     }
   };
 
   const resetForm = () => {
     setFormData({ name: "", email: "", password: "", role: "bo", position: "", partner_id: "" });
     setSuggestedPassword("");
+    setEditMode(false);
+    setEditingUserId(null);
+  };
+
+  const openEditDialog = (userToEdit) => {
+    setEditMode(true);
+    setEditingUserId(userToEdit.id);
+    setFormData({
+      name: userToEdit.name,
+      email: userToEdit.email,
+      password: "",
+      role: userToEdit.role,
+      position: userToEdit.position,
+      partner_id: userToEdit.partner_id || ""
+    });
+    setDialogOpen(true);
   };
 
   const getRoleIcon = (role) => {
