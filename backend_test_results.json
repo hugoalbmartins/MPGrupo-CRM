@@ -1,183 +1,207 @@
 {
   "summary": {
-    "tests_run": 29,
-    "tests_passed": 23,
-    "success_rate": 79.3103448275862
+    "tests_run": 33,
+    "tests_passed": 28,
+    "success_rate": 84.84848484848484
   },
   "results": [
     {
       "test": "Login with initial credentials",
       "success": true,
       "details": "User: Hugo Martins (admin)",
-      "timestamp": "2025-11-27T19:09:45.894565"
+      "timestamp": "2025-11-27T19:11:23.117114"
     },
     {
       "test": "Get users for editing test",
       "success": true,
       "details": "Found 11 users",
-      "timestamp": "2025-11-27T19:09:45.936537"
+      "timestamp": "2025-11-27T19:11:23.150569"
     },
     {
       "test": "Select test user",
       "success": true,
       "details": "Using non-admin user: Leirtrix (ID: 1753b32d-4212-4ce8-9489-3993a5f269f9)",
-      "timestamp": "2025-11-27T19:09:45.936569"
+      "timestamp": "2025-11-27T19:11:23.150597"
     },
     {
       "test": "Update user without password",
       "success": true,
       "details": "Updated name: 'Leirtrix (Editado)', position: 'Parceiro - Atualizado'",
-      "timestamp": "2025-11-27T19:09:45.978954"
+      "timestamp": "2025-11-27T19:11:23.186091"
     },
     {
       "test": "Verify user changes applied",
       "success": true,
       "details": "Changes confirmed: Leirtrix (Editado), Parceiro - Atualizado",
-      "timestamp": "2025-11-27T19:09:46.014977"
+      "timestamp": "2025-11-27T19:11:23.220105"
     },
     {
       "test": "Update user with password",
       "success": true,
       "details": "Password updated, must_change_password: True",
-      "timestamp": "2025-11-27T19:09:46.280859"
+      "timestamp": "2025-11-27T19:11:23.520877"
     },
     {
       "test": "Verify must_change_password flag",
       "success": true,
       "details": "must_change_password correctly set to true",
-      "timestamp": "2025-11-27T19:09:46.280908"
+      "timestamp": "2025-11-27T19:11:23.520919"
     },
     {
       "test": "Restore original user data",
       "success": true,
       "details": "User data restored to original state",
-      "timestamp": "2025-11-27T19:09:46.316546"
+      "timestamp": "2025-11-27T19:11:23.558851"
     },
     {
       "test": "Get operators for download test",
       "success": true,
       "details": "Found 10 operators",
-      "timestamp": "2025-11-27T19:09:46.351709"
+      "timestamp": "2025-11-27T19:11:23.593180"
     },
     {
       "test": "Found existing document",
       "success": true,
       "details": "Using document 91405a4d-17b7-4ff9-b96c-4fe4bade6d26 from Endesa",
-      "timestamp": "2025-11-27T19:09:46.351739"
+      "timestamp": "2025-11-27T19:11:23.593207"
     },
     {
       "test": "Download document response",
       "success": true,
       "details": "Status: 200, Size: 173341 bytes, Content-Type: application/pdf",
-      "timestamp": "2025-11-27T19:09:46.398183"
+      "timestamp": "2025-11-27T19:11:23.634043"
     },
     {
       "test": "Verify Content-Disposition header",
       "success": true,
       "details": "Header present: attachment; filename=Tarifa Quero+.pdf",
-      "timestamp": "2025-11-27T19:09:46.398214"
+      "timestamp": "2025-11-27T19:11:23.634076"
     },
     {
       "test": "Verify forced download behavior",
       "success": true,
       "details": "Content-Disposition starts with 'attachment;' - forces download",
-      "timestamp": "2025-11-27T19:09:46.398221"
+      "timestamp": "2025-11-27T19:11:23.634083"
     },
     {
       "test": "Verify file validity",
       "success": true,
       "details": "Valid PDF file: 173341 bytes",
-      "timestamp": "2025-11-27T19:09:46.398226"
+      "timestamp": "2025-11-27T19:11:23.634088"
     },
     {
       "test": "Setup requisition test",
       "success": true,
       "details": "Found 9 partners and 4 operators",
-      "timestamp": "2025-11-27T19:09:46.476001"
+      "timestamp": "2025-11-27T19:11:23.718517"
     },
     {
       "test": "Create sale with requisition (telecomunicacoes)",
-      "success": false,
-      "details": "Requisition field not saved correctly",
-      "timestamp": "2025-11-27T19:09:46.540590"
+      "success": true,
+      "details": "Sale created with requisition: REQ-TELECOM-001",
+      "timestamp": "2025-11-27T19:11:23.762409"
+    },
+    {
+      "test": "Create sale with requisition (energia)",
+      "success": true,
+      "details": "Backend accepts requisition for energia: REQ-ENERGIA-001",
+      "timestamp": "2025-11-27T19:11:23.848383"
+    },
+    {
+      "test": "Update sale requisition",
+      "success": true,
+      "details": "Requisition updated to: REQ-UPDATED-001",
+      "timestamp": "2025-11-27T19:11:23.884860"
+    },
+    {
+      "test": "Verify requisition in sales list (telecom)",
+      "success": true,
+      "details": "Requisition found: REQ-UPDATED-001",
+      "timestamp": "2025-11-27T19:11:23.925611"
+    },
+    {
+      "test": "Verify requisition in sales list (energia)",
+      "success": true,
+      "details": "Requisition found: REQ-ENERGIA-001",
+      "timestamp": "2025-11-27T19:11:23.925642"
     },
     {
       "test": "Dashboard stats",
       "success": false,
       "details": "Missing fields: ['total_value', 'sales_by_operator', 'sales_by_status', 'sales_timeline']",
-      "timestamp": "2025-11-27T19:09:46.579198"
+      "timestamp": "2025-11-27T19:11:23.970931"
     },
     {
       "test": "Get partners",
       "success": true,
       "details": "Found 9 partners",
-      "timestamp": "2025-11-27T19:09:46.614555"
+      "timestamp": "2025-11-27T19:11:24.009072"
     },
     {
       "test": "Create partner",
       "success": false,
       "details": "Status: 422, Response: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"partner_type\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"contact_person\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"street\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"door_number\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"postal_code\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"locality\"],\"msg\":\"Field required\",\"input\":{\"name\":\"Test Partner\",\"email\":\"test@partner.com\",\"phone\":\"123456789\",\"address\":\"Test Address\",\"nif\":\"123456789\",\"iban\":\"PT50000000000000000000000\",\"bank_details\":\"Test Bank\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"}]}",
-      "timestamp": "2025-11-27T19:09:46.667806"
+      "timestamp": "2025-11-27T19:11:24.048098"
     },
     {
       "test": "Get operators",
       "success": true,
       "details": "Found 4 operators",
-      "timestamp": "2025-11-27T19:09:46.701495"
+      "timestamp": "2025-11-27T19:11:24.083774"
     },
     {
       "test": "Default operators present",
       "success": false,
       "details": "Only found: ['Vodafone', 'Endesa']",
-      "timestamp": "2025-11-27T19:09:46.701526"
+      "timestamp": "2025-11-27T19:11:24.083811"
     },
     {
       "test": "Get sales",
       "success": true,
-      "details": "Found 12 sales",
-      "timestamp": "2025-11-27T19:09:46.806925"
+      "details": "Found 19 sales",
+      "timestamp": "2025-11-27T19:11:24.202896"
     },
     {
       "test": "Create sale",
       "success": false,
       "details": "Status: 422, Response: {\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"scope\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_type\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_name\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_nif\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"},{\"type\":\"missing\",\"loc\":[\"body\",\"client_contact\"],\"msg\":\"Field required\",\"input\":{\"date\":\"2025-01-15\",\"value\":1500.0,\"operator_id\":\"b5da5cc2-091a-4f6f-b5ce-e59936cb6b25\",\"partner_id\":\"da09f26f-b9d2-4f14-879b-cbbfcfe8e063\",\"final_client\":\"Test Client\",\"sale_type\":\"eletricidade\",\"cpe\":\"CPE123456\"},\"url\":\"https://errors.pydantic.dev/2.12/v/missing\"}]}",
-      "timestamp": "2025-11-27T19:09:46.849933"
+      "timestamp": "2025-11-27T19:11:24.238030"
     },
     {
       "test": "Get users",
       "success": true,
       "details": "Found 11 users",
-      "timestamp": "2025-11-27T19:09:46.887846"
+      "timestamp": "2025-11-27T19:11:24.275306"
     },
     {
       "test": "Admin user exists",
       "success": true,
       "details": "Found 1 admin users",
-      "timestamp": "2025-11-27T19:09:46.887875"
+      "timestamp": "2025-11-27T19:11:24.275332"
     },
     {
       "test": "Excel export",
       "success": false,
       "details": "Status: 500",
-      "timestamp": "2025-11-27T19:09:46.989179"
+      "timestamp": "2025-11-27T19:11:24.337564"
     },
     {
       "test": "Get operators for forms testing",
       "success": true,
       "details": "Found 10 operators",
-      "timestamp": "2025-11-27T19:09:47.026264"
+      "timestamp": "2025-11-27T19:11:24.372735"
     },
     {
       "test": "Select test operator",
       "success": true,
       "details": "Using operator: Vodafone (ID: b3ae4835-485c-4f2f-bc0d-17449e186ffb)",
-      "timestamp": "2025-11-27T19:09:47.026293"
+      "timestamp": "2025-11-27T19:11:24.372762"
     },
     {
       "test": "Forms functionality check",
       "success": true,
       "details": "No existing documents found - forms system ready for use",
-      "timestamp": "2025-11-27T19:09:47.026299"
+      "timestamp": "2025-11-27T19:11:24.372769"
     }
   ]
 }
