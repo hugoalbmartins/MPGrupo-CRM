@@ -293,6 +293,96 @@ async def delete_operator(operator_id: str, current_user: dict = Depends(get_cur
     await db.operators.delete_one({"id": operator_id})
     return {"message": "Deleted"}
 
+@api_router.post("/operators/{operator_id}/upload")
+async def upload_operator_document(
+    operator_id: str,
+    files: List[UploadFile] = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can upload documents")
+    
+    operator = await db.operators.find_one({"id": operator_id}, {"_id": 0})
+    if not operator:
+        raise HTTPException(status_code=404, detail="Operator not found")
+    
+    uploaded_docs = []
+    for file in files:
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(status_code=400, detail=f"Only PDF files allowed: {file.filename}")
+        
+        file_id = str(uuid.uuid4())
+        file_extension = file.filename.split('.')[-1]
+        filename = f"{file_id}.{file_extension}"
+        file_path = UPLOAD_DIR / filename
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        doc_info = {
+            "id": file_id,
+            "filename": file.filename,
+            "filepath": str(file_path),
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
+            "uploaded_by": current_user['id']
+        }
+        uploaded_docs.append(doc_info)
+    
+    await db.operators.update_one(
+        {"id": operator_id},
+        {"$push": {"documents": {"$each": uploaded_docs}}}
+    )
+    
+    return {"message": f"{len(uploaded_docs)} document(s) uploaded", "documents": uploaded_docs}
+
+@api_router.delete("/operators/{operator_id}/documents/{doc_id}")
+async def delete_operator_document(
+    operator_id: str,
+    doc_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can delete documents")
+    
+    operator = await db.operators.find_one({"id": operator_id}, {"_id": 0})
+    if not operator:
+        raise HTTPException(status_code=404, detail="Operator not found")
+    
+    doc = next((d for d in operator.get('documents', []) if d['id'] == doc_id), None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    file_path = Path(doc['filepath'])
+    if file_path.exists():
+        file_path.unlink()
+    
+    await db.operators.update_one(
+        {"id": operator_id},
+        {"$pull": {"documents": {"id": doc_id}}}
+    )
+    
+    return {"message": "Document deleted"}
+
+@api_router.get("/operators/{operator_id}/documents/{doc_id}/download")
+async def download_operator_document(operator_id: str, doc_id: str, current_user: dict = Depends(get_current_user)):
+    operator = await db.operators.find_one({"id": operator_id}, {"_id": 0})
+    if not operator:
+        raise HTTPException(status_code=404, detail="Operator not found")
+    
+    doc = next((d for d in operator.get('documents', []) if d['id'] == doc_id), None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    file_path = Path(doc['filepath'])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    return FileResponse(
+        path=file_path,
+        filename=doc['filename'],
+        media_type='application/pdf'
+    )
+
 # SALES ENDPOINTS
 @api_router.post("/sales", response_model=Sale)
 async def create_sale(sale_data: SaleCreate, current_user: dict = Depends(get_current_user)):
