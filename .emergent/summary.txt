@@ -4,146 +4,112 @@ O utilizador solicitou a criação de uma aplicação de CRM para registo de par
 **PRODUCT REQUIREMENTS:**
 
 1.  **Tipos de Utilizador e Permissões:**
-    *   **Administrador:** Acesso total. Vê todos os dados, incluindo comissões. Gere utilizadores, parceiros e operadoras. Dashboards com métricas globais (vendas por tipo, comissões a pagar, vendas pagas, evolução diária, vendas por estado, vendas por parceiro). Pode exportar vendas para Excel.
-    *   **Backoffice (BO):** Regista e edita vendas (estado, REQ, pagamento). Vê todas as vendas sem valores de comissão. Dashboards com quantidades de vendas por estado, evolução por parceiro, tipo de vendas e evolução diária. Pode desativar/reativar operadoras. Pode exportar vendas para Excel.
-    *   **Parceiro:** Regista e visualiza apenas as suas próprias vendas. Não pode editar, mas pode adicionar notas. Dashboard com evolução das suas vendas, valores de comissões por tipo/dia/estado e gráfico evolutivo mensal.
-    *   **Parceiro - Comercial:** Associado a um parceiro. Regista vendas e visualiza apenas as vendas registadas por si, sem acesso a comissões.
+    *   **Administrador:** Acesso total, dashboards com métricas globais, gestão total.
+    *   **Backoffice (BO):** Regista e edita vendas, vê todas as vendas sem comissões.
+    *   **Parceiro:** Regista e visualiza apenas as suas próprias vendas com comissões.
+    *   **Parceiro - Comercial:** Regista e visualiza apenas as suas próprias vendas sem comissões.
 
 2.  **Gestão de Parceiros (Apenas Admins):**
-    *   Dados: Nome, NIF (com validação de código CRC se começar por 5), tipo (D2D, Rev, Rev+), pessoa de contacto, morada completa, emails ilimitados para comunicação.
-    *   Código de parceiro gerado automaticamente (ex: ).
-    *   Criação de parceiro gera automaticamente um utilizador associado (login com email principal, password forte aleatória).
-    *   Possibilidade de anexar documentos ao parceiro.
-    *   Admins podem editar parceiros (se o email principal for alterado, o login do utilizador é atualizado).
+    *   Dados completos, incluindo NIF com validação CRC.
+    *   Geração automática de código de parceiro (ex: ).
+    *   Criação automática de utilizador associado.
+    *   Anexar documentos ao parceiro.
 
 3.  **Gestão de Operadoras (Apenas Admins):**
-    *   Dados: Nome, âmbito (Telecomunicações, Energia, Solar ou Dual).
-    *   **Sistema de Comissões Complexo:**
-        *   Multiplicador de comissão por tipo de cliente e tipo de serviço (para telecomunicações).
-        *   Valor de comissão por tipo de cliente (para energia).
-        *   Patamares de comissões (valor/multiplicador diferente acima de X vendas).
-    *   Possibilidade de ocultar operadoras para novos registos.
+    *   Configuração de operadoras por âmbito.
+    *   **Sistema de Comissões Complexo:** Multiplicadores e valores fixos por tipo de cliente/serviço, com patamares de comissão baseados no volume de vendas do parceiro para aquela operadora.
 
 4.  **Registo de Vendas:**
-    *   Campos: Data (automática/editável), Parceiro, Âmbito da venda, Nome do cliente, NIF, contacto, email, IBAN, Morada de instalação, Operadora, Observações.
-    *   Lógica condicional:
-        *   **Telecomunicações:** Pede tipo de serviço (M3/M4) e valor da mensalidade.
-        *   **Energia/Solar:** Pede CPE (validação:  + 12 dígitos + 2 letras) e potência.
-        *   **Dual:** Pede CPE (com potência) e CUI (validação:  + 15 dígitos + 2 letras) e Escalão (1-4).
-    *   Estado da Venda: , , , , .
-    *   Código de venda gerado automaticamente (ex: ).
-    *   Campo Requisição para edição por Admin/BO.
-    *   Flag Paga pelo operador com campo de data.
+    *   Formulário com campos condicionais baseados no âmbito da venda (Telecomunicações, Energia, Solar, Dual) com validações específicas (CPE, CUI).
+    *   Geração automática de código de venda (ex: ).
+    *   Gestão de estados da venda, com campos editáveis por Admin/BO.
+    *   Anexar documentos ao registar a venda.
 
-5.  **Gestão de Utilizadores e Segurança:**
-    *   Criação de utilizadores com password forte aleatória (8 caracteres, 1 maiúscula, 1 número, 1 especial).
-    *   Utilizadores podem alterar a própria password.
-    *   **Obrigatório alterar a password no primeiro login.**
-    *   Página de Perfil para cada utilizador visualizar os seus dados e alterar a password.
+5.  **Sistema de Alertas:**
+    *   Notificar Admins, BOs e o parceiro envolvido quando uma venda é registada, tem o seu estado alterado para Concluído ou Ativo, ou quando uma nota é adicionada.
 
-6.  **Outros:**
-    *   Nome da aplicação: MP Grupo - CRM.
-    *   Exportação de vendas para Excel com filtro por intervalo de datas.
-    *   Design profissional e claro, com dashboards coloridos.
+6.  **Secção Formulários:**
+    *   Permitir anexar documentos (PDFs) a cada operadora.
+    *   Menu dinâmico que lista apenas as operadoras com formulários.
+    *   Página para descarregar os formulários de cada operadora.
+
+7.  **UI/UX:**
+    *   Design profissional, dashboards coloridos.
+    *   Tabelas com scroll horizontal em ecrãs pequenos.
+    *   Diálogos (pop-ups) com cores claras para melhor legibilidade.
 
 **User's preferred language**: Portuguese
 
 **what currently exists?**
-A aplicação foi completamente refatorada do zero para acomodar os requisitos complexos do utilizador.
-- **Backend:** A estrutura do backend foi reescrita com , , e . Implementa a lógica inicial para utilizadores, parceiros, vendas e operadoras, incluindo a criação do utilizador administrador com uma password forte () e a lógica de redirecionamento para alteração de password no primeiro login. As estruturas de dados em  foram atualizadas para incluir novos campos.
-- **Frontend:** A estrutura do frontend também foi recriada. Existem páginas funcionais para Login, Dashboard, Parceiros, Vendas, Operadoras, Utilizadores e uma nova página de Perfil. Funcionalidades como a edição de parceiros, a adição de morada de instalação nas vendas e a página de perfil do utilizador foram implementadas na última sessão.
+A aplicação full-stack (React + FastAPI + MongoDB) está funcional e implementa a maioria dos requisitos.
+- **Backend:** Estrutura modular com  e ficheiros separados para modelos () e utilitários (). Inclui endpoints para utilizadores, parceiros, vendas, operadoras, dashboards por perfil, exportação para Excel, e um sistema de alertas. Uma estrutura de testes foi criada em .
+- **Frontend:** Páginas funcionais para Login, Dashboard (com visão por perfil, filtro mensal e gráfico de 12 meses), Parceiros, Vendas, Operadoras, Utilizadores e Perfil. A interface permite a configuração complexa de comissões, upload de documentos em parceiros e vendas, edição de vendas, e visualização de alertas.
+- **Funcionalidades Chave:** O sistema de comissões por patamares (calculado por parceiro e por operadora), a geração de códigos automáticos e a validação de NIF/CRC estão implementados e testados. O sistema de alertas está funcional. As melhorias de UI (scroll e clareza dos diálogos) foram implementadas.
 
 **Last working item**:
-    - Last item agent was working: O agente estava a iniciar a implementação do complexo sistema de comissões para as operadoras, conforme solicitado pelo utilizador. A tarefa foi iniciada no backend, atualizando os modelos de dados para suportar esta nova lógica.
+    - Last item agent was working: O agente estava a iniciar a implementação da secção Formulários, que permite anexar documentos às operadoras e visualizá-los num menu dedicado.
     - Status: IN PROGRESS
     - Agent Testing Done: N
     - Which testing method agent to use? both
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Concluir a implementação do sistema de comissões (P0)
-  - Issue 2: Lógica de dashboards para cada tipo de utilizador não está implementada (P1)
-  - Issue 3: Geração automática de códigos para parceiros e vendas não está implementada (P1)
-  - Issue 4: Validação detalhada de campos (CPE, CUI, CRC) no frontend precisa de ser implementada (P1)
+  - Issue 1: Concluir a implementação da secção Formulários (P0)
+  - Issue 2: Instabilidade e timeouts intermitentes no frontend (P1)
   
   **Issues Detail:**
-  - **Issue 1:** Concluir a implementação do sistema de comissões
-     - **Attempted fixes:** O agente começou por atualizar os modelos no backend em  para incluir os campos  na venda e uma estrutura de comissões no operador. Estava prestes a criar a função  em .
+  - **Issue 1:** Concluir a implementação da secção Formulários
+     - **Attempted fixes:** O agente começou a implementação no backend, adicionando a lógica para suportar o anexo de documentos às operadoras. O frontend ainda não foi implementado.
      - **Next debug checklist:**
-        1.  Finalizar a função  em  para incluir lógica de multiplicadores, valores fixos e patamares.
-        2.  Atualizar os endpoints de criação/edição de vendas em  para calcular e guardar a comissão.
-        3.  Criar uma interface na página  para que os administradores possam configurar as regras de comissão (multiplicadores, patamares) para cada operadora.
-        4.  Exibir a comissão calculada nas listagens de vendas e dashboards relevantes.
-     - **Why fix this issue and what will be achieved with the fix?** Esta é uma funcionalidade central para o negócio do utilizador, permitindo o cálculo automático e flexível das comissões das vendas.
+        1. Verificar se o endpoint de upload para operadoras está completo no backend ().
+        2. No frontend, modificar  para adicionar um botão e um diálogo que permita aos administradores fazer o upload de documentos para uma operadora.
+        3. Modificar  para adicionar o item de menu Formulários com um submenu dinâmico que liste apenas as operadoras que têm documentos anexados.
+        4. Criar uma nova página  para ser a página principal da secção, que mostra uma mensagem genérica e botões para as páginas de cada operadora.
+        5. Criar uma página dinâmica (ou rota) para exibir os documentos de uma operadora específica para download.
+        6. Adicionar as novas rotas em .
+     - **Why fix this issue and what will be achieved with the fix?** É o último requisito explícito do utilizador, que centralizará o acesso a documentos importantes das operadoras.
      - **Status:** IN PROGRESS
      - **Is recurring issue?** N
      - **Should Test frontend/backend/both after fix?** both
      - **Blocked on other issue:** None
 
-  - **Issue 2:** Lógica de dashboards para cada tipo de utilizador
-     - **Attempted fixes:** A página de Dashboard () existe, mas apresenta uma vista genérica e não está adaptada às permissões e métricas específicas de cada um dos quatro tipos de utilizador (Administrador, Backoffice, Parceiro, Parceiro-Comercial).
+  - **Issue 2:** Instabilidade e timeouts intermitentes no frontend
+     - **Attempted fixes:** O agente reiniciou o serviço do frontend quando encontrou problemas (página preta, timeouts em screenshots). No entanto, não foi feita uma investigação aprofundada da causa.
      - **Next debug checklist:**
-        1.  Criar endpoints de dashboard específicos no backend () para cada tipo de utilizador, que retornem apenas os dados permitidos.
-        2.  Em , obter o tipo de utilizador atual e fazer a chamada ao endpoint correspondente.
-        3.  Renderizar condicionalmente os gráficos e métricas corretas com base no tipo de utilizador.
-     - **Why fix this issue and what will be achieved with the fix?** Garante que cada utilizador tenha acesso apenas à informação pertinente e permitida, melhorando a segurança e a experiência de utilizador.
+        1. Após completar uma funcionalidade, executar vários testes de screenshot em diferentes páginas (, , ) para garantir que a aplicação carrega de forma consistente.
+        2. Se um timeout ou ecrã preto ocorrer, verificar a consola do browser (através do log do screenshot) por erros de React/JavaScript.
+        3. Analisar o código recentemente adicionado às páginas  e , pois os problemas começaram após grandes modificações nestes ficheiros (adição de múltiplos diálogos, estados e handlers de eventos).
+     - **Why fix this issue and what will be achieved with the fix?** Garante que a aplicação é estável e usável em produção, resolvendo potenciais erros de renderização ou performance no frontend.
      - **Status:** NOT STARTED
-     - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on other issue:** None
-
-  - **Issue 3:** Geração automática de códigos para parceiros e vendas
-     - **Attempted fixes:** Nenhum. A lógica atual usa UUIDs.
-     - **Next debug checklist:**
-        1.  No backend (), modificar o endpoint de criação de parceiros para gerar um código sequencial com base no tipo (ex: ). Será necessário guardar o último número sequencial.
-        2.  Modificar o endpoint de criação de vendas para gerar um código com base nas 3 primeiras letras do parceiro, um número sequencial por mês e o número do mês (ex: ).
-     - **Why fix this issue and what will be achieved with the fix?** Implementa uma regra de negócio específica do utilizador para identificadores legíveis e organizados.
-     - **Status:** NOT STARTED
-     - **Is recurring issue?** N
-     - **Should Test frontend/backend/both after fix?** backend
-     - **Blocked on other issue:** None
-
-  - **Issue 4:** Validação detalhada de campos no frontend
-     - **Attempted fixes:** Nenhum.
-     - **Next debug checklist:**
-        1.  Na página , adicionar validações de formato para os campos CPE e CUI usando expressões regulares.
-        2.  Na página , adicionar a validação para o NIF e o código CRC.
-     - **Why fix this issue and what will be achieved with the fix?** Aumenta a qualidade dos dados inseridos, evitando erros no registo.
-     - **Status:** NOT STARTED
-     - **Is recurring issue?** N
+     - **Is recurring issue?** Y
      - **Should Test frontend/backend/both after fix?** frontend
      - **Blocked on other issue:** None
 
 **In progress Task List**:
-- **Task 1**: Implementação do sistema de comissões
-     - **Where to resume**: Continuar o desenvolvimento no backend, criando a função  em .
-     - **What will be achieved with this?** A aplicação será capaz de calcular comissões de forma dinâmica com base em regras complexas definidas por operadora.
+- **Task 1**: Implementação da secção Formulários
+     - **Where to resume**: O backend foi preparado. O próximo passo é focar no frontend: modificar a página  para permitir o upload e depois criar a nova secção de menu e páginas em  e .
+     - **What will be achieved with this?** A aplicação terá uma secção dedicada para os utilizadores descarregarem formulários e documentos oficiais de cada operadora.
      - **Status:** IN PROGRESS
      - **Should Test frontend/backend/both after fix?** both
      - **Blocked on something:** None
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks:**
-  - (P1) Implementar os dashboards específicos para cada perfil de utilizador.
-  - (P1) Implementar a geração automática de códigos para parceiros e vendas.
-  - (P1) Implementar a anexação de documentos na criação/edição de parceiros.
-  - (P1) Implementar a exportação de vendas para Excel com filtro de data.
-- **Future Tasks:**
-  - (P2) Realizar uma revisão completa de todas as permissões para garantir que cada perfil (Admin, BO, Parceiro, Comercial) só pode ver e fazer o que está definido nos requisitos.
-  - (P2) Adicionar feedback visual (toasts/sonner) para todas as operações de CRUD (criação, edição, exclusão).
+- Após a conclusão da secção Formulários, todos os requisitos iniciais do utilizador terão sido abordados. Os próximos passos serão baseados em novo feedback do utilizador.
 
 **Completed work in this session**
-- Refatoração completa da aplicação (backend e frontend) para um modelo mais complexo e modular.
-- Implementação da estrutura base para os 4 tipos de utilizadores.
-- Implementação de um sistema de password forte e alteração obrigatória no primeiro login.
-- Atualização da password do utilizador administrador a pedido.
-- Criação de uma página de Perfil para visualização de dados e alteração de password.
-- Implementação da funcionalidade de edição de parceiros por administradores, incluindo a atualização do login do utilizador se o email for alterado.
-- Adição de novos campos ao formulário de vendas (,  para âmbito Dual).
-- Alteração do nome da aplicação para MP Grupo - CRM.
+- **Sistema de Comissões (Issue 1):** Implementado e refinado o complexo sistema de comissões, com patamares por parceiro e por operadora.
+- **Dashboards por Perfil (Issue 2):** Implementados dashboards específicos para cada tipo de utilizador (Admin, BO, Parceiro), com filtro mensal e um gráfico de evolução dos últimos 12 meses.
+- **Geração de Códigos (Issue 3):** Validada e confirmada a funcionalidade de geração automática de códigos para parceiros e vendas.
+- **Validação NIF/CRC (Issue 4):** Implementada a validação no backend e frontend para NIFs de empresas (iniciados por 5).
+- **Sistema de Alertas:** Criado um sistema de notificações completo (backend e frontend) para eventos importantes nas vendas.
+- **Gestão de Documentos:** Implementada a funcionalidade de anexar documentos na criação/edição de parceiros e na criação de vendas.
+- **Edição de Vendas:** Adicionada a capacidade de Admins/BOs editarem vendas e adicionarem notas através da UI.
+- **Exportação para Excel:** Implementada a funcionalidade de exportar vendas para um ficheiro Excel, com filtro de datas.
+- **Melhorias de UI/UX:** As tabelas foram tornadas responsivas com scroll horizontal e o design dos diálogos foi tornado mais claro e legível.
+- **Refatoração e Testes:** A estrutura do backend foi refatorada para melhor organização e foram criados 11 testes unitários para a lógica de comissões.
 
 **Earlier issues found/mentioned but not fixed**
-N/A - Os problemas anteriores (como erros de JSX) foram corrigidos. As funcionalidades em falta são de requisitos novos ou da grande refatoração e estão listadas como pendentes.
+N/A
 
 **Known issue recurrence from previous fork**
 N/A
@@ -152,73 +118,76 @@ N/A
 
 
 **Key Technical Concepts**
-- **Backend:** FastAPI, Pydantic para modelação de dados, Motor para acesso assíncrono ao MongoDB, Passlib para hashing de passwords, JWT para autenticação.
-- **Frontend:** React, React Router para navegação, Axios para chamadas API, TailwindCSS para estilização.
+- **Backend:** FastAPI, Pydantic, Motor (MongoDB async), Passlib, JWT, openpyxl, pandas.
+- **Frontend:** React, React Router, Axios, TailwindCSS, Recharts.
 - **Database:** MongoDB.
-- **Architecture:** Aplicação Full-Stack com separação clara entre o backend API e o frontend React.
+- **Architecture:** API RESTful (FastAPI) e Single Page Application (React).
 
 **key DB schema**
-(definido em )
-- **User:** uid=0(root) gid=0(root) groups=0(root), , , ,  (Admin, Backoffice, Partner, Partner-Commercial),  (se aplicável), .
-- **Partner:** uid=0(root) gid=0(root) groups=0(root), , , , , , , , , .
-- **Operator:** uid=0(root) gid=0(root) groups=0(root), ,  (Telecomunicações, Energia, etc.), ,  (objeto complexo com multiplicadores, patamares, etc).
-- **Sale:** uid=0(root) gid=0(root) groups=0(root), , Wed Nov 26 01:47:18 UTC 2025, , , , , , , , , , e outros campos específicos do tipo de venda (CPE, CUI, etc.).
+- **User:** uid=0(root) gid=0(root) groups=0(root), , , , , , .
+- **Partner:** uid=0(root) gid=0(root) groups=0(root), , , , , ,  (List[str]).
+- **Operator:** uid=0(root) gid=0(root) groups=0(root), , , , ,  (List[str]).
+- **Sale:** uid=0(root) gid=0(root) groups=0(root), , , , , , , , .
+- **Alert:** uid=0(root) gid=0(root) groups=0(root), , , , , .
 - **Note:** uid=0(root) gid=0(root) groups=0(root), , , , .
 
 **changes in tech stack**
-N/A
+-  foi adicionado para gráficos no frontend.
+- , ,  foram usados para a exportação de Excel no backend.
 
 **All files**
-- : Criado para separar os modelos Pydantic do ficheiro principal do servidor, melhorando a organização.
-- : Criado para conter funções de utilidade, como hashing de passwords, para manter o  mais limpo.
-- : Reescrito para ser mais modular, importando de  e , e para implementar a nova lógica de negócio.
-- : Todas as páginas nesta diretoria foram reescritas ou criadas do zero durante a refatoração para corresponder ao novo design e requisitos.
-- : Ficheiro novo para permitir aos utilizadores gerir os seus dados.
-- : Ficheiro novo para o fluxo de alteração de password obrigatória.
-- : Atualizado para incluir a navegação para a nova página de Perfil.
-- : Criado para armazenar documentos anexados.
+- : Modificado extensivamente para adicionar endpoints de dashboard por perfil, exportação de Excel, sistema de alertas e edição de vendas.
+- : A função  foi refatorada várias vezes para corresponder à lógica de patamares por parceiro/operadora. Adicionada .
+- : Adicionado o modelo  e o campo  aos modelos  e .
+- : Nova diretoria com testes para a lógica de comissões.
+- : Completamente reescrito para suportar visões por perfil, filtro de data e o novo gráfico de 12 meses.
+- : Modificado para adicionar a coluna de comissão, botões/diálogos para edição de vendas e adição de notas, UI para exportação de Excel e campo de upload de ficheiros na criação.
+- : Modificado para adicionar validação de NIF/CRC em tempo real e a UI para gestão de documentos do parceiro.
+- : Modificado para integrar o componente de configuração de comissões.
+- : Novo componente para a UI de configuração de comissões.
+- : Modificado para integrar o sistema de alertas (ícone, contador e painel).
+- : Nova página para listar todos os alertas do utilizador.
+- : Adicionada a rota para a página .
+- : Adicionados estilos para responsividade das tabelas (scroll) e para melhorar a visibilidade dos diálogos.
+- : Novo documento de arquitetura.
+- : Atualizado ao longo da sessão.
 
 **Areas that need refactoring**:
-- A lógica de renderização condicional em  e outras páginas precisa de ser implementada para se adaptar aos diferentes tipos de utilizadores. Atualmente, a maior parte do conteúdo é estático ou genérico.
+- O frontend, especialmente os ficheiros  e , tornaram-se muito grandes e complexos. Extrair os diálogos (modals) e outras lógicas para componentes separados poderia melhorar a manutenção.
 
 **key api endpoints**
-- : Autenticação de utilizadores.
-- : Obter dados do utilizador autenticado.
-- : Alterar a password do utilizador.
-- : CRUD para parceiros.
-- : CRUD para vendas.
-- : CRUD para operadoras.
-- : Endpoint para dados do dashboard (precisa ser dividido por perfil).
-- : Upload de documentos para uma venda.
-- : Adicionar notas a uma venda.
+- 
+- , 
+- ,  (PUT, GET), 
+- , 
+- , ,  (aceitam query params  e )
+- 
+- , , 
 
 **Critical Info for New Agent**
-- A aplicação passou por uma refatoração completa e massiva. Não confie na estrutura de código anterior à mensagem .
-- O login do administrador inicial é  com a password .
-- A lógica de negócio mais complexa, especialmente em torno das comissões, dashboards específicos por perfil e geração de códigos, ainda não foi implementada e é a principal prioridade.
-- O agente anterior usou a ferramenta  várias vezes, declarando o sistema como 100% funcional prematuramente. É crucial testar exaustivamente todas as novas implementações e não assumir que as funcionalidades estão completas.
+- A lógica de cálculo de comissões é o coração do sistema: os patamares são definidos por operadora e aplicados com base na contagem de vendas de um parceiro **para essa operadora específica**. Os contadores são independentes entre operadoras.
+- O frontend tem mostrado sinais de instabilidade (timeouts, ecrãs pretos) após grandes modificações. É crucial testar a UI de forma consistente após cada alteração.
+- A tarefa atualmente em progresso é a secção Formulários. O trabalho de backend foi iniciado, mas toda a implementação do frontend ainda está pendente.
 
 **documents created in this job**
-N/A
+- 
+- 
+- 
 
 **Last 5 User Messages and any pending user messages**
-1.  **User (Msg 264):** Solicitou várias melhorias:  para vendas Dual, campo , visualização de utilizador/password na criação de parceiro, edição de parceiros por admins e uma página de perfil do utilizador. **Status:** Implementado.
-2.  **Agent (Msg 304):** Confirmou a implementação das melhorias e usou  novamente.
-3.  **User (Msg 305):** Respondeu prosseguir.
-4.  **Agent (Msg 307):** Reconfirmou a próxima tarefa com o utilizador.
-5.  **User (Msg 308):** Reafirmou o requisito complexo para o sistema de comissões das operadoras, detalhando a necessidade de multiplicadores, patamares e a capacidade de ocultar operadoras. **Status:** Em progresso.
+1.  **User (Msg 383):** Solicitou melhorias na UI: tabelas com scroll horizontal para ecrãs pequenos e diálogos (pop-ups) com cores mais claras. **Status:** Implementado.
+2.  **User (Msg 412):** Solicitou um sistema de alertas para novas vendas, alterações de estado e novas notas, e a capacidade de anexar documentos no registo de vendas. **Status:** Implementado.
+3.  **User (Msg 475):** Solicitou a funcionalidade Formulários: anexar PDFs às operadoras e mostrá-los num menu e página dedicados. **Status:** Em progresso.
+4.  **User (Msg 282):** Disse para proceder com o resto dos procedimentos em falta (após o agente se ter bloqueado na exportação para excel). **Status:** Concluído.
+5.  **User (Msg 331):** Disse para proceder restantes pendentes. **Status:** Concluído.
 
 **Project Health Check:**
-- **Broken:**
-  - A lógica dos dashboards não diferencia os tipos de utilizador.
-  - A geração de códigos personalizados para parceiros e vendas não está implementada.
-  - A validação de frontend para campos como CPE e CUI está em falta.
-- **Mocked:**
-  - Os dados nos dashboards são provavelmente genéricos/estáticos e não refletem os cálculos reais por perfil.
+- **Broken:** Ocasionalmente, o frontend falha ao carregar ou responde com timeouts, especialmente após modificações em componentes complexos como . Isto sugere potenciais problemas de performance ou erros de renderização que precisam de ser investigados.
+- **Mocked:** N/A.
 
 **Testing status**
-  - Testing agent used after significant changes: NO (O testing agent não foi usado após a grande refatoração).
-  - Troubleshoot agent used after agent stuck in loop: N/A
+  - Testing agent used after significant changes: YES (usado no final da sessão, corrigiu um erro de JSX e validou o fluxo geral).
+  - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: []
   - Known regressions: N/A
 
@@ -228,6 +197,4 @@ N/A
   - **Password:** 
 
 **What agent forgot to execute**
-- O agente não realizou testes abrangentes, especialmente usando o , após a refatoração completa do sistema.
-- O agente não implementou vários requisitos detalhados da grande lista fornecida pelo utilizador na , como a geração de códigos (), dashboards específicos por perfil e a exportação para Excel.
-- O agente não implementou a funcionalidade de anexar documentos ao criar/editar um parceiro.</analysis>
+- O agente não investigou a fundo as causas dos timeouts e ecrãs pretos no frontend, optando por reiniciar os serviços e seguir em frente. A estabilidade geral da UI precisa de ser confirmada.</analysis>
