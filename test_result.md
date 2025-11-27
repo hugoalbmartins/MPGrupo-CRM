@@ -147,6 +147,46 @@ frontend:
         agent: "testing"
         comment: "COMPREHENSIVE UI TESTING COMPLETED. Operators document management working perfectly: ✅ Upload buttons (📤 icon) visible for each operator ✅ Upload dialogs open correctly with proper titles (Gerir Formulários - [Operator]) ✅ File input accepts PDF files ✅ Upload functionality working with success toasts ✅ Document count display (📄 X formulário(s)) ✅ Existing documents section with download/delete buttons ✅ Admin-only access controls enforced ✅ Professional dialog styling with clear sections. All requested Portuguese UI flows tested and confirmed working."
 
+backend:
+  - task: "User editing endpoint - PUT /api/users/{user_id}"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "CORRECTION 1 TESTED SUCCESSFULLY. PUT /api/users/{user_id} endpoint working perfectly. Tested user data updates (name, position) without password - changes applied correctly. Tested password updates - must_change_password flag correctly set to true. Password field is optional as required. All functionality verified with admin credentials."
+
+  - task: "Forced download with Content-Disposition header"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "CORRECTION 2 TESTED SUCCESSFULLY. Document download endpoint GET /api/operators/{operator_id}/documents/{doc_id}/download now includes proper Content-Disposition header with 'attachment; filename=...' format. Forces download instead of preview as required. Tested with existing PDF document (173341 bytes) - header present and correctly formatted."
+
+  - task: "Requisition field backend support"
+    implemented: true
+    working: true
+    file: "backend/models.py, backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "Initial test failed - requisition field missing from SaleCreate model"
+      - working: true
+        agent: "testing"
+        comment: "CORRECTION 3 FIXED AND TESTED SUCCESSFULLY. Added requisition field to SaleCreate model in models.py. Backend now accepts requisition field for any scope (telecomunicacoes, energia, solar, dual) during sale creation and updates. Tested with telecomunicacoes and energia scopes - requisition field properly saved and retrieved. Frontend validation (showing field only for telecomunicacoes) is handled by frontend code."
+
 agent_communication:
   - agent: "main"
     message: "Issue 1 (Commission System) completed successfully. All components tested: backend calculation, frontend UI, integration. Ready to proceed with next priority tasks."
