@@ -308,7 +308,6 @@ const Sales = ({ user }) => {
                       <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
                       <SelectItem value="energia">Energia</SelectItem>
                       <SelectItem value="solar">Solar</SelectItem>
-                      <SelectItem value="dual">Dual</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
