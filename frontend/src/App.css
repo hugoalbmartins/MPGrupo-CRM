@@ -344,3 +344,37 @@ tbody td {
   background: #F1F5F9 !important;
   border: 1px solid #E2E8F0 !important;
 }
+
+/* Cards escuros dentro de diálogos devem ser claros */
+[role="dialog"] .bg-gray-800,
+[role="dialog"] .bg-gray-900,
+[role="dialog"] [class*="bg-gray-8"],
+[role="dialog"] [class*="bg-gray-9"] {
+  background: #FFFFFF !important;
+  border: 2px solid #E2E8F0 !important;
+}
+
+[role="dialog"] .bg-blue-50 {
+  background: #EFF6FF !important;
+  border: 1px solid #BFDBFE !important;
+}
+
+/* Texto em cards dentro de diálogos */
+[role="dialog"] .text-gray-300,
+[role="dialog"] .text-gray-400,
+[role="dialog"] .text-gray-500 {
+  color: #64748B !important;
+}
+
+[role="dialog"] .text-gray-600,
+[role="dialog"] .text-gray-700 {
+  color: #475569 !important;
+}
+
+[role="dialog"] .text-blue-900 {
+  color: #1E3A8A !important;
+}
+
+[role="dialog"] .text-blue-800 {
+  color: #1E40AF !important;
+}
