@@ -431,26 +431,24 @@ const Sales = ({ user }) => {
                             <SelectContent>
                               {["1", "2", "3", "4"].map(t => <SelectItem key={t} value={t}>Escalão {t}</SelectItem>)}
                             </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Tipo de Entrada - para todas as operadoras de energia */}
+                    <div className="col-span-2">
+                      <Label>Tipo de Entrada *</Label>
+                      <Select value={formData.entry_type} onValueChange={(v) => setFormData({...formData, entry_type: v})}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
+                          <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
+                          <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
+                        </SelectContent>
                       </Select>
                     </div>
                   </>
-                )}
-                </>
-                )}
-                
-                {/* Tipo de Entrada - para todas as operadoras de energia */}
-                {formData.scope === 'energia' && (
-                  <div className="col-span-2">
-                    <Label>Tipo de Entrada *</Label>
-                    <Select value={formData.entry_type} onValueChange={(v) => setFormData({...formData, entry_type: v})}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
-                        <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
-                        <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                 )}
                 
                 <div className="col-span-2">
