@@ -1200,6 +1200,37 @@ async def get_users(current_user: dict = Depends(get_current_user)):
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
     return [User(**u) for u in users]
 
+@api_router.put("/users/{user_id}")
+async def update_user(user_id: str, user_data: UserCreate, current_user: dict = Depends(get_current_user)):
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can update users")
+    
+    # Check if user exists
+    existing_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prepare update data
+    update_data = {
+        "name": user_data.name,
+        "email": user_data.email,
+        "role": user_data.role,
+        "position": user_data.position,
+        "partner_id": user_data.partner_id
+    }
+    
+    # Only update password if provided
+    if user_data.password:
+        if not validate_password(user_data.password):
+            raise HTTPException(status_code=400, detail="Password must be 8+ chars with 1 uppercase, 1 digit, 1 special char")
+        update_data['password_hash'] = hash_password(user_data.password)
+        update_data['must_change_password'] = True
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    return User(**updated_user)
+
 app.include_router(api_router)
 
 app.add_middleware(
