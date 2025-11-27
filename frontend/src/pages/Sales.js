@@ -580,7 +580,7 @@ const Sales = ({ user }) => {
               {filteredSales.length === 0 ? (
                 <tr><td colSpan={user?.role === 'partner_commercial' ? 7 : 9} className="text-center py-8 text-gray-400">Nenhuma venda encontrada</td></tr>
               ) : (
-                filteredSales.map((sale) => (
+                sortedSales.map((sale) => (
                   <tr key={sale.id}>
                     <td className="font-semibold text-blue-600">{sale.sale_code}</td>
                     <td>{new Date(sale.date).toLocaleDateString('pt-PT')}</td>
