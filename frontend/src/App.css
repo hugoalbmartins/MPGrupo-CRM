@@ -250,3 +250,63 @@ tbody td {
 .bg-orange { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
 .bg-red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
 .bg-cyan { background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); }
+
+/* Dialog Improvements - Cores Mais Claras */
+[role="dialog"] {
+  background: #FFFFFF !important;
+  border: 2px solid #E2E8F0 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+[role="dialog"] h2,
+[role="dialog"] .dialog-title {
+  color: #1E293B !important;
+  font-weight: 700 !important;
+  font-size: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+[role="dialog"] label {
+  color: #334155 !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+[role="dialog"] input,
+[role="dialog"] select,
+[role="dialog"] textarea {
+  border: 2px solid #CBD5E1 !important;
+  background: #F8FAFC !important;
+  color: #1E293B !important;
+  font-size: 1rem !important;
+}
+
+[role="dialog"] input:focus,
+[role="dialog"] select:focus,
+[role="dialog"] textarea:focus {
+  border-color: #3B82F6 !important;
+  background: #FFFFFF !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+[role="dialog"] button {
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+}
+
+[role="dialog"] .text-sm,
+[role="dialog"] .text-xs {
+  color: #64748B !important;
+}
+
+/* Melhor contraste em cards dentro de diálogos */
+[role="dialog"] .bg-gray-50,
+[role="dialog"] .bg-gray-100 {
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+}
