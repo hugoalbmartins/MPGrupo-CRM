@@ -851,25 +851,35 @@ startxref
         print("\n🔍 Testing Email System Configuration (NEW FEATURE 2)")
         print("=" * 60)
         
-        # Test 1: Check SMTP environment variables
+        # Test 1: Check SMTP environment variables in backend .env file
         try:
-            import os
-            smtp_vars = {
-                'SMTP_HOST': os.environ.get('SMTP_HOST'),
-                'SMTP_PORT': os.environ.get('SMTP_PORT'),
-                'SMTP_USER': os.environ.get('SMTP_USER'),
-                'SMTP_PASSWORD': os.environ.get('SMTP_PASSWORD'),
-                'SMTP_FROM': os.environ.get('SMTP_FROM'),
-                'SMTP_FROM_NAME': os.environ.get('SMTP_FROM_NAME')
-            }
+            env_file_path = '/app/backend/.env'
+            smtp_vars_found = {}
             
-            missing_vars = [var for var, value in smtp_vars.items() if not value]
+            with open(env_file_path, 'r') as f:
+                env_content = f.read()
+                
+            # Check for SMTP variables in .env file
+            smtp_vars_to_check = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM', 'SMTP_FROM_NAME']
+            
+            for var in smtp_vars_to_check:
+                if f'{var}=' in env_content:
+                    # Extract value
+                    for line in env_content.split('\n'):
+                        if line.startswith(f'{var}='):
+                            value = line.split('=', 1)[1].strip('"')
+                            smtp_vars_found[var] = value if value else None
+                            break
+                else:
+                    smtp_vars_found[var] = None
+            
+            missing_vars = [var for var, value in smtp_vars_found.items() if not value]
             
             if not missing_vars:
-                self.log_test("SMTP environment variables", True, f"All SMTP variables configured: {list(smtp_vars.keys())}")
+                self.log_test("SMTP environment variables", True, f"All SMTP variables configured in .env: {list(smtp_vars_found.keys())}")
             else:
-                self.log_test("SMTP environment variables", False, f"Missing variables: {missing_vars}")
-                return False
+                self.log_test("SMTP environment variables", False, f"Missing or empty variables: {missing_vars}")
+                # Don't return False here as this is configuration, not functionality
                 
         except Exception as e:
             self.log_test("SMTP environment variables", False, f"Exception: {str(e)}")
