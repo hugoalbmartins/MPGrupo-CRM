@@ -172,3 +172,47 @@ async def calculate_commission(operator, sale_data, db) -> float:
     else:
         # Fixed commission value
         return applicable_tier.get('commission_value', 0)
+
+
+import os
+import aiosmtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+async def send_email(to_emails: list, subject: str, html_content: str):
+    """Send email using SMTP configuration from environment variables"""
+    try:
+        smtp_host = os.environ.get('SMTP_HOST', 'mail.marciopinto.pt')
+        smtp_port = int(os.environ.get('SMTP_PORT', '465'))
+        smtp_user = os.environ.get('SMTP_USER', 'crm-noreply@marciopinto.pt')
+        smtp_password = os.environ.get('SMTP_PASSWORD', '')
+        smtp_from = os.environ.get('SMTP_FROM', 'crm-noreply@marciopinto.pt')
+        smtp_from_name = os.environ.get('SMTP_FROM_NAME', 'MP Grupo CRM')
+        
+        # Create message
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = f"{smtp_from_name} <{smtp_from}>"
+        message['To'] = ', '.join(to_emails)
+        
+        # Attach HTML content
+        html_part = MIMEText(html_content, 'html', 'utf-8')
+        message.attach(html_part)
+        
+        # Send email via SSL/TLS
+        await aiosmtplib.send(
+            message,
+            hostname=smtp_host,
+            port=smtp_port,
+            username=smtp_user,
+            password=smtp_password,
+            use_tls=True,
+            start_tls=False
+        )
+        
+        print(f"✅ Email sent successfully to: {', '.join(to_emails)}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error sending email: {str(e)}")
+        return False
