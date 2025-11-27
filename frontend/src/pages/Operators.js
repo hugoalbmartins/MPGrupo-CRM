@@ -191,8 +191,8 @@ const Operators = ({ user }) => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {['telecomunicacoes', 'energia', 'solar', 'dual'].map(scope => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {['telecomunicacoes', 'energia', 'solar'].map(scope => (
           <div key={scope} className="professional-card p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4 capitalize">{scope}</h2>
             <div className="space-y-2">
