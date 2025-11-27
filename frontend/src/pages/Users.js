@@ -204,6 +204,14 @@ const Users = ({ user }) => {
                 <p className="text-xs text-gray-500 mt-1">{u.email}</p>
                 <p className="text-xs text-gray-500">{u.position}</p>
               </div>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => openEditDialog(u)}
+                title="Editar utilizador"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         ))}
