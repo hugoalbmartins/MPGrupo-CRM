@@ -442,6 +442,21 @@ const Sales = ({ user }) => {
                   <Label>Observações</Label>
                   <Textarea value={formData.observations} onChange={(e) => setFormData({...formData, observations: e.target.value})} rows={3} />
                 </div>
+
+                <div className="col-span-2">
+                  <Label>Documentos (opcional)</Label>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => setUploadFiles(Array.from(e.target.files))}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {uploadFiles.length > 0 && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      {uploadFiles.length} ficheiro(s) selecionado(s)
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
