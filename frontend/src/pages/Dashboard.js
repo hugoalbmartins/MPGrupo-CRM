@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ShoppingCart, Phone, Zap, Sun, Award, CheckCircle } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { supabase } from "../lib/supabase";
+import { dashboardService } from "../services/dashboardService";
 
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
@@ -16,8 +16,8 @@ const Dashboard = ({ user }) => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API}/dashboard/stats?year=${selectedYear}&month=${selectedMonth}`);
-      setStats(response.data);
+      const data = await dashboardService.getStats(selectedYear, selectedMonth);
+      setStats(data);
     } catch (error) {
       toast.error("Erro ao carregar estatísticas");
     } finally {

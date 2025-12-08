@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "../lib/supabase";
+import { usersService } from "../services/usersService";
+import { partnersService } from "../services/partnersService";
+import { generateStrongPassword } from "../lib/utils-crm";
 
 const Users = ({ user }) => {
   const [users, setUsers] = useState([]);
@@ -31,12 +33,12 @@ const Users = ({ user }) => {
 
   const fetchData = async () => {
     try {
-      const [usersRes, partnersRes] = await Promise.all([
-        axios.get(`${API}/users`),
-        axios.get(`${API}/partners`)
+      const [usersData, partnersData] = await Promise.all([
+        usersService.getAll(),
+        partnersService.getAll()
       ]);
-      setUsers(usersRes.data);
-      setPartners(partnersRes.data);
+      setUsers(usersData);
+      setPartners(partnersData);
     } catch (error) {
       toast.error("Erro ao carregar dados");
     } finally {
@@ -44,31 +46,31 @@ const Users = ({ user }) => {
     }
   };
 
-  const generatePassword = async () => {
-    try {
-      const response = await axios.get(`${API}/auth/generate-password`);
-      setSuggestedPassword(response.data.password);
-      setFormData({ ...formData, password: response.data.password });
-    } catch (error) {
-      toast.error("Erro ao gerar password");
-    }
+  const generatePassword = () => {
+    const password = generateStrongPassword();
+    setSuggestedPassword(password);
+    setFormData({ ...formData, password });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editMode) {
-        await axios.put(`${API}/users/${editingUserId}`, formData);
+        await usersService.update(editingUserId, formData);
         toast.success("Utilizador atualizado com sucesso!");
       } else {
-        await axios.post(`${API}/auth/register`, formData);
-        toast.success(`Utilizador criado! Password: ${formData.password}`, { duration: 10000 });
+        const result = await usersService.create(formData);
+        if (result.initial_password) {
+          toast.success(`Utilizador criado! Password: ${result.initial_password}`, { duration: 10000 });
+        } else {
+          toast.success("Utilizador criado com sucesso!");
+        }
       }
       setDialogOpen(false);
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || `Erro ao ${editMode ? 'atualizar' : 'criar'} utilizador`);
+      toast.error(error.message || `Erro ao ${editMode ? 'atualizar' : 'criar'} utilizador`);
     }
   };
 

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "../lib/supabase";
+import { partnersService } from "../services/partnersService";
+import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
 
 const Partners = ({ user }) => {
   const [partners, setPartners] = useState([]);
@@ -39,8 +40,8 @@ const Partners = ({ user }) => {
 
   const fetchPartners = async () => {
     try {
-      const response = await axios.get(`${API}/partners`);
-      setPartners(response.data);
+      const data = await partnersService.getAll();
+      setPartners(data);
     } catch (error) {
       toast.error("Erro ao carregar parceiros");
     } finally {
@@ -48,13 +49,9 @@ const Partners = ({ user }) => {
     }
   };
 
-  const generatePassword = async () => {
-    try {
-      const response = await axios.get(`${API}/auth/generate-password`);
-      setGeneratedPassword(response.data.password);
-    } catch (error) {
-      console.error("Erro ao gerar password");
-    }
+  const generatePassword = () => {
+    const password = generateStrongPassword();
+    setGeneratedPassword(password);
   };
 
   useEffect(() => {
@@ -63,73 +60,39 @@ const Partners = ({ user }) => {
     }
   }, [formData.email]);
 
-  const validateNIF = (nif) => {
-    // Remove spaces and non-digits
-    const cleanNif = nif.replace(/\D/g, '');
-    
-    // Must be 9 digits
-    if (cleanNif.length !== 9) {
-      return { valid: false, message: "NIF deve ter 9 dígitos" };
-    }
-    
-    // If starts with 5, validate check digit
-    if (cleanNif[0] === '5') {
-      const multipliers = [9, 8, 7, 6, 5, 4, 3, 2];
-      let sum = 0;
-      
-      for (let i = 0; i < 8; i++) {
-        sum += parseInt(cleanNif[i]) * multipliers[i];
-      }
-      
-      const remainder = sum % 11;
-      let checkDigit = 11 - remainder;
-      
-      if (checkDigit >= 10) {
-        checkDigit = 0;
-      }
-      
-      if (checkDigit !== parseInt(cleanNif[8])) {
-        return { valid: false, message: "NIF inválido: dígito de controlo CRC incorreto" };
-      }
-    }
-    
-    return { valid: true };
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate NIF
+
     const nifValidation = validateNIF(formData.nif);
     if (!nifValidation.valid) {
       toast.error(nifValidation.message);
       return;
     }
-    
+
     try {
       const submitData = { ...formData };
       submitData.communication_emails = formData.communication_emails.filter(e => e.trim());
-      
+
       if (editingPartner) {
-        await axios.put(`${API}/partners/${editingPartner.id}`, submitData);
+        await partnersService.update(editingPartner.id, submitData);
         toast.success("Parceiro atualizado com sucesso!");
       } else {
-        const response = await axios.post(`${API}/partners`, submitData);
-        if (response.data.initial_password) {
+        const result = await partnersService.create(submitData);
+        if (result.initial_password) {
           toast.success(
-            `Parceiro criado! Password: ${response.data.initial_password}`,
+            `Parceiro criado! Password: ${result.initial_password}`,
             { duration: 10000 }
           );
         } else {
           toast.success("Parceiro criado com sucesso!");
         }
       }
-      
+
       setDialogOpen(false);
       resetForm();
       fetchPartners();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Erro ao salvar parceiro");
+      toast.error(error.message || "Erro ao salvar parceiro");
     }
   };
 
@@ -155,15 +118,8 @@ const Partners = ({ user }) => {
   const handleUploadDocument = async (partnerId, file) => {
     try {
       setUploadingDoc(true);
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      await axios.post(`${API}/partners/${partnerId}/documents`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
       toast.success("Documento carregado com sucesso!");
-      fetchPartners(); // Refresh to get updated documents
+      fetchPartners();
     } catch (error) {
       toast.error("Erro ao carregar documento");
     } finally {
@@ -429,16 +385,9 @@ const Partners = ({ user }) => {
                           </p>
                         </div>
                       </div>
-                      <a 
-                        href={`${API}/partners/${selectedPartnerForDocs.id}/documents/${doc.id}`}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button size="sm" variant="ghost">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </a>
+                      <Button size="sm" variant="ghost">
+                        <Download className="w-4 h-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>

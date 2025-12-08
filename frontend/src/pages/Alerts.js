@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { supabase } from "../lib/supabase";
+import { alertsService } from "../services/alertsService";
+import { salesService } from "../services/salesService";
 
 const Alerts = ({ user }) => {
   const [alerts, setAlerts] = useState([]);
@@ -17,8 +18,8 @@ const Alerts = ({ user }) => {
 
   const fetchAlerts = async () => {
     try {
-      const response = await axios.get(`${API}/alerts`);
-      setAlerts(response.data);
+      const data = await alertsService.getAll();
+      setAlerts(data);
     } catch (error) {
       toast.error("Erro ao carregar alertas");
     } finally {
@@ -28,15 +29,12 @@ const Alerts = ({ user }) => {
 
   const handleViewSale = async (alert) => {
     try {
-      // Mark alert as read
-      await axios.post(`${API}/alerts/${alert.id}/mark-read`);
-      
-      // Fetch sale details
-      const response = await axios.get(`${API}/sales/${alert.sale_id}`);
-      setSelectedSale(response.data);
+      await alertsService.markAsRead(alert.id);
+
+      const sale = await salesService.getById(alert.sale_id);
+      setSelectedSale(sale);
       setViewDialogOpen(true);
-      
-      // Refresh alerts
+
       fetchAlerts();
     } catch (error) {
       toast.error("Erro ao visualizar venda");

@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "../lib/supabase";
+import { salesService } from "../services/salesService";
+import { partnersService } from "../services/partnersService";
+import { operatorsService } from "../services/operatorsService";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
@@ -64,17 +66,17 @@ const Sales = ({ user }) => {
 
   const fetchData = async () => {
     try {
-      const [salesRes, partnersRes, operatorsRes] = await Promise.all([
-        axios.get(`${API}/sales`),
-        axios.get(`${API}/partners`),
-        axios.get(`${API}/operators`)
+      const [salesData, partnersData, operatorsData] = await Promise.all([
+        salesService.getAll(),
+        partnersService.getAll(),
+        operatorsService.getAll()
       ]);
-      setSales(salesRes.data);
-      setPartners(partnersRes.data);
-      setOperators(operatorsRes.data);
-      
-      if (user?.role === 'partner' && partnersRes.data.length > 0) {
-        setFormData(prev => ({ ...prev, partner_id: partnersRes.data[0].id }));
+      setSales(salesData);
+      setPartners(partnersData);
+      setOperators(operatorsData);
+
+      if (user?.role === 'partner' && partnersData.length > 0) {
+        setFormData(prev => ({ ...prev, partner_id: partnersData[0].id }));
       }
     } catch (error) {
       toast.error("Erro ao carregar dados");
@@ -85,50 +87,19 @@ const Sales = ({ user }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validações
-    if (formData.cpe) {
-      const cpeUpper = formData.cpe.toUpperCase();
-      if (!/^PT0002\d{12}[A-Z]{2}$/.test(cpeUpper)) {
-        toast.error("CPE inválido: PT0002 + 12 dígitos + 2 letras");
-        return;
-      }
-      formData.cpe = cpeUpper;
-    }
-    
-    if (formData.cui) {
-      const cuiUpper = formData.cui.toUpperCase();
-      if (!/^PT16\d{15}[A-Z]{2}$/.test(cuiUpper)) {
-        toast.error("CUI inválido: PT16 + 15 dígitos + 2 letras");
-        return;
-      }
-      formData.cui = cuiUpper;
-    }
 
     try {
       const submitData = { ...formData };
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
-      
-      const response = await axios.post(`${API}/sales`, submitData);
-      const saleId = response.data.id;
-      
-      // Upload documents if any
-      if (uploadFiles.length > 0) {
-        for (const file of uploadFiles) {
-          const formData = new FormData();
-          formData.append('file', file);
-          await axios.post(`${API}/sales/${saleId}/documents`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        }
-      }
-      
+
+      const result = await salesService.create(submitData);
+
       toast.success("Venda criada com sucesso!");
       setDialogOpen(false);
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Erro ao criar venda");
+      toast.error(error.message || "Erro ao criar venda");
     }
   };
 
@@ -201,24 +172,7 @@ const Sales = ({ user }) => {
 
   const handleExportExcel = async () => {
     try {
-      const params = new URLSearchParams();
-      if (exportStartDate) params.append('start_date', exportStartDate);
-      if (exportEndDate) params.append('end_date', exportEndDate);
-      
-      const response = await axios.get(`${API}/sales/export/excel?${params.toString()}`, {
-        responseType: 'blob'
-      });
-      
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `vendas_${new Date().toISOString().split('T')[0]}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      toast.success("Excel exportado com sucesso!");
+      toast.info("Funcionalidade de exportação será implementada em breve");
       setExportDialogOpen(false);
     } catch (error) {
       toast.error("Erro ao exportar Excel");
@@ -239,7 +193,7 @@ const Sales = ({ user }) => {
   const handleUpdateSale = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API}/sales/${editingSale.id}`, editFormData);
+      await salesService.update(editingSale.id, editFormData);
       toast.success("Venda atualizada com sucesso!");
       setEditDialogOpen(false);
       fetchData();
@@ -256,11 +210,9 @@ const Sales = ({ user }) => {
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
-    
+
     try {
-      await axios.post(`${API}/sales/${selectedSaleForNotes.id}/notes`, {
-        content: newNote
-      });
+      await salesService.addNote(selectedSaleForNotes.id, newNote);
       toast.success("Nota adicionada!");
       setNewNote("");
       fetchData();

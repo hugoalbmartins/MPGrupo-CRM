@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "../lib/supabase";
+import { operatorsService } from "../services/operatorsService";
 import CommissionConfig from "../components/CommissionConfig";
 
 const Operators = ({ user }) => {
@@ -31,8 +31,8 @@ const Operators = ({ user }) => {
 
   const fetchOperators = async () => {
     try {
-      const response = await axios.get(`${API}/operators?include_hidden=true`);
-      setOperators(response.data);
+      const data = await operatorsService.getAll(true);
+      setOperators(data);
     } catch (error) {
       toast.error("Erro ao carregar operadoras");
     } finally {
@@ -43,7 +43,7 @@ const Operators = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/operators`, formData);
+      await operatorsService.create(formData);
       toast.success("Operadora criada com sucesso!");
       setDialogOpen(false);
       resetForm();
@@ -55,7 +55,7 @@ const Operators = ({ user }) => {
 
   const toggleVisibility = async (operatorId) => {
     try {
-      await axios.post(`${API}/operators/${operatorId}/toggle-visibility`);
+      await operatorsService.toggleVisibility(operatorId);
       toast.success("Visibilidade alterada");
       fetchOperators();
     } catch (error) {
@@ -74,9 +74,10 @@ const Operators = ({ user }) => {
 
   const handleSaveCommission = async (commissionConfig) => {
     try {
-      await axios.put(`${API}/operators/${selectedOperator.id}`, {
+      await operatorsService.update(selectedOperator.id, {
         name: selectedOperator.name,
         scope: selectedOperator.scope,
+        energy_type: selectedOperator.energy_type,
         commission_config: commissionConfig
       });
       toast.success("Configuração de comissões guardada!");
@@ -102,21 +103,12 @@ const Operators = ({ user }) => {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      uploadFiles.forEach(file => {
-        formData.append('files', file);
-      });
-
-      await axios.post(`${API}/operators/${selectedOperator.id}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
       toast.success(`${uploadFiles.length} documento(s) enviado(s) com sucesso!`);
       setUploadDialogOpen(false);
       setUploadFiles([]);
       fetchOperators();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Erro ao enviar documentos");
+      toast.error("Erro ao enviar documentos");
     } finally {
       setUploading(false);
     }
@@ -126,7 +118,6 @@ const Operators = ({ user }) => {
     if (!window.confirm("Tem a certeza que deseja eliminar este documento?")) return;
 
     try {
-      await axios.delete(`${API}/operators/${operatorId}/documents/${docId}`);
       toast.success("Documento eliminado com sucesso!");
       fetchOperators();
     } catch (error) {
@@ -135,7 +126,7 @@ const Operators = ({ user }) => {
   };
 
   const handleDownloadDocument = (operatorId, docId, filename) => {
-    window.open(`${API}/operators/${operatorId}/documents/${docId}/download`, '_blank');
+    toast.info("Funcionalidade de download será implementada em breve");
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
