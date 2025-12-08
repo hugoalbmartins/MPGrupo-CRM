@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { API } from "../App";
+import { supabase } from "../lib/supabase";
 
 const Alerts = ({ user }) => {
   const [alerts, setAlerts] = useState([]);

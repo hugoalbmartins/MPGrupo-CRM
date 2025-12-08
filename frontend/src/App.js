@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import axios from "axios";
 import { Toaster } from "@/components/ui/sonner";
+import { authService } from "./lib/auth";
+import { supabase } from "./lib/supabase";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
 import Dashboard from "./pages/Dashboard";
@@ -15,55 +16,85 @@ import Forms from "./pages/Forms";
 import Layout from "./components/Layout";
 import "@/App.css";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-export { API };
+export { supabase };
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      fetchUser();
-    }
-  }, [token]);
+    checkUser();
 
-  const fetchUser = async () => {
+    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await loadUser();
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setMustChangePassword(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkUser = async () => {
     try {
-      const response = await axios.get(`${API}/auth/me`);
-      setUser(response.data);
-      setMustChangePassword(response.data.must_change_password);
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        setUser(userData);
+        setMustChangePassword(userData.must_change_password);
+      }
     } catch (error) {
       console.error("Failed to fetch user", error);
-      handleLogout();
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLogin = (newToken, userData, mustChange) => {
-    setToken(newToken);
-    setUser(userData);
-    setMustChangePassword(mustChange);
-    localStorage.setItem("token", newToken);
-    axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+  const loadUser = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        setUser(userData);
+        setMustChangePassword(userData.must_change_password);
+      }
+    } catch (error) {
+      console.error("Failed to load user", error);
+    }
   };
 
-  const handleLogout = () => {
-    setToken(null);
-    setUser(null);
-    setMustChangePassword(false);
-    localStorage.removeItem("token");
-    delete axios.defaults.headers.common["Authorization"];
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setMustChangePassword(userData.must_change_password);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.signOut();
+      setUser(null);
+      setMustChangePassword(false);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   const handlePasswordChanged = () => {
     setMustChangePassword(false);
+    if (user) {
+      setUser({ ...user, must_change_password: false });
+    }
   };
 
-  if (!token) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
     return (
       <div className="App">
         <BrowserRouter>

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "sonner";
 import { Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { API } from "../App";
+import { supabase } from "../lib/supabase";
 
 const Forms = ({ user }) => {
   const { operatorId } = useParams();

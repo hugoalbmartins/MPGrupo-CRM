@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import { Eye, EyeOff, Lock, AlertCircle } from "lucide-react";
-import { API } from "../App";
+import { authService } from "../lib/auth";
 
 const ChangePassword = ({ onPasswordChanged, onLogout }) => {
   const [currentPassword, setCurrentPassword] = useState("");

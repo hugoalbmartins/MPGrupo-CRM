@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import { API } from "../App";
+import { authService } from "../lib/auth";
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState("");
@@ -15,11 +14,12 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/auth/login`, { email, password });
+      const { user } = await authService.signIn(email, password);
       toast.success("Login bem-sucedido!");
-      onLogin(response.data.token, response.data.user, response.data.must_change_password);
+      onLogin(user);
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Erro ao fazer login");
+      console.error("Login error:", error);
+      toast.error(error.message || "Erro ao fazer login");
     } finally {
       setLoading(false);
     }

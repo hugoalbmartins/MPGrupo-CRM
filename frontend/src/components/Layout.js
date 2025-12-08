@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText } from "lucide-react";
-import axios from "axios";
-import { API } from "../App";
+import { supabase } from "../lib/supabase";
 
 const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
@@ -20,12 +19,7 @@ const Layout = ({ children, user, onLogout }) => {
   }, [user]);
 
   const fetchUnreadCount = async () => {
-    try {
-      const response = await axios.get(`${API}/alerts/unread/count`);
-      setUnreadCount(response.data.count);
-    } catch (error) {
-      console.error("Error fetching unread count:", error);
-    }
+    setUnreadCount(0);
   };
 
   const menuItems = [

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 import { User as UserIcon, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { API } from "../App";
+import { authService } from "../lib/auth";
 
 const Profile = ({ user }) => {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
