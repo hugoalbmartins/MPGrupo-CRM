@@ -28,15 +28,19 @@ const ChangePassword = ({ onPasswordChanged, onLogout }) => {
     setLoading(true);
 
     try {
-      await axios.post(`${API}/auth/change-password`, {
-        current_password: currentPassword,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-      });
+      await authService.updatePassword(newPassword);
+
+      const { data: { user } } = await authService.supabase.auth.getUser();
+      await authService.supabase
+        .from('users')
+        .update({ must_change_password: false })
+        .eq('id', user.id);
+
       toast.success("Password alterada com sucesso!");
       onPasswordChanged();
     } catch (error) {
-      toast.error(error.response?.data?.detail || "Erro ao alterar password");
+      console.error("Password change error:", error);
+      toast.error(error.message || "Erro ao alterar password");
     } finally {
       setLoading(false);
     }
