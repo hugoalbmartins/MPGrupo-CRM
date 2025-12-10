@@ -52,8 +52,8 @@ const Layout = ({ children, user, onLogout }) => {
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-white p-2">
-              <img src="/mpgrupo.png" alt="MP Grupo" className="w-full h-full object-contain" />
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
+              <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight" style={{ color: '#FFFFFF' }}>MP GRUPO</h1>
@@ -129,8 +129,8 @@ const Layout = ({ children, user, onLogout }) => {
       {sidebarOpen && (
         <aside className="md:hidden fixed inset-0 z-40 flex flex-col bg-white">
           <div className="flex items-center p-6 border-b border-gray-200 mt-16">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white border-2 border-gray-200 p-1.5">
-              <img src="/mpgrupo.png" alt="MP Grupo" className="w-full h-full object-contain" />
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden">
+              <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
             </div>
             <div className="ml-3">
               <h1 className="text-lg font-bold text-gray-900">MP GRUPO</h1>
