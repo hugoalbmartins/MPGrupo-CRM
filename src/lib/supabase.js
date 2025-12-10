@@ -8,8 +8,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 const customFetch = async (url, options = {}) => {
-  const response = await fetch(url, options);
-  return response.clone();
+  const originalResponse = await fetch(url, options);
+
+  const clonedResponse = originalResponse.clone();
+  const bodyText = await clonedResponse.text();
+
+  return new Response(bodyText, {
+    status: originalResponse.status,
+    statusText: originalResponse.statusText,
+    headers: originalResponse.headers
+  });
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
