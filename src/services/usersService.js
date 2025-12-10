@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { generateStrongPassword, validatePassword } from '../lib/utils-crm';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 export const usersService = {
   async getAll() {
     const { data, error } = await supabase
@@ -19,95 +21,85 @@ export const usersService = {
       throw new Error('Password must be 8+ chars with 1 uppercase, 1 digit, 1 special char');
     }
 
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email: userData.email,
-      password,
-      options: {
-        data: {
-          name: userData.name,
-          role: userData.role
-        }
-      }
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
 
-    if (signUpError) {
-      if (signUpError.message?.includes('already registered') || signUpError.status === 422) {
-        throw new Error('Este email já está registado. Por favor, use outro email.');
-      }
-      throw signUpError;
-    }
-
-    if (!authData?.user) throw new Error('Failed to create auth user');
-
-    const { data, error } = await supabase
-      .from('users')
-      .insert({
-        id: authData.user.id,
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-user`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         name: userData.name,
         email: userData.email,
+        password,
         role: userData.role,
         position: userData.position,
         partner_id: userData.partner_id || null,
-        must_change_password: true
-      })
-      .select()
-      .maybeSingle();
+      }),
+    });
 
-    if (error) {
-      console.error('Failed to create user profile:', error);
-      console.warn('Auth user created but profile insert failed. User ID:', authData.user.id);
-      throw new Error(`Failed to create user profile: ${error.message}`);
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create user');
     }
 
-    if (!data) {
-      throw new Error('User profile created but not returned from database');
-    }
-
-    return { ...data, initial_password: password };
+    return result.data;
   },
 
   async update(userId, userData) {
-    const updateData = {
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      position: userData.position,
-      partner_id: userData.partner_id || null
-    };
-
-    if (userData.password) {
-      if (!validatePassword(userData.password)) {
-        throw new Error('Password must be 8+ chars with 1 uppercase, 1 digit, 1 special char');
-      }
-
-      const { error: authError } = await supabase.auth.updateUser({
-        password: userData.password
-      });
-
-      if (authError) throw authError;
-
-      updateData.must_change_password = true;
+    if (userData.password && !validatePassword(userData.password)) {
+      throw new Error('Password must be 8+ chars with 1 uppercase, 1 digit, 1 special char');
     }
 
-    const { data, error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', userId)
-      .select()
-      .maybeSingle();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
 
-    if (error) throw error;
-    if (!data) throw new Error('User not found or update failed');
-    return data;
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/update-user`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        name: userData.name,
+        email: userData.email,
+        password: userData.password || undefined,
+        role: userData.role,
+        position: userData.position,
+        partner_id: userData.partner_id || null,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update user');
+    }
+
+    return result.data;
   },
 
   async delete(userId) {
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', userId);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
 
-    if (error) throw error;
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/delete-user?userId=${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete user');
+    }
   },
 
   generatePassword() {
