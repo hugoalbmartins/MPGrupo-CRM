@@ -65,7 +65,8 @@ async function getLast12MonthsData() {
 
       if (!monthlyData[key]) {
         monthlyData[key] = {
-          month: key,
+          year: date.getFullYear(),
+          month_num: date.getMonth() + 1,
           telecomunicacoes: 0,
           energia: 0,
           solar: 0,
@@ -83,7 +84,8 @@ async function getLast12MonthsData() {
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
     result.push(monthlyData[key] || {
-      month: key,
+      year: date.getFullYear(),
+      month_num: date.getMonth() + 1,
       telecomunicacoes: 0,
       energia: 0,
       solar: 0,
