@@ -1,0 +1,482 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  color: #1E293B;
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.App {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2rem;
+  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Professional Card */
+.professional-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.professional-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3B82F6, #06B6D4, #8B5CF6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.professional-card:hover {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
+  transform: translateY(-4px);
+  border-color: #CBD5E1;
+}
+
+.professional-card:hover::before {
+  opacity: 1;
+}
+
+/* Primary Button */
+.btn-primary {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.938rem;
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-primary:hover::before {
+  opacity: 1;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.25), 0 4px 8px rgba(59, 130, 246, 0.15);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-primary span,
+.btn-primary svg {
+  position: relative;
+  z-index: 1;
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: white;
+  color: #3B82F6;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid #3B82F6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #EFF6FF;
+}
+
+/* Inputs */
+input, select, textarea {
+  background: white;
+  border: 2px solid #E2E8F0;
+  color: #1E293B;
+  padding: 11px 15px;
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  background: #FAFCFF;
+  transform: translateY(-1px);
+}
+
+input:hover, select:hover, textarea:hover {
+  border-color: #CBD5E1;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.813rem;
+  font-weight: 600;
+  gap: 4px;
+}
+
+.status-para-registo {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.status-pendente {
+  background: #FED7AA;
+  color: #9A3412;
+}
+
+.status-concluido {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.status-ativo {
+  background: #BFDBFE;
+  color: #1E40AF;
+}
+
+.status-cancelado {
+  background: #FECACA;
+  color: #991B1B;
+}
+
+/* Stats Card */
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid #E2E8F0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  transition: transform 0.6s ease;
+}
+
+.stat-card:hover::after {
+  transform: scale(1.2);
+}
+
+.stat-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
+  border-color: #CBD5E1;
+}
+
+/* Table */
+.table-container {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+/* Scrollbar personalizado */
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Scroll horizontal em mobile */
+@media (max-width: 1024px) {
+  .table-container {
+    overflow-x: scroll;
+    position: relative;
+  }
+  
+  .table-container::after {
+    content: '← Deslize para ver mais →';
+    position: sticky;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, #F8FAFC 20%, #F8FAFC);
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    color: #64748B;
+    text-align: right;
+    pointer-events: none;
+    display: block;
+  }
+  
+  table {
+    min-width: 900px;
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: linear-gradient(to bottom, #F8FAFC 0%, #F1F5F9 100%);
+  border-bottom: 2px solid #E2E8F0;
+}
+
+thead th {
+  padding: 16px 18px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.813rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}
+
+tbody tr {
+  border-bottom: 1px solid #F1F5F9;
+  transition: background 0.15s ease;
+}
+
+tbody tr:hover {
+  background: #F8FAFC;
+}
+
+tbody td {
+  padding: 16px;
+  color: #334155;
+  font-size: 0.938rem;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Loading Spinner */
+.spinner {
+  border: 3px solid #E2E8F0;
+  border-top-color: #3B82F6;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Color utilities for dashboards */
+.color-blue { color: #3B82F6; }
+.color-green { color: #10B981; }
+.color-purple { color: #8B5CF6; }
+.color-orange { color: #F59E0B; }
+.color-red { color: #EF4444; }
+.color-cyan { color: #06B6D4; }
+
+.bg-blue { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+.bg-green { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+.bg-purple { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); }
+.bg-orange { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+.bg-red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
+.bg-cyan { background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); }
+
+/* Dialog Improvements - Cores Mais Claras */
+[role="dialog"] {
+  background: #FFFFFF !important;
+  border: 2px solid #E2E8F0 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+}
+
+[role="dialog"] h2,
+[role="dialog"] .dialog-title {
+  color: #1E293B !important;
+  font-weight: 700 !important;
+  font-size: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+[role="dialog"] label {
+  color: #334155 !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+[role="dialog"] input,
+[role="dialog"] select,
+[role="dialog"] textarea {
+  border: 2px solid #CBD5E1 !important;
+  background: #F8FAFC !important;
+  color: #1E293B !important;
+  font-size: 1rem !important;
+}
+
+[role="dialog"] input:focus,
+[role="dialog"] select:focus,
+[role="dialog"] textarea:focus {
+  border-color: #3B82F6 !important;
+  background: #FFFFFF !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+[role="dialog"] button {
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+}
+
+[role="dialog"] .text-sm,
+[role="dialog"] .text-xs {
+  color: #64748B !important;
+}
+
+/* Melhor contraste em cards dentro de diálogos */
+[role="dialog"] .bg-gray-50,
+[role="dialog"] .bg-gray-100 {
+  background: #F1F5F9 !important;
+  border: 1px solid #E2E8F0 !important;
+}
+
+/* Cards escuros dentro de diálogos devem ser claros */
+[role="dialog"] .bg-gray-800,
+[role="dialog"] .bg-gray-900,
+[role="dialog"] [class*="bg-gray-8"],
+[role="dialog"] [class*="bg-gray-9"],
+[role="dialog"] > div > div > div[class*="bg-"],
+[role="dialog"] div[class*="Card"] {
+  background: #FFFFFF !important;
+}
+
+/* Forçar cards Shadcn dentro de diálogos serem claros */
+[role="dialog"] [class*="Card"],
+[role="dialog"] [class*="card"] {
+  background: #FFFFFF !important;
+  border: 2px solid #E2E8F0 !important;
+  color: #1E293B !important;
+}
+
+[role="dialog"] .bg-blue-50 {
+  background: #EFF6FF !important;
+  border: 1px solid #BFDBFE !important;
+}
+
+/* Texto em cards dentro de diálogos */
+[role="dialog"] .text-gray-300,
+[role="dialog"] .text-gray-400,
+[role="dialog"] .text-gray-500 {
+  color: #64748B !important;
+}
+
+[role="dialog"] .text-gray-600,
+[role="dialog"] .text-gray-700 {
+  color: #475569 !important;
+}
+
+[role="dialog"] .text-blue-900 {
+  color: #1E3A8A !important;
+}
+
+[role="dialog"] .text-blue-800 {
+  color: #1E40AF !important;
+}
