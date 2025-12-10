@@ -80,7 +80,13 @@ export const partnersService = {
       }
     });
 
-    if (signUpError) throw signUpError;
+    if (signUpError) {
+      if (signUpError.message?.includes('already registered') || signUpError.status === 422) {
+        throw new Error('Este email já está registado. Por favor, use outro email.');
+      }
+      throw signUpError;
+    }
+
     if (!authData?.user) throw new Error('Failed to create auth user');
 
     const { data: userProfile, error: userError } = await supabase

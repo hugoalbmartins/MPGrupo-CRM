@@ -73,9 +73,10 @@ export const authService = {
       .update(updates)
       .eq('id', userId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error('User not found or update failed');
     return data;
   },
 
