@@ -47,8 +47,9 @@ export const usersService = {
       .single();
 
     if (error) {
-      await supabase.auth.admin.deleteUser(authUser.id);
-      throw error;
+      console.error('Failed to create user profile:', error);
+      console.warn('Auth user created but profile insert failed. Auth user ID:', authUser.id);
+      throw new Error(`Failed to create user profile: ${error.message}`);
     }
 
     return { ...data, initial_password: password };

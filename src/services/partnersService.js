@@ -93,8 +93,9 @@ export const partnersService = {
       .single();
 
     if (userError) {
-      await supabase.auth.admin.deleteUser(authUser.id);
-      throw userError;
+      console.error('Failed to create user profile for partner:', userError);
+      console.warn('Auth user created but profile insert failed. Auth user ID:', authUser.id);
+      throw new Error(`Failed to create user profile: ${userError.message}`);
     }
 
     const { data: partner, error: partnerError } = await supabase
@@ -120,9 +121,14 @@ export const partnersService = {
       .single();
 
     if (partnerError) {
-      await supabase.auth.admin.deleteUser(authUser.id);
-      await supabase.from('users').delete().eq('id', authUser.id);
-      throw partnerError;
+      console.error('Failed to create partner record:', partnerError);
+      console.warn('User profile created but partner insert failed. User ID:', authUser.id);
+      await supabase.from('users').delete().eq('id', authUser.id).then(
+        ({ error: delError }) => {
+          if (delError) console.error('Failed to cleanup user profile:', delError);
+        }
+      );
+      throw new Error(`Failed to create partner: ${partnerError.message}`);
     }
 
     return { ...partner, initial_password: userPassword };
