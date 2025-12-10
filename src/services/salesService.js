@@ -10,7 +10,9 @@ export const salesService = {
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (!currentUser) throw new Error('User not found');
 
     let query = supabase
       .from('sales')
@@ -22,7 +24,7 @@ export const salesService = {
         .from('partners')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (partner) {
         query = query.eq('partner_id', partner.id);
@@ -46,9 +48,10 @@ export const salesService = {
       .from('sales')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error('Sale not found');
     return data;
   },
 
@@ -72,7 +75,9 @@ export const salesService = {
       .from('users')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (!currentUser) throw new Error('User not found');
 
     const status = ['partner', 'partner_commercial'].includes(currentUser.role)
       ? 'Para registo'
@@ -82,7 +87,7 @@ export const salesService = {
       .from('operators')
       .select('*')
       .eq('id', saleData.operator_id)
-      .single();
+      .maybeSingle();
 
     if (!operator) throw new Error('Operator not found');
 
@@ -95,7 +100,7 @@ export const salesService = {
       .from('partners')
       .select('name')
       .eq('id', saleData.partner_id)
-      .single();
+      .maybeSingle();
 
     const insertData = {
       sale_code: saleCode,
@@ -128,9 +133,10 @@ export const salesService = {
       .from('sales')
       .insert(insertData)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error('Sale created but not returned from database');
 
     await this.createAlert('new_sale', data.id, data.sale_code,
       `Nova venda registada: ${data.sale_code} - ${partner?.name || 'Unknown'}`);
@@ -143,7 +149,9 @@ export const salesService = {
       .from('sales')
       .select('status')
       .eq('id', id)
-      .single();
+      .maybeSingle();
+
+    if (!oldSale) throw new Error('Sale not found');
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
@@ -157,9 +165,10 @@ export const salesService = {
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error('Sale update failed');
 
     if (updateData.status && oldSale.status !== updateData.status) {
       if (['Concluido', 'Ativo'].includes(updateData.status)) {
@@ -177,13 +186,17 @@ export const salesService = {
       .from('users')
       .select('name, role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (!currentUser) throw new Error('User not found');
 
     const { data: sale } = await supabase
       .from('sales')
       .select('notes, sale_code')
       .eq('id', saleId)
-      .single();
+      .maybeSingle();
+
+    if (!sale) throw new Error('Sale not found');
 
     const note = {
       id: crypto.randomUUID(),
@@ -200,9 +213,10 @@ export const salesService = {
       .update({ notes: newNotes })
       .eq('id', saleId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error('Failed to add note to sale');
 
     await this.createAlert('note_added', saleId, sale.sale_code,
       `Nova nota adicionada em ${sale.sale_code} por ${currentUser.name}`);
@@ -216,13 +230,17 @@ export const salesService = {
       .from('users')
       .select('name')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (!currentUser) throw new Error('User not found');
 
     const { data: sale } = await supabase
       .from('sales')
       .select('partner_id, created_by_user_id')
       .eq('id', saleId)
-      .single();
+      .maybeSingle();
+
+    if (!sale) throw new Error('Sale not found');
 
     const userIds = [];
 
@@ -230,7 +248,7 @@ export const salesService = {
       .from('partners')
       .select('user_id')
       .eq('id', sale.partner_id)
-      .single();
+      .maybeSingle();
 
     if (partner?.user_id) userIds.push(partner.user_id);
     if (sale.created_by_user_id) userIds.push(sale.created_by_user_id);

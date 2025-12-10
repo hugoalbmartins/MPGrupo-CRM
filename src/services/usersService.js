@@ -19,7 +19,7 @@ export const usersService = {
       throw new Error('Password must be 8+ chars with 1 uppercase, 1 digit, 1 special char');
     }
 
-    const { data: { user: authUser }, error: signUpError } = await supabase.auth.signUp({
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: userData.email,
       password,
       options: {
@@ -31,11 +31,12 @@ export const usersService = {
     });
 
     if (signUpError) throw signUpError;
+    if (!authData?.user) throw new Error('Failed to create auth user');
 
     const { data, error } = await supabase
       .from('users')
       .insert({
-        id: authUser.id,
+        id: authData.user.id,
         name: userData.name,
         email: userData.email,
         role: userData.role,
@@ -44,12 +45,16 @@ export const usersService = {
         must_change_password: true
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Failed to create user profile:', error);
-      console.warn('Auth user created but profile insert failed. Auth user ID:', authUser.id);
+      console.warn('Auth user created but profile insert failed. User ID:', authData.user.id);
       throw new Error(`Failed to create user profile: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('User profile created but not returned from database');
     }
 
     return { ...data, initial_password: password };
@@ -83,9 +88,10 @@ export const usersService = {
       .update(updateData)
       .eq('id', userId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) throw new Error('User not found or update failed');
     return data;
   },
 
