@@ -39,10 +39,10 @@ const Login = ({ onLogin }) => {
       <div className="w-full max-w-md relative z-10">
         {/* Logo Card */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 shadow-2xl bg-white">
-            <img src="/mpgrupo.png" alt="MP Grupo" className="h-16 w-16 object-contain" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-4 shadow-2xl bg-white p-3">
+            <img src="/mpgrupo.png" alt="MP Grupo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">MP GRUPO</h1>
+          <h1 className="text-4xl font-bold mb-2 tracking-tight" style={{ color: '#FFFFFF' }}>MP GRUPO</h1>
           <p className="text-gray-400 font-medium">Sales CRM Platform</p>
         </div>
 
