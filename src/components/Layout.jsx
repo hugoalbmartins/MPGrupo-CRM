@@ -52,11 +52,8 @@ const Layout = ({ children, user, onLogout }) => {
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{
-              background: 'linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%)',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-            }}>
-              <img src="/logo.png" alt="MP" className="h-7 w-7 object-contain" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white">
+              <img src="/mpgrupo.png" alt="MP Grupo" className="h-10 w-10 object-contain" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-white tracking-tight">MP GRUPO</h1>
@@ -132,7 +129,7 @@ const Layout = ({ children, user, onLogout }) => {
       {sidebarOpen && (
         <aside className="md:hidden fixed inset-0 z-40 flex flex-col bg-white">
           <div className="flex items-center p-6 border-b border-gray-200 mt-16">
-            <img src="/logo.png" alt="MP Grupo" className="h-10 w-10 object-contain" />
+            <img src="/mpgrupo.png" alt="MP Grupo" className="h-10 w-10 object-contain" />
             <div className="ml-3">
               <h1 className="text-lg font-bold text-gray-900">MP GRUPO</h1>
               <p className="text-xs text-gray-500">CRM</p>
