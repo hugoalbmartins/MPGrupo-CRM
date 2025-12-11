@@ -32,7 +32,7 @@ export function validateCPE(cpe) {
 }
 
 export function validateCUI(cui) {
-  return /^PT16\d{15}[A-Z]{2}$/i.test(cui);
+  return /^PT16\d{16}[A-Z]{2}$/i.test(cui);
 }
 
 export function validateNIF(nif) {
@@ -91,8 +91,8 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
     .from('sales')
     .select('*', { count: 'exact', head: true })
     .eq('partner_id', partnerId)
-    .gte('sale_date', startOfMonth)
-    .lt('sale_date', endOfMonth);
+    .gte('date', startOfMonth)
+    .lt('date', endOfMonth);
 
   const sequence = String((count || 0) + 1).padStart(4, '0');
   return `${namePrefix}${sequence}${month}`;
