@@ -21,10 +21,11 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
   }, [operator]);
 
   const isTelecom = operator?.scope === 'telecomunicacoes';
+  const isEnergy = operator?.scope === 'energia';
 
   const addTier = (clientType, serviceType = null) => {
     const newConfig = { ...config };
-    const target = serviceType 
+    const target = serviceType
       ? (newConfig[clientType][serviceType] || {})
       : newConfig[clientType];
 
@@ -90,6 +91,15 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
           const tiers = config[clientType]?.[serviceType]?.tiers || [];
           if (tiers.length === 0) {
             toast.error(`Configure pelo menos 1 patamar para ${clientType} - ${serviceType}`);
+            return;
+          }
+        }
+      } else if (isEnergy) {
+        const energyTypes = ['eletricidade', 'gas', 'dual'];
+        for (const energyType of energyTypes) {
+          const tiers = config[clientType]?.[energyType]?.tiers || [];
+          if (tiers.length === 0) {
+            toast.error(`Configure pelo menos 1 patamar para ${clientType} - ${energyType}`);
             return;
           }
         }
@@ -218,6 +228,11 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
           <li>• <strong>Patamares:</strong> Permite definir comissões diferentes baseadas no número de vendas</li>
           {isTelecom ? (
             <li>• <strong>Telecomunicações:</strong> O multiplicador é aplicado ao valor da mensalidade</li>
+          ) : isEnergy ? (
+            <>
+              <li>• <strong>Energia:</strong> Configure valores fixos para Eletricidade, Gás e Dual separadamente</li>
+              <li>• <strong>Contabilização:</strong> Vendas Dual contam para patamares de Eletricidade (1 CPE) e Gás (1 CUI)</li>
+            </>
           ) : (
             <li>• <strong>{operator?.scope}:</strong> Use valores fixos de comissão em euros</li>
           )}
@@ -245,6 +260,23 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                 {renderTierForm('particular', 'M4')}
               </TabsContent>
             </Tabs>
+          ) : isEnergy ? (
+            <Tabs defaultValue="eletricidade" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
+                <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
+                <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
+              </TabsList>
+              <TabsContent value="eletricidade" className="mt-4">
+                {renderTierForm('particular', 'eletricidade')}
+              </TabsContent>
+              <TabsContent value="gas" className="mt-4">
+                {renderTierForm('particular', 'gas')}
+              </TabsContent>
+              <TabsContent value="dual" className="mt-4">
+                {renderTierForm('particular', 'dual')}
+              </TabsContent>
+            </Tabs>
           ) : (
             renderTierForm('particular')
           )}
@@ -262,6 +294,23 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
               </TabsContent>
               <TabsContent value="M4" className="mt-4">
                 {renderTierForm('empresarial', 'M4')}
+              </TabsContent>
+            </Tabs>
+          ) : isEnergy ? (
+            <Tabs defaultValue="eletricidade" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
+                <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
+                <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
+              </TabsList>
+              <TabsContent value="eletricidade" className="mt-4">
+                {renderTierForm('empresarial', 'eletricidade')}
+              </TabsContent>
+              <TabsContent value="gas" className="mt-4">
+                {renderTierForm('empresarial', 'gas')}
+              </TabsContent>
+              <TabsContent value="dual" className="mt-4">
+                {renderTierForm('empresarial', 'dual')}
               </TabsContent>
             </Tabs>
           ) : (

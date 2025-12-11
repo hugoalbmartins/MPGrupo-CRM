@@ -17,7 +17,7 @@ export const salesService = {
     let query = supabase
       .from('sales')
       .select('*')
-      .order('sale_date', { ascending: false });
+      .order('date', { ascending: false });
 
     if (currentUser.role === 'partner') {
       const { data: partner } = await supabase
@@ -104,29 +104,31 @@ export const salesService = {
 
     const insertData = {
       sale_code: saleCode,
-      sale_date: saleData.date,
+      date: saleData.date,
       partner_id: saleData.partner_id,
       partner_name: partner?.name || 'Unknown',
       created_by_user_id: user.id,
       scope: saleData.scope,
-      customer_type: saleData.customer_type,
-      customer_name: saleData.customer_name,
-      nif: saleData.nif,
-      contact: saleData.contact,
+      client_type: saleData.client_type,
+      client_name: saleData.client_name,
+      client_nif: saleData.client_nif,
+      client_contact: saleData.client_contact,
+      client_email: saleData.client_email || null,
+      client_iban: saleData.client_iban || null,
+      installation_address: saleData.installation_address || null,
       operator_id: saleData.operator_id,
       operator_name: operator.name,
       status,
-      request_number: saleData.request_number || null,
+      service_type: saleData.service_type || null,
       monthly_value: saleData.monthly_value || null,
-      commission_value: saleData.commission_value || null,
-      calculated_commission: commission,
+      energy_sale_type: saleData.energy_sale_type || null,
       cpe: saleData.cpe?.toUpperCase() || null,
+      power: saleData.power || null,
+      entry_type: saleData.entry_type || null,
       cui: saleData.cui?.toUpperCase() || null,
-      street: saleData.street || null,
-      door_number: saleData.door_number || null,
-      postal_code: saleData.postal_code || null,
-      locality: saleData.locality || null,
-      province: saleData.province || null
+      tier: saleData.tier || null,
+      observations: saleData.observations || null,
+      calculated_commission: commission
     };
 
     const { data, error } = await supabase

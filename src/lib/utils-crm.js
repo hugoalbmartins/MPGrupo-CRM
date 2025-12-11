@@ -100,16 +100,21 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
 
 export async function calculateCommission(operator, saleData, supabase) {
   const commissionConfig = operator.commission_config || {};
-  const customerType = saleData.customer_type || 'particular';
+  const customerType = saleData.customer_type || saleData.client_type || 'particular';
   const scope = saleData.scope;
 
   const customerConfig = commissionConfig[customerType];
   if (!customerConfig) return 0.0;
 
   let serviceConfig;
+  let energySaleType;
+
   if (scope === 'telecomunicacoes') {
     const serviceType = saleData.service_type || 'M3';
     serviceConfig = customerConfig[serviceType] || customerConfig.default || {};
+  } else if (scope === 'energia') {
+    energySaleType = saleData.energy_sale_type || operator.energy_type || 'eletricidade';
+    serviceConfig = customerConfig[energySaleType] || customerConfig;
   } else {
     serviceConfig = customerConfig;
   }
@@ -117,14 +122,30 @@ export async function calculateCommission(operator, saleData, supabase) {
   const tiers = serviceConfig.tiers || [];
   if (tiers.length === 0) return 0.0;
 
-  const { count: partnerSalesAtOperator } = await supabase
-    .from('sales')
-    .select('*', { count: 'exact', head: true })
-    .eq('partner_id', saleData.partner_id)
-    .eq('operator_id', operator.id);
+  let partnerSalesAtOperator = 0;
+
+  if (scope === 'energia' && energySaleType) {
+    const { count: energyCount } = await supabase
+      .from('sales')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', saleData.partner_id)
+      .eq('operator_id', operator.id)
+      .eq('scope', 'energia')
+      .or(`energy_sale_type.eq.${energySaleType},energy_sale_type.eq.dual`);
+
+    partnerSalesAtOperator = energyCount || 0;
+  } else {
+    const { count } = await supabase
+      .from('sales')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', saleData.partner_id)
+      .eq('operator_id', operator.id);
+
+    partnerSalesAtOperator = count || 0;
+  }
 
   const sortedTiers = [...tiers].sort((a, b) => (b.min_sales || 0) - (a.min_sales || 0));
-  const applicableTier = sortedTiers.find(tier => (partnerSalesAtOperator || 0) >= (tier.min_sales || 0)) || tiers[0];
+  const applicableTier = sortedTiers.find(tier => partnerSalesAtOperator >= (tier.min_sales || 0)) || tiers[0];
 
   if (scope === 'telecomunicacoes') {
     const multiplier = applicableTier.multiplier || 0;

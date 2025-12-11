@@ -53,14 +53,14 @@ async function getLast12MonthsData() {
 
   const { data: sales } = await supabase
     .from('sales')
-    .select('sale_date, scope')
-    .gte('sale_date', twelveMonthsAgo.toISOString().split('T')[0]);
+    .select('date, scope')
+    .gte('date', twelveMonthsAgo.toISOString().split('T')[0]);
 
   const monthlyData = {};
 
   if (sales) {
     sales.forEach(sale => {
-      const date = new Date(sale.sale_date);
+      const date = new Date(sale.date);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (!monthlyData[key]) {
@@ -102,8 +102,8 @@ async function getAdminDashboard(year, month) {
   const { data: sales } = await supabase
     .from('sales')
     .select('*')
-    .gte('sale_date', start.split('T')[0])
-    .lt('sale_date', end.split('T')[0]);
+    .gte('date', start.split('T')[0])
+    .lt('date', end.split('T')[0]);
 
   const { count: partnerCount } = await supabase
     .from('partners')
@@ -182,8 +182,8 @@ async function getBODashboard(year, month) {
   const { data: sales } = await supabase
     .from('sales')
     .select('*')
-    .gte('sale_date', start.split('T')[0])
-    .lt('sale_date', end.split('T')[0]);
+    .gte('date', start.split('T')[0])
+    .lt('date', end.split('T')[0]);
 
   const last12Months = await getLast12MonthsData();
 
@@ -235,8 +235,8 @@ async function getPartnerDashboard(partnerId, year, month) {
     .from('sales')
     .select('*')
     .eq('partner_id', partnerId)
-    .gte('sale_date', start.split('T')[0])
-    .lt('sale_date', end.split('T')[0]);
+    .gte('date', start.split('T')[0])
+    .lt('date', end.split('T')[0]);
 
   const last12Months = await getLast12MonthsData();
 
@@ -299,8 +299,8 @@ async function getCommercialDashboard(userId, year, month) {
     .from('sales')
     .select('*')
     .eq('created_by_user_id', userId)
-    .gte('sale_date', start.split('T')[0])
-    .lt('sale_date', end.split('T')[0]);
+    .gte('date', start.split('T')[0])
+    .lt('date', end.split('T')[0]);
 
   const last12Months = await getLast12MonthsData();
 
