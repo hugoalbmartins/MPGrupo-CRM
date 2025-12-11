@@ -72,12 +72,9 @@ export const partnersService = {
         .maybeSingle();
       console.log('1c. Current user from DB:', currentUser);
 
-      if (!validateNIF(partnerData.nif)) {
-        if (partnerData.nif.startsWith('5')) {
-          throw new Error('NIF inválido: dígito de controlo CRC incorreto');
-        } else {
-          throw new Error('NIF inválido: formato incorreto');
-        }
+      const nifValidation = validateNIF(partnerData.nif);
+      if (!nifValidation.valid) {
+        throw new Error(nifValidation.message);
       }
 
       console.log('2. NIF validated successfully');
@@ -182,12 +179,9 @@ export const partnersService = {
   },
 
   async update(id, partnerData) {
-    if (!validateNIF(partnerData.nif)) {
-      if (partnerData.nif.startsWith('5')) {
-        throw new Error('NIF inválido: dígito de controlo CRC incorreto');
-      } else {
-        throw new Error('NIF inválido: formato incorreto');
-      }
+    const nifValidation = validateNIF(partnerData.nif);
+    if (!nifValidation.valid) {
+      throw new Error(nifValidation.message);
     }
 
     const { data: oldPartner } = await supabase

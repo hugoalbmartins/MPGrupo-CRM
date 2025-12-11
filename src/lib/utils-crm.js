@@ -39,14 +39,24 @@ export function validateNIF(nif) {
   const cleaned = nif.replace(/\D/g, '');
 
   if (cleaned.length !== 9 || !/^\d+$/.test(cleaned)) {
-    return false;
+    return {
+      valid: false,
+      message: 'NIF inválido: deve ter 9 dígitos'
+    };
   }
 
   if (cleaned[0] === '5') {
-    return validateNIFCheckDigit(cleaned);
+    const isValid = validateNIFCheckDigit(cleaned);
+    return {
+      valid: isValid,
+      message: isValid ? '' : 'NIF inválido: dígito de controlo CRC incorreto'
+    };
   }
 
-  return true;
+  return {
+    valid: true,
+    message: ''
+  };
 }
 
 export function validateNIFCheckDigit(nif) {
