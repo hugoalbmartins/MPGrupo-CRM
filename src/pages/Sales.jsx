@@ -708,7 +708,17 @@ const Sales = ({ user }) => {
           <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
             <div>
               <Label>Status *</Label>
-              <Select value={editFormData.status} onValueChange={(v) => setEditFormData({...editFormData, status: v})}>
+              <Select
+                value={editFormData.status}
+                onValueChange={(v) => {
+                  const newFormData = {...editFormData, status: v};
+                  if (v !== 'Ativo') {
+                    newFormData.paid_to_operator = false;
+                    newFormData.payment_date = "";
+                  }
+                  setEditFormData(newFormData);
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Para registo">Para registo</SelectItem>
@@ -731,15 +741,23 @@ const Sales = ({ user }) => {
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="paid_to_operator"
-                checked={editFormData.paid_to_operator}
-                onChange={(e) => setEditFormData({...editFormData, paid_to_operator: e.target.checked})}
-                className="w-4 h-4"
-              />
-              <Label htmlFor="paid_to_operator">Paga pelo Operador</Label>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="paid_to_operator"
+                  checked={editFormData.paid_to_operator}
+                  onChange={(e) => setEditFormData({...editFormData, paid_to_operator: e.target.checked})}
+                  disabled={editFormData.status !== 'Ativo'}
+                  className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <Label htmlFor="paid_to_operator" className={editFormData.status !== 'Ativo' ? 'text-gray-400' : ''}>
+                  Paga pelo Operador
+                </Label>
+              </div>
+              {editFormData.status !== 'Ativo' && (
+                <p className="text-xs text-gray-500">Apenas disponível para vendas com estado "Ativo"</p>
+              )}
             </div>
 
             {editFormData.paid_to_operator && (

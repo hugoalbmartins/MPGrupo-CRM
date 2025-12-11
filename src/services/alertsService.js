@@ -8,7 +8,7 @@ export const alertsService = {
     const { data, error } = await supabase
       .from('alerts')
       .select('*')
-      .contains('user_ids', [user.id])
+      .overlaps('user_ids', [user.id])
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -23,7 +23,7 @@ export const alertsService = {
     const { count, error } = await supabase
       .from('alerts')
       .select('*', { count: 'exact', head: true })
-      .contains('user_ids', [user.id])
+      .overlaps('user_ids', [user.id])
       .not('read_by', 'cs', `{${user.id}}`);
 
     if (error) throw error;

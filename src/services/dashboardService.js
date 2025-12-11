@@ -162,11 +162,11 @@ async function getAdminDashboard(year, month) {
 
       if (sale.paid_to_operator) {
         stats.paid_by_operator++;
-      } else {
-        stats.unpaid_by_operator++;
         if (status === 'Ativo') {
           stats.commission_to_pay += commission;
         }
+      } else {
+        stats.unpaid_by_operator++;
       }
 
       stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + commission;
