@@ -419,26 +419,6 @@ const Dashboard = ({ user }) => {
       {user?.role === 'partner' && renderPartnerDashboard()}
       {user?.role === 'partner_commercial' && renderCommercialDashboard()}
 
-      {/* 12 Months Bar Chart */}
-      {stats?.last_12_months && stats.last_12_months.length > 0 && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Evolução dos Últimos 12 Meses</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={prepare12MonthsData()}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Telecom" fill="#06b6d4" name="Telecomunicações" />
-              <Bar dataKey="Energia" fill="#f97316" name="Energia" />
-              <Bar dataKey="Solar" fill="#22c55e" name="Solar" />
-              <Bar dataKey="Dual" fill="#6b7280" name="Dual" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {statusData.length > 0 && (
           <div className="professional-card p-6">
@@ -474,6 +454,26 @@ const Dashboard = ({ user }) => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* 12 Months Bar Chart */}
+      {stats?.last_12_months && stats.last_12_months.length > 0 && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Evolução dos Últimos 12 Meses</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={prepare12MonthsData()}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="Telecom" fill="#06b6d4" name="Telecomunicações" />
+              <Bar dataKey="Energia" fill="#f97316" name="Energia" />
+              <Bar dataKey="Solar" fill="#22c55e" name="Solar" />
+              <Bar dataKey="Dual" fill="#6b7280" name="Dual" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 };

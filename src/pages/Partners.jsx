@@ -200,15 +200,67 @@ const Partners = ({ user }) => {
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
+  const handleExportExcel = async () => {
+    try {
+      if (partners.length === 0) {
+        toast.error("Nenhum parceiro encontrado para exportar");
+        return;
+      }
+
+      // Preparar dados para Excel
+      const excelData = partners.map(partner => ({
+        'Código': partner.partner_code,
+        'Tipo': partner.partner_type,
+        'Nome': partner.name,
+        'Email Principal': partner.email,
+        'Emails Comunicação': (partner.communication_emails || []).join(', '),
+        'Telefone': partner.phone,
+        'Pessoa Contacto': partner.contact_person,
+        'Rua': partner.street,
+        'Nº Porta': partner.door_number,
+        'Código Postal': partner.postal_code,
+        'Localidade': partner.locality,
+        'NIF': partner.nif,
+        'CRC': partner.crc || '',
+        'IBAN': partner.iban || '',
+        'Data Criação': new Date(partner.created_at).toLocaleDateString('pt-PT')
+      }));
+
+      // Criar workbook e worksheet
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Parceiros');
+
+      // Gerar e fazer download
+      const fileName = `parceiros_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      toast.success(`Exportados ${partners.length} parceiros`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao exportar Excel");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Parceiros</h1>
-        {user?.role === 'admin' && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Parceiro</Button>
-            </DialogTrigger>
+        <div className="flex gap-3">
+          <Button
+            onClick={handleExportExcel}
+            variant="outline"
+            className="border-green-500 text-green-600 hover:bg-green-50"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar Excel
+          </Button>
+          {user?.role === 'admin' && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Parceiro</Button>
+              </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-2xl">{editingPartner ? "Editar Parceiro" : "Novo Parceiro"}</DialogTitle>
@@ -333,6 +385,7 @@ const Partners = ({ user }) => {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
 
       <div className="professional-card p-6">

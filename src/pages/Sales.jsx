@@ -178,9 +178,72 @@ const Sales = ({ user }) => {
 
   const handleExportExcel = async () => {
     try {
-      toast.info("Funcionalidade de exportação será implementada em breve");
+      let dataToExport = [...sales];
+
+      // Filtrar por data se especificado
+      if (exportStartDate) {
+        dataToExport = dataToExport.filter(sale => new Date(sale.date) >= new Date(exportStartDate));
+      }
+      if (exportEndDate) {
+        dataToExport = dataToExport.filter(sale => new Date(sale.date) <= new Date(exportEndDate));
+      }
+
+      if (dataToExport.length === 0) {
+        toast.error("Nenhuma venda encontrada para exportar");
+        return;
+      }
+
+      // Preparar dados para Excel
+      const excelData = dataToExport.map(sale => {
+        const partner = partners.find(p => p.id === sale.partner_id);
+        const operator = operators.find(o => o.id === sale.operator_id);
+        const commission = sale.manual_commission || sale.calculated_commission || 0;
+
+        return {
+          'Código': sale.sale_code,
+          'Data': new Date(sale.date).toLocaleDateString('pt-PT'),
+          'Parceiro': partner?.name || '',
+          'Âmbito': sale.scope,
+          'Tipo Cliente': sale.client_type,
+          'Nome Cliente': sale.client_name,
+          'NIF': sale.client_nif,
+          'Contacto': sale.client_contact,
+          'Email': sale.client_email || '',
+          'IBAN': sale.client_iban || '',
+          'Morada Instalação': sale.installation_address || '',
+          'Operadora': operator?.name || '',
+          'Tipo Serviço': sale.service_type || '',
+          'Tipo Ativação': sale.activation_type || '',
+          'Valor Mensal': sale.monthly_value ? `€${sale.monthly_value}` : '',
+          'Tipo Venda Energia': sale.energy_sale_type || '',
+          'CPE': sale.cpe || '',
+          'Potência': sale.power || '',
+          'CUI': sale.cui || '',
+          'Escalão': sale.tier || '',
+          'Tipo Entrada': sale.entry_type || '',
+          'Status': sale.status,
+          'Nº Requisição': sale.request_number || '',
+          'Comissão': `€${commission.toFixed(2)}`,
+          'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
+          'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
+          'Observações': sale.observations || ''
+        };
+      });
+
+      // Criar workbook e worksheet
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Vendas');
+
+      // Gerar e fazer download
+      const fileName = `vendas_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      toast.success(`Exportadas ${dataToExport.length} vendas`);
       setExportDialogOpen(false);
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao exportar Excel");
     }
   };

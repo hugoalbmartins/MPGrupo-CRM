@@ -134,7 +134,7 @@ async function getAdminDashboard(year, month) {
   if (sales) {
     sales.forEach(sale => {
       const scope = sale.scope || '';
-      const commission = sale.calculated_commission || 0;
+      const commission = sale.manual_commission || sale.calculated_commission || 0;
       const status = sale.status || 'Pendente';
 
       if (scope === 'telecomunicacoes') {
@@ -260,7 +260,7 @@ async function getPartnerDashboard(partnerId, year, month) {
   if (sales) {
     sales.forEach(sale => {
       const scope = sale.scope || '';
-      const commission = sale.calculated_commission || 0;
+      const commission = sale.manual_commission || sale.calculated_commission || 0;
       const status = sale.status || 'Pendente';
 
       if (scope === 'telecomunicacoes') {

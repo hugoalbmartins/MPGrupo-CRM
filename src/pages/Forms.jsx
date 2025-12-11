@@ -25,9 +25,16 @@ const Forms = ({ user }) => {
 
   const fetchOperators = async () => {
     try {
-      const response = await axios.get(`${API}/operators?include_hidden=false`);
+      const { data, error } = await supabase
+        .from('operators')
+        .select('*')
+        .eq('hidden', false)
+        .order('name');
+
+      if (error) throw error;
+
       // Filtrar apenas operadoras com documentos
-      const operatorsWithDocs = response.data.filter(op => op.documents && op.documents.length > 0);
+      const operatorsWithDocs = (data || []).filter(op => op.documents && op.documents.length > 0);
       setOperators(operatorsWithDocs);
     } catch (error) {
       toast.error("Erro ao carregar operadoras");
@@ -36,8 +43,33 @@ const Forms = ({ user }) => {
     }
   };
 
-  const handleDownloadDocument = (operatorId, docId, filename) => {
-    window.open(`${API}/operators/${operatorId}/documents/${docId}/download`, '_blank');
+  const handleDownloadDocument = async (doc) => {
+    try {
+      if (doc.url) {
+        // Se for uma URL direta, abrir
+        window.open(doc.url, '_blank');
+      } else if (doc.path) {
+        // Se for um path no Supabase Storage
+        const { data, error } = await supabase.storage
+          .from('operator-documents')
+          .download(doc.path);
+
+        if (error) throw error;
+
+        // Criar URL temporária e fazer download
+        const url = window.URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = doc.filename || 'document';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      toast.error("Erro ao descarregar documento");
+      console.error(error);
+    }
   };
 
   if (loading) {
@@ -134,7 +166,7 @@ const Forms = ({ user }) => {
                   </div>
                 </div>
                 <Button
-                  onClick={() => handleDownloadDocument(selectedOperator.id, doc.id, doc.filename)}
+                  onClick={() => handleDownloadDocument(doc)}
                   className="btn-primary"
                   size="sm"
                 >
