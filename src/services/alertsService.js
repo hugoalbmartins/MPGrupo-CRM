@@ -54,8 +54,6 @@ export const alertsService = {
   },
 
   subscribeToAlerts(callback) {
-    const { data: { user } } = supabase.auth.getUser();
-
     const subscription = supabase
       .channel('alerts')
       .on(
