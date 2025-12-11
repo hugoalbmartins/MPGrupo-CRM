@@ -56,7 +56,7 @@ const Layout = ({ children, user, onLogout }) => {
               <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight" style={{ color: '#FFFFFF' }}>MP GRUPO</h1>
+              <h1 className="text-lg font-bold tracking-tight" style={{ color: '#FFFFFF', opacity: 1 }}>MP GRUPO</h1>
               <p className="text-xs text-gray-400 font-medium">Sales CRM</p>
             </div>
           </div>
