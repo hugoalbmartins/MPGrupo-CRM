@@ -773,20 +773,26 @@ const Sales = ({ user }) => {
 
             {(() => {
               const saleOperator = operators.find(op => op.id === editingSale?.operator_id);
-              return (saleOperator?.commission_mode === 'manual' || editingSale?.scope === 'solar') && (
+              const shouldShowCommission = (saleOperator?.commission_mode === 'manual' || editingSale?.scope === 'solar');
+              const canEditCommission = user?.role === 'admin';
+
+              return shouldShowCommission && (
                 <div>
-                  <Label>Comissão Manual (€)</Label>
+                  <Label>Comissão Manual (€) {!canEditCommission && <span className="text-red-500">*Apenas Administradores</span>}</Label>
                   <Input
                     type="number"
                     step="0.01"
                     value={editFormData.manual_commission}
                     onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
                     placeholder="Definir comissão"
+                    disabled={!canEditCommission}
+                    className={!canEditCommission ? "bg-gray-100 cursor-not-allowed" : ""}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {saleOperator?.commission_mode === 'manual'
                       ? 'Operadora com comissão definida ao contrato'
                       : 'Comissão para venda Solar'}
+                    {!canEditCommission && ' - Apenas administradores podem definir comissões manuais'}
                   </p>
                 </div>
               );

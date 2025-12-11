@@ -295,18 +295,20 @@ const Operators = ({ user }) => {
                         <Button onClick={() => openCommissionConfig(op)} size="sm" variant="ghost" title="Configurar Comissões">
                           <Settings className="w-4 h-4" />
                         </Button>
-                        <Button onClick={() => openUploadDialog(op)} size="sm" variant="ghost" title="Gerir Formulários">
-                          <Upload className="w-4 h-4" />
-                        </Button>
                         <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-500 hover:text-red-700">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </>
                     )}
                     {(user?.role === 'admin' || user?.role === 'bo') && (
-                      <Button onClick={() => toggleVisibility(op.id)} size="sm" variant="ghost" title={op.hidden ? "Mostrar" : "Ocultar"}>
-                        {op.hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
+                      <>
+                        <Button onClick={() => openUploadDialog(op)} size="sm" variant="ghost" title="Gerir Formulários">
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                        <Button onClick={() => toggleVisibility(op.id)} size="sm" variant="ghost" title={op.hidden ? "Mostrar" : "Ocultar"}>
+                          {op.hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
