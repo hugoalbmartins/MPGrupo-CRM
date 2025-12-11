@@ -57,7 +57,7 @@ const Layout = ({ children, user, onLogout }) => {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight" style={{ color: '#FFFFFF', opacity: 1 }}>MP GRUPO</h1>
-              <p className="text-xs text-gray-400 font-medium">Sales CRM</p>
+              <p className="text-xs font-medium" style={{ color: '#FFFFFF', opacity: 1 }}>Sales CRM</p>
             </div>
           </div>
         </div>
