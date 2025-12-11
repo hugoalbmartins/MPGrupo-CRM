@@ -103,11 +103,12 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
     .eq('id', partnerId)
     .maybeSingle();
 
-  if (!partner) return 'XXX00010';
+  if (!partner) return 'XXX00010125';
 
   const namePrefix = partner.name.substring(0, 3).toUpperCase();
   const date = new Date(saleDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = String(date.getFullYear()).slice(-2);
 
   const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
   const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1).toISOString();
@@ -120,7 +121,7 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
     .lt('date', endOfMonth);
 
   const sequence = String((count || 0) + 1).padStart(4, '0');
-  return `${namePrefix}${sequence}${month}`;
+  return `${namePrefix}${sequence}${month}${year}`;
 }
 
 export async function calculateCommission(operator, saleData, supabase) {
