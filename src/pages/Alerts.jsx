@@ -14,6 +14,17 @@ const Alerts = ({ user }) => {
 
   useEffect(() => {
     fetchAlerts();
+
+    const interval = setInterval(fetchAlerts, 30000);
+
+    const unsubscribe = alertsService.subscribeToAlerts(() => {
+      fetchAlerts();
+    });
+
+    return () => {
+      clearInterval(interval);
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const fetchAlerts = async () => {
