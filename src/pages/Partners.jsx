@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Plus, Search, Upload, File, Download, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -204,7 +204,12 @@ const Partners = ({ user }) => {
               <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Parceiro</Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle className="text-2xl">{editingPartner ? "Editar Parceiro" : "Novo Parceiro"}</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle className="text-2xl">{editingPartner ? "Editar Parceiro" : "Novo Parceiro"}</DialogTitle>
+                <DialogDescription>
+                  {editingPartner ? "Atualize as informações do parceiro" : "Preencha os dados para criar um novo parceiro"}
+                </DialogDescription>
+              </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -396,6 +401,7 @@ const Partners = ({ user }) => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Documentos - {selectedPartnerForDocs?.name}</DialogTitle>
+            <DialogDescription>Gerir documentos associados ao parceiro</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {/* Upload Section */}
