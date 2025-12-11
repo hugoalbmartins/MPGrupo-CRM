@@ -76,6 +76,29 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing required fields");
     }
 
+    const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers();
+    const userAlreadyExists = existingAuthUser?.users?.some(u => u.email === requestData.email);
+    
+    if (userAlreadyExists) {
+      const orphanUser = existingAuthUser?.users?.find(u => u.email === requestData.email);
+      if (orphanUser) {
+        const { data: existingProfile } = await supabaseAdmin
+          .from("users")
+          .select("id")
+          .eq("id", orphanUser.id)
+          .maybeSingle();
+        
+        if (!existingProfile) {
+          await supabaseAdmin.auth.admin.deleteUser(orphanUser.id);
+          console.log(`Cleaned up orphan auth user: ${orphanUser.id}`);
+        } else {
+          throw new Error("Este email já está registado. Por favor, use outro email.");
+        }
+      } else {
+        throw new Error("Este email já está registado. Por favor, use outro email.");
+      }
+    }
+
     const { data: authData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
       email: requestData.email,
       password: requestData.password,
@@ -134,6 +157,7 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
+    console.error("Error creating user:", error);
     return new Response(
       JSON.stringify({
         success: false,

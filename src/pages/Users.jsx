@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Briefcase, User as UserIcon, Edit } from "lucide-react";
+import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,8 @@ const Users = ({ user }) => {
   const [editMode, setEditMode] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
   const [suggestedPassword, setSuggestedPassword] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -93,6 +96,25 @@ const Users = ({ user }) => {
       partner_id: userToEdit.partner_id || ""
     });
     setDialogOpen(true);
+  };
+
+  const openDeleteDialog = (userToDelete) => {
+    setUserToDelete(userToDelete);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await usersService.delete(userToDelete.id);
+      toast.success("Utilizador eliminado com sucesso!");
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      fetchData();
+    } catch (error) {
+      toast.error(error.message || "Erro ao eliminar utilizador");
+    }
   };
 
   const getRoleIcon = (role) => {
@@ -205,18 +227,49 @@ const Users = ({ user }) => {
                 <p className="text-xs text-gray-500 mt-1">{u.email}</p>
                 <p className="text-xs text-gray-500">{u.position}</p>
               </div>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                onClick={() => openEditDialog(u)}
-                title="Editar utilizador"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openEditDialog(u)}
+                  title="Editar utilizador"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openDeleteDialog(u)}
+                  title="Eliminar utilizador"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  disabled={u.id === user?.id}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Eliminação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem a certeza que deseja eliminar o utilizador <strong>{userToDelete?.name}</strong> ({userToDelete?.email})?
+              <br /><br />
+              Esta ação não pode ser revertida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
