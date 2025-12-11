@@ -62,13 +62,28 @@ export function validateNIFCheckDigit(nif) {
 }
 
 export async function generatePartnerCode(partnerType, supabase) {
-  const { count } = await supabase
-    .from('partners')
-    .select('*', { count: 'exact', head: true })
-    .eq('partner_type', partnerType);
+  try {
+    console.log('generatePartnerCode: Starting for type', partnerType);
 
-  const number = 1001 + (count || 0);
-  return `${partnerType}${number}`;
+    const { count, error } = await supabase
+      .from('partners')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_type', partnerType);
+
+    if (error) {
+      console.error('generatePartnerCode: Query error:', error);
+      throw error;
+    }
+
+    console.log('generatePartnerCode: Found', count, 'existing partners of type', partnerType);
+    const number = 1001 + (count || 0);
+    const code = `${partnerType}${number}`;
+    console.log('generatePartnerCode: Generated code', code);
+    return code;
+  } catch (error) {
+    console.error('generatePartnerCode: Failed:', error);
+    throw error;
+  }
 }
 
 export async function generateSaleCode(partnerId, saleDate, supabase) {

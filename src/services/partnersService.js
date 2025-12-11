@@ -60,6 +60,17 @@ export const partnersService = {
   async create(partnerData) {
     try {
       console.log('1. Starting partner creation...');
+      console.log('1a. Partner data:', partnerData);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('1b. Current auth user:', user?.id, user?.email);
+
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+      console.log('1c. Current user from DB:', currentUser);
 
       if (!validateNIF(partnerData.nif)) {
         if (partnerData.nif.startsWith('5')) {
@@ -71,6 +82,7 @@ export const partnersService = {
 
       console.log('2. NIF validated successfully');
 
+      console.log('2a. About to call generatePartnerCode...');
       const partnerCode = await generatePartnerCode(partnerData.partner_type, supabase);
       console.log('3. Generated partner code:', partnerCode);
 
