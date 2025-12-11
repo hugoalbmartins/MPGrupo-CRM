@@ -24,16 +24,19 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
   const isEnergy = operator?.scope === 'energia';
   const isManualCommission = operator?.commission_mode === 'manual';
 
-  const addTier = (clientType, serviceType = null) => {
+  const addTier = (clientType, partnerType, serviceType = null) => {
     const newConfig = { ...config };
 
     if (!newConfig[clientType]) {
       newConfig[clientType] = {};
     }
+    if (!newConfig[clientType][partnerType]) {
+      newConfig[clientType][partnerType] = {};
+    }
 
     const target = serviceType
-      ? (newConfig[clientType][serviceType] || {})
-      : (newConfig[clientType] || {});
+      ? (newConfig[clientType][partnerType][serviceType] || {})
+      : (newConfig[clientType][partnerType] || {});
 
     if (!target.tiers) {
       target.tiers = [];
@@ -46,19 +49,19 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
     });
 
     if (serviceType) {
-      newConfig[clientType][serviceType] = target;
+      newConfig[clientType][partnerType][serviceType] = target;
     } else {
-      newConfig[clientType] = target;
+      newConfig[clientType][partnerType] = target;
     }
 
     setConfig(newConfig);
   };
 
-  const removeTier = (clientType, tierIndex, serviceType = null) => {
+  const removeTier = (clientType, partnerType, tierIndex, serviceType = null) => {
     const newConfig = { ...config };
-    const target = serviceType 
-      ? newConfig[clientType]?.[serviceType]
-      : newConfig[clientType];
+    const target = serviceType
+      ? newConfig[clientType]?.[partnerType]?.[serviceType]
+      : newConfig[clientType]?.[partnerType];
 
     if (target?.tiers) {
       target.tiers.splice(tierIndex, 1);
@@ -67,12 +70,16 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
     setConfig(newConfig);
   };
 
-  const updateTier = (clientType, tierIndex, field, value, serviceType = null) => {
+  const updateTier = (clientType, partnerType, tierIndex, field, value, serviceType = null) => {
     const newConfig = { ...config };
-    const target = serviceType 
-      ? (newConfig[clientType][serviceType] || { tiers: [] })
-      : (newConfig[clientType] || { tiers: [] });
+    if (!newConfig[clientType]) newConfig[clientType] = {};
+    if (!newConfig[clientType][partnerType]) newConfig[clientType][partnerType] = {};
 
+    const target = serviceType
+      ? (newConfig[clientType][partnerType][serviceType] || { tiers: [] })
+      : (newConfig[clientType][partnerType] || { tiers: [] });
+
+    if (!target.tiers) target.tiers = [];
     if (!target.tiers[tierIndex]) {
       target.tiers[tierIndex] = {};
     }
@@ -80,52 +87,23 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
     target.tiers[tierIndex][field] = parseFloat(value) || 0;
 
     if (serviceType) {
-      if (!newConfig[clientType]) newConfig[clientType] = {};
-      newConfig[clientType][serviceType] = target;
+      newConfig[clientType][partnerType][serviceType] = target;
     } else {
-      newConfig[clientType] = target;
+      newConfig[clientType][partnerType] = target;
     }
 
     setConfig(newConfig);
   };
 
   const handleSave = () => {
-    // Validate config
-    for (const clientType of ['particular', 'empresarial']) {
-      if (isTelecom) {
-        for (const serviceType of ['M3', 'M4']) {
-          const tiers = config[clientType]?.[serviceType]?.tiers || [];
-          if (tiers.length === 0) {
-            toast.error(`Configure pelo menos 1 patamar para ${clientType} - ${serviceType}`);
-            return;
-          }
-        }
-      } else if (isEnergy) {
-        const energyTypes = ['eletricidade', 'gas', 'dual'];
-        for (const energyType of energyTypes) {
-          const tiers = config[clientType]?.[energyType]?.tiers || [];
-          if (tiers.length === 0) {
-            toast.error(`Configure pelo menos 1 patamar para ${clientType} - ${energyType}`);
-            return;
-          }
-        }
-      } else {
-        const tiers = config[clientType]?.tiers || [];
-        if (tiers.length === 0) {
-          toast.error(`Configure pelo menos 1 patamar para ${clientType}`);
-          return;
-        }
-      }
-    }
-
     onSave(config);
   };
 
-  const renderTierForm = (clientType, serviceType = null) => {
-    const target = serviceType 
-      ? config[clientType]?.[serviceType]
-      : config[clientType];
-    
+  const renderTierForm = (clientType, partnerType, serviceType = null) => {
+    const target = serviceType
+      ? config[clientType]?.[partnerType]?.[serviceType]
+      : config[clientType]?.[partnerType];
+
     const tiers = target?.tiers || [];
 
     return (
@@ -138,7 +116,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
             <div className="group relative">
               <Info className="w-4 h-4 text-blue-500 cursor-help" />
               <div className="hidden group-hover:block absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg -top-2 left-6">
-                {isTelecom 
+                {isTelecom
                   ? "Multiplicador será aplicado ao valor da mensalidade"
                   : "Valor fixo de comissão para este tipo de venda"
                 }
@@ -149,7 +127,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => addTier(clientType, serviceType)}
+            onClick={() => addTier(clientType, partnerType, serviceType)}
           >
             <Plus className="w-4 h-4 mr-1" />
             Adicionar Patamar
@@ -172,7 +150,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                     type="number"
                     min="0"
                     value={tier.min_sales || 0}
-                    onChange={(e) => updateTier(clientType, index, 'min_sales', e.target.value, serviceType)}
+                    onChange={(e) => updateTier(clientType, partnerType, index, 'min_sales', e.target.value, serviceType)}
                     placeholder="Ex: 0, 50, 100"
                   />
                   <p className="text-xs text-gray-500 mt-1">A partir de quantas vendas</p>
@@ -186,7 +164,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                       step="0.1"
                       min="0"
                       value={tier.multiplier || 0}
-                      onChange={(e) => updateTier(clientType, index, 'multiplier', e.target.value, serviceType)}
+                      onChange={(e) => updateTier(clientType, partnerType, index, 'multiplier', e.target.value, serviceType)}
                       placeholder="Ex: 1.5, 2.0"
                     />
                     <p className="text-xs text-gray-500 mt-1">Multiplica a mensalidade</p>
@@ -199,7 +177,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                       step="0.01"
                       min="0"
                       value={tier.commission_value || 0}
-                      onChange={(e) => updateTier(clientType, index, 'commission_value', e.target.value, serviceType)}
+                      onChange={(e) => updateTier(clientType, partnerType, index, 'commission_value', e.target.value, serviceType)}
                       placeholder="Ex: 50.00"
                     />
                     <p className="text-xs text-gray-500 mt-1">Valor fixo em euros</p>
@@ -211,7 +189,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                     type="button"
                     variant="destructive"
                     size="sm"
-                    onClick={() => removeTier(clientType, index, serviceType)}
+                    onClick={() => removeTier(clientType, partnerType, index, serviceType)}
                     className="w-full"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
@@ -264,6 +242,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
             <li>• <strong>{operator?.scope}:</strong> Use valores fixos de comissão em euros</li>
           )}
           <li>• <strong>Tipos de cliente:</strong> Particular ou Empresarial</li>
+          <li>• <strong>Tipos de parceiro:</strong> D2D, Rev ou Rev+</li>
         </ul>
       </div>
 
@@ -274,75 +253,97 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
         </TabsList>
 
         <TabsContent value="particular" className="space-y-4 mt-4">
-          {isTelecom ? (
-            <Tabs defaultValue="M3" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="M3">M3</TabsTrigger>
-                <TabsTrigger value="M4">M4</TabsTrigger>
-              </TabsList>
-              <TabsContent value="M3" className="mt-4">
-                {renderTierForm('particular', 'M3')}
+          <Tabs defaultValue="D2D" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="D2D">D2D</TabsTrigger>
+              <TabsTrigger value="Rev">Rev</TabsTrigger>
+              <TabsTrigger value="Rev+">Rev+</TabsTrigger>
+            </TabsList>
+            {['D2D', 'Rev', 'Rev+'].map(partnerType => (
+              <TabsContent key={partnerType} value={partnerType} className="mt-4">
+                {isTelecom ? (
+                  <Tabs defaultValue="M3" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="M3">M3</TabsTrigger>
+                      <TabsTrigger value="M4">M4</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="M3" className="mt-4">
+                      {renderTierForm('particular', partnerType, 'M3')}
+                    </TabsContent>
+                    <TabsContent value="M4" className="mt-4">
+                      {renderTierForm('particular', partnerType, 'M4')}
+                    </TabsContent>
+                  </Tabs>
+                ) : isEnergy ? (
+                  <Tabs defaultValue="eletricidade" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
+                      <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
+                      <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="eletricidade" className="mt-4">
+                      {renderTierForm('particular', partnerType, 'eletricidade')}
+                    </TabsContent>
+                    <TabsContent value="gas" className="mt-4">
+                      {renderTierForm('particular', partnerType, 'gas')}
+                    </TabsContent>
+                    <TabsContent value="dual" className="mt-4">
+                      {renderTierForm('particular', partnerType, 'dual')}
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  renderTierForm('particular', partnerType)
+                )}
               </TabsContent>
-              <TabsContent value="M4" className="mt-4">
-                {renderTierForm('particular', 'M4')}
-              </TabsContent>
-            </Tabs>
-          ) : isEnergy ? (
-            <Tabs defaultValue="eletricidade" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
-                <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
-                <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
-              </TabsList>
-              <TabsContent value="eletricidade" className="mt-4">
-                {renderTierForm('particular', 'eletricidade')}
-              </TabsContent>
-              <TabsContent value="gas" className="mt-4">
-                {renderTierForm('particular', 'gas')}
-              </TabsContent>
-              <TabsContent value="dual" className="mt-4">
-                {renderTierForm('particular', 'dual')}
-              </TabsContent>
-            </Tabs>
-          ) : (
-            renderTierForm('particular')
-          )}
+            ))}
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="empresarial" className="space-y-4 mt-4">
-          {isTelecom ? (
-            <Tabs defaultValue="M3" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="M3">M3</TabsTrigger>
-                <TabsTrigger value="M4">M4</TabsTrigger>
-              </TabsList>
-              <TabsContent value="M3" className="mt-4">
-                {renderTierForm('empresarial', 'M3')}
+          <Tabs defaultValue="D2D" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="D2D">D2D</TabsTrigger>
+              <TabsTrigger value="Rev">Rev</TabsTrigger>
+              <TabsTrigger value="Rev+">Rev+</TabsTrigger>
+            </TabsList>
+            {['D2D', 'Rev', 'Rev+'].map(partnerType => (
+              <TabsContent key={partnerType} value={partnerType} className="mt-4">
+                {isTelecom ? (
+                  <Tabs defaultValue="M3" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="M3">M3</TabsTrigger>
+                      <TabsTrigger value="M4">M4</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="M3" className="mt-4">
+                      {renderTierForm('empresarial', partnerType, 'M3')}
+                    </TabsContent>
+                    <TabsContent value="M4" className="mt-4">
+                      {renderTierForm('empresarial', partnerType, 'M4')}
+                    </TabsContent>
+                  </Tabs>
+                ) : isEnergy ? (
+                  <Tabs defaultValue="eletricidade" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
+                      <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
+                      <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="eletricidade" className="mt-4">
+                      {renderTierForm('empresarial', partnerType, 'eletricidade')}
+                    </TabsContent>
+                    <TabsContent value="gas" className="mt-4">
+                      {renderTierForm('empresarial', partnerType, 'gas')}
+                    </TabsContent>
+                    <TabsContent value="dual" className="mt-4">
+                      {renderTierForm('empresarial', partnerType, 'dual')}
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  renderTierForm('empresarial', partnerType)
+                )}
               </TabsContent>
-              <TabsContent value="M4" className="mt-4">
-                {renderTierForm('empresarial', 'M4')}
-              </TabsContent>
-            </Tabs>
-          ) : isEnergy ? (
-            <Tabs defaultValue="eletricidade" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
-                <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
-                <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
-              </TabsList>
-              <TabsContent value="eletricidade" className="mt-4">
-                {renderTierForm('empresarial', 'eletricidade')}
-              </TabsContent>
-              <TabsContent value="gas" className="mt-4">
-                {renderTierForm('empresarial', 'gas')}
-              </TabsContent>
-              <TabsContent value="dual" className="mt-4">
-                {renderTierForm('empresarial', 'dual')}
-              </TabsContent>
-            </Tabs>
-          ) : (
-            renderTierForm('empresarial')
-          )}
+            ))}
+          </Tabs>
         </TabsContent>
       </Tabs>
 

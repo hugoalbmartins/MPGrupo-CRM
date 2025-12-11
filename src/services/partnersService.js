@@ -69,48 +69,32 @@ export const partnersService = {
     const partnerCode = await generatePartnerCode(partnerData.partner_type, supabase);
     const userPassword = generateStrongPassword();
 
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email: partnerData.email,
-      password: userPassword,
-      options: {
-        data: {
-          name: partnerData.name,
-          role: 'partner'
-        }
-      }
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
 
-    if (signUpError) {
-      if (signUpError.message?.includes('already registered') || signUpError.status === 422) {
-        throw new Error('Este email já está registado. Por favor, use outro email.');
-      }
-      throw signUpError;
-    }
-
-    if (!authData?.user) throw new Error('Failed to create auth user');
-
-    const { data: userProfile, error: userError } = await supabase
-      .from('users')
-      .insert({
-        id: authData.user.id,
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         name: partnerData.name,
         email: partnerData.email,
+        password: userPassword,
         role: 'partner',
-        position: 'Parceiro',
-        must_change_password: true
+        position: 'Parceiro'
       })
-      .select()
-      .maybeSingle();
+    });
 
-    if (userError) {
-      console.error('Failed to create user profile for partner:', userError);
-      console.warn('Auth user created but profile insert failed. User ID:', authData.user.id);
-      throw new Error(`Failed to create user profile: ${userError.message}`);
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Falha ao criar utilizador');
     }
 
-    if (!userProfile) {
-      throw new Error('User profile created but not returned from database');
-    }
+    const userId = result.data.id;
 
     const { data: partner, error: partnerError } = await supabase
       .from('partners')
@@ -129,7 +113,7 @@ export const partnersService = {
         nif: partnerData.nif,
         crc: partnerData.crc,
         iban: partnerData.iban,
-        user_id: authData.user.id,
+        user_id: userId,
         initial_password: userPassword
       })
       .select()
@@ -137,12 +121,6 @@ export const partnersService = {
 
     if (partnerError) {
       console.error('Failed to create partner record:', partnerError);
-      console.warn('User profile created but partner insert failed. User ID:', authData.user.id);
-      await supabase.from('users').delete().eq('id', authData.user.id).then(
-        ({ error: delError }) => {
-          if (delError) console.error('Failed to cleanup user profile:', delError);
-        }
-      );
       throw new Error(`Failed to create partner: ${partnerError.message}`);
     }
 
