@@ -64,6 +64,10 @@ const Partners = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    console.log('=== PARTNER FORM SUBMIT START ===');
+    console.log('User:', user);
+    console.log('Form data:', formData);
+
     const nifValidation = validateNIF(formData.nif);
     if (!nifValidation.valid) {
       toast.error(nifValidation.message);
@@ -83,7 +87,9 @@ const Partners = ({ user }) => {
         await partnersService.update(editingPartner.id, submitData);
         toast.success("Parceiro atualizado com sucesso!");
       } else {
+        console.log('Calling partnersService.create...');
         const result = await partnersService.create(submitData);
+        console.log('Partner created successfully:', result);
         if (result.initial_password) {
           toast.success(
             `Parceiro criado! Password: ${result.initial_password}`,

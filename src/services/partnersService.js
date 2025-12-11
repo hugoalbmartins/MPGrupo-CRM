@@ -79,10 +79,19 @@ export const partnersService = {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
-      console.log('5. Session obtained');
+      console.log('5. Session obtained, token length:', session.access_token?.length);
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
       console.log('6. Calling edge function:', apiUrl);
+
+      const requestBody = {
+        name: partnerData.name,
+        email: partnerData.email,
+        password: userPassword,
+        role: 'partner',
+        position: 'Parceiro'
+      };
+      console.log('6a. Request body:', requestBody);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -90,24 +99,23 @@ export const partnersService = {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: partnerData.name,
-          email: partnerData.email,
-          password: userPassword,
-          role: 'partner',
-          position: 'Parceiro'
-        })
+        body: JSON.stringify(requestBody)
       });
 
       console.log('7. Edge function response status:', response.status);
+      console.log('7a. Response headers:', Object.fromEntries(response.headers.entries()));
+
+      const responseText = await response.text();
+      console.log('7b. Raw response:', responseText);
 
       let result;
       try {
-        result = await response.json();
+        result = JSON.parse(responseText);
         console.log('8. Edge function response:', result);
       } catch (jsonError) {
         console.error('Failed to parse edge function response:', jsonError);
-        throw new Error('Resposta inválida do servidor ao criar utilizador');
+        console.error('Response was:', responseText);
+        throw new Error(`Resposta inválida do servidor: ${responseText.substring(0, 100)}`);
       }
 
       if (!response.ok || !result.success) {
