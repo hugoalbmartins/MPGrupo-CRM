@@ -32,7 +32,7 @@ export function validateCPE(cpe) {
 }
 
 export function validateCUI(cui) {
-  return /^PT16\d{16}[A-Z]{2}$/i.test(cui);
+  return /^PT16\d{14}[A-Z]{2}$/i.test(cui);
 }
 
 export function validateNIF(nif) {
