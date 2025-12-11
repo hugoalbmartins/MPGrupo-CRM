@@ -148,7 +148,18 @@ const Users = ({ user }) => {
             <Button onClick={() => { resetForm(); generatePassword(); }} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Utilizador</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle className="text-2xl">{editMode ? 'Editar Utilizador' : 'Novo Utilizador'}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">
+                {editMode ? (
+                  <span>Editar Utilizador: <span className="text-blue-600">{formData.name}</span></span>
+                ) : (
+                  'Novo Utilizador'
+                )}
+              </DialogTitle>
+              {editMode && (
+                <p className="text-sm text-gray-600 mt-1">Como administrador, pode editar todos os dados incluindo a password</p>
+              )}
+            </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -189,19 +200,28 @@ const Users = ({ user }) => {
                 <div className="col-span-2">
                   <Label>Password {editMode ? '(deixar vazio para não alterar)' : '*'}</Label>
                   <div className="flex gap-2">
-                    <Input 
-                      value={formData.password} 
-                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                    <Input
+                      type="text"
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
                       required={!editMode}
-                      className="flex-1" 
+                      className="flex-1"
+                      placeholder={editMode ? "Deixe vazio para manter a atual" : ""}
                     />
                     <Button type="button" onClick={generatePassword} variant="outline">Gerar</Button>
                   </div>
                   {suggestedPassword && (
-                    <p className="text-sm text-gray-600 mt-1">Password gerada: <span className="font-mono font-semibold">{suggestedPassword}</span></p>
+                    <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md mt-2 border border-green-200">
+                      Password gerada: <span className="font-mono font-semibold">{suggestedPassword}</span>
+                    </p>
                   )}
                   {editMode && (
-                    <p className="text-xs text-gray-500 mt-1">Se alterar a password, o utilizador terá que mudar na próxima vez que fizer login</p>
+                    <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md mt-2 border border-blue-200">
+                      <strong>Administrador:</strong> Pode alterar a password de qualquer utilizador. O utilizador terá que mudar a password na próxima vez que fizer login.
+                    </div>
+                  )}
+                  {!editMode && (
+                    <p className="text-xs text-gray-500 mt-1">A password será fornecida ao utilizador. Deve conter pelo menos 8 caracteres, 1 maiúscula, 1 número e 1 carácter especial.</p>
                   )}
                 </div>
               </div>
@@ -216,37 +236,40 @@ const Users = ({ user }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {users.map((u) => (
-          <div key={u.id} className="professional-card p-6">
+          <div key={u.id} className="professional-card p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-start gap-3">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                 {getRoleIcon(u.role)}
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{u.name}</h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 truncate">{u.name}</h3>
                 <p className="text-sm text-gray-600">{getRoleLabel(u.role)}</p>
-                <p className="text-xs text-gray-500 mt-1">{u.email}</p>
-                <p className="text-xs text-gray-500">{u.position}</p>
+                <p className="text-xs text-gray-500 mt-1 truncate">{u.email}</p>
+                <p className="text-xs text-gray-500 truncate">{u.position}</p>
               </div>
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => openEditDialog(u)}
-                  title="Editar utilizador"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => openDeleteDialog(u)}
-                  title="Eliminar utilizador"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  disabled={u.id === user?.id}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
+              {user?.role === 'admin' && (
+                <div className="flex flex-col gap-1 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openEditDialog(u)}
+                    title="Editar utilizador"
+                    className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDeleteDialog(u)}
+                    title="Eliminar utilizador"
+                    className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                    disabled={u.id === user?.id}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         ))}
