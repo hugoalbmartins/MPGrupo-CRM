@@ -120,6 +120,7 @@ export const salesService = {
       operator_name: operator.name,
       status,
       service_type: saleData.service_type || null,
+      activation_type: saleData.activation_type || null,
       monthly_value: saleData.monthly_value || null,
       energy_sale_type: saleData.energy_sale_type || null,
       cpe: saleData.cpe?.toUpperCase() || null,
@@ -157,8 +158,12 @@ export const salesService = {
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
-      if (updateData[key] !== null && updateData[key] !== undefined) {
-        updates[key] = updateData[key];
+      if (updateData[key] !== null && updateData[key] !== undefined && updateData[key] !== '') {
+        if (key === 'manual_commission') {
+          updates[key] = parseFloat(updateData[key]) || null;
+        } else {
+          updates[key] = updateData[key];
+        }
       }
     });
 

@@ -39,6 +39,8 @@ export const operatorsService = {
         name: operatorData.name,
         scope: operatorData.scope,
         energy_type: operatorData.energy_type || null,
+        activation_types: operatorData.activation_types || [],
+        commission_mode: operatorData.commission_mode || 'tier',
         active: true,
         hidden: false,
         commission_config: operatorData.commission_config || {}

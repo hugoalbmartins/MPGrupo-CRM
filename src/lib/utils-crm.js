@@ -99,6 +99,10 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
 }
 
 export async function calculateCommission(operator, saleData, supabase) {
+  if (operator.commission_mode === 'manual') {
+    return 0.0;
+  }
+
   const commissionConfig = operator.commission_config || {};
   const customerType = saleData.customer_type || saleData.client_type || 'particular';
   const scope = saleData.scope;

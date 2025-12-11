@@ -22,6 +22,8 @@ const Operators = ({ user }) => {
     name: "",
     scope: "telecomunicacoes",
     energy_type: "",
+    activation_types: [],
+    commission_mode: "tier",
     commission_config: {}
   });
 
@@ -63,8 +65,38 @@ const Operators = ({ user }) => {
     }
   };
 
+  const handleDelete = async (operatorId, operatorName) => {
+    if (!window.confirm(`Tem a certeza que deseja eliminar a operadora "${operatorName}"? Esta ação não pode ser revertida.`)) {
+      return;
+    }
+
+    try {
+      await operatorsService.delete(operatorId);
+      toast.success("Operadora eliminada com sucesso");
+      fetchOperators();
+    } catch (error) {
+      toast.error("Erro ao eliminar operadora. Pode existir vendas associadas.");
+    }
+  };
+
   const resetForm = () => {
-    setFormData({ name: "", scope: "telecomunicacoes", energy_type: "", commission_config: {} });
+    setFormData({
+      name: "",
+      scope: "telecomunicacoes",
+      energy_type: "",
+      activation_types: [],
+      commission_mode: "tier",
+      commission_config: {}
+    });
+  };
+
+  const toggleActivationType = (type) => {
+    setFormData(prev => {
+      const newTypes = prev.activation_types.includes(type)
+        ? prev.activation_types.filter(t => t !== type)
+        : [...prev.activation_types, type];
+      return { ...prev, activation_types: newTypes };
+    });
   };
 
   const openCommissionConfig = (operator) => {
@@ -158,17 +190,70 @@ const Operators = ({ user }) => {
                     </SelectContent>
                   </Select>
                 </div>
-                {formData.scope === 'energia' && (
+                {formData.scope === 'telecomunicacoes' && (
                   <div>
-                    <Label>Tipo de Energia *</Label>
-                    <Select value={formData.energy_type} onValueChange={(v) => setFormData({...formData, energy_type: v})}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                    <Label>Tipos de Ativação *</Label>
+                    <div className="mt-2 space-y-2">
+                      {['NI', 'REFID Emp', 'MC'].map(type => (
+                        <div key={type} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`activation-${type}`}
+                            checked={formData.activation_types.includes(type)}
+                            onChange={() => toggleActivationType(type)}
+                            className="w-4 h-4"
+                          />
+                          <Label htmlFor={`activation-${type}`} className="cursor-pointer font-normal">{type}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {formData.scope === 'energia' && (
+                  <>
+                    <div>
+                      <Label>Tipo de Energia *</Label>
+                      <Select value={formData.energy_type} onValueChange={(v) => setFormData({...formData, energy_type: v})}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="eletricidade">Apenas Eletricidade</SelectItem>
+                          <SelectItem value="gas">Apenas Gás</SelectItem>
+                          <SelectItem value="dual">Dual (Eletricidade + Gás)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Modo de Comissão *</Label>
+                      <Select value={formData.commission_mode} onValueChange={(v) => setFormData({...formData, commission_mode: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tier">Por Patamares</SelectItem>
+                          <SelectItem value="manual">Definida ao Contrato</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formData.commission_mode === 'tier'
+                          ? 'Comissões calculadas automaticamente por patamares'
+                          : 'Comissão definida manualmente na edição de cada venda'}
+                      </p>
+                    </div>
+                  </>
+                )}
+                {formData.scope === 'solar' && (
+                  <div>
+                    <Label>Modo de Comissão *</Label>
+                    <Select value={formData.commission_mode} onValueChange={(v) => setFormData({...formData, commission_mode: v})}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="eletricidade">Apenas Eletricidade</SelectItem>
-                        <SelectItem value="gas">Apenas Gás</SelectItem>
-                        <SelectItem value="dual">Dual (Eletricidade + Gás)</SelectItem>
+                        <SelectItem value="tier">Por Patamares</SelectItem>
+                        <SelectItem value="manual">Definida ao Contrato</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.commission_mode === 'tier'
+                        ? 'Comissões calculadas automaticamente por patamares'
+                        : 'Comissão definida manualmente na edição de cada venda'}
+                    </p>
                   </div>
                 )}
                 <div className="flex justify-end gap-2 pt-4">
@@ -212,6 +297,9 @@ const Operators = ({ user }) => {
                         </Button>
                         <Button onClick={() => openUploadDialog(op)} size="sm" variant="ghost" title="Gerir Formulários">
                           <Upload className="w-4 h-4" />
+                        </Button>
+                        <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-500 hover:text-red-700">
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </>
                     )}

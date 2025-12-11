@@ -31,7 +31,8 @@ const Sales = ({ user }) => {
     status: "",
     requisition: "",
     paid_by_operator: false,
-    paid_date: ""
+    paid_date: "",
+    manual_commission: ""
   });
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
@@ -51,6 +52,7 @@ const Sales = ({ user }) => {
     installation_address: "",
     operator_id: "",
     service_type: "",
+    activation_type: "",
     monthly_value: "",
     energy_sale_type: "",
     cpe: "",
@@ -118,6 +120,7 @@ const Sales = ({ user }) => {
       installation_address: "",
       operator_id: "",
       service_type: "",
+      activation_type: "",
       monthly_value: "",
       energy_sale_type: "",
       cpe: "",
@@ -188,7 +191,8 @@ const Sales = ({ user }) => {
       status: sale.status || "",
       requisition: sale.requisition || "",
       paid_by_operator: sale.paid_by_operator || false,
-      paid_date: sale.paid_date ? sale.paid_date.split('T')[0] : ""
+      paid_date: sale.paid_date ? sale.paid_date.split('T')[0] : "",
+      manual_commission: sale.manual_commission || ""
     });
     setEditDialogOpen(true);
   };
@@ -394,6 +398,19 @@ const Sales = ({ user }) => {
                         </SelectContent>
                       </Select>
                     </div>
+                    {selectedOperator?.activation_types && selectedOperator.activation_types.length > 0 && (
+                      <div>
+                        <Label>Tipo de Ativação *</Label>
+                        <Select value={formData.activation_type} onValueChange={(v) => setFormData({...formData, activation_type: v})}>
+                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            {selectedOperator.activation_types.map(type => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div>
                       <Label>Mensalidade (€) *</Label>
                       <Input type="number" step="0.01" value={formData.monthly_value} onChange={(e) => setFormData({...formData, monthly_value: e.target.value})} required />
@@ -591,7 +608,10 @@ const Sales = ({ user }) => {
                     <td><span className={`status-badge status-${sale.status.toLowerCase().replace(' ', '-')}`}>{sale.status}</span></td>
                     {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
                       <td className="font-semibold text-green-600">
-                        {sale.commission ? `€${sale.commission.toFixed(2)}` : '-'}
+                        {(() => {
+                          const commission = sale.manual_commission || sale.calculated_commission;
+                          return commission ? `€${parseFloat(commission).toFixed(2)}` : '-';
+                        })()}
                       </td>
                     )}
                     {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
@@ -662,13 +682,34 @@ const Sales = ({ user }) => {
             {editFormData.paid_by_operator && (
               <div>
                 <Label>Data de Pagamento</Label>
-                <Input 
+                <Input
                   type="date"
                   value={editFormData.paid_date}
                   onChange={(e) => setEditFormData({...editFormData, paid_date: e.target.value})}
                 />
               </div>
             )}
+
+            {(() => {
+              const saleOperator = operators.find(op => op.id === editingSale?.operator_id);
+              return (saleOperator?.commission_mode === 'manual' || editingSale?.scope === 'solar') && (
+                <div>
+                  <Label>Comissão Manual (€)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.manual_commission}
+                    onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
+                    placeholder="Definir comissão"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {saleOperator?.commission_mode === 'manual'
+                      ? 'Operadora com comissão definida ao contrato'
+                      : 'Comissão para venda Solar'}
+                  </p>
+                </div>
+              );
+            })()}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>

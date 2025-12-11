@@ -22,12 +22,18 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
 
   const isTelecom = operator?.scope === 'telecomunicacoes';
   const isEnergy = operator?.scope === 'energia';
+  const isManualCommission = operator?.commission_mode === 'manual';
 
   const addTier = (clientType, serviceType = null) => {
     const newConfig = { ...config };
+
+    if (!newConfig[clientType]) {
+      newConfig[clientType] = {};
+    }
+
     const target = serviceType
       ? (newConfig[clientType][serviceType] || {})
-      : newConfig[clientType];
+      : (newConfig[clientType] || {});
 
     if (!target.tiers) {
       target.tiers = [];
@@ -219,6 +225,27 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
       </div>
     );
   };
+
+  if (isManualCommission) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <h3 className="font-semibold text-yellow-900 mb-2 text-lg">Comissão Definida ao Contrato</h3>
+          <p className="text-yellow-800 mb-4">
+            Esta operadora está configurada para comissão manual. As comissões serão definidas individualmente na edição de cada venda pelos administradores.
+          </p>
+          <p className="text-sm text-yellow-700">
+            Para usar patamares automáticos, altere o modo de comissão nas configurações da operadora.
+          </p>
+        </div>
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Fechar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
