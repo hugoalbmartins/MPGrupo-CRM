@@ -189,9 +189,9 @@ const Sales = ({ user }) => {
     setEditingSale(sale);
     setEditFormData({
       status: sale.status || "",
-      requisition: sale.requisition || "",
-      paid_by_operator: sale.paid_by_operator || false,
-      paid_date: sale.paid_date ? sale.paid_date.split('T')[0] : "",
+      request_number: sale.request_number || "",
+      paid_to_operator: sale.paid_to_operator || false,
+      payment_date: sale.payment_date ? sale.payment_date.split('T')[0] : "",
       manual_commission: sale.manual_commission || ""
     });
     setEditDialogOpen(true);
@@ -660,32 +660,32 @@ const Sales = ({ user }) => {
             {editingSale?.scope === 'telecomunicacoes' && (
               <div>
                 <Label>Requisição (REQ)</Label>
-                <Input 
-                  value={editFormData.requisition}
-                  onChange={(e) => setEditFormData({...editFormData, requisition: e.target.value})}
+                <Input
+                  value={editFormData.request_number}
+                  onChange={(e) => setEditFormData({...editFormData, request_number: e.target.value})}
                   placeholder="Número de requisição"
                 />
               </div>
             )}
 
             <div className="flex items-center gap-2">
-              <input 
+              <input
                 type="checkbox"
-                id="paid_by_operator"
-                checked={editFormData.paid_by_operator}
-                onChange={(e) => setEditFormData({...editFormData, paid_by_operator: e.target.checked})}
+                id="paid_to_operator"
+                checked={editFormData.paid_to_operator}
+                onChange={(e) => setEditFormData({...editFormData, paid_to_operator: e.target.checked})}
                 className="w-4 h-4"
               />
-              <Label htmlFor="paid_by_operator">Paga pelo Operador</Label>
+              <Label htmlFor="paid_to_operator">Paga pelo Operador</Label>
             </div>
 
-            {editFormData.paid_by_operator && (
+            {editFormData.paid_to_operator && (
               <div>
                 <Label>Data de Pagamento</Label>
                 <Input
                   type="date"
-                  value={editFormData.paid_date}
-                  onChange={(e) => setEditFormData({...editFormData, paid_date: e.target.value})}
+                  value={editFormData.payment_date}
+                  onChange={(e) => setEditFormData({...editFormData, payment_date: e.target.value})}
                 />
               </div>
             )}
