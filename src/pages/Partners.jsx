@@ -98,7 +98,9 @@ const Partners = ({ user }) => {
       resetForm();
       fetchPartners();
     } catch (error) {
-      toast.error(error.message || "Erro ao salvar parceiro");
+      console.error('Error in handleSubmit:', error);
+      const errorMessage = error.message || error.toString() || "Erro desconhecido ao salvar parceiro";
+      toast.error(errorMessage, { duration: 5000 });
     }
   };
 

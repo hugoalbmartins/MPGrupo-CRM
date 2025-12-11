@@ -58,77 +58,107 @@ export const partnersService = {
   },
 
   async create(partnerData) {
-    if (!validateNIF(partnerData.nif)) {
-      if (partnerData.nif.startsWith('5')) {
-        throw new Error('NIF inválido: dígito de controlo CRC incorreto');
-      } else {
-        throw new Error('NIF inválido: formato incorreto');
+    try {
+      console.log('1. Starting partner creation...');
+
+      if (!validateNIF(partnerData.nif)) {
+        if (partnerData.nif.startsWith('5')) {
+          throw new Error('NIF inválido: dígito de controlo CRC incorreto');
+        } else {
+          throw new Error('NIF inválido: formato incorreto');
+        }
       }
+
+      console.log('2. NIF validated successfully');
+
+      const partnerCode = await generatePartnerCode(partnerData.partner_type, supabase);
+      console.log('3. Generated partner code:', partnerCode);
+
+      const userPassword = generateStrongPassword();
+      console.log('4. Generated password');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      console.log('5. Session obtained');
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
+      console.log('6. Calling edge function:', apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: partnerData.name,
+          email: partnerData.email,
+          password: userPassword,
+          role: 'partner',
+          position: 'Parceiro'
+        })
+      });
+
+      console.log('7. Edge function response status:', response.status);
+
+      let result;
+      try {
+        result = await response.json();
+        console.log('8. Edge function response:', result);
+      } catch (jsonError) {
+        console.error('Failed to parse edge function response:', jsonError);
+        throw new Error('Resposta inválida do servidor ao criar utilizador');
+      }
+
+      if (!response.ok || !result.success) {
+        const errorMsg = result.error || `Erro HTTP ${response.status}`;
+        console.error('Edge function error:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      const userId = result.data.id;
+      console.log('9. User created with ID:', userId);
+
+      console.log('10. Inserting partner record...');
+      const { data: partner, error: partnerError } = await supabase
+        .from('partners')
+        .insert({
+          partner_code: partnerCode,
+          partner_type: partnerData.partner_type,
+          name: partnerData.name,
+          email: partnerData.email,
+          communication_emails: partnerData.communication_emails || [],
+          phone: partnerData.phone,
+          contact_person: partnerData.contact_person,
+          street: partnerData.street,
+          door_number: partnerData.door_number,
+          postal_code: partnerData.postal_code,
+          locality: partnerData.locality,
+          nif: partnerData.nif,
+          crc: partnerData.crc || null,
+          iban: partnerData.iban || null,
+          user_id: userId,
+          initial_password: userPassword
+        })
+        .select()
+        .maybeSingle();
+
+      if (partnerError) {
+        console.error('Partner insert error:', partnerError);
+        throw new Error(`Erro ao criar parceiro na base de dados: ${partnerError.message}`);
+      }
+
+      if (!partner) {
+        console.error('Partner created but not returned');
+        throw new Error('Parceiro criado mas não retornado pela base de dados');
+      }
+
+      console.log('11. Partner created successfully:', partner.id);
+      return { ...partner, initial_password: userPassword };
+    } catch (error) {
+      console.error('Partner creation failed:', error);
+      throw error;
     }
-
-    const partnerCode = await generatePartnerCode(partnerData.partner_type, supabase);
-    const userPassword = generateStrongPassword();
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
-
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: partnerData.name,
-        email: partnerData.email,
-        password: userPassword,
-        role: 'partner',
-        position: 'Parceiro'
-      })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || 'Falha ao criar utilizador');
-    }
-
-    const userId = result.data.id;
-
-    const { data: partner, error: partnerError } = await supabase
-      .from('partners')
-      .insert({
-        partner_code: partnerCode,
-        partner_type: partnerData.partner_type,
-        name: partnerData.name,
-        email: partnerData.email,
-        communication_emails: partnerData.communication_emails || [],
-        phone: partnerData.phone,
-        contact_person: partnerData.contact_person,
-        street: partnerData.street,
-        door_number: partnerData.door_number,
-        postal_code: partnerData.postal_code,
-        locality: partnerData.locality,
-        nif: partnerData.nif,
-        crc: partnerData.crc,
-        iban: partnerData.iban,
-        user_id: userId,
-        initial_password: userPassword
-      })
-      .select()
-      .maybeSingle();
-
-    if (partnerError) {
-      console.error('Failed to create partner record:', partnerError);
-      throw new Error(`Failed to create partner: ${partnerError.message}`);
-    }
-
-    if (!partner) {
-      throw new Error('Partner created but not returned from database');
-    }
-
-    return { ...partner, initial_password: userPassword };
   },
 
   async update(id, partnerData) {
