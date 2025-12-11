@@ -114,14 +114,13 @@ export const partnersService = {
       console.log('7. Edge function response status:', response.status);
       console.log('7a. Response headers:', Object.fromEntries(response.headers.entries()));
 
-      const responseText = await response.text();
-      console.log('7b. Raw response:', responseText);
-
+      const responseClone = response.clone();
       let result;
       try {
-        result = JSON.parse(responseText);
+        result = await response.json();
         console.log('8. Edge function response:', result);
       } catch (jsonError) {
+        const responseText = await responseClone.text();
         console.error('Failed to parse edge function response:', jsonError);
         console.error('Response was:', responseText);
         throw new Error(`Resposta inválida do servidor: ${responseText.substring(0, 100)}`);
