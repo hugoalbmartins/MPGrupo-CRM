@@ -210,6 +210,16 @@ export const salesService = {
     return note;
   },
 
+  async delete(id) {
+    const { error } = await supabase
+      .from('sales')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  },
+
   async createAlert(type, saleId, saleCode, message) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: currentUser } = await supabase

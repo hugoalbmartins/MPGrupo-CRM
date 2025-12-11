@@ -221,6 +221,20 @@ const Sales = ({ user }) => {
     }
   };
 
+  const handleDeleteSale = async (sale) => {
+    if (!window.confirm(`Tem a certeza que deseja apagar a venda ${sale.sale_code}? Esta ação não pode ser revertida.`)) {
+      return;
+    }
+
+    try {
+      await salesService.delete(sale.id);
+      toast.success("Venda apagada com sucesso!");
+      fetchData();
+    } catch (error) {
+      toast.error("Erro ao apagar venda");
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
   return (
@@ -556,6 +570,11 @@ const Sales = ({ user }) => {
                           <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600">
                             Notas ({sale.notes?.length || 0})
                           </Button>
+                          {user?.role === 'admin' && (
+                            <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     )}
