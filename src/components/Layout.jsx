@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { alertsService } from "../services/alertsService";
 
 const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
@@ -12,14 +13,26 @@ const Layout = ({ children, user, onLogout }) => {
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      // Poll every 30 seconds
       const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
+
+      const unsubscribe = alertsService.subscribeToAlerts(() => {
+        fetchUnreadCount();
+      });
+
+      return () => {
+        clearInterval(interval);
+        if (unsubscribe) unsubscribe();
+      };
     }
   }, [user]);
 
   const fetchUnreadCount = async () => {
-    setUnreadCount(0);
+    try {
+      const count = await alertsService.getUnreadCount();
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Failed to fetch unread count:', error);
+    }
   };
 
   const menuItems = [
@@ -27,6 +40,7 @@ const Layout = ({ children, user, onLogout }) => {
     { path: "/partners", label: "Parceiros", icon: Users, roles: ["admin", "bo", "partner"] },
     { path: "/sales", label: "Vendas", icon: ShoppingCart, roles: ["admin", "bo", "partner", "partner_commercial"] },
     { path: "/forms", label: "Formulários", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial"] },
+    { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial"], badge: unreadCount },
   ];
 
   if (user?.role === "admin") {
@@ -82,7 +96,14 @@ const Layout = ({ children, user, onLogout }) => {
               >
                 <Icon className={`w-5 h-5 mr-3 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-gray-500'}`} />
                 <span className="text-sm">{item.label}</span>
-                {isActive && (
+                {item.badge > 0 && (
+                  <span className="ml-auto text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" style={{
+                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+                  }}>
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
+                {isActive && !item.badge && (
                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white"></div>
                 )}
               </Link>
@@ -155,6 +176,13 @@ const Layout = ({ children, user, onLogout }) => {
                 >
                   <Icon className="w-5 h-5 mr-3" />
                   {item.label}
+                  {item.badge > 0 && (
+                    <span className="ml-auto text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" style={{
+                      background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+                    }}>
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

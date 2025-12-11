@@ -243,7 +243,7 @@ export const salesService = {
 
     const { data: sale } = await supabase
       .from('sales')
-      .select('partner_id, created_by_user_id')
+      .select('partner_id, created_by_user_id, client_name, client_nif, scope')
       .eq('id', saleId)
       .maybeSingle();
 
@@ -280,5 +280,79 @@ export const salesService = {
       created_by: user.id,
       created_by_name: currentUser.name
     });
+
+    const { data: recipientUsers } = await supabase
+      .from('users')
+      .select('email, name')
+      .in('id', uniqueUserIds);
+
+    if (recipientUsers && recipientUsers.length > 0) {
+      const scopeTranslation = {
+        telecomunicacoes: 'Telecomunicações',
+        energia: 'Energia',
+        solar: 'Solar',
+        dual: 'Dual'
+      };
+
+      const emailSubject = `${sale.client_name} - ${sale.client_nif} - ${scopeTranslation[sale.scope] || sale.scope}`;
+
+      const emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); padding: 30px; text-align: center;">
+            <h1 style="color: #FFFFFF; margin: 0; font-size: 24px;">MP GRUPO</h1>
+            <p style="color: #FFFFFF; margin: 5px 0 0 0; font-size: 14px;">Sales CRM</p>
+          </div>
+
+          <div style="padding: 30px; background-color: #FFFFFF;">
+            <h2 style="color: #1E293B; margin-top: 0;">Notificação de Venda</h2>
+            <p style="color: #475569; line-height: 1.6;">${message}</p>
+
+            <div style="background-color: #F8FAFC; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 5px 0; color: #475569;"><strong>Código:</strong> ${saleCode}</p>
+              <p style="margin: 5px 0; color: #475569;"><strong>Cliente:</strong> ${sale.client_name}</p>
+              <p style="margin: 5px 0; color: #475569;"><strong>NIF:</strong> ${sale.client_nif}</p>
+              <p style="margin: 5px 0; color: #475569;"><strong>Tipo:</strong> ${scopeTranslation[sale.scope] || sale.scope}</p>
+            </div>
+
+            <p style="color: #64748B; font-size: 14px; margin-top: 30px;">
+              Melhores cumprimentos,<br>
+              <strong>Gestão de vendas da Grupo MarcioPinto</strong>
+            </p>
+          </div>
+
+          <div style="background-color: #F8FAFC; padding: 20px; text-align: center; border-top: 1px solid #E2E8F0;">
+            <p style="color: #94A3B8; font-size: 12px; margin: 0;">
+              Esta é uma notificação automática do sistema de gestão de vendas MP GRUPO.
+            </p>
+          </div>
+        </div>
+      `;
+
+      for (const recipient of recipientUsers) {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-alert-email`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                to: recipient.email,
+                subject: emailSubject,
+                html: emailBody,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            console.error(`Failed to send email to ${recipient.email}`);
+          }
+        } catch (error) {
+          console.error(`Error sending email to ${recipient.email}:`, error);
+        }
+      }
+    }
   }
 };
