@@ -52,8 +52,8 @@ const Layout = ({ children, user, onLogout }) => {
           borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden">
-              <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
+            <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', border: '2px solid rgba(255, 255, 255, 0.2)' }}>
+              <span className="text-2xl font-bold" style={{ color: '#FFFFFF', opacity: 1 }}>MP</span>
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight" style={{ color: '#FFFFFF', opacity: 1 }}>MP GRUPO</h1>
