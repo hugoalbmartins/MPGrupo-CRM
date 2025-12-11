@@ -3,6 +3,16 @@ import { supabase } from './supabase';
 export const authService = {
   supabase,
 
+  async clearInvalidSession() {
+    try {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      window.location.reload();
+    } catch (error) {
+      console.error('Error clearing session:', error);
+    }
+  },
+
   async signIn(email, password) {
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
@@ -45,18 +55,42 @@ export const authService = {
   },
 
   async getCurrentUser() {
-    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    if (!session) return null;
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        if (sessionError.message?.includes('session_not_found')) {
+          await this.clearInvalidSession();
+          return null;
+        }
+        throw sessionError;
+      }
 
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .maybeSingle();
+      if (!session) return null;
 
-    if (error) throw error;
-    return userData;
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (error) {
+        if (error.message?.includes('session_not_found') || error.code === 'PGRST301') {
+          await this.clearInvalidSession();
+          return null;
+        }
+        throw error;
+      }
+
+      return userData;
+    } catch (error) {
+      if (error.message?.includes('session_not_found')) {
+        await this.clearInvalidSession();
+        return null;
+      }
+      throw error;
+    }
   },
 
   async updatePassword(newPassword) {
