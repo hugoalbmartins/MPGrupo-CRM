@@ -128,6 +128,7 @@ export const partnersService = {
         locality: partnerData.locality,
         nif: partnerData.nif,
         crc: partnerData.crc,
+        iban: partnerData.iban,
         user_id: authData.user.id,
         initial_password: userPassword
       })
@@ -180,7 +181,8 @@ export const partnersService = {
       postal_code: partnerData.postal_code,
       locality: partnerData.locality,
       nif: partnerData.nif,
-      crc: partnerData.crc
+      crc: partnerData.crc,
+      iban: partnerData.iban
     };
 
     const { data, error } = await supabase

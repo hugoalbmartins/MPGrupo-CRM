@@ -32,6 +32,7 @@ const Partners = ({ user }) => {
     locality: "",
     nif: "",
     crc: "",
+    iban: "",
   });
 
   useEffect(() => {
@@ -66,6 +67,11 @@ const Partners = ({ user }) => {
     const nifValidation = validateNIF(formData.nif);
     if (!nifValidation.valid) {
       toast.error(nifValidation.message);
+      return;
+    }
+
+    if (formData.nif.startsWith('5') && !formData.crc) {
+      toast.error("Código CRC é obrigatório para NIF iniciado por 5");
       return;
     }
 
@@ -111,8 +117,23 @@ const Partners = ({ user }) => {
       locality: partner.locality,
       nif: partner.nif,
       crc: partner.crc || "",
+      iban: partner.iban || "",
     });
     setDialogOpen(true);
+  };
+
+  const handleDelete = async (partnerId, partnerName) => {
+    if (!window.confirm(`Tem a certeza que deseja eliminar o parceiro "${partnerName}"? Esta ação não pode ser revertida.`)) {
+      return;
+    }
+
+    try {
+      await partnersService.delete(partnerId);
+      toast.success("Parceiro eliminado com sucesso");
+      fetchPartners();
+    } catch (error) {
+      toast.error("Erro ao eliminar parceiro. Pode existir vendas associadas.");
+    }
   };
 
   const handleUploadDocument = async (partnerId, file) => {
@@ -149,6 +170,7 @@ const Partners = ({ user }) => {
       locality: "",
       nif: "",
       crc: "",
+      iban: "",
     });
   };
 
@@ -228,17 +250,17 @@ const Partners = ({ user }) => {
                   </div>
                   <div>
                     <Label>NIF *</Label>
-                    <Input 
-                      value={formData.nif} 
-                      onChange={(e) => setFormData({...formData, nif: e.target.value})} 
-                      required 
+                    <Input
+                      value={formData.nif}
+                      onChange={(e) => setFormData({...formData, nif: e.target.value})}
+                      required
                       maxLength={9}
                       placeholder="9 dígitos"
                     />
                     {formData.nif.length === 9 && (
                       <p className={`text-xs mt-1 ${
-                        validateNIF(formData.nif).valid 
-                          ? 'text-green-600' 
+                        validateNIF(formData.nif).valid
+                          ? 'text-green-600'
                           : 'text-red-600'
                       }`}>
                         {validateNIF(formData.nif).valid ? (
@@ -248,6 +270,29 @@ const Partners = ({ user }) => {
                         )}
                       </p>
                     )}
+                  </div>
+                  {formData.nif.startsWith('5') && (
+                    <div>
+                      <Label>Código CRC *</Label>
+                      <Input
+                        value={formData.crc}
+                        onChange={(e) => setFormData({...formData, crc: e.target.value})}
+                        required
+                        placeholder="Código CRC"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Obrigatório para NIF iniciado por 5</p>
+                    </div>
+                  )}
+                  <div>
+                    <Label>IBAN para Pagamento de Comissões *</Label>
+                    <Input
+                      value={formData.iban}
+                      onChange={(e) => setFormData({...formData, iban: e.target.value})}
+                      required
+                      placeholder="PT50..."
+                      maxLength={25}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">IBAN para receber pagamento de comissões</p>
                   </div>
                 </div>
                 <div>
@@ -326,9 +371,14 @@ const Partners = ({ user }) => {
                     )}
                     {user?.role === 'admin' && (
                       <td className="text-center">
-                        <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-blue-600">
-                          Editar
-                        </Button>
+                        <div className="flex gap-2 justify-center">
+                          <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-blue-600">
+                            Editar
+                          </Button>
+                          <Button onClick={() => handleDelete(partner.id, partner.name)} size="sm" variant="ghost" className="text-red-500 hover:text-red-700">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>
