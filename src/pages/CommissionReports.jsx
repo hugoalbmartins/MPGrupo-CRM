@@ -170,6 +170,8 @@ const CommissionReports = ({ user }) => {
   const createStyledWorksheet = (partner, sales, XLSX) => {
     const data = [];
 
+    data.push(['']);
+    data.push(['']);
     data.push(['MARCIO & SANDRA LDA']);
     data.push(['Avenida rainha Santa Isabel Lt 8 loja 1']);
     data.push(['5000-434 Vila Real']);
@@ -178,6 +180,7 @@ const CommissionReports = ({ user }) => {
 
     const monthName = months.find(m => m.value === selectedMonth)?.label;
     data.push([`AUTO DE COMISSÕES - ${partner.name} - ${monthName}/${selectedYear}`]);
+    data.push([]);
     data.push([]);
 
     data.push(['Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativação', 'Valor (€)']);
@@ -227,19 +230,22 @@ const CommissionReports = ({ user }) => {
 
         if (!ws[cell_address].s) ws[cell_address].s = {};
 
-        if (R === 0) {
+        if (R === 0 || R === 1) {
+          continue;
+        }
+        else if (R === 2) {
           ws[cell_address].s = {
             font: { bold: true, sz: 14, color: { rgb: "1F4E78" } },
             alignment: { horizontal: "left", vertical: "center" }
           };
         }
-        else if (R >= 1 && R <= 3) {
+        else if (R >= 3 && R <= 5) {
           ws[cell_address].s = {
             font: { sz: 10 },
             alignment: { horizontal: "left", vertical: "center" }
           };
         }
-        else if (R === 5) {
+        else if (R === 7) {
           ws[cell_address].s = {
             font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
             fill: { fgColor: { rgb: "1F4E78" } },
@@ -292,9 +298,17 @@ const CommissionReports = ({ user }) => {
     }
 
     if (!ws['!rows']) ws['!rows'] = [];
-    ws['!rows'][0] = { hpt: 20 };
-    ws['!rows'][5] = { hpt: 25 };
+    ws['!rows'][0] = { hpt: 50 };
+    ws['!rows'][1] = { hpt: 10 };
+    ws['!rows'][2] = { hpt: 20 };
+    ws['!rows'][7] = { hpt: 25 };
     ws['!rows'][headerRow] = { hpt: 22 };
+
+    if (!ws['!merges']) ws['!merges'] = [];
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+
+    ws['A1'].v = '📊 MARCIO & SANDRA LDA';
+    ws['A1'].t = 's';
 
     return ws;
   };
