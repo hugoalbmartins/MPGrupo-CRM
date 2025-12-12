@@ -11,10 +11,12 @@ import CommissionConfig from "../components/CommissionConfig";
 
 const Operators = ({ user }) => {
   const [operators, setOperators] = useState([]);
+  const [hiddenOperators, setHiddenOperators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [hiddenDialogOpen, setHiddenDialogOpen] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState(null);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -35,8 +37,10 @@ const Operators = ({ user }) => {
 
   const fetchOperators = async () => {
     try {
-      const data = await operatorsService.getAll(true);
-      setOperators(data);
+      const visibleData = await operatorsService.getAll(false);
+      const hiddenData = await operatorsService.getHidden();
+      setOperators(visibleData);
+      setHiddenOperators(hiddenData);
     } catch (error) {
       toast.error("Erro ao carregar operadoras");
     } finally {
@@ -170,7 +174,19 @@ const Operators = ({ user }) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Operadoras</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-gray-900">Operadoras</h1>
+          {hiddenOperators.length > 0 && (
+            <Button
+              onClick={() => setHiddenDialogOpen(true)}
+              variant="outline"
+              size="sm"
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Ver Desativadas ({hiddenOperators.length})
+            </Button>
+          )}
+        </div>
         {user?.role === 'admin' && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -446,6 +462,59 @@ const Operators = ({ user }) => {
                 <p className="text-sm text-gray-500 mt-2">Nenhum formulário disponível</p>
               )}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={hiddenDialogOpen} onOpenChange={setHiddenDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Operadoras Desativadas</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {hiddenOperators.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhuma operadora desativada</p>
+            ) : (
+              <div className="space-y-3">
+                {hiddenOperators.map(op => (
+                  <div key={op.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                    <div>
+                      <span className="font-medium block">{op.name}</span>
+                      <span className="text-sm text-gray-500 capitalize">{op.scope}</span>
+                    </div>
+                    {user?.role === 'admin' && (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={async () => {
+                            await toggleVisibility(op.id);
+                            setHiddenDialogOpen(false);
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="text-green-600 hover:text-green-700"
+                          title="Reativar"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Reativar
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            handleDelete(op.id, op.name);
+                            setHiddenDialogOpen(false);
+                          }}
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:text-red-700"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

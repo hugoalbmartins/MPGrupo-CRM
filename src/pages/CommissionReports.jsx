@@ -132,10 +132,23 @@ const CommissionReports = ({ user }) => {
               color: #333;
             }
             .header {
-              text-align: left;
+              display: flex;
+              align-items: flex-start;
+              justify-content: space-between;
               margin-bottom: 30px;
               border-bottom: 3px solid #1F4E78;
               padding-bottom: 15px;
+            }
+            .header-left {
+              flex: 1;
+            }
+            .header-logo {
+              flex-shrink: 0;
+              margin-left: 20px;
+            }
+            .header-logo img {
+              height: 60px;
+              width: auto;
             }
             .company-name {
               font-size: 18px;
@@ -204,11 +217,16 @@ const CommissionReports = ({ user }) => {
         </head>
         <body>
           <div class="header">
-            <div class="company-name">MARCIO & SANDRA LDA</div>
-            <div class="company-details">
-              Avenida rainha Santa Isabel Lt 8 loja 1<br>
-              5000-434 Vila Real<br>
-              NIF: 518162796
+            <div class="header-left">
+              <div class="company-name">MARCIO & SANDRA LDA</div>
+              <div class="company-details">
+                Avenida rainha Santa Isabel Lt 8 loja 1<br>
+                5000-434 Vila Real<br>
+                NIF: 518162796
+              </div>
+            </div>
+            <div class="header-logo">
+              <img src="/logo.png" alt="Logo MP Grupo" />
             </div>
           </div>
 
