@@ -3,15 +3,19 @@ import { toast } from "sonner";
 import { ShoppingCart, Phone, Zap, Sun, Award, CheckCircle } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { dashboardService } from "../services/dashboardService";
+import { salesService } from "../services/salesService";
+import { partnersService } from "../services/partnersService";
 
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [partnerStats, setPartnerStats] = useState([]);
 
   useEffect(() => {
     fetchStats();
+    fetchPartnerStats();
   }, [selectedYear, selectedMonth]);
 
   const fetchStats = async () => {
@@ -22,6 +26,69 @@ const Dashboard = ({ user }) => {
       toast.error("Erro ao carregar estatísticas");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPartnerStats = async () => {
+    try {
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+
+      const [sales, partners] = await Promise.all([
+        salesService.getAll(),
+        partnersService.getAll()
+      ]);
+
+      const currentMonthSales = sales.filter(sale => {
+        const saleDate = new Date(sale.date);
+        return saleDate.getMonth() + 1 === currentMonth && saleDate.getFullYear() === currentYear;
+      });
+
+      const partnerMap = {};
+
+      currentMonthSales.forEach(sale => {
+        if (!partnerMap[sale.partner_id]) {
+          const partner = partners.find(p => p.id === sale.partner_id);
+          partnerMap[sale.partner_id] = {
+            name: partner?.name || 'Desconhecido',
+            telecom: { nos: 0, meo: 0, vodafone: 0 },
+            energy: { galp: 0, edp: 0, endesa: 0, goldenergy: 0 },
+            solar: 0,
+            total: 0
+          };
+        }
+
+        const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
+        const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
+        const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
+        const totalComm = commission + ddValue + feValue;
+
+        const scope = (sale.scope || '').toLowerCase();
+        const operator = (sale.operator?.name || '').toLowerCase();
+
+        if (scope === 'telecomunicações' || scope === 'telecom') {
+          if (operator.includes('nos')) partnerMap[sale.partner_id].telecom.nos++;
+          else if (operator.includes('meo')) partnerMap[sale.partner_id].telecom.meo++;
+          else if (operator.includes('vodafone')) partnerMap[sale.partner_id].telecom.vodafone++;
+        } else if (scope === 'energia') {
+          if (operator.includes('galp')) partnerMap[sale.partner_id].energy.galp++;
+          else if (operator.includes('edp')) partnerMap[sale.partner_id].energy.edp++;
+          else if (operator.includes('endesa')) partnerMap[sale.partner_id].energy.endesa++;
+          else if (operator.includes('golden')) partnerMap[sale.partner_id].energy.goldenergy++;
+        } else if (scope === 'solar') {
+          partnerMap[sale.partner_id].solar++;
+        }
+
+        partnerMap[sale.partner_id].total += totalComm;
+      });
+
+      const sortedStats = Object.values(partnerMap)
+        .filter(p => p.total > 0)
+        .sort((a, b) => b.total - a.total);
+
+      setPartnerStats(sortedStats);
+    } catch (error) {
+      console.error("Erro ao carregar estatísticas de parceiros:", error);
     }
   };
 
@@ -454,6 +521,47 @@ const Dashboard = ({ user }) => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Partners Stats for Current Month */}
+      {partnerStats.length > 0 && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Parceiro - {months[new Date().getMonth()]} {new Date().getFullYear()}</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Parceiro</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">NOS</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">MEO</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Vodafone</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Galp</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">EDP</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Endesa</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Goldenergy</th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Solar</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Total Comissões</th>
+                </tr>
+              </thead>
+              <tbody>
+                {partnerStats.map((partner, index) => (
+                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-900">{partner.name}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.telecom.nos || '-'}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.telecom.meo || '-'}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.telecom.vodafone || '-'}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.galp || '-'}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.edp || '-'}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.endesa || '-'}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.goldenergy || '-'}</td>
+                    <td className="text-center py-3 px-2 text-gray-600">{partner.solar || '-'}</td>
+                    <td className="text-right py-3 px-4 font-bold text-blue-600">€{partner.total.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* 12 Months Bar Chart */}
       {stats?.last_12_months && stats.last_12_months.length > 0 && (

@@ -10,6 +10,8 @@ import { partnersService } from "../services/partnersService";
 import { salesService } from "../services/salesService";
 import { commissionReportsService } from "../services/commissionReportsService";
 import { supabase } from "../lib/supabase";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const CommissionReports = ({ user }) => {
   const [partners, setPartners] = useState([]);
@@ -204,6 +206,18 @@ const CommissionReports = ({ user }) => {
         return;
       }
 
+      printWindow.reportData = {
+        partnerId,
+        partnerName: partner.name,
+        partnerEmail: partner.email,
+        month: selectedMonth,
+        monthName,
+        year: selectedYear,
+        userId: user.id,
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+        supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY
+      };
+
       let total = 0;
       const salesRows = finalSales.map(sale => {
         const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
@@ -338,7 +352,7 @@ const CommissionReports = ({ user }) => {
               </div>
             </div>
             <div class="header-logo">
-              <img src="/logo.png" alt="Logo MP Grupo" />
+              <img src="${window.location.origin}/logo.png" alt="Logo MP Grupo" onerror="this.style.display='none'" />
             </div>
           </div>
 
@@ -373,14 +387,88 @@ const CommissionReports = ({ user }) => {
             Documento gerado em ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT')}
           </div>
 
-          <div class="no-print">
+          <div class="no-print" style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+            <button id="approveBtn" onclick="approveAndRegister()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #10b981; color: white; border: none; border-radius: 5px;">
+              ✅ Aprovar e Registrar Auto
+            </button>
             <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #1F4E78; color: white; border: none; border-radius: 5px;">
               🖨️ Imprimir
             </button>
-            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 5px; margin-left: 10px;">
+            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 5px;">
               Fechar
             </button>
           </div>
+
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+          <script>
+            async function approveAndRegister() {
+              const btn = document.getElementById('approveBtn');
+              btn.disabled = true;
+              btn.textContent = '⏳ Processando...';
+
+              try {
+                const { jsPDF } = window.jspdf;
+                const element = document.body;
+
+                const canvas = await html2canvas(element, {
+                  scale: 2,
+                  useCORS: true,
+                  logging: false
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                const pdfBlob = pdf.output('blob');
+
+                const data = window.reportData;
+
+                const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': \`Bearer \${data.supabaseKey}\`
+                  },
+                  body: JSON.stringify({
+                    partnerId: data.partnerId,
+                    partnerEmail: data.partnerEmail,
+                    partnerName: data.partnerName,
+                    month: data.monthName,
+                    year: data.year,
+                    userId: data.userId,
+                    pdfBase64: await blobToBase64(pdfBlob)
+                  })
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.error || 'Erro ao registrar auto');
+                }
+
+                alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
+                window.opener.location.reload();
+                window.close();
+              } catch (error) {
+                console.error(error);
+                alert('Erro ao processar auto: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = '✅ Aprovar e Registrar Auto';
+              }
+            }
+
+            function blobToBase64(blob) {
+              return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            }
+          </script>
         </body>
         </html>
       `;
@@ -718,7 +806,7 @@ const CommissionReports = ({ user }) => {
                   disabled={!selectedPartner || loading}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  🖨️ Imprimir Auto
+                  👁️ Pré-visualizar
                 </Button>
                 <Button
                   onClick={() => generateCommissionReport(selectedPartner)}
@@ -729,14 +817,6 @@ const CommissionReports = ({ user }) => {
                   Excel
                 </Button>
               </div>
-              <Button
-                onClick={() => registerCommissionReport(selectedPartner)}
-                disabled={!selectedPartner || loading}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Registrar Auto Emitido
-              </Button>
             </div>
           </CardContent>
         </Card>
