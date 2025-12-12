@@ -46,14 +46,30 @@ const CommissionReports = ({ user }) => {
   };
 
   const filterSalesByMonth = (sales) => {
-    return sales.filter(sale => {
-      if (!sale.activation_date) return false;
+    console.log(`Filtrando vendas para ${selectedMonth}/${selectedYear}`);
 
-      const saleDate = new Date(sale.activation_date);
+    return sales.filter(sale => {
+      if (!sale.activation_date) {
+        console.log(`Venda ${sale.sale_code} sem data de ativação`);
+        return false;
+      }
+
+      let saleDate;
+      if (typeof sale.activation_date === 'string' && sale.activation_date.includes('T')) {
+        saleDate = new Date(sale.activation_date);
+      } else {
+        const parts = sale.activation_date.split('-');
+        saleDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      }
+
       const saleMonth = saleDate.getMonth() + 1;
       const saleYear = saleDate.getFullYear();
 
-      return saleMonth === selectedMonth && saleYear === selectedYear;
+      const matches = saleMonth === selectedMonth && saleYear === selectedYear;
+
+      console.log(`Venda ${sale.sale_code}: ${sale.activation_date} -> ${saleMonth}/${saleYear} - Match: ${matches}`);
+
+      return matches;
     });
   };
 
@@ -61,14 +77,19 @@ const CommissionReports = ({ user }) => {
     setLoading(true);
     try {
       const allSales = await salesService.getAll();
+      console.log(`Total de vendas: ${allSales.length}`);
 
       const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+      console.log(`Vendas pagas pelo operador: ${paidSales.length}`);
 
       const filteredByMonth = filterSalesByMonth(paidSales);
+      console.log(`Vendas após filtro de mês: ${filteredByMonth.length}`);
 
       const finalSales = partnerId
         ? filteredByMonth.filter(s => s.partner_id === partnerId)
         : filteredByMonth;
+
+      console.log(`Vendas finais: ${finalSales.length}`);
 
       if (finalSales.length === 0) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
