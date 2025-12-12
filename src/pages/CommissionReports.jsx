@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { FileDown, Download } from "lucide-react";
+import { FileDown, Download, FileText, Trash2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { partnersService } from "../services/partnersService";
 import { salesService } from "../services/salesService";
+import { commissionReportsService } from "../services/commissionReportsService";
+import { supabase } from "../lib/supabase";
 
 const CommissionReports = ({ user }) => {
   const [partners, setPartners] = useState([]);
@@ -14,6 +17,9 @@ const CommissionReports = ({ user }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
+  const [emittedReports, setEmittedReports] = useState([]);
+  const [showReportsDialog, setShowReportsDialog] = useState(false);
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
   const months = [
     { value: 1, label: 'Janeiro' },
@@ -34,7 +40,8 @@ const CommissionReports = ({ user }) => {
 
   useEffect(() => {
     fetchPartners();
-  }, []);
+    fetchEmittedReports();
+  }, [filterYear]);
 
   const fetchPartners = async () => {
     try {
@@ -42,6 +49,97 @@ const CommissionReports = ({ user }) => {
       setPartners(data);
     } catch (error) {
       toast.error("Erro ao carregar parceiros");
+    }
+  };
+
+  const fetchEmittedReports = async () => {
+    try {
+      const data = await commissionReportsService.getAll(filterYear);
+      setEmittedReports(data);
+    } catch (error) {
+      console.error("Erro ao carregar autos emitidos:", error);
+    }
+  };
+
+  const registerCommissionReport = async (partnerId) => {
+    try {
+      const partner = partners.find(p => p.id === partnerId);
+      if (!partner) {
+        toast.error("Parceiro não encontrado");
+        return;
+      }
+
+      const monthName = months.find(m => m.value === selectedMonth)?.label;
+      const version = await commissionReportsService.getNextVersion(partnerId, selectedMonth, selectedYear);
+
+      const fileName = `${partner.name}_Auto_${monthName}_${selectedYear}_V${version}.pdf`;
+      const filePath = `${partnerId}/${selectedYear}/${fileName}`;
+
+      const reportData = {
+        partner_id: partnerId,
+        month: selectedMonth,
+        year: selectedYear,
+        version: version,
+        file_name: fileName,
+        file_path: filePath,
+        created_by: user.id
+      };
+
+      const newReport = await commissionReportsService.create(reportData);
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-commission-report-email`;
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          partnerEmail: partner.email,
+          partnerName: partner.name,
+          month: monthName,
+          year: selectedYear,
+          reportId: newReport.id
+        })
+      });
+
+      await commissionReportsService.markAsEmailed(newReport.id);
+
+      toast.success(`Auto registrado e email enviado para ${partner.name}`);
+      fetchEmittedReports();
+    } catch (error) {
+      console.error("Erro ao registrar auto:", error);
+      toast.error("Erro ao registrar auto de comissão");
+    }
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!window.confirm("Tem certeza que deseja eliminar este auto?")) return;
+
+    try {
+      await commissionReportsService.delete(reportId);
+      toast.success("Auto eliminado com sucesso");
+      fetchEmittedReports();
+    } catch (error) {
+      toast.error("Erro ao eliminar auto");
+    }
+  };
+
+  const handleDownloadReport = async (report) => {
+    try {
+      const blob = await commissionReportsService.downloadFile(report.file_path);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = report.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Download iniciado");
+    } catch (error) {
+      console.error("Erro ao fazer download:", error);
+      toast.error("Erro ao fazer download do auto");
     }
   };
 
@@ -599,21 +697,31 @@ const CommissionReports = ({ user }) => {
                 </Select>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => printCommissionReport(selectedPartner)}
+                  disabled={!selectedPartner || loading}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  🖨️ Imprimir Auto
+                </Button>
+                <Button
+                  onClick={() => generateCommissionReport(selectedPartner)}
+                  disabled={!selectedPartner || loading}
+                  className="flex-1 btn-primary"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Excel
+                </Button>
+              </div>
               <Button
-                onClick={() => printCommissionReport(selectedPartner)}
+                onClick={() => registerCommissionReport(selectedPartner)}
                 disabled={!selectedPartner || loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                🖨️ Imprimir Auto
-              </Button>
-              <Button
-                onClick={() => generateCommissionReport(selectedPartner)}
-                disabled={!selectedPartner || loading}
-                className="flex-1 btn-primary"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Excel
+                <FileText className="w-4 h-4 mr-2" />
+                Registrar Auto Emitido
               </Button>
             </div>
           </CardContent>
@@ -681,6 +789,82 @@ const CommissionReports = ({ user }) => {
 
       <Card>
         <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              Autos Emitidos
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-600" />
+              <Select value={filterYear.toString()} onValueChange={(v) => setFilterYear(parseInt(v))}>
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(year => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <CardDescription>
+            Lista de todos os autos registrados no sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {emittedReports.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p>Nenhum auto emitido para o ano selecionado</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {emittedReports.map(report => (
+                <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-900">
+                      {report.partner?.name || 'Parceiro Desconhecido'}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      {months.find(m => m.value === report.month)?.label} {report.year} - Versão {report.version}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Emitido em {new Date(report.created_at).toLocaleDateString('pt-PT')} por {report.creator?.name || 'Sistema'}
+                      {report.emailed_at && (
+                        <span className="ml-2 text-green-600">• Email enviado</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownloadReport(report)}
+                      title="Download PDF"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteReport(report.id)}
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Informações Importantes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-gray-600">
@@ -689,6 +873,7 @@ const CommissionReports = ({ user }) => {
           <p>• Os valores de comissão apresentados incluem o cálculo automático ou comissão manual definida</p>
           <p>• O auto inclui cabeçalho com dados da empresa (Marcio & Sandra lda)</p>
           <p>• Os totais incluem subtotal, IVA (23%) e total com IVA</p>
+          <p>• Após gerar o auto, clique em "Registrar Auto Emitido" para notificar o parceiro por email</p>
         </CardContent>
       </Card>
     </div>
