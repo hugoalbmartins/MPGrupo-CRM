@@ -107,9 +107,14 @@ const Operators = ({ user }) => {
     });
   };
 
-  const openCommissionConfig = (operator) => {
-    setSelectedOperator(operator);
-    setConfigDialogOpen(true);
+  const openCommissionConfig = async (operator) => {
+    try {
+      const freshOperatorData = await operatorsService.getById(operator.id);
+      setSelectedOperator(freshOperatorData);
+      setConfigDialogOpen(true);
+    } catch (error) {
+      toast.error("Erro ao carregar dados da operadora");
+    }
   };
 
   const handleSaveCommission = async (commissionConfig) => {
