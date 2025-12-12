@@ -184,11 +184,25 @@ const CommissionReports = ({ user }) => {
       const partner = partners.find(p => p.id === partnerId);
       if (!partner) {
         toast.error("Parceiro não encontrado");
+        setLoading(false);
+        return;
+      }
+
+      if (finalSales.length === 0) {
+        const monthName = months.find(m => m.value === selectedMonth)?.label;
+        toast.error(`Não existem vendas pagas para ${partner.name} no mês de ${monthName}/${selectedYear}`);
+        setLoading(false);
         return;
       }
 
       const monthName = months.find(m => m.value === selectedMonth)?.label;
       const printWindow = window.open('', '_blank');
+
+      if (!printWindow) {
+        toast.error("Popup bloqueado. Por favor, permita popups para este site.");
+        setLoading(false);
+        return;
+      }
 
       let total = 0;
       const salesRows = finalSales.map(sale => {
