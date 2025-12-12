@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText } from "lucide-react";
+import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 const Layout = ({ children, user, onLogout }) => {
@@ -32,7 +32,8 @@ const Layout = ({ children, user, onLogout }) => {
   if (user?.role === "admin") {
     menuItems.push(
       { path: "/operators", label: "Operadoras", icon: Building2, roles: ["admin"] },
-      { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"] }
+      { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"] },
+      { path: "/commission-reports", label: "Autos de Comissões", icon: FileSpreadsheet, roles: ["admin"] }
     );
   } else if (user?.role === "bo") {
     menuItems.push(

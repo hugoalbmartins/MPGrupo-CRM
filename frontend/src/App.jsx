@@ -13,6 +13,7 @@ import Users from "./pages/Users.jsx";
 import Profile from "./pages/Profile.jsx";
 import Alerts from "./pages/Alerts.jsx";
 import Forms from "./pages/Forms.jsx";
+import CommissionReports from "./pages/CommissionReports.jsx";
 import Layout from "./components/Layout.jsx";
 import "@/App.css";
 
@@ -134,6 +135,7 @@ function App() {
               <>
                 <Route path="/operators" element={<Operators user={user} />} />
                 <Route path="/users" element={<Users user={user} />} />
+                <Route path="/commission-reports" element={<CommissionReports user={user} />} />
               </>
             )}
             {user?.role === "bo" && (

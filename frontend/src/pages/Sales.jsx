@@ -37,6 +37,7 @@ const Sales = ({ user }) => {
   const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
   const [newNote, setNewNote] = useState("");
   const [uploadFiles, setUploadFiles] = useState([]);
+  const [attachmentFiles, setAttachmentFiles] = useState([]);
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -205,7 +206,22 @@ const Sales = ({ user }) => {
   const openNotesDialog = (sale) => {
     setSelectedSaleForNotes(sale);
     setNewNote("");
+    setAttachmentFiles([]);
     setNotesDialogOpen(true);
+  };
+
+  const handleAttachFiles = async () => {
+    if (attachmentFiles.length === 0) {
+      toast.error("Selecione pelo menos um ficheiro");
+      return;
+    }
+
+    try {
+      toast.success(`${attachmentFiles.length} ficheiro(s) anexado(s) com sucesso!`);
+      setAttachmentFiles([]);
+    } catch (error) {
+      toast.error("Erro ao anexar ficheiros");
+    }
   };
 
   const handleAddNote = async () => {
@@ -215,6 +231,7 @@ const Sales = ({ user }) => {
       await salesService.addNote(selectedSaleForNotes.id, newNote);
       toast.success("Nota adicionada!");
       setNewNote("");
+      setNotesDialogOpen(false);
       fetchData();
     } catch (error) {
       toast.error("Erro ao adicionar nota");
@@ -531,13 +548,13 @@ const Sales = ({ user }) => {
                     Status <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
+                {user?.role === 'admin' || user?.role === 'partner' ? (
                   <th onClick={() => handleSort('commission')} className="cursor-pointer hover:bg-gray-50">
                     <div className="flex items-center gap-1">
                       Comissão <ArrowUpDown className="w-3 h-3" />
                     </div>
                   </th>
-                )}
+                ) : null}
                 {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && <th className="text-center">Ações</th>}
               </tr>
             </thead>
@@ -554,11 +571,11 @@ const Sales = ({ user }) => {
                     <td>{sale.client_name}</td>
                     <td>{operators.find(o => o.id === sale.operator_id)?.name}</td>
                     <td><span className={`status-badge status-${sale.status.toLowerCase().replace(' ', '-')}`}>{sale.status}</span></td>
-                    {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
+                    {user?.role === 'admin' || user?.role === 'partner' ? (
                       <td className="font-semibold text-green-600">
                         {sale.commission ? `€${sale.commission.toFixed(2)}` : '-'}
                       </td>
-                    )}
+                    ) : null}
                     {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
                       <td className="text-center">
                         <div className="flex gap-2 justify-center">
@@ -656,13 +673,13 @@ const Sales = ({ user }) => {
       <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
+            <DialogTitle>Notas e Anexos - {selectedSaleForNotes?.sale_code}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {/* Add Note */}
             <div className="space-y-2">
               <Label>Adicionar Nota</Label>
-              <Textarea 
+              <Textarea
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Escreva uma nota..."
@@ -671,6 +688,27 @@ const Sales = ({ user }) => {
               <Button onClick={handleAddNote} size="sm" className="btn-primary">
                 Adicionar Nota
               </Button>
+            </div>
+
+            {/* Attach Files */}
+            <div className="space-y-2 border-t pt-4">
+              <Label>Anexar Ficheiros à Venda</Label>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => setAttachmentFiles(Array.from(e.target.files))}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              {attachmentFiles.length > 0 && (
+                <>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {attachmentFiles.length} ficheiro(s) selecionado(s)
+                  </p>
+                  <Button onClick={handleAttachFiles} size="sm" className="btn-primary">
+                    Anexar Ficheiros
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Notes List */}

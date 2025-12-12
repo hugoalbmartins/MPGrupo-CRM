@@ -196,7 +196,7 @@ const Dashboard = ({ user }) => {
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Pagas</p>
+              <p className="text-sm text-gray-600 mb-1">Comissões Previstas</p>
               <p className="text-2xl font-bold color-green">€{stats?.commission_paid?.toFixed(2) || '0.00'}</p>
             </div>
             <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">

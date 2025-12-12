@@ -147,7 +147,7 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
         )}
 
         {tiers.map((tier, index) => (
-          <Card key={index} className="border-2">
+          <Card key={index} className="border border-gray-200 bg-white">
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -193,10 +193,10 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                 <div className="flex items-end">
                   <Button
                     type="button"
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
                     onClick={() => removeTier(clientType, index, serviceType)}
-                    className="w-full"
+                    className="w-full text-red-600 border-red-200 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Remover
