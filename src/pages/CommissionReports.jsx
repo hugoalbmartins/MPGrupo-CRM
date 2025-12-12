@@ -134,18 +134,7 @@ const CommissionReports = ({ user }) => {
     const partnerSales = sales.filter(s => s.partner_id === partnerId);
 
     const wb = XLSX.utils.book_new();
-    const wsData = createWorksheetData(partner, partnerSales);
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    ws['!cols'] = [
-      { wch: 30 }, // Nome Cliente
-      { wch: 12 }, // NIF
-      { wch: 15 }, // CPE
-      { wch: 15 }, // CUI
-      { wch: 12 }, // REQ
-      { wch: 12 }, // Data Ativação
-      { wch: 10 }  // Valor
-    ];
+    const ws = createStyledWorksheet(partner, partnerSales, XLSX);
 
     XLSX.utils.book_append_sheet(wb, ws, partner.name.substring(0, 31));
 
@@ -169,19 +158,7 @@ const CommissionReports = ({ user }) => {
       const partner = partners.find(p => p.id === partnerId);
       if (!partner) continue;
 
-      const wsData = createWorksheetData(partner, partnerSales);
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      ws['!cols'] = [
-        { wch: 30 },
-        { wch: 12 },
-        { wch: 15 },
-        { wch: 15 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 10 }
-      ];
-
+      const ws = createStyledWorksheet(partner, partnerSales, XLSX);
       XLSX.utils.book_append_sheet(wb, ws, partner.name.substring(0, 31));
     }
 
@@ -190,19 +167,22 @@ const CommissionReports = ({ user }) => {
     XLSX.writeFile(wb, fileName);
   };
 
-  const createWorksheetData = (partner, sales) => {
+  const createStyledWorksheet = (partner, sales, XLSX) => {
     const data = [];
 
     data.push(['MARCIO & SANDRA LDA']);
-    data.push(['Rua Luís Reis Santos, Lote 5, R/C']);
-    data.push(['2260-082 VILA NOVA DA BARQUINHA']);
-    data.push(['NIF: 514792149']);
+    data.push(['Avenida rainha Santa Isabel Lt 8 loja 1']);
+    data.push(['5000-434 Vila Real']);
+    data.push(['NIF: 518162796']);
     data.push([]);
+
     const monthName = months.find(m => m.value === selectedMonth)?.label;
     data.push([`AUTO DE COMISSÕES - ${partner.name} - ${monthName}/${selectedYear}`]);
     data.push([]);
 
     data.push(['Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativação', 'Valor (€)']);
+
+    const headerRow = data.length - 1;
 
     let total = 0;
     sales.forEach(sale => {
@@ -226,7 +206,97 @@ const CommissionReports = ({ user }) => {
     data.push(['', '', '', '', '', 'IVA (23%):', (total * 0.23).toFixed(2)]);
     data.push(['', '', '', '', '', 'Total c/ IVA:', (total * 1.23).toFixed(2)]);
 
-    return data;
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    ws['!cols'] = [
+      { wch: 35 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 12 }
+    ];
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[cell_address]) continue;
+
+        if (!ws[cell_address].s) ws[cell_address].s = {};
+
+        if (R === 0) {
+          ws[cell_address].s = {
+            font: { bold: true, sz: 14, color: { rgb: "1F4E78" } },
+            alignment: { horizontal: "left", vertical: "center" }
+          };
+        }
+        else if (R >= 1 && R <= 3) {
+          ws[cell_address].s = {
+            font: { sz: 10 },
+            alignment: { horizontal: "left", vertical: "center" }
+          };
+        }
+        else if (R === 5) {
+          ws[cell_address].s = {
+            font: { bold: true, sz: 12, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "1F4E78" } },
+            alignment: { horizontal: "center", vertical: "center" }
+          };
+        }
+        else if (R === headerRow) {
+          ws[cell_address].s = {
+            font: { bold: true, sz: 11, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4472C4" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: {
+              top: { style: "thin", color: { rgb: "000000" } },
+              bottom: { style: "thin", color: { rgb: "000000" } },
+              left: { style: "thin", color: { rgb: "000000" } },
+              right: { style: "thin", color: { rgb: "000000" } }
+            }
+          };
+        }
+        else if (R > headerRow && R < range.e.r - 3) {
+          ws[cell_address].s = {
+            font: { sz: 10 },
+            alignment: { horizontal: C === 6 ? "right" : "left", vertical: "center" },
+            border: {
+              top: { style: "thin", color: { rgb: "D0D0D0" } },
+              bottom: { style: "thin", color: { rgb: "D0D0D0" } },
+              left: { style: "thin", color: { rgb: "D0D0D0" } },
+              right: { style: "thin", color: { rgb: "D0D0D0" } }
+            }
+          };
+
+          if (R % 2 === 0) {
+            ws[cell_address].s.fill = { fgColor: { rgb: "F2F2F2" } };
+          }
+        }
+        else if (R >= range.e.r - 2) {
+          ws[cell_address].s = {
+            font: { bold: true, sz: 11 },
+            alignment: { horizontal: "right", vertical: "center" },
+            border: {
+              top: { style: R === range.e.r - 2 ? "double" : "thin", color: { rgb: "000000" } }
+            }
+          };
+
+          if (R === range.e.r) {
+            ws[cell_address].s.fill = { fgColor: { rgb: "E7E6E6" } };
+          }
+        }
+      }
+    }
+
+    if (!ws['!rows']) ws['!rows'] = [];
+    ws['!rows'][0] = { hpt: 20 };
+    ws['!rows'][5] = { hpt: 25 };
+    ws['!rows'][headerRow] = { hpt: 22 };
+
+    return ws;
   };
 
   if (user?.role !== 'admin') {
