@@ -285,9 +285,25 @@ const Sales = ({ user }) => {
       await salesService.addNote(selectedSaleForNotes.id, newNote);
       toast.success("Nota adicionada!");
       setNewNote("");
-      fetchData();
+      setNotesDialogOpen(false);
+      setTimeout(() => fetchData(), 100);
     } catch (error) {
       toast.error("Erro ao adicionar nota");
+    }
+  };
+
+  const handleDeleteSale = async (sale) => {
+    if (!window.confirm(`Tem a certeza que deseja apagar a venda ${sale.sale_code}?\n\nEsta ação é irreversível e irá remover todos os dados associados à venda.`)) {
+      return;
+    }
+
+    try {
+      await salesService.delete(sale.id);
+      toast.success("Venda apagada com sucesso!");
+      fetchData();
+    } catch (error) {
+      toast.error("Erro ao apagar venda");
+      console.error('Erro ao apagar venda:', error);
     }
   };
 
@@ -688,6 +704,11 @@ const Sales = ({ user }) => {
                           <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600">
                             Notas ({sale.notes?.length || 0})
                           </Button>
+                          {user?.role === 'admin' && (
+                            <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     )}

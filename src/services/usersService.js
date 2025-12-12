@@ -104,5 +104,32 @@ export const usersService = {
 
   generatePassword() {
     return generateStrongPassword();
+  },
+
+  async getCurrentUser() {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authUser.id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateEmailAlertPreference(enabled) {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error('Not authenticated');
+
+    const { error } = await supabase
+      .from('users')
+      .update({ email_alerts_enabled: enabled })
+      .eq('id', authUser.id);
+
+    if (error) throw error;
+    return true;
   }
 };

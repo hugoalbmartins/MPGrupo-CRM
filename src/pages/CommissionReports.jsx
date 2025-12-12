@@ -1,0 +1,263 @@
+import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { FileDown, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { partnersService } from "../services/partnersService";
+import { salesService } from "../services/salesService";
+
+const CommissionReports = ({ user }) => {
+  const [partners, setPartners] = useState([]);
+  const [selectedPartner, setSelectedPartner] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchPartners();
+  }, []);
+
+  const fetchPartners = async () => {
+    try {
+      const data = await partnersService.getAll();
+      setPartners(data);
+    } catch (error) {
+      toast.error("Erro ao carregar parceiros");
+    }
+  };
+
+  const generateCommissionReport = async (partnerId = null) => {
+    setLoading(true);
+    try {
+      const allSales = await salesService.getAll();
+
+      const paidSales = allSales.filter(sale =>
+        sale.paid_to_operator === true &&
+        (!partnerId || sale.partner_id === partnerId)
+      );
+
+      if (paidSales.length === 0) {
+        toast.error("Nenhuma venda paga encontrada");
+        setLoading(false);
+        return;
+      }
+
+      const XLSX = await import('xlsx');
+
+      if (partnerId) {
+        await generateSinglePartnerReport(partnerId, paidSales, XLSX);
+      } else {
+        await generateAllPartnersReport(paidSales, XLSX);
+      }
+
+      toast.success("Auto de comissões gerado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao gerar auto de comissões");
+      console.error('Erro:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateSinglePartnerReport = async (partnerId, sales, XLSX) => {
+    const partner = partners.find(p => p.id === partnerId);
+    if (!partner) return;
+
+    const partnerSales = sales.filter(s => s.partner_id === partnerId);
+
+    const wb = XLSX.utils.book_new();
+    const wsData = createWorksheetData(partner, partnerSales);
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    ws['!cols'] = [
+      { wch: 30 }, // Nome Cliente
+      { wch: 12 }, // NIF
+      { wch: 15 }, // CPE
+      { wch: 15 }, // CUI
+      { wch: 12 }, // REQ
+      { wch: 12 }, // Data Ativação
+      { wch: 10 }  // Valor
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, partner.name.substring(0, 31));
+
+    const fileName = `Auto_Comissoes_${partner.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const generateAllPartnersReport = async (sales, XLSX) => {
+    const wb = XLSX.utils.book_new();
+
+    const partnerGroups = {};
+    sales.forEach(sale => {
+      if (!partnerGroups[sale.partner_id]) {
+        partnerGroups[sale.partner_id] = [];
+      }
+      partnerGroups[sale.partner_id].push(sale);
+    });
+
+    for (const [partnerId, partnerSales] of Object.entries(partnerGroups)) {
+      const partner = partners.find(p => p.id === partnerId);
+      if (!partner) continue;
+
+      const wsData = createWorksheetData(partner, partnerSales);
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [
+        { wch: 30 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 10 }
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, partner.name.substring(0, 31));
+    }
+
+    const fileName = `Autos_Comissoes_Todos_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const createWorksheetData = (partner, sales) => {
+    const data = [];
+
+    data.push(['MARCIO & SANDRA LDA']);
+    data.push(['Rua Luís Reis Santos, Lote 5, R/C']);
+    data.push(['2260-082 VILA NOVA DA BARQUINHA']);
+    data.push(['NIF: 514792149']);
+    data.push([]);
+    data.push([`AUTO DE COMISSÕES - ${partner.name}`]);
+    data.push([`Data: ${new Date().toLocaleDateString('pt-PT')}`]);
+    data.push([]);
+
+    data.push(['Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativação', 'Valor (€)']);
+
+    let total = 0;
+    sales.forEach(sale => {
+      const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
+      total += commission;
+
+      data.push([
+        sale.client_name || '',
+        sale.client_nif || '',
+        sale.cpe || '',
+        sale.cui || '',
+        sale.request_number || '',
+        sale.activation_date ? new Date(sale.activation_date).toLocaleDateString('pt-PT') : '',
+        commission.toFixed(2)
+      ]);
+    });
+
+    data.push([]);
+    data.push(['', '', '', '', '', 'Total:', total.toFixed(2)]);
+    data.push(['', '', '', '', '', 'IVA (23%):', (total * 0.23).toFixed(2)]);
+    data.push(['', '', '', '', '', 'Total c/ IVA:', (total * 1.23).toFixed(2)]);
+
+    data.push([]);
+    data.push([`IBAN: ${partner.iban || 'Não definido'}`]);
+
+    return data;
+  };
+
+  if (user?.role !== 'admin') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Acesso negado. Apenas administradores podem aceder a esta página.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Autos de Comissões</h1>
+          <p className="text-gray-600 mt-1">Gere autos de comissões para parceiros (apenas vendas pagas)</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileDown className="w-5 h-5 text-blue-600" />
+              Auto Individual
+            </CardTitle>
+            <CardDescription>
+              Gere auto de comissões para um parceiro específico
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Selecionar Parceiro</Label>
+              <Select value={selectedPartner} onValueChange={setSelectedPartner}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um parceiro..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {partners.map(partner => (
+                    <SelectItem key={partner.id} value={partner.id}>
+                      {partner.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={() => generateCommissionReport(selectedPartner)}
+              disabled={!selectedPartner || loading}
+              className="w-full btn-primary"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Gerar Auto Individual
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileDown className="w-5 h-5 text-green-600" />
+              Autos de Todos os Parceiros
+            </CardTitle>
+            <CardDescription>
+              Gere autos de comissões para todos os parceiros (um ficheiro com múltiplas abas)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                Será criado um ficheiro Excel com uma aba para cada parceiro que tenha vendas pagas.
+              </p>
+            </div>
+            <Button
+              onClick={() => generateCommissionReport(null)}
+              disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Gerar Todos os Autos
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações Importantes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-gray-600">
+          <p>• Apenas vendas com o campo "Paga pelo Operador" marcado são incluídas nos autos</p>
+          <p>• Os valores de comissão apresentados incluem o cálculo automático ou comissão manual definida</p>
+          <p>• O auto inclui cabeçalho com dados da empresa (Marcio & Sandra lda)</p>
+          <p>• Os totais incluem subtotal, IVA (23%) e total com IVA</p>
+          <p>• O IBAN do parceiro é incluído no final (se definido no cadastro)</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default CommissionReports;

@@ -247,25 +247,25 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
       </div>
 
       <Tabs defaultValue="particular" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="particular">Particular</TabsTrigger>
-          <TabsTrigger value="empresarial">Empresarial</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-blue-50 border border-blue-200">
+          <TabsTrigger value="particular" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Particular</TabsTrigger>
+          <TabsTrigger value="empresarial" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Empresarial</TabsTrigger>
         </TabsList>
 
         <TabsContent value="particular" className="space-y-4 mt-4">
           <Tabs defaultValue="D2D" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="D2D">D2D</TabsTrigger>
-              <TabsTrigger value="Rev">Rev</TabsTrigger>
-              <TabsTrigger value="Rev+">Rev+</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-blue-50 border border-blue-200">
+              <TabsTrigger value="D2D" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">D2D</TabsTrigger>
+              <TabsTrigger value="Rev" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rev</TabsTrigger>
+              <TabsTrigger value="Rev+" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rev+</TabsTrigger>
             </TabsList>
             {['D2D', 'Rev', 'Rev+'].map(partnerType => (
               <TabsContent key={partnerType} value={partnerType} className="mt-4">
                 {isTelecom ? (
                   <Tabs defaultValue="M3" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="M3">M3</TabsTrigger>
-                      <TabsTrigger value="M4">M4</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 bg-blue-50 border border-blue-200">
+                      <TabsTrigger value="M3" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M3</TabsTrigger>
+                      <TabsTrigger value="M4" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M4</TabsTrigger>
                     </TabsList>
                     <TabsContent value="M3" className="mt-4">
                       {renderTierForm('particular', partnerType, 'M3')}
@@ -276,10 +276,10 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                   </Tabs>
                 ) : isEnergy ? (
                   <Tabs defaultValue="eletricidade" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
-                      <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
-                      <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3 bg-blue-50 border border-blue-200">
+                      <TabsTrigger value="eletricidade" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">⚡ Eletricidade</TabsTrigger>
+                      <TabsTrigger value="gas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">🔥 Gás</TabsTrigger>
+                      <TabsTrigger value="dual" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">⚡🔥 Dual</TabsTrigger>
                     </TabsList>
                     <TabsContent value="eletricidade" className="mt-4">
                       {renderTierForm('particular', partnerType, 'eletricidade')}
@@ -301,18 +301,18 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
 
         <TabsContent value="empresarial" className="space-y-4 mt-4">
           <Tabs defaultValue="D2D" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="D2D">D2D</TabsTrigger>
-              <TabsTrigger value="Rev">Rev</TabsTrigger>
-              <TabsTrigger value="Rev+">Rev+</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-blue-50 border border-blue-200">
+              <TabsTrigger value="D2D" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">D2D</TabsTrigger>
+              <TabsTrigger value="Rev" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rev</TabsTrigger>
+              <TabsTrigger value="Rev+" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Rev+</TabsTrigger>
             </TabsList>
             {['D2D', 'Rev', 'Rev+'].map(partnerType => (
               <TabsContent key={partnerType} value={partnerType} className="mt-4">
                 {isTelecom ? (
                   <Tabs defaultValue="M3" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="M3">M3</TabsTrigger>
-                      <TabsTrigger value="M4">M4</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 bg-blue-50 border border-blue-200">
+                      <TabsTrigger value="M3" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M3</TabsTrigger>
+                      <TabsTrigger value="M4" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M4</TabsTrigger>
                     </TabsList>
                     <TabsContent value="M3" className="mt-4">
                       {renderTierForm('empresarial', partnerType, 'M3')}
@@ -323,10 +323,10 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
                   </Tabs>
                 ) : isEnergy ? (
                   <Tabs defaultValue="eletricidade" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="eletricidade">⚡ Eletricidade</TabsTrigger>
-                      <TabsTrigger value="gas">🔥 Gás</TabsTrigger>
-                      <TabsTrigger value="dual">⚡🔥 Dual</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3 bg-blue-50 border border-blue-200">
+                      <TabsTrigger value="eletricidade" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">⚡ Eletricidade</TabsTrigger>
+                      <TabsTrigger value="gas" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">🔥 Gás</TabsTrigger>
+                      <TabsTrigger value="dual" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">⚡🔥 Dual</TabsTrigger>
                     </TabsList>
                     <TabsContent value="eletricidade" className="mt-4">
                       {renderTierForm('empresarial', partnerType, 'eletricidade')}
