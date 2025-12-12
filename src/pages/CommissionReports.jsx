@@ -49,10 +49,10 @@ const CommissionReports = ({ user }) => {
     console.log(`Filtrando vendas para ${selectedMonth}/${selectedYear}`);
 
     return sales.filter(sale => {
-      const dateField = sale.activation_date || sale.paid_date;
+      const dateField = sale.activation_date || sale.paid_date || sale.date;
 
       if (!dateField) {
-        console.log(`Venda ${sale.sale_code} sem data - activation_date: ${sale.activation_date}, paid_date: ${sale.paid_date}`);
+        console.log(`Venda ${sale.sale_code} sem nenhuma data`);
         return false;
       }
 
@@ -209,13 +209,14 @@ const CommissionReports = ({ user }) => {
       const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
       total += commission;
 
+      const saleDate = sale.activation_date || sale.paid_date || sale.date;
       data.push([
         sale.client_name || '',
         sale.client_nif || '',
         sale.cpe || '',
         sale.cui || '',
         sale.request_number || '',
-        sale.activation_date ? new Date(sale.activation_date).toLocaleDateString('pt-PT') : '',
+        saleDate ? new Date(saleDate).toLocaleDateString('pt-PT') : '',
         commission.toFixed(2)
       ]);
     });
