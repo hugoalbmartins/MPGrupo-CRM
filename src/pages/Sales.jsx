@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2 } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ const Sales = ({ user }) => {
   const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
   const [newNote, setNewNote] = useState("");
   const [uploadFiles, setUploadFiles] = useState([]);
+  const [noteAttachments, setNoteAttachments] = useState([]);
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -285,6 +286,7 @@ const Sales = ({ user }) => {
       await salesService.addNote(selectedSaleForNotes.id, newNote);
       toast.success("Nota adicionada!");
       setNewNote("");
+      setNoteAttachments([]);
       setNotesDialogOpen(false);
       setTimeout(() => fetchData(), 100);
     } catch (error) {
@@ -841,12 +843,34 @@ const Sales = ({ user }) => {
             {/* Add Note */}
             <div className="space-y-2">
               <Label>Adicionar Nota</Label>
-              <Textarea 
+              <Textarea
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Escreva uma nota..."
                 rows={3}
               />
+
+              <div className="flex items-center gap-2">
+                <Label htmlFor="note-attachments" className="cursor-pointer">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 transition-colors">
+                    <Paperclip className="w-4 h-4" />
+                    <span className="text-sm">Anexar Documentos</span>
+                  </div>
+                </Label>
+                <input
+                  id="note-attachments"
+                  type="file"
+                  multiple
+                  onChange={(e) => setNoteAttachments(Array.from(e.target.files))}
+                  className="hidden"
+                />
+                {noteAttachments.length > 0 && (
+                  <span className="text-sm text-gray-600">
+                    {noteAttachments.length} ficheiro(s) selecionado(s)
+                  </span>
+                )}
+              </div>
+
               <Button onClick={handleAddNote} size="sm" className="btn-primary">
                 Adicionar Nota
               </Button>
@@ -854,12 +878,12 @@ const Sales = ({ user }) => {
 
             {/* Notes List */}
             <div className="space-y-2">
-              <h3 className="font-semibold text-gray-900">Histórico de Notas:</h3>
+              <h3 className="font-semibold text-gray-900">Histórico de Notas (últimas 3):</h3>
               {(!selectedSaleForNotes?.notes || selectedSaleForNotes.notes.length === 0) ? (
                 <p className="text-gray-500 text-sm py-4 text-center">Nenhuma nota ainda</p>
               ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {selectedSaleForNotes.notes.map((note) => (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto border border-gray-200 rounded-lg p-2">
+                  {selectedSaleForNotes.notes.slice(0, 3).map((note) => (
                     <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
                       <div className="flex justify-between items-start mb-2">
                         <span className="font-medium text-sm">{note.author}</span>
@@ -870,6 +894,11 @@ const Sales = ({ user }) => {
                       <p className="text-sm text-gray-700">{note.content}</p>
                     </div>
                   ))}
+                  {selectedSaleForNotes.notes.length > 3 && (
+                    <p className="text-xs text-gray-500 text-center py-2">
+                      + {selectedSaleForNotes.notes.length - 3} nota(s) mais antiga(s)
+                    </p>
+                  )}
                 </div>
               )}
             </div>

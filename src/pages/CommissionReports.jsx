@@ -11,7 +11,26 @@ import { salesService } from "../services/salesService";
 const CommissionReports = ({ user }) => {
   const [partners, setPartners] = useState([]);
   const [selectedPartner, setSelectedPartner] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
+
+  const months = [
+    { value: 1, label: 'Janeiro' },
+    { value: 2, label: 'Fevereiro' },
+    { value: 3, label: 'Março' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Maio' },
+    { value: 6, label: 'Junho' },
+    { value: 7, label: 'Julho' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Setembro' },
+    { value: 10, label: 'Outubro' },
+    { value: 11, label: 'Novembro' },
+    { value: 12, label: 'Dezembro' }
+  ];
+
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 
   useEffect(() => {
     fetchPartners();
@@ -26,18 +45,34 @@ const CommissionReports = ({ user }) => {
     }
   };
 
+  const filterSalesByMonth = (sales) => {
+    return sales.filter(sale => {
+      if (!sale.activation_date) return false;
+
+      const saleDate = new Date(sale.activation_date);
+      const saleMonth = saleDate.getMonth() + 1;
+      const saleYear = saleDate.getFullYear();
+
+      return saleMonth === selectedMonth && saleYear === selectedYear;
+    });
+  };
+
   const generateCommissionReport = async (partnerId = null) => {
     setLoading(true);
     try {
       const allSales = await salesService.getAll();
 
-      const paidSales = allSales.filter(sale =>
-        sale.paid_to_operator === true &&
-        (!partnerId || sale.partner_id === partnerId)
-      );
+      const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
 
-      if (paidSales.length === 0) {
-        toast.error("Nenhuma venda paga encontrada");
+      const filteredByMonth = filterSalesByMonth(paidSales);
+
+      const finalSales = partnerId
+        ? filteredByMonth.filter(s => s.partner_id === partnerId)
+        : filteredByMonth;
+
+      if (finalSales.length === 0) {
+        const monthName = months.find(m => m.value === selectedMonth)?.label;
+        toast.error(`Não existem vendas pagas para o mês de ${monthName}/${selectedYear}`);
         setLoading(false);
         return;
       }
@@ -45,9 +80,9 @@ const CommissionReports = ({ user }) => {
       const XLSX = await import('xlsx');
 
       if (partnerId) {
-        await generateSinglePartnerReport(partnerId, paidSales, XLSX);
+        await generateSinglePartnerReport(partnerId, finalSales, XLSX);
       } else {
-        await generateAllPartnersReport(paidSales, XLSX);
+        await generateAllPartnersReport(finalSales, XLSX);
       }
 
       toast.success("Auto de comissões gerado com sucesso!");
@@ -81,7 +116,8 @@ const CommissionReports = ({ user }) => {
 
     XLSX.utils.book_append_sheet(wb, ws, partner.name.substring(0, 31));
 
-    const fileName = `Auto_Comissoes_${partner.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const monthName = months.find(m => m.value === selectedMonth)?.label;
+    const fileName = `Auto_Comissoes_${partner.name.replace(/\s+/g, '_')}_${monthName}_${selectedYear}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -116,7 +152,8 @@ const CommissionReports = ({ user }) => {
       XLSX.utils.book_append_sheet(wb, ws, partner.name.substring(0, 31));
     }
 
-    const fileName = `Autos_Comissoes_Todos_${new Date().toISOString().split('T')[0]}.xlsx`;
+    const monthName = months.find(m => m.value === selectedMonth)?.label;
+    const fileName = `Autos_Comissoes_Todos_${monthName}_${selectedYear}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -128,8 +165,8 @@ const CommissionReports = ({ user }) => {
     data.push(['2260-082 VILA NOVA DA BARQUINHA']);
     data.push(['NIF: 514792149']);
     data.push([]);
-    data.push([`AUTO DE COMISSÕES - ${partner.name}`]);
-    data.push([`Data: ${new Date().toLocaleDateString('pt-PT')}`]);
+    const monthName = months.find(m => m.value === selectedMonth)?.label;
+    data.push([`AUTO DE COMISSÕES - ${partner.name} - ${monthName}/${selectedYear}`]);
     data.push([]);
 
     data.push(['Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativação', 'Valor (€)']);
@@ -154,9 +191,6 @@ const CommissionReports = ({ user }) => {
     data.push(['', '', '', '', '', 'Total:', total.toFixed(2)]);
     data.push(['', '', '', '', '', 'IVA (23%):', (total * 0.23).toFixed(2)]);
     data.push(['', '', '', '', '', 'Total c/ IVA:', (total * 1.23).toFixed(2)]);
-
-    data.push([]);
-    data.push([`IBAN: ${partner.iban || 'Não definido'}`]);
 
     return data;
   };
@@ -205,6 +239,38 @@ const CommissionReports = ({ user }) => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Mês</Label>
+                <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map(month => (
+                      <SelectItem key={month.value} value={month.value.toString()}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Ano</Label>
+                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map(year => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <Button
               onClick={() => generateCommissionReport(selectedPartner)}
               disabled={!selectedPartner || loading}
@@ -227,9 +293,41 @@ const CommissionReports = ({ user }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Mês</Label>
+                <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map(month => (
+                      <SelectItem key={month.value} value={month.value.toString()}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Ano</Label>
+                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map(year => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                Será criado um ficheiro Excel com uma aba para cada parceiro que tenha vendas pagas.
+                Será criado um ficheiro Excel com uma aba para cada parceiro que tenha vendas pagas no período selecionado.
               </p>
             </div>
             <Button
@@ -249,11 +347,11 @@ const CommissionReports = ({ user }) => {
           <CardTitle>Informações Importantes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-gray-600">
-          <p>• Apenas vendas com o campo "Paga pelo Operador" marcado são incluídas nos autos</p>
+          <p>• Selecione o mês e ano para filtrar as vendas a incluir no auto</p>
+          <p>• Apenas vendas com data de ativação no período selecionado e pagas pelo operador são incluídas</p>
           <p>• Os valores de comissão apresentados incluem o cálculo automático ou comissão manual definida</p>
           <p>• O auto inclui cabeçalho com dados da empresa (Marcio & Sandra lda)</p>
           <p>• Os totais incluem subtotal, IVA (23%) e total com IVA</p>
-          <p>• O IBAN do parceiro é incluído no final (se definido no cadastro)</p>
         </CardContent>
       </Card>
     </div>
