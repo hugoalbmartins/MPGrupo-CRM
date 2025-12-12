@@ -95,6 +95,26 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
     setConfig(newConfig);
   };
 
+  const updateAdditionalService = (clientType, partnerType, field, value, serviceType = null) => {
+    const newConfig = { ...config };
+    if (!newConfig[clientType]) newConfig[clientType] = {};
+    if (!newConfig[clientType][partnerType]) newConfig[clientType][partnerType] = {};
+
+    const target = serviceType
+      ? (newConfig[clientType][partnerType][serviceType] || {})
+      : (newConfig[clientType][partnerType] || {});
+
+    target[field] = parseFloat(value) || 0;
+
+    if (serviceType) {
+      newConfig[clientType][partnerType][serviceType] = target;
+    } else {
+      newConfig[clientType][partnerType] = target;
+    }
+
+    setConfig(newConfig);
+  };
+
   const handleSave = () => {
     onSave(config);
   };
@@ -200,6 +220,44 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
             </CardContent>
           </Card>
         ))}
+
+        {operator?.pays_direct_debit || operator?.pays_electronic_invoice ? (
+          <Card className="border-2 border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <h4 className="font-semibold text-gray-900 mb-4">Serviços Adicionais</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {operator?.pays_direct_debit && (
+                  <div>
+                    <Label className="text-sm">Valor Débito Direto (€)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={target?.direct_debit_value || 0}
+                      onChange={(e) => updateAdditionalService(clientType, partnerType, 'direct_debit_value', e.target.value, serviceType)}
+                      placeholder="Ex: 5.00"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Comissão por adesão a DD</p>
+                  </div>
+                )}
+                {operator?.pays_electronic_invoice && (
+                  <div>
+                    <Label className="text-sm">Valor Fatura Eletrónica (€)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={target?.electronic_invoice_value || 0}
+                      onChange={(e) => updateAdditionalService(clientType, partnerType, 'electronic_invoice_value', e.target.value, serviceType)}
+                      placeholder="Ex: 3.00"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Comissão por adesão a FE</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     );
   };

@@ -75,6 +75,198 @@ const CommissionReports = ({ user }) => {
     });
   };
 
+  const printCommissionReport = async (partnerId) => {
+    setLoading(true);
+    try {
+      const allSales = await salesService.getAll();
+      const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+      const filteredByMonth = filterSalesByMonth(paidSales);
+      const finalSales = filteredByMonth.filter(s => s.partner_id === partnerId);
+
+      const partner = partners.find(p => p.id === partnerId);
+      if (!partner) {
+        toast.error("Parceiro não encontrado");
+        return;
+      }
+
+      const monthName = months.find(m => m.value === selectedMonth)?.label;
+      const printWindow = window.open('', '_blank');
+
+      let total = 0;
+      const salesRows = finalSales.map(sale => {
+        const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
+        const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
+        const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
+        const totalComm = commission + ddValue + feValue;
+        total += totalComm;
+
+        return `
+          <tr>
+            <td>${sale.client_name}</td>
+            <td>${sale.client_nif}</td>
+            <td>${sale.cpe || '-'}</td>
+            <td>${sale.cui || '-'}</td>
+            <td>${sale.request_number || '-'}</td>
+            <td>${sale.activation_date ? new Date(sale.activation_date).toLocaleDateString('pt-PT') : '-'}</td>
+            <td>${sale.has_direct_debit ? 'Sim' : 'Não'}</td>
+            <td>${sale.has_electronic_invoice ? 'Sim' : 'Não'}</td>
+            <td style="text-align: right">€${totalComm.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Auto de Comissões - ${partner.name} - ${monthName}/${selectedYear}</title>
+          <style>
+            @media print {
+              @page { margin: 15mm; }
+              body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            }
+            body {
+              font-family: Arial, sans-serif;
+              margin: 20px;
+              color: #333;
+            }
+            .header {
+              text-align: left;
+              margin-bottom: 30px;
+              border-bottom: 3px solid #1F4E78;
+              padding-bottom: 15px;
+            }
+            .company-name {
+              font-size: 18px;
+              font-weight: bold;
+              color: #1F4E78;
+              margin-bottom: 5px;
+            }
+            .company-details {
+              font-size: 11px;
+              color: #666;
+              line-height: 1.5;
+            }
+            .title {
+              font-size: 20px;
+              font-weight: bold;
+              color: #1F4E78;
+              text-align: center;
+              margin: 25px 0;
+              padding: 10px;
+              background-color: #f0f4f8;
+              border-radius: 5px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 20px 0;
+              font-size: 11px;
+            }
+            th {
+              background-color: #1F4E78;
+              color: white;
+              padding: 10px 8px;
+              text-align: left;
+              font-weight: bold;
+              font-size: 11px;
+            }
+            td {
+              padding: 8px;
+              border: 1px solid #ddd;
+            }
+            tr:nth-child(even) {
+              background-color: #f9f9f9;
+            }
+            .total-row {
+              background-color: #e8f0f7 !important;
+              font-weight: bold;
+              font-size: 13px;
+            }
+            .total-row td {
+              border-top: 2px solid #1F4E78;
+            }
+            .footer {
+              margin-top: 40px;
+              text-align: right;
+              font-size: 10px;
+              color: #666;
+            }
+            .no-print {
+              margin: 20px 0;
+              text-align: center;
+            }
+            @media print {
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-name">MARCIO & SANDRA LDA</div>
+            <div class="company-details">
+              Avenida rainha Santa Isabel Lt 8 loja 1<br>
+              5000-434 Vila Real<br>
+              NIF: 518162796
+            </div>
+          </div>
+
+          <div class="title">
+            AUTO DE COMISSÕES - ${partner.name} - ${monthName}/${selectedYear}
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Nome Cliente</th>
+                <th>NIF</th>
+                <th>CPE</th>
+                <th>CUI</th>
+                <th>REQ</th>
+                <th>Data Ativação</th>
+                <th>DD</th>
+                <th>FE</th>
+                <th style="text-align: right">Valor (€)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${salesRows}
+              <tr class="total-row">
+                <td colspan="8" style="text-align: right">TOTAL:</td>
+                <td style="text-align: right">€${total.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="footer">
+            Documento gerado em ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT')}
+          </div>
+
+          <div class="no-print">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #1F4E78; color: white; border: none; border-radius: 5px;">
+              🖨️ Imprimir
+            </button>
+            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 5px; margin-left: 10px;">
+              Fechar
+            </button>
+          </div>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      toast.success(`Auto de comissões de ${partner.name} aberto em nova janela`);
+    } catch (error) {
+      toast.error("Erro ao gerar auto para impressão");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const generateCommissionReport = async (partnerId = null) => {
     setLoading(true);
     try {
@@ -389,14 +581,23 @@ const CommissionReports = ({ user }) => {
                 </Select>
               </div>
             </div>
-            <Button
-              onClick={() => generateCommissionReport(selectedPartner)}
-              disabled={!selectedPartner || loading}
-              className="w-full btn-primary"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Gerar Auto Individual
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => printCommissionReport(selectedPartner)}
+                disabled={!selectedPartner || loading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                🖨️ Imprimir Auto
+              </Button>
+              <Button
+                onClick={() => generateCommissionReport(selectedPartner)}
+                disabled={!selectedPartner || loading}
+                className="flex-1 btn-primary"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Excel
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

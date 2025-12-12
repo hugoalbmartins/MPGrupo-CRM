@@ -24,7 +24,9 @@ const Operators = ({ user }) => {
     energy_type: "",
     activation_types: [],
     commission_mode: "tier",
-    commission_config: {}
+    commission_config: {},
+    pays_direct_debit: false,
+    pays_electronic_invoice: false
   });
 
   useEffect(() => {
@@ -86,7 +88,9 @@ const Operators = ({ user }) => {
       energy_type: "",
       activation_types: [],
       commission_mode: "tier",
-      commission_config: {}
+      commission_config: {},
+      pays_direct_debit: false,
+      pays_electronic_invoice: false
     });
   };
 
@@ -256,6 +260,40 @@ const Operators = ({ user }) => {
                     </p>
                   </div>
                 )}
+
+                <div className="border-t pt-4 mt-4">
+                  <Label className="text-base font-semibold mb-3 block">Serviços Adicionais</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="pays_direct_debit"
+                        checked={formData.pays_direct_debit}
+                        onChange={(e) => setFormData({...formData, pays_direct_debit: e.target.checked})}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="pays_direct_debit" className="cursor-pointer font-normal">
+                        Paga adesão a Débito Direto
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="pays_electronic_invoice"
+                        checked={formData.pays_electronic_invoice}
+                        onChange={(e) => setFormData({...formData, pays_electronic_invoice: e.target.checked})}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="pays_electronic_invoice" className="cursor-pointer font-normal">
+                        Paga adesão a Fatura Eletrónica
+                      </Label>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Os valores para estes serviços são definidos na configuração de patamares
+                  </p>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
                   <Button type="submit" className="btn-primary">Criar</Button>

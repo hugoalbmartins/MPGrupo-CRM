@@ -50,6 +50,9 @@ const Sales = ({ user }) => {
     client_contact: "",
     client_email: "",
     client_iban: "",
+    street: "",
+    postal_code: "",
+    locality: "",
     installation_address: "",
     operator_id: "",
     service_type: "",
@@ -61,6 +64,8 @@ const Sales = ({ user }) => {
     entry_type: "",
     cui: "",
     tier: "",
+    has_direct_debit: false,
+    has_electronic_invoice: false,
     observations: ""
   });
 
@@ -92,6 +97,17 @@ const Sales = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.street || !formData.postal_code || !formData.locality) {
+      toast.error("Morada, código postal e localidade são obrigatórios!");
+      return;
+    }
+
+    const postalCodeRegex = /^\d{4}-\d{3}$/;
+    if (!postalCodeRegex.test(formData.postal_code)) {
+      toast.error("Código postal inválido! Use o formato: 0000-000");
+      return;
+    }
+
     try {
       const submitData = { ...formData };
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
@@ -118,6 +134,9 @@ const Sales = ({ user }) => {
       client_contact: "",
       client_email: "",
       client_iban: "",
+      street: "",
+      postal_code: "",
+      locality: "",
       installation_address: "",
       operator_id: "",
       service_type: "",
@@ -129,6 +148,8 @@ const Sales = ({ user }) => {
       entry_type: "",
       cui: "",
       tier: "",
+      has_direct_debit: false,
+      has_electronic_invoice: false,
       observations: ""
     });
     setUploadFiles([]);
@@ -398,30 +419,7 @@ const Sales = ({ user }) => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>Nome Cliente *</Label>
-                  <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} required />
-                </div>
-                <div>
-                  <Label>NIF Cliente *</Label>
-                  <Input value={formData.client_nif} onChange={(e) => setFormData({...formData, client_nif: e.target.value})} required />
-                </div>
-                <div>
-                  <Label>Contacto Cliente *</Label>
-                  <Input value={formData.client_contact} onChange={(e) => setFormData({...formData, client_contact: e.target.value})} required />
-                </div>
-                <div>
-                  <Label>Email Cliente</Label>
-                  <Input type="email" value={formData.client_email} onChange={(e) => setFormData({...formData, client_email: e.target.value})} />
-                </div>
-                <div>
-                  <Label>IBAN Cliente</Label>
-                  <Input value={formData.client_iban} onChange={(e) => setFormData({...formData, client_iban: e.target.value})} />
-                </div>
-                <div className="col-span-2">
-                  <Label>Morada de Instalação/Fornecimento</Label>
-                  <Input value={formData.installation_address} onChange={(e) => setFormData({...formData, installation_address: e.target.value})} />
-                </div>
+
                 <div className={formData.scope === 'energia' ? '' : 'col-span-2'}>
                   <Label>Operadora *</Label>
                   <Select value={formData.operator_id} onValueChange={(v) => {
@@ -452,7 +450,6 @@ const Sales = ({ user }) => {
                   </Select>
                 </div>
 
-                {/* Tipo de Venda de Energia - apenas para operadoras Dual */}
                 {formData.scope === 'energia' && operatorEnergyType === 'dual' && (
                   <div>
                     <Label>Tipo de Venda *</Label>
@@ -466,7 +463,63 @@ const Sales = ({ user }) => {
                     </Select>
                   </div>
                 )}
-                
+
+                <div>
+                  <Label>Nome Cliente *</Label>
+                  <Input value={formData.client_name} onChange={(e) => setFormData({...formData, client_name: e.target.value})} required />
+                </div>
+                <div>
+                  <Label>NIF Cliente *</Label>
+                  <Input value={formData.client_nif} onChange={(e) => setFormData({...formData, client_nif: e.target.value})} required />
+                </div>
+                <div>
+                  <Label>Contacto Cliente *</Label>
+                  <Input value={formData.client_contact} onChange={(e) => setFormData({...formData, client_contact: e.target.value})} required />
+                </div>
+                <div>
+                  <Label>Email Cliente</Label>
+                  <Input type="email" value={formData.client_email} onChange={(e) => setFormData({...formData, client_email: e.target.value})} />
+                </div>
+                <div>
+                  <Label>IBAN Cliente</Label>
+                  <Input value={formData.client_iban} onChange={(e) => setFormData({...formData, client_iban: e.target.value})} />
+                </div>
+
+                <div className="col-span-2">
+                  <Label>Morada do Cliente *</Label>
+                  <Input
+                    value={formData.street}
+                    onChange={(e) => setFormData({...formData, street: e.target.value})}
+                    placeholder="Rua, Avenida, número, andar, etc."
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Código Postal *</Label>
+                  <Input
+                    value={formData.postal_code}
+                    onChange={(e) => setFormData({...formData, postal_code: e.target.value})}
+                    placeholder="0000-000"
+                    pattern="\d{4}-\d{3}"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Localidade *</Label>
+                  <Input
+                    value={formData.locality}
+                    onChange={(e) => setFormData({...formData, locality: e.target.value})}
+                    placeholder="Ex: Lisboa, Porto, etc."
+                    required
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <Label>Morada de Instalação/Fornecimento</Label>
+                  <Input value={formData.installation_address} onChange={(e) => setFormData({...formData, installation_address: e.target.value})} />
+                  <p className="text-xs text-gray-500 mt-1">Se diferente da morada do cliente</p>
+                </div>
+
                 {formData.scope === 'telecomunicacoes' && (
                   <>
                     <div>
@@ -584,7 +637,46 @@ const Sales = ({ user }) => {
                     </div>
                   </>
                 )}
-                
+
+                {selectedOperator && (selectedOperator.pays_direct_debit || selectedOperator.pays_electronic_invoice) && (
+                  <div className="col-span-2 border-t pt-4">
+                    <Label className="text-base font-semibold mb-3 block">Adesões do Cliente</Label>
+                    <div className="space-y-2 bg-blue-50 p-4 rounded-lg">
+                      {selectedOperator.pays_direct_debit && (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="has_direct_debit"
+                            checked={formData.has_direct_debit}
+                            onChange={(e) => setFormData({...formData, has_direct_debit: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <Label htmlFor="has_direct_debit" className="cursor-pointer font-normal">
+                            Cliente aderiu a Débito Direto (DD)
+                          </Label>
+                        </div>
+                      )}
+                      {selectedOperator.pays_electronic_invoice && (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="has_electronic_invoice"
+                            checked={formData.has_electronic_invoice}
+                            onChange={(e) => setFormData({...formData, has_electronic_invoice: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <Label htmlFor="has_electronic_invoice" className="cursor-pointer font-normal">
+                            Cliente aderiu a Fatura Eletrónica (FE)
+                          </Label>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-600 mt-2">
+                        ℹ️ Valores adicionais serão somados à comissão conforme configuração da operadora
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="col-span-2">
                   <Label>Observações</Label>
                   <Textarea value={formData.observations} onChange={(e) => setFormData({...formData, observations: e.target.value})} rows={3} />
