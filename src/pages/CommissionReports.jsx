@@ -49,16 +49,18 @@ const CommissionReports = ({ user }) => {
     console.log(`Filtrando vendas para ${selectedMonth}/${selectedYear}`);
 
     return sales.filter(sale => {
-      if (!sale.activation_date) {
-        console.log(`Venda ${sale.sale_code} sem data de ativação`);
+      const dateField = sale.activation_date || sale.paid_date;
+
+      if (!dateField) {
+        console.log(`Venda ${sale.sale_code} sem data - activation_date: ${sale.activation_date}, paid_date: ${sale.paid_date}`);
         return false;
       }
 
       let saleDate;
-      if (typeof sale.activation_date === 'string' && sale.activation_date.includes('T')) {
-        saleDate = new Date(sale.activation_date);
+      if (typeof dateField === 'string' && dateField.includes('T')) {
+        saleDate = new Date(dateField);
       } else {
-        const parts = sale.activation_date.split('-');
+        const parts = dateField.split('-');
         saleDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
       }
 
@@ -67,7 +69,7 @@ const CommissionReports = ({ user }) => {
 
       const matches = saleMonth === selectedMonth && saleYear === selectedYear;
 
-      console.log(`Venda ${sale.sale_code}: ${sale.activation_date} -> ${saleMonth}/${saleYear} - Match: ${matches}`);
+      console.log(`Venda ${sale.sale_code}: ${dateField} -> ${saleMonth}/${saleYear} - Match: ${matches}`);
 
       return matches;
     });
@@ -81,6 +83,16 @@ const CommissionReports = ({ user }) => {
 
       const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
       console.log(`Vendas pagas pelo operador: ${paidSales.length}`);
+
+      if (paidSales.length > 0) {
+        console.log('Exemplo de venda paga:', {
+          sale_code: paidSales[0].sale_code,
+          activation_date: paidSales[0].activation_date,
+          paid_date: paidSales[0].paid_date,
+          date: paidSales[0].date,
+          paid_to_operator: paidSales[0].paid_to_operator
+        });
+      }
 
       const filteredByMonth = filterSalesByMonth(paidSales);
       console.log(`Vendas após filtro de mês: ${filteredByMonth.length}`);
