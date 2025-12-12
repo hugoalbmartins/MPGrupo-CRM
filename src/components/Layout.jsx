@@ -53,6 +53,10 @@ const Layout = ({ children, user, onLogout }) => {
     menuItems.push(
       { path: "/operators", label: "Operadoras", icon: Building2, roles: ["bo"] }
     );
+  } else if (user?.role === "partner") {
+    menuItems.push(
+      { path: "/my-reports", label: "Meus Autos", icon: FileSpreadsheet, roles: ["partner"] }
+    );
   }
 
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));

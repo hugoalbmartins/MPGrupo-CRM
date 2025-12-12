@@ -53,6 +53,8 @@ export const operatorsService = {
         energy_type: operatorData.energy_type || null,
         activation_types: operatorData.activation_types || [],
         commission_mode: operatorData.commission_mode || 'tier',
+        pays_direct_debit: operatorData.pays_direct_debit || false,
+        pays_electronic_invoice: operatorData.pays_electronic_invoice || false,
         active: true,
         hidden: false,
         commission_config: operatorData.commission_config || {}

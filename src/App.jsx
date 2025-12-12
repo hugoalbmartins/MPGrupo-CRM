@@ -14,6 +14,7 @@ import Profile from "./pages/Profile.jsx";
 import Alerts from "./pages/Alerts.jsx";
 import Forms from "./pages/Forms.jsx";
 import CommissionReports from "./pages/CommissionReports.jsx";
+import CommissionReportsPartner from "./pages/CommissionReportsPartner.jsx";
 import Layout from "./components/Layout.jsx";
 import "@/App.css";
 
@@ -133,6 +134,9 @@ function App() {
             <Route path="/profile" element={<Profile user={user} />} />
             <Route path="/forms" element={<Forms user={user} />} />
             <Route path="/forms/:operatorId" element={<Forms user={user} />} />
+            {user?.role === "partner" && (
+              <Route path="/my-reports" element={<CommissionReportsPartner user={user} />} />
+            )}
             {user?.role === "admin" && (
               <>
                 <Route path="/operators" element={<Operators user={user} />} />
