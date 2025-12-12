@@ -232,7 +232,7 @@ const Sales = ({ user }) => {
       toast.success("Nota adicionada!");
       setNewNote("");
       setNotesDialogOpen(false);
-      fetchData();
+      setTimeout(() => fetchData(), 100);
     } catch (error) {
       toast.error("Erro ao adicionar nota");
     }

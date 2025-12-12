@@ -226,17 +226,17 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
       </div>
 
       <Tabs defaultValue="particular" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="particular">Particular</TabsTrigger>
-          <TabsTrigger value="empresarial">Empresarial</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-blue-50 border border-blue-200">
+          <TabsTrigger value="particular" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Particular</TabsTrigger>
+          <TabsTrigger value="empresarial" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Empresarial</TabsTrigger>
         </TabsList>
 
         <TabsContent value="particular" className="space-y-4 mt-4">
           {isTelecom ? (
             <Tabs defaultValue="M3" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="M3">M3</TabsTrigger>
-                <TabsTrigger value="M4">M4</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-blue-50 border border-blue-200">
+                <TabsTrigger value="M3" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M3</TabsTrigger>
+                <TabsTrigger value="M4" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M4</TabsTrigger>
               </TabsList>
               <TabsContent value="M3" className="mt-4">
                 {renderTierForm('particular', 'M3')}
@@ -253,9 +253,9 @@ const CommissionConfig = ({ operator, onSave, onCancel }) => {
         <TabsContent value="empresarial" className="space-y-4 mt-4">
           {isTelecom ? (
             <Tabs defaultValue="M3" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="M3">M3</TabsTrigger>
-                <TabsTrigger value="M4">M4</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-blue-50 border border-blue-200">
+                <TabsTrigger value="M3" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M3</TabsTrigger>
+                <TabsTrigger value="M4" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">M4</TabsTrigger>
               </TabsList>
               <TabsContent value="M3" className="mt-4">
                 {renderTierForm('empresarial', 'M3')}

@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye } from "lucide-react";
+import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { alertsService } from "../services/alertsService";
 import { salesService } from "../services/salesService";
+import { usersService } from "../services/usersService";
 
 const Alerts = ({ user }) => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSale, setSelectedSale] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
 
   useEffect(() => {
     fetchAlerts();
+    fetchEmailPreference();
   }, []);
 
   const fetchAlerts = async () => {
@@ -24,6 +29,27 @@ const Alerts = ({ user }) => {
       toast.error("Erro ao carregar alertas");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEmailPreference = async () => {
+    try {
+      if (user?.role === 'admin') {
+        const userData = await usersService.getCurrentUser();
+        setEmailAlertsEnabled(userData.email_alerts_enabled !== false);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar preferências:", error);
+    }
+  };
+
+  const handleToggleEmailAlerts = async (enabled) => {
+    try {
+      await usersService.updateEmailAlertPreference(enabled);
+      setEmailAlertsEnabled(enabled);
+      toast.success(enabled ? "Alertas por email ativados" : "Alertas por email desativados");
+    } catch (error) {
+      toast.error("Erro ao atualizar preferência");
     }
   };
 
@@ -64,11 +90,36 @@ const Alerts = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Alertas</h1>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Bell className="w-4 h-4" />
-          <span>{alerts.filter(a => isUnread(a)).length} não lidos</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Bell className="w-4 h-4" />
+            <span>{alerts.filter(a => isUnread(a)).length} não lidos</span>
+          </div>
         </div>
       </div>
+
+      {user?.role === 'admin' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Mail className="w-5 h-5 text-blue-600" />
+              <div>
+                <Label htmlFor="email-alerts" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                  Receber Alertas por Email
+                </Label>
+                <p className="text-xs text-gray-600 mt-1">
+                  Desative para receber alertas apenas na aplicação
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="email-alerts"
+              checked={emailAlertsEnabled}
+              onCheckedChange={handleToggleEmailAlerts}
+            />
+          </div>
+        </div>
+      )}
 
       {alerts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
