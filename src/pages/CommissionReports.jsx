@@ -459,9 +459,19 @@ const CommissionReports = ({ user }) => {
               btn.textContent = '⏳ Processando...';
 
               try {
+                console.log('Starting PDF generation...');
+
+                if (typeof window.jspdf === 'undefined') {
+                  throw new Error('jsPDF library not loaded');
+                }
+                if (typeof html2canvas === 'undefined') {
+                  throw new Error('html2canvas library not loaded');
+                }
+
                 const { jsPDF } = window.jspdf;
                 const element = document.body;
 
+                console.log('Capturing screenshot with html2canvas...');
                 const canvas = await html2canvas(element, {
                   scale: 2,
                   useCORS: true,
@@ -469,15 +479,28 @@ const CommissionReports = ({ user }) => {
                   allowTaint: true
                 });
 
+                console.log('Canvas created, generating PDF...');
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                console.log('PDF generated, converting to blob...');
                 const pdfBlob = pdf.output('blob');
+                console.log('PDF blob created, size:', pdfBlob.size);
 
                 const data = window.reportData;
+
+                console.log('Sending data to edge function:', {
+                  partnerId: data.partnerId,
+                  partnerEmail: data.partnerEmail,
+                  partnerName: data.partnerName,
+                  month: data.month,
+                  year: data.year,
+                  userId: data.userId,
+                  pdfSize: pdfBlob.size
+                });
 
                 const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
                   method: 'POST',
@@ -496,17 +519,24 @@ const CommissionReports = ({ user }) => {
                   })
                 });
 
+                console.log('Response status:', response.status);
+
                 if (!response.ok) {
                   const errorText = await response.text();
-                  console.error('Response error:', errorText);
+                  console.error('Response error text:', errorText);
                   let errorData;
                   try {
                     errorData = JSON.parse(errorText);
+                    console.error('Parsed error data:', errorData);
                   } catch (e) {
-                    throw new Error(\`Erro do servidor: \${errorText}\`);
+                    console.error('Failed to parse error:', e);
+                    throw new Error(\`Erro do servidor (${response.status}): \${errorText.substring(0, 200)}\`);
                   }
-                  throw new Error(errorData.error || 'Erro ao registrar auto');
+                  throw new Error(errorData.error || \`Erro ao registrar auto (${response.status})\`);
                 }
+
+                const result = await response.json();
+                console.log('Success response:', result);
 
                 alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
                 if (window.opener) {

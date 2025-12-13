@@ -39,7 +39,7 @@ async function sendEmailSMTP(to: string, subject: string, html: string) {
     `Message-ID: ${messageId}`,
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary=\"${boundary}\"`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
     ``,
     `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
@@ -97,10 +97,13 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log("Processing commission report request");
     const payload: EmailPayload = await req.json();
     const { partnerId, partnerEmail, partnerName, month, year, userId, pdfBase64 } = payload;
 
+    console.log("Validating payload fields");
     if (!partnerId || !partnerEmail || !partnerName || !month || !year || !userId || !pdfBase64) {
+      console.error("Missing fields:", { partnerId: !!partnerId, partnerEmail: !!partnerEmail, partnerName: !!partnerName, month: !!month, year: !!year, userId: !!userId, pdfBase64: !!pdfBase64 });
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -110,10 +113,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log("Creating Supabase client");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    console.log("Processing month");
     let monthNum: number;
     if (typeof month === 'string') {
       const monthNames = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -135,6 +140,7 @@ Deno.serve(async (req: Request) => {
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const monthName = monthNames[monthNum - 1];
 
+    console.log("Checking for existing versions");
     const { data: versionData } = await supabase
       .from("commission_reports")
       .select("version")
@@ -149,6 +155,7 @@ Deno.serve(async (req: Request) => {
     const fileName = `${partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_${monthName}_${year}_V${version}.pdf`;
     const filePath = `${partnerId}/${year}/${fileName}`;
 
+    console.log("Uploading PDF to storage:", filePath);
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
 
     const { error: uploadError } = await supabase.storage
@@ -159,9 +166,11 @@ Deno.serve(async (req: Request) => {
       });
 
     if (uploadError) {
+      console.error("Upload error:", uploadError);
       throw new Error(`Upload error: ${uploadError.message}`);
     }
 
+    console.log("Inserting record into database");
     const { data: reportData, error: insertError } = await supabase
       .from("commission_reports")
       .insert({
@@ -177,9 +186,11 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (insertError) {
+      console.error("Database insert error:", insertError);
       throw new Error(`Database error: ${insertError.message}`);
     }
 
+    console.log("Sending email to:", partnerEmail);
     const subject = `Auto de Comissões - ${monthName}/${year}`;
 
     const html = `
@@ -238,15 +249,15 @@ Deno.serve(async (req: Request) => {
         </style>
       </head>
       <body>
-        <div class=\"header\">
+        <div class="header">
           <h1>🧾 Novo Auto de Comissões</h1>
         </div>
-        <div class=\"content\">
+        <div class="content">
           <p>Olá <strong>${partnerName}</strong>,</p>
 
           <p>Foi emitido um novo auto de comissões para o período:</p>
 
-          <div class=\"info-box\">
+          <div class="info-box">
             <strong>📅 Período:</strong> ${monthName}/${year}<br>
             <strong>📊 Estado:</strong> Disponível para download
           </div>
@@ -254,16 +265,16 @@ Deno.serve(async (req: Request) => {
           <p>Pode aceder ao auto através da sua área de parceiro no CRM:</p>
 
           <center>
-            <a href=\"${Deno.env.get("APP_URL") || "https://seu-crm.com"}/my-reports\" class=\"button\">
+            <a href="${Deno.env.get("APP_URL") || "https://seu-crm.com"}/my-reports" class="button">
               Aceder aos Meus Autos
             </a>
           </center>
 
-          <p style=\"margin-top: 30px; font-size: 14px; color: #666;\">
+          <p style="margin-top: 30px; font-size: 14px; color: #666;">
             Este email é automático. Por favor não responda diretamente a este email.
           </p>
         </div>
-        <div class=\"footer\">
+        <div class="footer">
           <p>© ${new Date().getFullYear()} MP Grupo - Sistema de Gestão de Comissões</p>
           <p>MARCIO & SANDRA LDA | NIF: 518162796</p>
         </div>
@@ -273,15 +284,18 @@ Deno.serve(async (req: Request) => {
 
     try {
       await sendEmailSMTP(partnerEmail, subject, html);
+      console.log("Email sent successfully");
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
     }
 
+    console.log("Updating email sent status");
     await supabase
       .from("commission_reports")
       .update({ email_sent: true, email_sent_at: new Date().toISOString() })
       .eq("id", reportData.id);
 
+    console.log("Process completed successfully");
     return new Response(
       JSON.stringify({
         success: true,
@@ -296,7 +310,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error("Error processing commission report:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Unknown error occurred" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
