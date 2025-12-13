@@ -399,40 +399,41 @@ const CommissionReports = ({ user }) => {
             </button>
           </div>
 
+          <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
           <script>
-            let html2canvasLoaded = false;
-            let jspdfLoaded = false;
+            let librariesReady = false;
+            let checkAttempts = 0;
+            const maxAttempts = 50;
 
-            function checkLibrariesLoaded() {
+            function checkLibraries() {
+              checkAttempts++;
               const btn = document.getElementById('approveBtn');
-              if (html2canvasLoaded && jspdfLoaded) {
-                btn.disabled = false;
-                btn.textContent = '✅ Aprovar e Registrar Auto';
-                btn.style.opacity = '1';
-                console.log('All libraries loaded successfully');
+
+              if (typeof html2canvas !== 'undefined' && typeof window.jspdf !== 'undefined') {
+                librariesReady = true;
+                if (btn) {
+                  btn.disabled = false;
+                  btn.textContent = '✅ Aprovar e Registrar Auto';
+                  btn.style.opacity = '1';
+                }
+                console.log('Libraries loaded successfully');
+                return true;
               }
+
+              if (checkAttempts < maxAttempts) {
+                setTimeout(checkLibraries, 100);
+              } else {
+                console.error('Libraries failed to load after ' + maxAttempts + ' attempts');
+                if (btn) {
+                  btn.disabled = false;
+                  btn.textContent = '⚠️ Tentar Registar (bibliotecas não carregadas)';
+                  btn.style.opacity = '1';
+                  btn.style.backgroundColor = '#f59e0b';
+                }
+              }
+              return false;
             }
-
-            function loadScript(src, onLoadCallback) {
-              const script = document.createElement('script');
-              script.src = src;
-              script.onload = onLoadCallback;
-              script.onerror = function() {
-                console.error('Failed to load script:', src);
-                alert('Erro ao carregar bibliotecas necessárias. Por favor, recarregue a página.');
-              };
-              document.head.appendChild(script);
-            }
-
-            loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
-              html2canvasLoaded = true;
-              checkLibrariesLoaded();
-            });
-
-            loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js', function() {
-              jspdfLoaded = true;
-              checkLibrariesLoaded();
-            });
 
             window.addEventListener('DOMContentLoaded', function() {
               const approveBtn = document.getElementById('approveBtn');
@@ -441,19 +442,17 @@ const CommissionReports = ({ user }) => {
                 approveBtn.textContent = '⏳ Carregando bibliotecas...';
                 approveBtn.style.opacity = '0.6';
               }
+              checkLibraries();
             });
 
             async function approveAndRegister() {
               const btn = document.getElementById('approveBtn');
 
-              if (!html2canvasLoaded || !jspdfLoaded) {
-                alert('Aguarde o carregamento completo das bibliotecas...');
-                return;
-              }
-
               if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
-                alert('Bibliotecas não carregadas. Por favor, recarregue a página.');
-                return;
+                alert('Bibliotecas não carregadas. A funcionalidade pode não funcionar corretamente. Deseja continuar mesmo assim?');
+                if (!confirm('Continuar sem bibliotecas carregadas?')) {
+                  return;
+                }
               }
 
               btn.disabled = true;
