@@ -399,30 +399,60 @@ const CommissionReports = ({ user }) => {
             </button>
           </div>
 
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-          <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
           <script>
-            let librariesLoaded = false;
+            let html2canvasLoaded = false;
+            let jspdfLoaded = false;
 
-            window.addEventListener('load', function() {
-              setTimeout(() => {
-                if (typeof html2canvas !== 'undefined' && typeof window.jspdf !== 'undefined') {
-                  librariesLoaded = true;
-                  console.log('Libraries loaded successfully');
-                } else {
-                  console.error('Libraries failed to load');
-                }
-              }, 500);
+            function checkLibrariesLoaded() {
+              const btn = document.getElementById('approveBtn');
+              if (html2canvasLoaded && jspdfLoaded) {
+                btn.disabled = false;
+                btn.textContent = '✅ Aprovar e Registrar Auto';
+                btn.style.opacity = '1';
+                console.log('All libraries loaded successfully');
+              }
+            }
+
+            function loadScript(src, onLoadCallback) {
+              const script = document.createElement('script');
+              script.src = src;
+              script.onload = onLoadCallback;
+              script.onerror = function() {
+                console.error('Failed to load script:', src);
+                alert('Erro ao carregar bibliotecas necessárias. Por favor, recarregue a página.');
+              };
+              document.head.appendChild(script);
+            }
+
+            loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function() {
+              html2canvasLoaded = true;
+              checkLibrariesLoaded();
+            });
+
+            loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js', function() {
+              jspdfLoaded = true;
+              checkLibrariesLoaded();
+            });
+
+            window.addEventListener('DOMContentLoaded', function() {
+              const approveBtn = document.getElementById('approveBtn');
+              if (approveBtn) {
+                approveBtn.disabled = true;
+                approveBtn.textContent = '⏳ Carregando bibliotecas...';
+                approveBtn.style.opacity = '0.6';
+              }
             });
 
             async function approveAndRegister() {
               const btn = document.getElementById('approveBtn');
 
-              if (!librariesLoaded) {
-                alert('Aguarde o carregamento completo da página...');
-                setTimeout(() => {
-                  librariesLoaded = true;
-                }, 2000);
+              if (!html2canvasLoaded || !jspdfLoaded) {
+                alert('Aguarde o carregamento completo das bibliotecas...');
+                return;
+              }
+
+              if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+                alert('Bibliotecas não carregadas. Por favor, recarregue a página.');
                 return;
               }
 
@@ -430,14 +460,6 @@ const CommissionReports = ({ user }) => {
               btn.textContent = '⏳ Processando...';
 
               try {
-                if (typeof window.jspdf === 'undefined') {
-                  throw new Error('jsPDF não carregado. Por favor, recarregue a página.');
-                }
-
-                if (typeof html2canvas === 'undefined') {
-                  throw new Error('html2canvas não carregado. Por favor, recarregue a página.');
-                }
-
                 const { jsPDF } = window.jspdf;
                 const element = document.body;
 
