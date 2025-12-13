@@ -11,7 +11,7 @@ interface EmailPayload {
   partnerId: string;
   partnerEmail: string;
   partnerName: string;
-  month: string;
+  month: string | number;
   year: number;
   userId: string;
   pdfBase64: string;
@@ -114,8 +114,26 @@ Deno.serve(async (req: Request) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const monthParts = month.split('/');
-    const monthNum = monthParts.length > 1 ? parseInt(monthParts[0]) : parseInt(month);
+    let monthNum: number;
+    if (typeof month === 'string') {
+      const monthNames = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const monthLower = month.toLowerCase();
+      const monthIndex = monthNames.indexOf(monthLower);
+      if (monthIndex !== -1) {
+        monthNum = monthIndex + 1;
+      } else {
+        monthNum = parseInt(month);
+      }
+    } else {
+      monthNum = month;
+    }
+
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      throw new Error(`Invalid month value: ${month}`);
+    }
+
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const monthName = monthNames[monthNum - 1];
 
     const { data: versionData } = await supabase
       .from("commission_reports")
@@ -128,7 +146,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     const version = versionData ? versionData.version + 1 : 1;
-    const fileName = `${partnerName}_Auto_${month.replace('/', '_')}_${year}_V${version}.pdf`;
+    const fileName = `${partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_${monthName}_${year}_V${version}.pdf`;
     const filePath = `${partnerId}/${year}/${fileName}`;
 
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
@@ -162,7 +180,7 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Database error: ${insertError.message}`);
     }
 
-    const subject = `Auto de Comissões - ${month}/${year}`;
+    const subject = `Auto de Comissões - ${monthName}/${year}`;
 
     const html = `
       <!DOCTYPE html>
@@ -225,22 +243,22 @@ Deno.serve(async (req: Request) => {
         </div>
         <div class=\"content\">
           <p>Olá <strong>${partnerName}</strong>,</p>
-          
+
           <p>Foi emitido um novo auto de comissões para o período:</p>
-          
+
           <div class=\"info-box\">
-            <strong>📅 Período:</strong> ${month}/${year}<br>
+            <strong>📅 Período:</strong> ${monthName}/${year}<br>
             <strong>📊 Estado:</strong> Disponível para download
           </div>
-          
+
           <p>Pode aceder ao auto através da sua área de parceiro no CRM:</p>
-          
+
           <center>
             <a href=\"${Deno.env.get("APP_URL") || "https://seu-crm.com"}/my-reports\" class=\"button\">
               Aceder aos Meus Autos
             </a>
           </center>
-          
+
           <p style=\"margin-top: 30px; font-size: 14px; color: #666;\">
             Este email é automático. Por favor não responda diretamente a este email.
           </p>
@@ -253,7 +271,11 @@ Deno.serve(async (req: Request) => {
       </html>
     `;
 
-    await sendEmailSMTP(partnerEmail, subject, html);
+    try {
+      await sendEmailSMTP(partnerEmail, subject, html);
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+    }
 
     await supabase
       .from("commission_reports")

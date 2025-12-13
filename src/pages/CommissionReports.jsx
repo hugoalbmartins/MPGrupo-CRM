@@ -402,19 +402,50 @@ const CommissionReports = ({ user }) => {
           <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
           <script>
+            let librariesLoaded = false;
+
+            window.addEventListener('load', function() {
+              setTimeout(() => {
+                if (typeof html2canvas !== 'undefined' && typeof window.jspdf !== 'undefined') {
+                  librariesLoaded = true;
+                  console.log('Libraries loaded successfully');
+                } else {
+                  console.error('Libraries failed to load');
+                }
+              }, 500);
+            });
+
             async function approveAndRegister() {
               const btn = document.getElementById('approveBtn');
+
+              if (!librariesLoaded) {
+                alert('Aguarde o carregamento completo da página...');
+                setTimeout(() => {
+                  librariesLoaded = true;
+                }, 2000);
+                return;
+              }
+
               btn.disabled = true;
               btn.textContent = '⏳ Processando...';
 
               try {
+                if (typeof window.jspdf === 'undefined') {
+                  throw new Error('jsPDF não carregado. Por favor, recarregue a página.');
+                }
+
+                if (typeof html2canvas === 'undefined') {
+                  throw new Error('html2canvas não carregado. Por favor, recarregue a página.');
+                }
+
                 const { jsPDF } = window.jspdf;
                 const element = document.body;
 
                 const canvas = await html2canvas(element, {
                   scale: 2,
                   useCORS: true,
-                  logging: false
+                  logging: false,
+                  allowTaint: true
                 });
 
                 const imgData = canvas.toDataURL('image/png');
@@ -437,7 +468,7 @@ const CommissionReports = ({ user }) => {
                     partnerId: data.partnerId,
                     partnerEmail: data.partnerEmail,
                     partnerName: data.partnerName,
-                    month: data.monthName,
+                    month: data.month,
                     year: data.year,
                     userId: data.userId,
                     pdfBase64: await blobToBase64(pdfBlob)
@@ -445,15 +476,24 @@ const CommissionReports = ({ user }) => {
                 });
 
                 if (!response.ok) {
-                  const errorData = await response.json();
+                  const errorText = await response.text();
+                  console.error('Response error:', errorText);
+                  let errorData;
+                  try {
+                    errorData = JSON.parse(errorText);
+                  } catch (e) {
+                    throw new Error(\`Erro do servidor: \${errorText}\`);
+                  }
                   throw new Error(errorData.error || 'Erro ao registrar auto');
                 }
 
                 alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
-                window.opener.location.reload();
+                if (window.opener) {
+                  window.opener.location.reload();
+                }
                 window.close();
               } catch (error) {
-                console.error(error);
+                console.error('Full error:', error);
                 alert('Erro ao processar auto: ' + error.message);
                 btn.disabled = false;
                 btn.textContent = '✅ Aprovar e Registrar Auto';
