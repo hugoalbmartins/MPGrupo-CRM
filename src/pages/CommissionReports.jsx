@@ -492,6 +492,38 @@ const CommissionReports = ({ user }) => {
 
                 const data = window.reportData;
 
+                console.log('Getting version from database...');
+                const versionResponse = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&select=version&order=version.desc&limit=1\`, {
+                  headers: {
+                    'apikey': data.supabaseKey,
+                    'Authorization': \`Bearer \${data.supabaseKey}\`
+                  }
+                });
+                const versionData = await versionResponse.json();
+                const version = versionData.length > 0 ? versionData[0].version + 1 : 1;
+
+                const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                const monthName = monthNames[data.month - 1];
+                const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_\${monthName}_\${data.year}_V\${version}.pdf\`;
+                const filePath = \`\${data.partnerId}/\${data.year}/\${fileName}\`;
+
+                console.log('Uploading PDF to storage:', filePath);
+                const uploadResponse = await fetch(\`\${data.supabaseUrl}/storage/v1/object/commission-reports/\${filePath}\`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': \`Bearer \${data.supabaseKey}\`,
+                    'Content-Type': 'application/pdf'
+                  },
+                  body: pdfBlob
+                });
+
+                if (!uploadResponse.ok) {
+                  const uploadError = await uploadResponse.text();
+                  console.error('Upload error:', uploadError);
+                  throw new Error('Erro ao fazer upload do PDF: ' + uploadError);
+                }
+
+                console.log('PDF uploaded successfully, sending email...');
                 console.log('Sending data to edge function:', {
                   partnerId: data.partnerId,
                   partnerEmail: data.partnerEmail,
@@ -499,7 +531,9 @@ const CommissionReports = ({ user }) => {
                   month: data.month,
                   year: data.year,
                   userId: data.userId,
-                  pdfSize: pdfBlob.size
+                  filePath: filePath,
+                  fileName: fileName,
+                  version: version
                 });
 
                 const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
@@ -515,7 +549,9 @@ const CommissionReports = ({ user }) => {
                     month: data.month,
                     year: data.year,
                     userId: data.userId,
-                    pdfBase64: await blobToBase64(pdfBlob)
+                    filePath: filePath,
+                    fileName: fileName,
+                    version: version
                   })
                 });
 

@@ -14,7 +14,9 @@ interface EmailPayload {
   month: string | number;
   year: number;
   userId: string;
-  pdfBase64: string;
+  filePath: string;
+  fileName: string;
+  version: number;
 }
 
 async function sendEmailSMTP(to: string, subject: string, html: string) {
@@ -99,11 +101,11 @@ Deno.serve(async (req: Request) => {
   try {
     console.log("Processing commission report request");
     const payload: EmailPayload = await req.json();
-    const { partnerId, partnerEmail, partnerName, month, year, userId, pdfBase64 } = payload;
+    const { partnerId, partnerEmail, partnerName, month, year, userId, filePath, fileName, version } = payload;
 
     console.log("Validating payload fields");
-    if (!partnerId || !partnerEmail || !partnerName || !month || !year || !userId || !pdfBase64) {
-      console.error("Missing fields:", { partnerId: !!partnerId, partnerEmail: !!partnerEmail, partnerName: !!partnerName, month: !!month, year: !!year, userId: !!userId, pdfBase64: !!pdfBase64 });
+    if (!partnerId || !partnerEmail || !partnerName || !month || !year || !userId || !filePath || !fileName || !version) {
+      console.error("Missing fields:", { partnerId: !!partnerId, partnerEmail: !!partnerEmail, partnerName: !!partnerName, month: !!month, year: !!year, userId: !!userId, filePath: !!filePath, fileName: !!fileName, version: !!version });
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         {
@@ -140,35 +142,7 @@ Deno.serve(async (req: Request) => {
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const monthName = monthNames[monthNum - 1];
 
-    console.log("Checking for existing versions");
-    const { data: versionData } = await supabase
-      .from("commission_reports")
-      .select("version")
-      .eq("partner_id", partnerId)
-      .eq("month", monthNum)
-      .eq("year", year)
-      .order("version", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const version = versionData ? versionData.version + 1 : 1;
-    const fileName = `${partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_${monthName}_${year}_V${version}.pdf`;
-    const filePath = `${partnerId}/${year}/${fileName}`;
-
-    console.log("Uploading PDF to storage:", filePath);
-    const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
-
-    const { error: uploadError } = await supabase.storage
-      .from("commission-reports")
-      .upload(filePath, pdfBuffer, {
-        contentType: "application/pdf",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      throw new Error(`Upload error: ${uploadError.message}`);
-    }
+    console.log("PDF already uploaded at:", filePath);
 
     console.log("Inserting record into database");
     const { data: reportData, error: insertError } = await supabase
