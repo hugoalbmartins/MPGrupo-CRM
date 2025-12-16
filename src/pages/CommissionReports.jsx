@@ -458,6 +458,7 @@ const CommissionReports = ({ user }) => {
             });
 
             async function approveAndRegister() {
+              console.log('=== APPROVE AND REGISTER FUNCTION CALLED ===');
               const btn = document.getElementById('approveBtn');
 
               if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
@@ -469,6 +470,7 @@ const CommissionReports = ({ user }) => {
 
               btn.disabled = true;
               btn.textContent = '⏳ Processando...';
+              btn.style.opacity = '0.6';
 
               try {
                 console.log('Starting PDF generation...');
@@ -484,6 +486,7 @@ const CommissionReports = ({ user }) => {
                 const element = document.body;
 
                 console.log('Capturing screenshot with html2canvas...');
+                btn.textContent = '⏳ Capturando imagem...';
                 const canvas = await html2canvas(element, {
                   scale: 1,
                   useCORS: true,
@@ -492,51 +495,75 @@ const CommissionReports = ({ user }) => {
                 });
 
                 console.log('Canvas created, generating PDF...');
+                console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
+                btn.textContent = '⏳ Gerando PDF...';
+
                 const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                console.log('Image data URL created, length:', imgData.length);
+
                 const pdf = new jsPDF('l', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                console.log('PDF dimensions:', pdfWidth, 'x', pdfHeight);
 
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                console.log('PDF generated, converting to blob...');
+                console.log('Image added to PDF, converting to blob...');
+
                 const pdfBlob = pdf.output('blob');
-                console.log('PDF blob created, size:', pdfBlob.size);
+                console.log('PDF blob created, size:', pdfBlob.size, 'bytes');
 
                 const data = window.reportData;
+                console.log('Report data:', data);
 
                 console.log('Getting version from database...');
+                btn.textContent = '⏳ Verificando versão...';
+
                 const versionResponse = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&select=version&order=version.desc&limit=1\`, {
                   headers: {
                     'apikey': data.supabaseKey,
                     'Authorization': \`Bearer \${data.accessToken}\`
                   }
                 });
+                console.log('Version response status:', versionResponse.status);
+
                 const versionData = await versionResponse.json();
                 const version = versionData.length > 0 ? versionData[0].version + 1 : 1;
+                console.log('Version:', version);
 
                 const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 const monthName = monthNames[data.month - 1];
                 const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_\${monthName}_\${data.year}_V\${version}.pdf\`;
                 const filePath = \`\${data.partnerId}/\${data.year}/\${fileName}\`;
 
-                console.log('Uploading PDF to storage:', filePath);
+                console.log('File name:', fileName);
+                console.log('File path:', filePath);
+                console.log('Uploading PDF to storage...');
+                btn.textContent = '⏳ Enviando PDF...';
                 const uploadResponse = await fetch(\`\${data.supabaseUrl}/storage/v1/object/commission-reports/\${filePath}\`, {
                   method: 'POST',
                   headers: {
+                    'apikey': data.supabaseKey,
                     'Authorization': \`Bearer \${data.accessToken}\`,
-                    'Content-Type': 'application/pdf'
+                    'Content-Type': 'application/pdf',
+                    'x-upsert': 'false'
                   },
                   body: pdfBlob
                 });
 
+                console.log('Upload response status:', uploadResponse.status);
+
                 if (!uploadResponse.ok) {
                   const uploadError = await uploadResponse.text();
                   console.error('Upload error:', uploadError);
+                  console.error('Upload response status:', uploadResponse.status);
                   throw new Error('Erro ao fazer upload do PDF: ' + uploadError);
                 }
 
-                console.log('PDF uploaded successfully, sending email...');
-                console.log('Sending data to edge function:', {
+                console.log('PDF uploaded successfully!');
+                console.log('Now sending email via edge function...');
+                btn.textContent = '⏳ Enviando email...';
+
+                const emailData = {
                   partnerId: data.partnerId,
                   partnerEmail: data.partnerEmail,
                   partnerName: data.partnerName,
@@ -546,7 +573,8 @@ const CommissionReports = ({ user }) => {
                   filePath: filePath,
                   fileName: fileName,
                   version: version
-                });
+                };
+                console.log('Sending data to edge function:', emailData);
 
                 const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
                   method: 'POST',
@@ -554,23 +582,15 @@ const CommissionReports = ({ user }) => {
                     'Content-Type': 'application/json',
                     'Authorization': \`Bearer \${data.accessToken}\`
                   },
-                  body: JSON.stringify({
-                    partnerId: data.partnerId,
-                    partnerEmail: data.partnerEmail,
-                    partnerName: data.partnerName,
-                    month: data.month,
-                    year: data.year,
-                    userId: data.userId,
-                    filePath: filePath,
-                    fileName: fileName,
-                    version: version
-                  })
+                  body: JSON.stringify(emailData)
                 });
+                console.log('Email request sent, waiting for response...');
 
                 const responseStatus = response.status;
                 console.log('Response status:', responseStatus);
 
                 if (!response.ok) {
+                  console.error('Response NOT OK, status:', responseStatus);
                   const errorText = await response.text();
                   console.error('Response error text:', errorText);
                   let errorData;
@@ -584,26 +604,51 @@ const CommissionReports = ({ user }) => {
                   throw new Error(errorData.error || \`Erro ao registrar auto (\${responseStatus})\`);
                 }
 
-                const result = await response.json();
-                console.log('Success response:', result);
+                console.log('Response OK, parsing JSON...');
+                let result;
+                try {
+                  result = await response.json();
+                  console.log('Success response:', result);
+                } catch (jsonError) {
+                  console.error('Failed to parse success response JSON:', jsonError);
+                  console.log('Response was OK but JSON parsing failed - treating as success');
+                  result = { success: true };
+                }
+                console.log('=== PROCESS COMPLETED SUCCESSFULLY ===');
 
                 btn.textContent = '✅ Concluído!';
                 btn.style.backgroundColor = '#10b981';
-
-                alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
-
-                if (window.opener) {
-                  window.opener.location.reload();
-                }
+                btn.style.opacity = '1';
 
                 setTimeout(() => {
-                  window.close();
-                }, 500);
+                  alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
+
+                  if (window.opener) {
+                    try {
+                      window.opener.location.reload();
+                    } catch (e) {
+                      console.error('Failed to reload opener:', e);
+                    }
+                  }
+
+                  setTimeout(() => {
+                    console.log('Closing window...');
+                    window.close();
+                  }, 300);
+                }, 100);
+
               } catch (error) {
+                console.error('=== ERROR OCCURRED ===');
                 console.error('Full error:', error);
-                alert('Erro ao processar auto: ' + error.message);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+
+                btn.style.opacity = '1';
                 btn.disabled = false;
                 btn.textContent = '✅ Aprovar e Registrar Auto';
+                btn.style.backgroundColor = '#10b981';
+
+                alert('Erro ao processar auto: ' + error.message);
               }
             }
 
