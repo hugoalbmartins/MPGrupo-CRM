@@ -153,29 +153,43 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Detalhes da Venda - {sale?.sale_code}</span>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="border-b pb-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-2xl font-bold text-[#1F4E78]">
+                Detalhes da Venda
+              </DialogTitle>
+              <p className="text-sm text-gray-500 mt-1">Código: {sale?.sale_code}</p>
+            </div>
             {user?.role === 'admin' && sale && !isEditing && (
-              <Button size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+              <Button
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="gap-2 bg-[#1F4E78] hover:bg-[#16395A] text-white"
+              >
                 <Edit2 className="w-4 h-4" />
-                Editar
+                <span className="text-white">Editar</span>
               </Button>
             )}
-          </DialogTitle>
+          </div>
         </DialogHeader>
 
         {loading ? (
-          <div className="text-center py-8">A carregar...</div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1F4E78] mx-auto"></div>
+            <p className="mt-4 text-gray-500">A carregar...</p>
+          </div>
         ) : sale ? (
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="notes">
+            <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-lg">
+              <TabsTrigger value="details" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
+                Detalhes
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
                 Notas {sale.notes?.length > 0 && `(${sale.notes.length})`}
               </TabsTrigger>
-              <TabsTrigger value="history">
+              <TabsTrigger value="history" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
                 Histórico {auditLogs.length > 0 && `(${auditLogs.length})`}
               </TabsTrigger>
             </TabsList>
@@ -266,131 +280,146 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     >
                       Cancelar
                     </Button>
-                    <Button onClick={handleSaveEdit} disabled={savingEdit}>
+                    <Button
+                      onClick={handleSaveEdit}
+                      disabled={savingEdit}
+                      className="bg-[#1F4E78] hover:bg-[#16395A] text-white"
+                    >
                       <Save className="w-4 h-4 mr-2" />
-                      {savingEdit ? "A guardar..." : "Guardar"}
+                      <span className="text-white">{savingEdit ? "A guardar..." : "Guardar"}</span>
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-gray-600">Código</Label>
-                    <p className="font-semibold">{sale.sale_code}</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Data</Label>
-                    <p className="font-semibold">
-                      {new Date(sale.date).toLocaleDateString('pt-PT')}
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Estado</Label>
-                    <Badge className={getStatusColor(sale.status)}>{sale.status}</Badge>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Âmbito</Label>
-                    <p className="font-semibold capitalize">{sale.scope}</p>
-                  </div>
-
-                  <div className="col-span-2 border-t pt-4">
-                    <h3 className="font-semibold mb-3">Informação do Cliente</h3>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Nome</Label>
-                    <p className="font-semibold">{sale.client_name}</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">NIF</Label>
-                    <p className="font-semibold">{sale.client_nif}</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Tipo</Label>
-                    <p className="font-semibold capitalize">{sale.client_type}</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Contacto</Label>
-                    <p className="font-semibold">{sale.client_contact}</p>
-                  </div>
-
-                  {sale.client_email && (
-                    <div>
-                      <Label className="text-gray-600">Email</Label>
-                      <p className="font-semibold">{sale.client_email}</p>
-                    </div>
-                  )}
-
-                  <div className="col-span-2 border-t pt-4">
-                    <h3 className="font-semibold mb-3">Detalhes da Venda</h3>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Parceiro</Label>
-                    <p className="font-semibold">{sale.partner_name}</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-gray-600">Operador</Label>
-                    <p className="font-semibold">{sale.operator_name}</p>
-                  </div>
-
-                  {sale.requisition && (
-                    <div>
-                      <Label className="text-gray-600">Requisição</Label>
-                      <p className="font-semibold">{sale.requisition}</p>
-                    </div>
-                  )}
-
-                  {sale.monthly_value && (
-                    <div>
-                      <Label className="text-gray-600">Valor Mensal</Label>
-                      <p className="font-semibold">€{parseFloat(sale.monthly_value).toFixed(2)}</p>
-                    </div>
-                  )}
-
-                  {user?.role !== 'bo' && user?.role !== 'partner_commercial' && sale.calculated_commission && (
-                    <div>
-                      <Label className="text-gray-600">Comissão</Label>
-                      <p className="font-semibold text-green-600">
-                        €{parseFloat(sale.calculated_commission).toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-
-                  {sale.cpe && (
-                    <div>
-                      <Label className="text-gray-600">CPE</Label>
-                      <p className="font-semibold">{sale.cpe}</p>
-                    </div>
-                  )}
-
-                  {sale.cui && (
-                    <div>
-                      <Label className="text-gray-600">CUI</Label>
-                      <p className="font-semibold">{sale.cui}</p>
-                    </div>
-                  )}
-
-                  {sale.paid_to_operator && (
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle className="w-5 h-5" />
-                        <span className="font-semibold">Pago ao Operador</span>
-                        {sale.payment_date && (
-                          <span className="text-sm">
-                            em {new Date(sale.payment_date).toLocaleDateString('pt-PT')}
-                          </span>
-                        )}
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-r from-[#1F4E78] to-[#2C5F8D] rounded-lg p-5 text-white">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm opacity-90">Código</p>
+                        <p className="font-bold text-lg">{sale.sale_code}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm opacity-90">Data</p>
+                        <p className="font-bold text-lg">
+                          {new Date(sale.date).toLocaleDateString('pt-PT')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm opacity-90">Estado</p>
+                        <Badge className="mt-1 bg-white text-[#1F4E78] hover:bg-white">{sale.status}</Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm opacity-90">Âmbito</p>
+                        <p className="font-bold capitalize">{sale.scope}</p>
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                    <h3 className="font-bold text-lg text-[#1F4E78] mb-4 flex items-center gap-2">
+                      <div className="w-1 h-6 bg-[#1F4E78] rounded"></div>
+                      Informação do Cliente
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+
+                      <div>
+                        <Label className="text-gray-500 text-xs uppercase">Nome</Label>
+                        <p className="font-semibold text-gray-900 mt-1">{sale.client_name}</p>
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-500 text-xs uppercase">NIF</Label>
+                        <p className="font-semibold text-gray-900 mt-1">{sale.client_nif}</p>
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-500 text-xs uppercase">Tipo</Label>
+                        <p className="font-semibold text-gray-900 mt-1 capitalize">{sale.client_type}</p>
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-500 text-xs uppercase">Contacto</Label>
+                        <p className="font-semibold text-gray-900 mt-1">{sale.client_contact}</p>
+                      </div>
+
+                      {sale.client_email && (
+                        <div className="col-span-2">
+                          <Label className="text-gray-500 text-xs uppercase">Email</Label>
+                          <p className="font-semibold text-gray-900 mt-1">{sale.client_email}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                    <h3 className="font-bold text-lg text-[#1F4E78] mb-4 flex items-center gap-2">
+                      <div className="w-1 h-6 bg-[#1F4E78] rounded"></div>
+                      Detalhes da Venda
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+
+                      <div>
+                        <Label className="text-gray-500 text-xs uppercase">Parceiro</Label>
+                        <p className="font-semibold text-gray-900 mt-1">{sale.partner_name}</p>
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-500 text-xs uppercase">Operador</Label>
+                        <p className="font-semibold text-gray-900 mt-1">{sale.operator_name}</p>
+                      </div>
+
+                      {sale.requisition && (
+                        <div>
+                          <Label className="text-gray-500 text-xs uppercase">Requisição</Label>
+                          <p className="font-semibold text-gray-900 mt-1">{sale.requisition}</p>
+                        </div>
+                      )}
+
+                      {sale.monthly_value && (
+                        <div>
+                          <Label className="text-gray-500 text-xs uppercase">Valor Mensal</Label>
+                          <p className="font-semibold text-gray-900 mt-1">€{parseFloat(sale.monthly_value).toFixed(2)}</p>
+                        </div>
+                      )}
+
+                      {user?.role !== 'bo' && user?.role !== 'partner_commercial' && sale.calculated_commission && (
+                        <div>
+                          <Label className="text-gray-500 text-xs uppercase">Comissão</Label>
+                          <p className="font-bold text-green-600 mt-1 text-lg">
+                            €{parseFloat(sale.calculated_commission).toFixed(2)}
+                          </p>
+                        </div>
+                      )}
+
+                      {sale.cpe && (
+                        <div>
+                          <Label className="text-gray-500 text-xs uppercase">CPE</Label>
+                          <p className="font-semibold text-gray-900 mt-1">{sale.cpe}</p>
+                        </div>
+                      )}
+
+                      {sale.cui && (
+                        <div>
+                          <Label className="text-gray-500 text-xs uppercase">CUI</Label>
+                          <p className="font-semibold text-gray-900 mt-1">{sale.cui}</p>
+                        </div>
+                      )}
+
+                      {sale.paid_to_operator && (
+                        <div className="col-span-2 bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="flex items-center gap-2 text-green-700">
+                            <CheckCircle className="w-5 h-5" />
+                            <span className="font-bold">Pago ao Operador</span>
+                            {sale.payment_date && (
+                              <span className="text-sm font-normal">
+                                em {new Date(sale.payment_date).toLocaleDateString('pt-PT')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </TabsContent>

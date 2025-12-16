@@ -12,6 +12,51 @@ interface EmailAttachment {
   contentType: string;
 }
 
+async function connectAndSend(
+  host: string,
+  port: number,
+  commands: string[],
+  timeout: number
+): Promise<void> {
+  console.log(`Connecting to ${host}:${port} with timeout ${timeout}ms`);
+
+  const conn = await Deno.connect({
+    hostname: host,
+    port: port,
+  });
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let buffer = new Uint8Array(4096);
+
+  try {
+    for (const command of commands) {
+      console.log(`Sending: ${command.substring(0, 50)}...`);
+      await conn.write(encoder.encode(command + "\r\n"));
+
+      const bytesRead = await conn.read(buffer);
+      if (bytesRead) {
+        const response = decoder.decode(buffer.subarray(0, bytesRead));
+        console.log(`Response: ${response.substring(0, 100)}...`);
+
+        if (response.startsWith("5")) {
+          throw new Error(`SMTP Error: ${response}`);
+        }
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.log("SMTP commands sent successfully");
+  } finally {
+    try {
+      conn.close();
+    } catch (e) {
+      console.error("Error closing connection:", e);
+    }
+  }
+}
+
 export async function sendEmailSMTP(to: string, subject: string, html: string, config?: SMTPConfig) {
   const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
   const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
@@ -24,6 +69,8 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
     throw new Error("SMTP_PASS not configured");
   }
 
+  console.log(`Preparing email to ${to} from ${fromEmail}`);
+
   const boundary = `----=_Part_${Date.now()}`;
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
 
@@ -34,61 +81,30 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
     `Message-ID: ${messageId}`,
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: quoted-printable`,
     ``,
-    html,
-    ``,
-    `--${boundary}--`,
+    html
   ].join("\r\n");
 
-  const connectTimeout = 8000;
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("SMTP connection timeout")), connectTimeout)
-  );
+  const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
 
-  const connectionPromise = (async () => {
-    const conn = await Deno.connect({
-      hostname: smtpHost,
-      port: smtpPort,
-    });
+  const commands = [
+    `EHLO ${smtpHost}`,
+    `AUTH PLAIN ${credentials}`,
+    `MAIL FROM:<${fromEmail}>`,
+    `RCPT TO:<${to}>`,
+    `DATA`,
+    `${emailBody}\r\n.`,
+    `QUIT`
+  ];
 
-    const encoder = new TextEncoder();
-    const buffer = new Uint8Array(2048);
-
-    try {
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`EHLO ${smtpHost}\r\n`));
-      await conn.read(buffer);
-
-      const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
-      await conn.write(encoder.encode(`AUTH PLAIN ${credentials}\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`MAIL FROM:<${fromEmail}>\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`RCPT TO:<${to}>\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`DATA\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`${emailBody}\r\n.\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`QUIT\r\n`));
-      await conn.read(buffer);
-    } finally {
-      conn.close();
-    }
-  })();
-
-  await Promise.race([connectionPromise, timeoutPromise]);
+  try {
+    await connectAndSend(smtpHost, smtpPort, commands, 20000);
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    throw error;
+  }
 }
 
 export async function sendEmailWithAttachment(
@@ -109,10 +125,21 @@ export async function sendEmailWithAttachment(
     throw new Error("SMTP_PASS not configured");
   }
 
+  console.log(`Preparing email with attachment to ${to} from ${fromEmail}`);
+  console.log(`Attachment size: ${attachment.content.length} bytes`);
+
   const boundary = `----=_Part_${Date.now()}`;
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
 
-  const base64Content = btoa(String.fromCharCode(...attachment.content));
+  let base64Content: string;
+  try {
+    console.log("Converting attachment to base64...");
+    base64Content = btoa(String.fromCharCode(...attachment.content));
+    console.log(`Base64 size: ${base64Content.length} characters`);
+  } catch (error) {
+    console.error("Failed to convert attachment to base64:", error);
+    throw new Error("Failed to encode attachment");
+  }
 
   const emailHeaders = [
     `From: ${fromName} <${fromEmail}>`,
@@ -147,50 +174,27 @@ export async function sendEmailWithAttachment(
     `--${boundary}--`,
   ].join("\r\n");
 
-  const connectTimeout = 15000;
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("SMTP connection timeout")), connectTimeout)
-  );
+  console.log(`Total email size: ${emailBody.length} bytes`);
 
-  const connectionPromise = (async () => {
-    const conn = await Deno.connect({
-      hostname: smtpHost,
-      port: smtpPort,
-    });
+  const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
 
-    const encoder = new TextEncoder();
-    const buffer = new Uint8Array(2048);
+  const commands = [
+    `EHLO ${smtpHost}`,
+    `AUTH PLAIN ${credentials}`,
+    `MAIL FROM:<${fromEmail}>`,
+    `RCPT TO:<${to}>`,
+    `DATA`,
+    `${emailBody}\r\n.`,
+    `QUIT`
+  ];
 
-    try {
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`EHLO ${smtpHost}\r\n`));
-      await conn.read(buffer);
-
-      const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
-      await conn.write(encoder.encode(`AUTH PLAIN ${credentials}\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`MAIL FROM:<${fromEmail}>\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`RCPT TO:<${to}>\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`DATA\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`${emailBody}\r\n.\r\n`));
-      await conn.read(buffer);
-
-      await conn.write(encoder.encode(`QUIT\r\n`));
-      await conn.read(buffer);
-    } finally {
-      conn.close();
-    }
-  })();
-
-  await Promise.race([connectionPromise, timeoutPromise]);
+  try {
+    await connectAndSend(smtpHost, smtpPort, commands, 30000);
+    console.log("Email with attachment sent successfully");
+  } catch (error) {
+    console.error("Failed to send email with attachment:", error);
+    throw error;
+  }
 }
 
 export async function sendEmailToMultipleRecipients(
