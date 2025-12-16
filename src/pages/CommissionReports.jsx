@@ -545,7 +545,7 @@ const CommissionReports = ({ user }) => {
                     'apikey': data.supabaseKey,
                     'Authorization': \`Bearer \${data.accessToken}\`,
                     'Content-Type': 'application/pdf',
-                    'x-upsert': 'false'
+                    'x-upsert': 'true'
                   },
                   body: pdfBlob
                 });
