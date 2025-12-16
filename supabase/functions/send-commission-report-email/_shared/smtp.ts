@@ -1,17 +1,3 @@
-interface SMTPConfig {
-  fromEmail?: string;
-  fromName?: string;
-  smtpUser?: string;
-  smtpPass?: string;
-  replyTo?: string;
-}
-
-interface EmailAttachment {
-  filename: string;
-  content: Uint8Array;
-  contentType: string;
-}
-
 async function connectAndSendTLS(
   host: string,
   port: number,
@@ -81,6 +67,14 @@ async function connectAndSendTLS(
   }
 }
 
+interface SMTPConfig {
+  fromEmail?: string;
+  fromName?: string;
+  smtpUser?: string;
+  smtpPass?: string;
+  replyTo?: string;
+}
+
 export async function sendEmailSMTP(to: string, subject: string, html: string, config?: SMTPConfig) {
   const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
   const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
@@ -97,7 +91,7 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
 
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
 
-  const emailBody = [
+  const emailHeaders = [
     `From: ${fromName} <${fromEmail}>`,
     `To: ${to}`,
     `Subject: ${subject}`,
@@ -106,9 +100,13 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
     `MIME-Version: 1.0`,
     `Content-Type: text/html; charset=UTF-8`,
     `Content-Transfer-Encoding: 8bit`,
-    ``,
-    html
-  ].join("\r\n");
+  ];
+
+  if (config?.replyTo) {
+    emailHeaders.push(`Reply-To: ${config.replyTo}`);
+  }
+
+  const emailBody = [...emailHeaders, ``, html].join("\r\n");
 
   try {
     await connectAndSendTLS(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, to, emailBody);
@@ -117,120 +115,4 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
     console.error("Failed to send email:", error);
     throw error;
   }
-}
-
-export async function sendEmailWithAttachment(
-  to: string,
-  subject: string,
-  html: string,
-  attachment: EmailAttachment,
-  config?: SMTPConfig
-) {
-  const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
-  const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-  const smtpUser = config?.smtpUser || Deno.env.get("SMTP_USER") || "noreply@mpgrupo.pt";
-  const smtpPass = config?.smtpPass || Deno.env.get("SMTP_PASS") || "";
-  const fromEmail = config?.fromEmail || Deno.env.get("FROM_EMAIL") || "noreply@mpgrupo.pt";
-  const fromName = config?.fromName || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
-
-  if (!smtpPass) {
-    throw new Error("SMTP_PASS not configured");
-  }
-
-  console.log(`Preparing email with attachment to ${to} from ${fromEmail}`);
-  console.log(`Attachment size: ${attachment.content.length} bytes`);
-
-  const boundary = `----=_Part_${Date.now()}`;
-  const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
-
-  let base64Content: string;
-  try {
-    console.log("Converting attachment to base64...");
-    let binaryString = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < attachment.content.length; i += chunkSize) {
-      const chunk = attachment.content.slice(i, i + chunkSize);
-      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
-    }
-    const fullBase64 = btoa(binaryString);
-    const lines: string[] = [];
-    for (let i = 0; i < fullBase64.length; i += 76) {
-      lines.push(fullBase64.substring(i, i + 76));
-    }
-    base64Content = lines.join("\r\n");
-    console.log(`Base64 conversion complete, size: ${base64Content.length} chars`);
-  } catch (error) {
-    console.error("Failed to convert attachment to base64:", error);
-    throw new Error("Failed to encode attachment");
-  }
-
-  const emailHeaders = [
-    `From: ${fromName} <${fromEmail}>`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    `Message-ID: ${messageId}`,
-    `Date: ${new Date().toUTCString()}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/mixed; boundary="${boundary}"`,
-  ];
-
-  if (config?.replyTo) {
-    emailHeaders.push(`Reply-To: ${config.replyTo}`);
-  }
-
-  const emailBody = [
-    ...emailHeaders,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: 8bit`,
-    ``,
-    html,
-    ``,
-    `--${boundary}`,
-    `Content-Type: ${attachment.contentType}; name="${attachment.filename}"`,
-    `Content-Disposition: attachment; filename="${attachment.filename}"`,
-    `Content-Transfer-Encoding: base64`,
-    ``,
-    base64Content,
-    ``,
-    `--${boundary}--`,
-  ].join("\r\n");
-
-  console.log(`Total email size: ${emailBody.length} bytes`);
-
-  try {
-    await connectAndSendTLS(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, to, emailBody);
-    console.log("Email with attachment sent successfully");
-  } catch (error) {
-    console.error("Failed to send email with attachment:", error);
-    throw error;
-  }
-}
-
-export async function sendEmailToMultipleRecipients(
-  recipients: Array<{ email: string; name: string }>,
-  subject: string,
-  html: string
-): Promise<{ sent: number; failed: number; errors: string[] }> {
-  const results = {
-    sent: 0,
-    failed: 0,
-    errors: [] as string[]
-  };
-
-  for (const recipient of recipients) {
-    try {
-      await sendEmailSMTP(recipient.email, subject, html);
-      results.sent++;
-      console.log(`Email sent successfully to ${recipient.email}`);
-    } catch (error) {
-      results.failed++;
-      const errorMsg = `Failed to send to ${recipient.email}: ${error.message}`;
-      results.errors.push(errorMsg);
-      console.error(errorMsg);
-    }
-  }
-
-  return results;
 }
