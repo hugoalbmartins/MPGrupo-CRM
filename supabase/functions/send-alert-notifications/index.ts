@@ -133,7 +133,17 @@ Deno.serve(async (req: Request) => {
           alert_type
         );
 
-        await sendEmailSMTP(recipient.email, subject, html);
+        await sendEmailSMTP(
+          recipient.email,
+          subject,
+          html,
+          {
+            fromEmail: "noreply@mpgrupo.pt",
+            fromName: "MP Grupo CRM",
+            smtpUser: "noreply@mpgrupo.pt",
+            smtpPass: "bmEcxN_X^mol"
+          }
+        );
         console.log(`Email sent successfully to ${recipient.email}`);
         successCount++;
         results.push({ recipient: recipient.email, success: true });
