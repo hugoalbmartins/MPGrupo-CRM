@@ -197,6 +197,13 @@ const CommissionReports = ({ user }) => {
         return;
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Sessão expirada. Por favor, faça login novamente.");
+        setLoading(false);
+        return;
+      }
+
       const monthName = months.find(m => m.value === selectedMonth)?.label;
       const printWindow = window.open('', '_blank');
 
@@ -215,7 +222,8 @@ const CommissionReports = ({ user }) => {
         year: selectedYear,
         userId: user.id,
         supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-        supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY
+        supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        accessToken: session.access_token
       };
 
       let total = 0;
@@ -496,7 +504,7 @@ const CommissionReports = ({ user }) => {
                 const versionResponse = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&select=version&order=version.desc&limit=1\`, {
                   headers: {
                     'apikey': data.supabaseKey,
-                    'Authorization': \`Bearer \${data.supabaseKey}\`
+                    'Authorization': \`Bearer \${data.accessToken}\`
                   }
                 });
                 const versionData = await versionResponse.json();
@@ -511,7 +519,7 @@ const CommissionReports = ({ user }) => {
                 const uploadResponse = await fetch(\`\${data.supabaseUrl}/storage/v1/object/commission-reports/\${filePath}\`, {
                   method: 'POST',
                   headers: {
-                    'Authorization': \`Bearer \${data.supabaseKey}\`,
+                    'Authorization': \`Bearer \${data.accessToken}\`,
                     'Content-Type': 'application/pdf'
                   },
                   body: pdfBlob
@@ -540,7 +548,7 @@ const CommissionReports = ({ user }) => {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': \`Bearer \${data.supabaseKey}\`
+                    'Authorization': \`Bearer \${data.accessToken}\`
                   },
                   body: JSON.stringify({
                     partnerId: data.partnerId,
