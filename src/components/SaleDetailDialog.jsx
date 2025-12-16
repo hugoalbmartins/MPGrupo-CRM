@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { X, Edit2, Save, History, MessageSquare, AlertTriangle, CheckCircle } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +50,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
       setAuditLogs(logs);
       setEditData({
         status: saleData.status,
-        requisition: saleData.requisition || "",
+        request_number: saleData.request_number || "",
         paid_to_operator: saleData.paid_to_operator || false,
         payment_date: saleData.payment_date || "",
         manual_commission: saleData.manual_commission || ""
@@ -67,9 +67,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
     try {
       setSavingEdit(true);
 
-      if (editData.requisition && sale.scope === 'telecomunicacoes') {
+      if (editData.request_number && sale.scope === 'telecomunicacoes') {
         const isDuplicate = await salesService.checkDuplicateRequisition(
-          editData.requisition,
+          editData.request_number,
           sale.scope,
           saleId
         );
@@ -160,7 +160,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <DialogTitle className="text-2xl font-bold text-[#1F4E78]">
                 Detalhes da Venda
               </DialogTitle>
-              <p className="text-sm text-gray-500 mt-1">Código: {sale?.sale_code}</p>
+              <DialogDescription className="text-sm text-gray-500 mt-1">
+                Código: {sale?.sale_code}
+              </DialogDescription>
             </div>
             {user?.role === 'admin' && sale && !isEditing && (
               <Button
@@ -227,8 +229,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     <div>
                       <Label>Número de Requisição</Label>
                       <Input
-                        value={editData.requisition}
-                        onChange={(e) => setEditData({ ...editData, requisition: e.target.value })}
+                        value={editData.request_number}
+                        onChange={(e) => setEditData({ ...editData, request_number: e.target.value })}
                         placeholder="REQ-XXXXX"
                       />
                     </div>
@@ -271,7 +273,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         setIsEditing(false);
                         setEditData({
                           status: sale.status,
-                          requisition: sale.requisition || "",
+                          request_number: sale.request_number || "",
                           paid_to_operator: sale.paid_to_operator || false,
                           payment_date: sale.payment_date || "",
                           manual_commission: sale.manual_commission || ""
@@ -368,10 +370,10 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         <p className="font-semibold text-gray-900 mt-1">{sale.operator_name}</p>
                       </div>
 
-                      {sale.requisition && (
+                      {sale.request_number && (
                         <div>
                           <Label className="text-gray-500 text-xs uppercase">Requisição</Label>
-                          <p className="font-semibold text-gray-900 mt-1">{sale.requisition}</p>
+                          <p className="font-semibold text-gray-900 mt-1">{sale.request_number}</p>
                         </div>
                       )}
 
