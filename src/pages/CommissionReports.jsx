@@ -519,7 +519,8 @@ const CommissionReports = ({ user }) => {
                   })
                 });
 
-                console.log('Response status:', response.status);
+                const responseStatus = response.status;
+                console.log('Response status:', responseStatus);
 
                 if (!response.ok) {
                   const errorText = await response.text();
@@ -530,9 +531,9 @@ const CommissionReports = ({ user }) => {
                     console.error('Parsed error data:', errorData);
                   } catch (e) {
                     console.error('Failed to parse error:', e);
-                    throw new Error(\`Erro do servidor (${response.status}): \${errorText.substring(0, 200)}\`);
+                    throw new Error(\`Erro do servidor (\${responseStatus}): \${errorText.substring(0, 200)}\`);
                   }
-                  throw new Error(errorData.error || \`Erro ao registrar auto (${response.status})\`);
+                  throw new Error(errorData.error || \`Erro ao registrar auto (\${responseStatus})\`);
                 }
 
                 const result = await response.json();
