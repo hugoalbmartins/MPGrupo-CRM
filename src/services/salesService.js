@@ -219,10 +219,11 @@ export const salesService = {
     if (!data) throw new Error('Sale update failed');
 
     if (updateData.status && oldSale.status !== updateData.status) {
-      if (['Concluido', 'Ativo'].includes(updateData.status)) {
-        await this.createAlert('status_change', data.id, data.sale_code,
-          `Status alterado para ${updateData.status}: ${data.sale_code}`);
-      }
+      await this.createAlert('status_change', data.id, data.sale_code,
+        `Status alterado para ${updateData.status}: ${data.sale_code}`);
+    } else {
+      await this.createAlert('sale_updated', data.id, data.sale_code,
+        `Venda atualizada: ${data.sale_code}`);
     }
 
     return data;
