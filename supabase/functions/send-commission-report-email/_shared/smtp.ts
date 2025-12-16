@@ -12,42 +12,66 @@ interface EmailAttachment {
   contentType: string;
 }
 
-async function connectAndSend(
+async function connectAndSendTLS(
   host: string,
   port: number,
-  commands: string[],
-  timeout: number
+  user: string,
+  pass: string,
+  fromEmail: string,
+  to: string,
+  emailBody: string
 ): Promise<void> {
-  console.log(`Connecting to ${host}:${port} with timeout ${timeout}ms`);
+  console.log(`Connecting to ${host}:${port} with TLS`);
 
-  const conn = await Deno.connect({
+  const conn = await Deno.connectTls({
     hostname: host,
     port: port,
   });
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
-  let buffer = new Uint8Array(4096);
+  let buffer = new Uint8Array(8192);
 
   try {
-    for (const command of commands) {
-      console.log(`Sending: ${command.substring(0, 50)}...`);
-      await conn.write(encoder.encode(command + "\r\n"));
-
+    const readResponse = async () => {
       const bytesRead = await conn.read(buffer);
       if (bytesRead) {
         const response = decoder.decode(buffer.subarray(0, bytesRead));
-        console.log(`Response: ${response.substring(0, 100)}...`);
-
-        if (response.startsWith("5")) {
-          throw new Error(`SMTP Error: ${response}`);
-        }
+        console.log(`Response: ${response.substring(0, 200)}...`);
+        return response;
       }
+      return "";
+    };
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+    await readResponse();
+
+    await conn.write(encoder.encode(`EHLO ${host}\r\n`));
+    await readResponse();
+
+    const credentials = btoa(`\0${user}\0${pass}`);
+    await conn.write(encoder.encode(`AUTH PLAIN ${credentials}\r\n`));
+    const authResponse = await readResponse();
+
+    if (authResponse.startsWith("5")) {
+      throw new Error(`SMTP Auth Error: ${authResponse}`);
     }
 
-    console.log("SMTP commands sent successfully");
+    await conn.write(encoder.encode(`MAIL FROM:<${fromEmail}>\r\n`));
+    await readResponse();
+
+    await conn.write(encoder.encode(`RCPT TO:<${to}>\r\n`));
+    await readResponse();
+
+    await conn.write(encoder.encode(`DATA\r\n`));
+    await readResponse();
+
+    await conn.write(encoder.encode(`${emailBody}\r\n.\r\n`));
+    await readResponse();
+
+    await conn.write(encoder.encode(`QUIT\r\n`));
+    await readResponse();
+
+    console.log("Email sent successfully via TLS");
   } finally {
     try {
       conn.close();
@@ -71,7 +95,6 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
 
   console.log(`Preparing email to ${to} from ${fromEmail}`);
 
-  const boundary = `----=_Part_${Date.now()}`;
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
 
   const emailBody = [
@@ -82,24 +105,13 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,
     `Content-Type: text/html; charset=UTF-8`,
+    `Content-Transfer-Encoding: 8bit`,
     ``,
     html
   ].join("\r\n");
 
-  const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
-
-  const commands = [
-    `EHLO ${smtpHost}`,
-    `AUTH PLAIN ${credentials}`,
-    `MAIL FROM:<${fromEmail}>`,
-    `RCPT TO:<${to}>`,
-    `DATA`,
-    `${emailBody}\r\n.`,
-    `QUIT`
-  ];
-
   try {
-    await connectAndSend(smtpHost, smtpPort, commands, 20000);
+    await connectAndSendTLS(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, to, emailBody);
     console.log("Email sent successfully");
   } catch (error) {
     console.error("Failed to send email:", error);
@@ -134,8 +146,13 @@ export async function sendEmailWithAttachment(
   let base64Content: string;
   try {
     console.log("Converting attachment to base64...");
-    base64Content = btoa(String.fromCharCode(...attachment.content));
-    console.log(`Base64 size: ${base64Content.length} characters`);
+    const chunks: string[] = [];
+    for (let i = 0; i < attachment.content.length; i += 57) {
+      const chunk = attachment.content.slice(i, i + 57);
+      chunks.push(btoa(String.fromCharCode(...chunk)));
+    }
+    base64Content = chunks.join("\r\n");
+    console.log(`Base64 conversion complete`);
   } catch (error) {
     console.error("Failed to convert attachment to base64:", error);
     throw new Error("Failed to encode attachment");
@@ -160,7 +177,7 @@ export async function sendEmailWithAttachment(
     ``,
     `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: quoted-printable`,
+    `Content-Transfer-Encoding: 8bit`,
     ``,
     html,
     ``,
@@ -176,20 +193,8 @@ export async function sendEmailWithAttachment(
 
   console.log(`Total email size: ${emailBody.length} bytes`);
 
-  const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
-
-  const commands = [
-    `EHLO ${smtpHost}`,
-    `AUTH PLAIN ${credentials}`,
-    `MAIL FROM:<${fromEmail}>`,
-    `RCPT TO:<${to}>`,
-    `DATA`,
-    `${emailBody}\r\n.`,
-    `QUIT`
-  ];
-
   try {
-    await connectAndSend(smtpHost, smtpPort, commands, 30000);
+    await connectAndSendTLS(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, to, emailBody);
     console.log("Email with attachment sent successfully");
   } catch (error) {
     console.error("Failed to send email with attachment:", error);
