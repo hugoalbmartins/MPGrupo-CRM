@@ -170,7 +170,7 @@ Deno.serve(async (req: Request) => {
 
     await supabase
       .from("commission_reports")
-      .update({ email_sent: true, email_sent_at: new Date().toISOString() })
+      .update({ emailed_at: new Date().toISOString() })
       .eq("id", reportData.id);
 
     console.log(`[CommissionReport] Database updated`);
