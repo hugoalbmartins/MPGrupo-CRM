@@ -369,31 +369,33 @@ export const salesService = {
         </div>
       `;
 
-      for (const recipient of recipientUsers) {
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-alert-email`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                to: recipient.email,
-                subject: emailSubject,
-                html: emailBody,
-              }),
-            }
-          );
+      (async () => {
+        for (const recipient of recipientUsers) {
+          try {
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-alert-email`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  to: recipient.email,
+                  subject: emailSubject,
+                  html: emailBody,
+                }),
+              }
+            );
 
-          if (!response.ok) {
-            console.error(`Failed to send email to ${recipient.email}`);
+            if (!response.ok) {
+              console.error(`Failed to send email to ${recipient.email}`);
+            }
+          } catch (error) {
+            console.error(`Error sending email to ${recipient.email}:`, error);
           }
-        } catch (error) {
-          console.error(`Error sending email to ${recipient.email}:`, error);
         }
-      }
+      })();
     }
   },
 
