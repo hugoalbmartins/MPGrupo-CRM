@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { sendEmailSMTP } from "./_shared/smtp.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,7 +69,7 @@ function getEmailTemplate(
           </div>
 
           <p>
-            <a href="${Deno.env.get('APP_URL') || 'https://crm.mpgrupo.pt'}/sales" class="button">
+            <a href="${Deno.env.get('APP_URL') || 'https://www.mpgrupo.pt'}/sales" class="button">
               Ver Detalhes da Venda
             </a>
           </p>
@@ -118,24 +119,11 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    let successCount = 0;
+    let failedCount = 0;
+    const results = [];
 
-    if (!resendApiKey) {
-      console.log("RESEND_API_KEY not configured - emails not sent (dev mode)");
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Dev mode - emails logged but not sent",
-          recipients: recipients.length
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const emailPromises = recipients.map(async (recipient) => {
+    for (const recipient of recipients) {
       try {
         const html = getEmailTemplate(
           recipient.name,
@@ -145,42 +133,16 @@ Deno.serve(async (req: Request) => {
           alert_type
         );
 
-        const response = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resendApiKey}`,
-          },
-          body: JSON.stringify({
-            from: "CRM MP Grupo <noreply@mpgrupo.pt>",
-            to: [recipient.email],
-            subject: subject,
-            html: html,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.text();
-          console.error(`Failed to send email to ${recipient.email}:`, error);
-          return { recipient: recipient.email, success: false, error };
-        }
-
-        const data = await response.json();
+        await sendEmailSMTP(recipient.email, subject, html);
         console.log(`Email sent successfully to ${recipient.email}`);
-        return { recipient: recipient.email, success: true, messageId: data.id };
+        successCount++;
+        results.push({ recipient: recipient.email, success: true });
       } catch (error) {
         console.error(`Error sending email to ${recipient.email}:`, error);
-        return { recipient: recipient.email, success: false, error: error.message };
+        failedCount++;
+        results.push({ recipient: recipient.email, success: false, error: error.message });
       }
-    });
-
-    const results = await Promise.allSettled(emailPromises);
-
-    const successCount = results.filter(
-      r => r.status === 'fulfilled' && r.value.success
-    ).length;
-
-    const failedCount = results.length - successCount;
+    }
 
     return new Response(
       JSON.stringify({
@@ -188,7 +150,7 @@ Deno.serve(async (req: Request) => {
         totalRecipients: recipients.length,
         sent: successCount,
         failed: failedCount,
-        results: results.map(r => r.status === 'fulfilled' ? r.value : { success: false })
+        results
       }),
       {
         status: 200,
