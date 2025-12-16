@@ -146,13 +146,19 @@ export async function sendEmailWithAttachment(
   let base64Content: string;
   try {
     console.log("Converting attachment to base64...");
-    const chunks: string[] = [];
-    for (let i = 0; i < attachment.content.length; i += 57) {
-      const chunk = attachment.content.slice(i, i + 57);
-      chunks.push(btoa(String.fromCharCode(...chunk)));
+    let binaryString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < attachment.content.length; i += chunkSize) {
+      const chunk = attachment.content.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
     }
-    base64Content = chunks.join("\r\n");
-    console.log(`Base64 conversion complete`);
+    const fullBase64 = btoa(binaryString);
+    const lines: string[] = [];
+    for (let i = 0; i < fullBase64.length; i += 76) {
+      lines.push(fullBase64.substring(i, i + 76));
+    }
+    base64Content = lines.join("\r\n");
+    console.log(`Base64 conversion complete, size: ${base64Content.length} chars`);
   } catch (error) {
     console.error("Failed to convert attachment to base64:", error);
     throw new Error("Failed to encode attachment");
