@@ -52,42 +52,50 @@ async function sendEmailSMTP(to: string, subject: string, html: string) {
     `--${boundary}--`,
   ].join("\r\n");
 
-  const conn = await Deno.connect({
-    hostname: smtpHost,
-    port: smtpPort,
-  });
+  const connectTimeout = 10000;
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("SMTP connection timeout")), connectTimeout)
+  );
 
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
+  const connectionPromise = (async () => {
+    const conn = await Deno.connect({
+      hostname: smtpHost,
+      port: smtpPort,
+    });
 
-  try {
-    const buffer = new Uint8Array(1024);
-    await conn.read(buffer);
+    const encoder = new TextEncoder();
+    const buffer = new Uint8Array(2048);
 
-    await conn.write(encoder.encode(`EHLO ${smtpHost}\r\n`));
-    await conn.read(buffer);
+    try {
+      await conn.read(buffer);
 
-    const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
-    await conn.write(encoder.encode(`AUTH PLAIN ${credentials}\r\n`));
-    await conn.read(buffer);
+      await conn.write(encoder.encode(`EHLO ${smtpHost}\r\n`));
+      await conn.read(buffer);
 
-    await conn.write(encoder.encode(`MAIL FROM:<${fromEmail}>\r\n`));
-    await conn.read(buffer);
+      const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
+      await conn.write(encoder.encode(`AUTH PLAIN ${credentials}\r\n`));
+      await conn.read(buffer);
 
-    await conn.write(encoder.encode(`RCPT TO:<${to}>\r\n`));
-    await conn.read(buffer);
+      await conn.write(encoder.encode(`MAIL FROM:<${fromEmail}>\r\n`));
+      await conn.read(buffer);
 
-    await conn.write(encoder.encode(`DATA\r\n`));
-    await conn.read(buffer);
+      await conn.write(encoder.encode(`RCPT TO:<${to}>\r\n`));
+      await conn.read(buffer);
 
-    await conn.write(encoder.encode(`${emailBody}\r\n.\r\n`));
-    await conn.read(buffer);
+      await conn.write(encoder.encode(`DATA\r\n`));
+      await conn.read(buffer);
 
-    await conn.write(encoder.encode(`QUIT\r\n`));
-    await conn.read(buffer);
-  } finally {
-    conn.close();
-  }
+      await conn.write(encoder.encode(`${emailBody}\r\n.\r\n`));
+      await conn.read(buffer);
+
+      await conn.write(encoder.encode(`QUIT\r\n`));
+      await conn.read(buffer);
+    } finally {
+      conn.close();
+    }
+  })();
+
+  await Promise.race([connectionPromise, timeoutPromise]);
 }
 
 Deno.serve(async (req: Request) => {
@@ -164,9 +172,10 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Database error: ${insertError.message}`);
     }
 
-    console.log("Sending email to:", partnerEmail);
-    const subject = `Auto de Comissões - ${monthName}/${year}`;
+    console.log("Database record created successfully, returning response");
+    console.log("Starting background email sending...");
 
+    const subject = `Auto de Comissões - ${monthName}/${year}`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -256,24 +265,25 @@ Deno.serve(async (req: Request) => {
       </html>
     `;
 
-    try {
-      await sendEmailSMTP(partnerEmail, subject, html);
-      console.log("Email sent successfully");
-    } catch (emailError) {
-      console.error("Email sending failed:", emailError);
-    }
+    (async () => {
+      try {
+        console.log("Sending email to:", partnerEmail);
+        await sendEmailSMTP(partnerEmail, subject, html);
+        console.log("Email sent successfully");
+        await supabase
+          .from("commission_reports")
+          .update({ email_sent: true, email_sent_at: new Date().toISOString() })
+          .eq("id", reportData.id);
+      } catch (emailError) {
+        console.error("Background email sending failed:", emailError);
+      }
+    })();
 
-    console.log("Updating email sent status");
-    await supabase
-      .from("commission_reports")
-      .update({ email_sent: true, email_sent_at: new Date().toISOString() })
-      .eq("id", reportData.id);
-
-    console.log("Process completed successfully");
+    console.log("Process completed successfully, response sent");
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Report registered and email sent successfully",
+        message: "Report registered successfully",
         reportId: reportData.id
       }),
       {
