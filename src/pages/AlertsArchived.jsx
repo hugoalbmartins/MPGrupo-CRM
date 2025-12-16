@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye, Mail, Check, X, ChevronLeft, ChevronRight, Archive } from "lucide-react";
+import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { alertsService } from "../services/alertsService";
 import { salesService } from "../services/salesService";
-import { usersService } from "../services/usersService";
 
-const Alerts = ({ user }) => {
+const AlertsArchived = ({ user }) => {
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSale, setSelectedSale] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
-  const [selectedAlerts, setSelectedAlerts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalAlerts, setTotalAlerts] = useState(0);
@@ -27,18 +21,6 @@ const Alerts = ({ user }) => {
 
   useEffect(() => {
     fetchAlerts();
-    fetchEmailPreference();
-
-    const interval = setInterval(() => fetchAlerts(), 30000);
-
-    const unsubscribe = alertsService.subscribeToAlerts(() => {
-      fetchAlerts();
-    });
-
-    return () => {
-      clearInterval(interval);
-      if (unsubscribe) unsubscribe();
-    };
   }, [currentPage, filter]);
 
   const fetchAlerts = async () => {
@@ -47,97 +29,25 @@ const Alerts = ({ user }) => {
         page: currentPage,
         limit: 10,
         filter: filter,
-        archived: false
+        archived: true
       });
       setAlerts(result.alerts);
       setTotalPages(result.totalPages);
       setTotalAlerts(result.total);
-      setSelectedAlerts([]);
     } catch (error) {
-      toast.error("Erro ao carregar alertas");
+      toast.error("Erro ao carregar alertas arquivados");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchEmailPreference = async () => {
-    try {
-      if (user?.role === 'admin') {
-        const userData = await usersService.getCurrentUser();
-        setEmailAlertsEnabled(userData.email_alerts_enabled !== false);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar preferências:", error);
-    }
-  };
-
-  const handleToggleEmailAlerts = async (enabled) => {
-    try {
-      await usersService.updateEmailAlertPreference(enabled);
-      setEmailAlertsEnabled(enabled);
-      toast.success(enabled ? "Alertas por email ativados" : "Alertas por email desativados");
-    } catch (error) {
-      toast.error("Erro ao atualizar preferência");
-    }
-  };
-
   const handleViewSale = async (alert) => {
     try {
-      await alertsService.markAsRead(alert.id);
-
       const sale = await salesService.getById(alert.sale_id);
       setSelectedSale(sale);
       setViewDialogOpen(true);
-
-      fetchAlerts();
     } catch (error) {
       toast.error("Erro ao visualizar venda");
-    }
-  };
-
-  const handleSelectAlert = (alertId) => {
-    setSelectedAlerts(prev =>
-      prev.includes(alertId)
-        ? prev.filter(id => id !== alertId)
-        : [...prev, alertId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedAlerts.length === alerts.length) {
-      setSelectedAlerts([]);
-    } else {
-      setSelectedAlerts(alerts.map(a => a.id));
-    }
-  };
-
-  const handleMarkAsRead = async () => {
-    if (selectedAlerts.length === 0) {
-      toast.error("Selecione pelo menos um alerta");
-      return;
-    }
-
-    try {
-      await alertsService.markAsRead(selectedAlerts);
-      toast.success(`${selectedAlerts.length} alerta(s) marcado(s) como lido(s)`);
-      fetchAlerts();
-    } catch (error) {
-      toast.error("Erro ao marcar alertas como lidos");
-    }
-  };
-
-  const handleMarkAsUnread = async () => {
-    if (selectedAlerts.length === 0) {
-      toast.error("Selecione pelo menos um alerta");
-      return;
-    }
-
-    try {
-      await alertsService.markAsUnread(selectedAlerts);
-      toast.success(`${selectedAlerts.length} alerta(s) marcado(s) como não lido(s)`);
-      fetchAlerts();
-    } catch (error) {
-      toast.error("Erro ao marcar alertas como não lidos");
     }
   };
 
@@ -157,99 +67,54 @@ const Alerts = ({ user }) => {
   const isUnread = (alert) => !alert.read_by.includes(user?.id);
 
   if (loading) {
-    return <div className="text-center py-8">A carregar alertas...</div>;
+    return <div className="text-center py-8">A carregar alertas arquivados...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-900">Alertas</h1>
         <div className="flex items-center gap-4">
           <Button
-            variant="outline"
-            onClick={() => navigate('/alerts/archived')}
+            variant="ghost"
+            onClick={() => navigate('/alerts')}
             className="gap-2"
           >
-            <Archive className="w-4 h-4" />
-            Ver Arquivados
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
           </Button>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Bell className="w-4 h-4" />
-            <span>{alerts.filter(a => isUnread(a)).length} não lidos de {totalAlerts}</span>
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Alertas Arquivados</h1>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Bell className="w-4 h-4" />
+          <span>{totalAlerts} alertas arquivados</span>
         </div>
       </div>
 
-      {user?.role === 'admin' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-blue-600" />
-              <div>
-                <Label htmlFor="email-alerts" className="text-sm font-semibold text-gray-900 cursor-pointer">
-                  Receber Alertas por Email
-                </Label>
-                <p className="text-xs text-gray-600 mt-1">
-                  Desative para receber alertas apenas na aplicação
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="email-alerts"
-              checked={emailAlertsEnabled}
-              onCheckedChange={handleToggleEmailAlerts}
-            />
-          </div>
-        </div>
-      )}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <p className="text-sm text-amber-800">
+          <strong>Arquivamento automático:</strong> Os alertas são automaticamente arquivados após 60 dias da sua criação.
+          Os alertas arquivados permanecem acessíveis para consulta histórica.
+        </p>
+      </div>
 
       <div className="flex justify-between items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Select value={filter} onValueChange={(value) => { setFilter(value); setCurrentPage(1); }}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrar alertas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Alertas</SelectItem>
-              <SelectItem value="unread">Não Lidos</SelectItem>
-              <SelectItem value="read">Lidos</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {alerts.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={selectedAlerts.length === alerts.length && alerts.length > 0}
-                onCheckedChange={handleSelectAll}
-                id="select-all"
-              />
-              <Label htmlFor="select-all" className="text-sm cursor-pointer">
-                Selecionar todos
-              </Label>
-            </div>
-          )}
-        </div>
-
-        {selectedAlerts.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">{selectedAlerts.length} selecionado(s)</span>
-            <Button size="sm" onClick={handleMarkAsRead} className="gap-1">
-              <Check className="w-4 h-4" />
-              Marcar como Lido
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleMarkAsUnread} className="gap-1">
-              <X className="w-4 h-4" />
-              Marcar como Não Lido
-            </Button>
-          </div>
-        )}
+        <Select value={filter} onValueChange={(value) => { setFilter(value); setCurrentPage(1); }}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filtrar alertas" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Alertas</SelectItem>
+            <SelectItem value="unread">Não Lidos</SelectItem>
+            <SelectItem value="read">Lidos</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {alerts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">
-            {filter === 'all' ? 'Nenhum alerta' : filter === 'unread' ? 'Nenhum alerta não lido' : 'Nenhum alerta lido'}
+            {filter === 'all' ? 'Nenhum alerta arquivado' : filter === 'unread' ? 'Nenhum alerta arquivado não lido' : 'Nenhum alerta arquivado lido'}
           </p>
         </div>
       ) : (
@@ -257,20 +122,12 @@ const Alerts = ({ user }) => {
           <div className="space-y-3">
             {alerts.map((alert) => {
               const unread = isUnread(alert);
-              const isSelected = selectedAlerts.includes(alert.id);
               return (
                 <div
                   key={alert.id}
-                  className={`bg-white rounded-xl shadow-sm border p-4 transition-all ${
-                    unread ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-                  } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md"
                 >
                   <div className="flex items-start gap-4">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => handleSelectAlert(alert.id)}
-                      className="mt-1"
-                    />
                     <div className="mt-1">{getAlertIcon(alert.type)}</div>
 
                     <div className="flex-1 min-w-0">
@@ -279,14 +136,21 @@ const Alerts = ({ user }) => {
                           <p className={`text-sm ${unread ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
                             {alert.message}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(alert.created_at).toLocaleString('pt-PT')}
-                          </p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <p className="text-xs text-gray-500">
+                              Criado: {new Date(alert.created_at).toLocaleString('pt-PT')}
+                            </p>
+                            {alert.archived_at && (
+                              <p className="text-xs text-amber-600">
+                                Arquivado: {new Date(alert.archived_at).toLocaleString('pt-PT')}
+                              </p>
+                            )}
+                          </div>
                         </div>
 
                         {unread && (
                           <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                            Novo
+                            Não lido
                           </span>
                         )}
                       </div>
@@ -296,10 +160,7 @@ const Alerts = ({ user }) => {
                           size="sm"
                           variant="ghost"
                           className="text-blue-600 h-8 px-3"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewSale(alert);
-                          }}
+                          onClick={() => handleViewSale(alert)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Ver Venda
@@ -340,7 +201,6 @@ const Alerts = ({ user }) => {
         </>
       )}
 
-      {/* Sale View Dialog (Read-only) */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -421,4 +281,4 @@ const Alerts = ({ user }) => {
   );
 };
 
-export default Alerts;
+export default AlertsArchived;

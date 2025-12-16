@@ -12,6 +12,7 @@ import Operators from "./pages/Operators.jsx";
 import Users from "./pages/Users.jsx";
 import Profile from "./pages/Profile.jsx";
 import Alerts from "./pages/Alerts.jsx";
+import AlertsArchived from "./pages/AlertsArchived.jsx";
 import Forms from "./pages/Forms.jsx";
 import CommissionReports from "./pages/CommissionReports.jsx";
 import CommissionReportsPartner from "./pages/CommissionReportsPartner.jsx";
@@ -131,6 +132,7 @@ function App() {
             <Route path="/partners" element={<Partners user={user} />} />
             <Route path="/sales" element={<Sales user={user} />} />
             <Route path="/alerts" element={<Alerts user={user} />} />
+            <Route path="/alerts/archived" element={<AlertsArchived user={user} />} />
             <Route path="/profile" element={<Profile user={user} />} />
             <Route path="/forms" element={<Forms user={user} />} />
             <Route path="/forms/:operatorId" element={<Forms user={user} />} />

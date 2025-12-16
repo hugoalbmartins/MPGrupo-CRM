@@ -1,19 +1,52 @@
 import { supabase } from '../lib/supabase';
 
 export const alertsService = {
-  async getAll() {
+  async getAll(options = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      filter = 'all',
+      archived = false
+    } = options;
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
       .from('alerts')
-      .select('*')
-      .overlaps('user_ids', [user.id])
+      .select('*', { count: 'exact' })
+      .overlaps('user_ids', [user.id]);
+
+    if (archived) {
+      query = query.not('archived_at', 'is', null);
+    } else {
+      query = query.is('archived_at', null);
+    }
+
+    if (filter === 'unread') {
+      query = query.not('read_by', 'cs', `{${user.id}}`);
+    } else if (filter === 'read') {
+      query = query.contains('read_by', [user.id]);
+    }
+
+    query = query
       .order('created_at', { ascending: false })
-      .limit(100);
+      .range(from, to);
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
-    return data || [];
+
+    return {
+      alerts: data || [],
+      total: count || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((count || 0) / limit)
+    };
   },
 
   async getUnreadCount() {
@@ -24,29 +57,59 @@ export const alertsService = {
       .from('alerts')
       .select('*', { count: 'exact', head: true })
       .overlaps('user_ids', [user.id])
+      .is('archived_at', null)
       .not('read_by', 'cs', `{${user.id}}`);
 
     if (error) throw error;
     return count || 0;
   },
 
-  async markAsRead(alertId) {
+  async markAsRead(alertIds) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data: alert } = await supabase
-      .from('alerts')
-      .select('read_by')
-      .eq('id', alertId)
-      .single();
+    const ids = Array.isArray(alertIds) ? alertIds : [alertIds];
 
-    const readBy = alert?.read_by || [];
-    if (!readBy.includes(user.id)) {
-      readBy.push(user.id);
+    for (const alertId of ids) {
+      const { data: alert } = await supabase
+        .from('alerts')
+        .select('read_by')
+        .eq('id', alertId)
+        .single();
+
+      const readBy = alert?.read_by || [];
+      if (!readBy.includes(user.id)) {
+        readBy.push(user.id);
+
+        const { error } = await supabase
+          .from('alerts')
+          .update({ read_by: readBy })
+          .eq('id', alertId);
+
+        if (error) throw error;
+      }
+    }
+  },
+
+  async markAsUnread(alertIds) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const ids = Array.isArray(alertIds) ? alertIds : [alertIds];
+
+    for (const alertId of ids) {
+      const { data: alert } = await supabase
+        .from('alerts')
+        .select('read_by')
+        .eq('id', alertId)
+        .single();
+
+      const readBy = alert?.read_by || [];
+      const updatedReadBy = readBy.filter(id => id !== user.id);
 
       const { error } = await supabase
         .from('alerts')
-        .update({ read_by: readBy })
+        .update({ read_by: updatedReadBy })
         .eq('id', alertId);
 
       if (error) throw error;
