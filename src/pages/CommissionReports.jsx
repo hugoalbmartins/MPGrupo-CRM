@@ -257,21 +257,25 @@ const CommissionReports = ({ user }) => {
           <title>Auto de Comissões - ${partner.name} - ${monthName}/${selectedYear}</title>
           <style>
             @media print {
-              @page { margin: 15mm; }
+              @page {
+                size: A4 landscape;
+                margin: 10mm;
+              }
               body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             }
             body {
               font-family: Arial, sans-serif;
-              margin: 20px;
+              margin: 15px;
               color: #333;
+              max-width: 100%;
             }
             .header {
               display: flex;
               align-items: flex-start;
               justify-content: space-between;
-              margin-bottom: 30px;
-              border-bottom: 3px solid #1F4E78;
-              padding-bottom: 15px;
+              margin-bottom: 15px;
+              border-bottom: 2px solid #1F4E78;
+              padding-bottom: 10px;
             }
             .header-left {
               flex: 1;
@@ -281,46 +285,46 @@ const CommissionReports = ({ user }) => {
               margin-left: 20px;
             }
             .header-logo img {
-              height: 60px;
+              height: 45px;
               width: auto;
             }
             .company-name {
-              font-size: 18px;
+              font-size: 14px;
               font-weight: bold;
               color: #1F4E78;
-              margin-bottom: 5px;
+              margin-bottom: 3px;
             }
             .company-details {
-              font-size: 11px;
+              font-size: 9px;
               color: #666;
-              line-height: 1.5;
+              line-height: 1.4;
             }
             .title {
-              font-size: 20px;
+              font-size: 16px;
               font-weight: bold;
               color: #1F4E78;
               text-align: center;
-              margin: 25px 0;
-              padding: 10px;
+              margin: 12px 0;
+              padding: 8px;
               background-color: #f0f4f8;
-              border-radius: 5px;
+              border-radius: 4px;
             }
             table {
               width: 100%;
               border-collapse: collapse;
-              margin: 20px 0;
-              font-size: 11px;
+              margin: 10px 0;
+              font-size: 9px;
             }
             th {
               background-color: #1F4E78;
               color: white;
-              padding: 10px 8px;
+              padding: 6px 4px;
               text-align: left;
               font-weight: bold;
-              font-size: 11px;
+              font-size: 9px;
             }
             td {
-              padding: 8px;
+              padding: 5px 4px;
               border: 1px solid #ddd;
             }
             tr:nth-child(even) {
@@ -329,15 +333,15 @@ const CommissionReports = ({ user }) => {
             .total-row {
               background-color: #e8f0f7 !important;
               font-weight: bold;
-              font-size: 13px;
+              font-size: 11px;
             }
             .total-row td {
               border-top: 2px solid #1F4E78;
             }
             .footer {
-              margin-top: 40px;
+              margin-top: 20px;
               text-align: right;
-              font-size: 10px;
+              font-size: 8px;
               color: #666;
             }
             .no-print {
@@ -481,19 +485,19 @@ const CommissionReports = ({ user }) => {
 
                 console.log('Capturing screenshot with html2canvas...');
                 const canvas = await html2canvas(element, {
-                  scale: 2,
+                  scale: 1,
                   useCORS: true,
                   logging: false,
                   allowTaint: true
                 });
 
                 console.log('Canvas created, generating PDF...');
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const pdf = new jsPDF('l', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
                 console.log('PDF generated, converting to blob...');
                 const pdfBlob = pdf.output('blob');
                 console.log('PDF blob created, size:', pdfBlob.size);
@@ -583,11 +587,18 @@ const CommissionReports = ({ user }) => {
                 const result = await response.json();
                 console.log('Success response:', result);
 
+                btn.textContent = '✅ Concluído!';
+                btn.style.backgroundColor = '#10b981';
+
                 alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
+
                 if (window.opener) {
                   window.opener.location.reload();
                 }
-                window.close();
+
+                setTimeout(() => {
+                  window.close();
+                }, 500);
               } catch (error) {
                 console.error('Full error:', error);
                 alert('Erro ao processar auto: ' + error.message);
