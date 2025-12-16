@@ -26,6 +26,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log("[EdgeFunction] Starting commission report email process");
+
     const payload: EmailPayload = await req.json();
     const { partnerId, partnerEmail, partnerName, month, year, userId, filePath, fileName, version } = payload;
 
@@ -56,6 +58,8 @@ Deno.serve(async (req: Request) => {
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const monthName = monthNames[monthNum - 1];
 
+    console.log(`[EdgeFunction] Processing report for ${partnerName} - ${monthName}/${year}`);
+
     const { data: reportData, error: insertError } = await supabase
       .from("commission_reports")
       .insert({
@@ -74,8 +78,9 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Database error: ${insertError.message}`);
     }
 
+    console.log(`[EdgeFunction] Report registered with ID: ${reportData.id}`);
+
     const subject = `Auto de Comissões - ${monthName}/${year}`;
-    const appUrl = Deno.env.get("APP_URL") || "https://www.mpgrupo.pt";
 
     const { data: urlData } = await supabase.storage
       .from("commission-reports")
@@ -148,6 +153,8 @@ Deno.serve(async (req: Request) => {
       </html>
     `;
 
+    console.log(`[EdgeFunction] Sending email to partner: ${partnerEmail}`);
+
     await sendEmailSMTP(
       partnerEmail,
       subject,
@@ -161,69 +168,14 @@ Deno.serve(async (req: Request) => {
       }
     );
 
+    console.log(`[EdgeFunction] Email sent successfully to partner`);
+
     await supabase
       .from("commission_reports")
       .update({ email_sent: true, email_sent_at: new Date().toISOString() })
       .eq("id", reportData.id);
 
-    const { data: admins } = await supabase
-      .from("users")
-      .select("email, name")
-      .eq("role", "admin");
-
-    if (admins && admins.length > 0) {
-      const adminHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #1F4E78 0%, #2C5F8D 100%); color: white; padding: 25px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background: #f9f9f9; padding: 25px; }
-            .info-box { background: white; border-left: 4px solid #1F4E78; padding: 15px; margin: 15px 0; border-radius: 4px; }
-            .button { display: inline-block; background: #1F4E78; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 15px 0; }
-            .footer { text-align: center; padding: 15px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header"><h1>Auto de Comissões Aprovado</h1></div>
-            <div class="content">
-              <p>Foi aprovado um auto de comissões:</p>
-              <div class="info-box">
-                <strong>Parceiro:</strong> ${partnerName}<br>
-                <strong>Período:</strong> ${monthName}/${year}<br>
-                <strong>Versão:</strong> V${version}<br>
-                <strong>Estado:</strong> Enviado ao parceiro
-              </div>
-              <center><a href="${appUrl}/commission-reports" class="button">Ver Todos os Autos</a></center>
-            </div>
-            <div class="footer">© ${new Date().getFullYear()} MP Grupo</div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      for (const admin of admins) {
-        try {
-          await sendEmailSMTP(
-            admin.email,
-            `[Admin] ${subject}`,
-            adminHtml,
-            {
-              fromEmail: "noreply@mpgrupo.pt",
-              fromName: "MP Grupo CRM",
-              smtpUser: "noreply@mpgrupo.pt",
-              smtpPass: "bmEcxN_X^mol"
-            }
-          );
-        } catch (error) {
-          console.error(`Failed to send admin email to ${admin.email}:`, error);
-        }
-      }
-    }
+    console.log(`[EdgeFunction] Database updated successfully`);
 
     return new Response(
       JSON.stringify({
@@ -234,7 +186,7 @@ Deno.serve(async (req: Request) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error:", error);
+    console.error("[EdgeFunction] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
