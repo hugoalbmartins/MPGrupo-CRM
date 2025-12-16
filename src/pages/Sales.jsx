@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
+import SaleDetailDialog from "../components/SaleDetailDialog";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
@@ -39,6 +41,10 @@ const Sales = ({ user }) => {
   const [newNote, setNewNote] = useState("");
   const [uploadFiles, setUploadFiles] = useState([]);
   const [noteAttachments, setNoteAttachments] = useState([]);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedSaleId, setSelectedSaleId] = useState(null);
+  const [validationWarnings, setValidationWarnings] = useState([]);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -112,15 +118,47 @@ const Sales = ({ user }) => {
       const submitData = { ...formData };
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
 
-      const result = await salesService.create(submitData);
+      if (!pendingSubmit) {
+        const result = await salesService.checkWarningsAndCreateSale(submitData);
 
-      toast.success("Venda criada com sucesso!");
-      setDialogOpen(false);
-      resetForm();
-      fetchData();
+        if (result.warnings) {
+          setValidationWarnings(result.warnings);
+          setPendingSubmit(true);
+          return;
+        }
+
+        toast.success("Venda criada com sucesso!");
+        setDialogOpen(false);
+        resetForm();
+        fetchData();
+      } else {
+        await salesService.create(submitData);
+        toast.success("Venda criada com sucesso!");
+        setDialogOpen(false);
+        resetForm();
+        setValidationWarnings([]);
+        setPendingSubmit(false);
+        fetchData();
+      }
     } catch (error) {
-      toast.error(error.message || "Erro ao criar venda");
+      const errorMessage = error.message || "Erro ao criar venda";
+
+      if (errorMessage.includes('REQ_DUPLICATE')) {
+        toast.error("Número de requisição já existe no sistema");
+      } else {
+        toast.error(errorMessage);
+      }
     }
+  };
+
+  const handleCancelWarnings = () => {
+    setValidationWarnings([]);
+    setPendingSubmit(false);
+  };
+
+  const handleContinueWithWarnings = async (e) => {
+    e.preventDefault();
+    await handleSubmit(e);
   };
 
   const resetForm = () => {
@@ -772,7 +810,17 @@ const Sales = ({ user }) => {
               ) : (
                 sortedSales.map((sale) => (
                   <tr key={sale.id}>
-                    <td className="font-semibold text-blue-600">{sale.sale_code}</td>
+                    <td>
+                      <button
+                        onClick={() => {
+                          setSelectedSaleId(sale.id);
+                          setDetailDialogOpen(true);
+                        }}
+                        className="font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                      >
+                        {sale.sale_code}
+                      </button>
+                    </td>
                     <td>{new Date(sale.date).toLocaleDateString('pt-PT')}</td>
                     <td>{partners.find(p => p.id === sale.partner_id)?.name}</td>
                     <td className="capitalize">{sale.scope}</td>
@@ -924,6 +972,53 @@ const Sales = ({ user }) => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Sale Detail Dialog */}
+      <SaleDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        saleId={selectedSaleId}
+        user={user}
+        onSaleUpdated={fetchData}
+      />
+
+      {/* Validation Warnings Dialog */}
+      {validationWarnings.length > 0 && (
+        <Dialog open={true} onOpenChange={() => handleCancelWarnings()}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                Aviso de Validação
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <Alert className="bg-amber-50 border-amber-200">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <AlertDescription>
+                  <p className="font-semibold mb-2">Foram detetados os seguintes avisos:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {validationWarnings.map((warning, index) => (
+                      <li key={index} className="text-sm">{warning}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 text-sm">
+                    Pode corrigir os dados ou continuar mesmo assim. A venda será criada de qualquer forma.
+                  </p>
+                </AlertDescription>
+              </Alert>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={handleCancelWarnings}>
+                  Voltar e Corrigir
+                </Button>
+                <Button onClick={handleContinueWithWarnings} className="bg-amber-500 hover:bg-amber-600">
+                  Continuar Mesmo Assim
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Notes Dialog */}
       <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>

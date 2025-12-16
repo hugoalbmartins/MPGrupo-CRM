@@ -55,17 +55,58 @@ export const salesService = {
     return data;
   },
 
+  async checkWarningsAndCreateSale(saleData) {
+    const saleDate = new Date(saleData.date);
+    if (saleDate > new Date()) {
+      throw new Error('Cannot create sales with future dates');
+    }
+
+    const warnings = [];
+
+    if (saleData.cpe && !validateCPE(saleData.cpe)) {
+      warnings.push('CPE com formato inválido (esperado: PT seguido de 13 dígitos)');
+    }
+    if (saleData.cui && !validateCUI(saleData.cui)) {
+      warnings.push('CUI com formato inválido (esperado: PT seguido de 16 dígitos)');
+    }
+
+    if (saleData.scope === 'telecomunicacoes' && saleData.requisition) {
+      const { data: duplicateCheck } = await supabase
+        .rpc('check_duplicate_requisition', {
+          p_requisition: saleData.requisition,
+          p_scope: 'telecomunicacoes',
+          p_sale_id: null
+        });
+
+      if (duplicateCheck) {
+        throw new Error('REQ_DUPLICATE|Número de requisição já existe no sistema');
+      }
+    }
+
+    if (warnings.length > 0) {
+      return { warnings };
+    }
+
+    return await this.create(saleData);
+  },
+
   async create(saleData) {
     const saleDate = new Date(saleData.date);
     if (saleDate > new Date()) {
       throw new Error('Cannot create sales with future dates');
     }
 
-    if (saleData.cpe && !validateCPE(saleData.cpe)) {
-      throw new Error('CPE invalid format');
-    }
-    if (saleData.cui && !validateCUI(saleData.cui)) {
-      throw new Error('CUI invalid format');
+    if (saleData.scope === 'telecomunicacoes' && saleData.requisition) {
+      const { data: duplicateCheck } = await supabase
+        .rpc('check_duplicate_requisition', {
+          p_requisition: saleData.requisition,
+          p_scope: 'telecomunicacoes',
+          p_sale_id: null
+        });
+
+      if (duplicateCheck) {
+        throw new Error('REQ_DUPLICATE|Número de requisição já existe no sistema');
+      }
     }
 
     const saleCode = await generateSaleCode(saleData.partner_id, saleData.date, supabase);
@@ -354,5 +395,56 @@ export const salesService = {
         }
       }
     }
+  },
+
+  async getAuditLogs(saleId) {
+    const { data, error } = await supabase
+      .from('sales_audit_log')
+      .select('*')
+      .eq('sale_id', saleId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async checkDuplicateRequisition(requisition, scope, saleId = null) {
+    if (scope !== 'telecomunicacoes' || !requisition) {
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .rpc('check_duplicate_requisition', {
+        p_requisition: requisition,
+        p_scope: scope,
+        p_sale_id: saleId
+      });
+
+    if (error) throw error;
+    return data || false;
+  },
+
+  async validateCPECUI(cpe, cui) {
+    const warnings = [];
+
+    if (cpe) {
+      const { data: isValidCPE } = await supabase
+        .rpc('validate_cpe', { cpe_value: cpe });
+
+      if (!isValidCPE) {
+        warnings.push('CPE com formato inválido (esperado: PT seguido de 13 dígitos)');
+      }
+    }
+
+    if (cui) {
+      const { data: isValidCUI } = await supabase
+        .rpc('validate_cui', { cui_value: cui });
+
+      if (!isValidCUI) {
+        warnings.push('CUI com formato inválido (esperado: PT seguido de 16 dígitos)');
+      }
+    }
+
+    return warnings;
   }
 };
