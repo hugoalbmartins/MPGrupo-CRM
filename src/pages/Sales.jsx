@@ -31,9 +31,9 @@ const Sales = ({ user }) => {
   const [editingSale, setEditingSale] = useState(null);
   const [editFormData, setEditFormData] = useState({
     status: "",
-    requisition: "",
-    paid_by_operator: false,
-    paid_date: "",
+    request_number: "",
+    paid_to_operator: false,
+    payment_date: "",
     manual_commission: ""
   });
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
