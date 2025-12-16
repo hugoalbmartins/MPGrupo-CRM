@@ -80,7 +80,14 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
         }
       }
 
-      await salesService.update(saleId, editData);
+      const updateData = user?.role === 'bo'
+        ? {
+            status: editData.status,
+            request_number: editData.request_number
+          }
+        : editData;
+
+      await salesService.update(saleId, updateData);
       toast.success("Venda atualizada com sucesso");
       setIsEditing(false);
       await fetchSaleDetails();
@@ -164,7 +171,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                 Código: {sale?.sale_code}
               </DialogDescription>
             </div>
-            {user?.role === 'admin' && sale && !isEditing && (
+            {(user?.role === 'admin' || user?.role === 'bo') && sale && !isEditing && (
               <Button
                 size="sm"
                 onClick={() => setIsEditing(true)}
@@ -202,7 +209,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                   <Alert>
                     <AlertTriangle className="w-4 h-4" />
                     <AlertDescription>
-                      Modo de edição - Apenas campos específicos podem ser alterados
+                      {user?.role === 'bo'
+                        ? 'Modo de edição - Pode alterar Estado e Número de Requisição'
+                        : 'Modo de edição - Apenas campos específicos podem ser alterados'}
                     </AlertDescription>
                   </Alert>
 
@@ -235,35 +244,39 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                       />
                     </div>
 
-                    <div>
-                      <Label>Comissão Manual</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={editData.manual_commission}
-                        onChange={(e) => setEditData({ ...editData, manual_commission: e.target.value })}
-                        placeholder="0.00"
-                      />
-                    </div>
+                    {user?.role === 'admin' && (
+                      <>
+                        <div>
+                          <Label>Comissão Manual</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={editData.manual_commission}
+                            onChange={(e) => setEditData({ ...editData, manual_commission: e.target.value })}
+                            placeholder="0.00"
+                          />
+                        </div>
 
-                    <div>
-                      <Label>Data de Pagamento</Label>
-                      <Input
-                        type="date"
-                        value={editData.payment_date}
-                        onChange={(e) => setEditData({ ...editData, payment_date: e.target.value })}
-                      />
-                    </div>
+                        <div>
+                          <Label>Data de Pagamento</Label>
+                          <Input
+                            type="date"
+                            value={editData.payment_date}
+                            onChange={(e) => setEditData({ ...editData, payment_date: e.target.value })}
+                          />
+                        </div>
 
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={editData.paid_to_operator}
-                          onCheckedChange={(checked) => setEditData({ ...editData, paid_to_operator: checked })}
-                        />
-                        <Label>Pago ao Operador</Label>
-                      </div>
-                    </div>
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={editData.paid_to_operator}
+                              onCheckedChange={(checked) => setEditData({ ...editData, paid_to_operator: checked })}
+                            />
+                            <Label>Pago ao Operador</Label>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex gap-2 justify-end pt-4 border-t">

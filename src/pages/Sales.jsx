@@ -811,15 +811,9 @@ const Sales = ({ user }) => {
                 sortedSales.map((sale) => (
                   <tr key={sale.id}>
                     <td>
-                      <button
-                        onClick={() => {
-                          setSelectedSaleId(sale.id);
-                          setDetailDialogOpen(true);
-                        }}
-                        className="font-semibold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                      >
+                      <span className="font-semibold text-gray-900">
                         {sale.sale_code}
-                      </button>
+                      </span>
                     </td>
                     <td>{new Date(sale.date).toLocaleDateString('pt-PT')}</td>
                     <td>{partners.find(p => p.id === sale.partner_id)?.name}</td>
@@ -839,7 +833,15 @@ const Sales = ({ user }) => {
                       <td className="text-center">
                         <div className="flex gap-2 justify-center">
                           {(user?.role === 'admin' || user?.role === 'bo') && (
-                            <Button onClick={() => openEditDialog(sale)} size="sm" variant="ghost" className="text-blue-600">
+                            <Button
+                              onClick={() => {
+                                setSelectedSaleId(sale.id);
+                                setDetailDialogOpen(true);
+                              }}
+                              size="sm"
+                              variant="ghost"
+                              className="text-blue-600"
+                            >
                               Editar
                             </Button>
                           )}
