@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { X, Edit2, Save, History, MessageSquare, AlertTriangle, CheckCircle } from "lucide-react";
+import { X, Edit2, Save, History, MessageSquare, AlertTriangle, CheckCircle, Upload, FileText, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
   const [newNote, setNewNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [operatorDoc, setOperatorDoc] = useState(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   useEffect(() => {
     if (open && saleId) {
@@ -118,6 +120,37 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
       console.error(error);
     } finally {
       setSavingNote(false);
+    }
+  };
+
+  const handleUploadOperatorDoc = async () => {
+    if (!operatorDoc) {
+      toast.error("Selecione um ficheiro");
+      return;
+    }
+
+    try {
+      setUploadingDoc(true);
+      await salesService.uploadOperatorValidation(saleId, operatorDoc);
+      toast.success("Documento de validação carregado com sucesso");
+      setOperatorDoc(null);
+      await fetchSaleDetails();
+      if (onSaleUpdated) onSaleUpdated();
+    } catch (error) {
+      toast.error("Erro ao carregar documento");
+      console.error(error);
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handleDownloadOperatorDoc = async () => {
+    try {
+      await salesService.downloadOperatorValidation(sale.operator_doc_file);
+      toast.success("Download iniciado");
+    } catch (error) {
+      toast.error("Erro ao fazer download");
+      console.error(error);
     }
   };
 
@@ -276,6 +309,77 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           </div>
                         </div>
                       </>
+                    )}
+
+                    {(user?.role === 'admin' || user?.role === 'bo') && (
+                      <div className="col-span-2 pt-4 border-t">
+                        <Label className="text-base font-semibold mb-2 block">Validação pela Operadora</Label>
+
+                        {sale?.operator_doc_file ? (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                  <CheckCircle className="w-5 h-5 text-green-600" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-green-900">Documento Carregado</p>
+                                  <p className="text-xs text-green-700">
+                                    {sale.operator_doc_uploaded_at && new Date(sale.operator_doc_uploaded_at).toLocaleString('pt-PT')}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDownloadOperatorDoc}
+                                className="gap-2"
+                              >
+                                <Download className="w-4 h-4" />
+                                Download
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                onChange={(e) => setOperatorDoc(e.target.files[0])}
+                                className="hidden"
+                                id="operator-doc-upload"
+                              />
+                              <label
+                                htmlFor="operator-doc-upload"
+                                className="flex-1 cursor-pointer bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <FileText className="w-5 h-5 text-gray-400" />
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-700">
+                                      {operatorDoc ? operatorDoc.name : 'Clique para selecionar documento'}
+                                    </p>
+                                    <p className="text-xs text-gray-500">PDF, JPG, PNG (máx 10MB)</p>
+                                  </div>
+                                </div>
+                              </label>
+                              <Button
+                                onClick={handleUploadOperatorDoc}
+                                disabled={!operatorDoc || uploadingDoc}
+                                size="sm"
+                                className="gap-2"
+                              >
+                                <Upload className="w-4 h-4" />
+                                {uploadingDoc ? 'A carregar...' : 'Carregar'}
+                              </Button>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              📋 Carregue o auto ou documento de validação fornecido pela operadora
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 

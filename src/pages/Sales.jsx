@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,11 +22,18 @@ const Sales = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedPartner, setSelectedPartner] = useState("");
+  const [selectedOperator, setSelectedOperator] = useState("");
+  const [selectedScope, setSelectedScope] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [sortField, setSortField] = useState("created_at");
   const [sortDirection, setSortDirection] = useState("desc");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -194,9 +201,9 @@ const Sales = ({ user }) => {
   };
 
   const filteredOperators = operators.filter(op => op.scope === formData.scope);
-  
-  const selectedOperator = operators.find(op => op.id === formData.operator_id);
-  const operatorEnergyType = selectedOperator?.energy_type || '';
+
+  const currentOperator = operators.find(op => op.id === formData.operator_id);
+  const operatorEnergyType = currentOperator?.energy_type || '';
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -207,7 +214,24 @@ const Sales = ({ user }) => {
     }
   };
 
-  const filteredSales = selectedStatus ? sales.filter(s => s.status === selectedStatus) : sales;
+  const filteredSales = sales.filter(sale => {
+    if (selectedStatus && sale.status !== selectedStatus) return false;
+    if (selectedPartner && sale.partner_id !== selectedPartner) return false;
+    if (selectedOperator && sale.operator_id !== selectedOperator) return false;
+    if (selectedScope && sale.scope !== selectedScope) return false;
+    if (filterStartDate && new Date(sale.date) < new Date(filterStartDate)) return false;
+    if (filterEndDate && new Date(sale.date) > new Date(filterEndDate)) return false;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        sale.sale_code?.toLowerCase().includes(query) ||
+        sale.client_name?.toLowerCase().includes(query) ||
+        sale.client_nif?.toLowerCase().includes(query) ||
+        sale.client_contact?.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
   
   const sortedSales = [...filteredSales].sort((a, b) => {
     let aValue = a[sortField];
@@ -570,13 +594,13 @@ const Sales = ({ user }) => {
                         </SelectContent>
                       </Select>
                     </div>
-                    {selectedOperator?.activation_types && selectedOperator.activation_types.length > 0 && (
+                    {currentOperator?.activation_types && currentOperator.activation_types.length > 0 && (
                       <div>
                         <Label>Tipo de Ativação *</Label>
                         <Select value={formData.activation_type} onValueChange={(v) => setFormData({...formData, activation_type: v})}>
                           <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
-                            {selectedOperator.activation_types.map(type => (
+                            {currentOperator.activation_types.map(type => (
                               <SelectItem key={type} value={type}>{type}</SelectItem>
                             ))}
                           </SelectContent>
@@ -676,11 +700,11 @@ const Sales = ({ user }) => {
                   </>
                 )}
 
-                {selectedOperator && (selectedOperator.pays_direct_debit || selectedOperator.pays_electronic_invoice) && (
+                {currentOperator && (currentOperator.pays_direct_debit || currentOperator.pays_electronic_invoice) && (
                   <div className="col-span-2 border-t pt-4">
                     <Label className="text-base font-semibold mb-3 block">Adesões do Cliente</Label>
                     <div className="space-y-2 bg-blue-50 p-4 rounded-lg">
-                      {selectedOperator.pays_direct_debit && (
+                      {currentOperator.pays_direct_debit && (
                         <div className="flex items-center space-x-2">
                           <input
                             type="checkbox"
@@ -694,7 +718,7 @@ const Sales = ({ user }) => {
                           </Label>
                         </div>
                       )}
-                      {selectedOperator.pays_electronic_invoice && (
+                      {currentOperator.pays_electronic_invoice && (
                         <div className="flex items-center space-x-2">
                           <input
                             type="checkbox"
@@ -745,14 +769,140 @@ const Sales = ({ user }) => {
       </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      {/* Filtros de Status (sempre visíveis) */}
+      <div className="flex flex-wrap gap-2 mb-4">
         <Button onClick={() => setSelectedStatus("")} variant={selectedStatus === "" ? "default" : "outline"} size="sm">Todas</Button>
         <Button onClick={() => setSelectedStatus("Para registo")} variant={selectedStatus === "Para registo" ? "default" : "outline"} size="sm">Para registo</Button>
         <Button onClick={() => setSelectedStatus("Pendente")} variant={selectedStatus === "Pendente" ? "default" : "outline"} size="sm">Pendente</Button>
         <Button onClick={() => setSelectedStatus("Concluido")} variant={selectedStatus === "Concluido" ? "default" : "outline"} size="sm">Concluído</Button>
         <Button onClick={() => setSelectedStatus("Ativo")} variant={selectedStatus === "Ativo" ? "default" : "outline"} size="sm">Ativo</Button>
         <Button onClick={() => setSelectedStatus("Cancelado")} variant={selectedStatus === "Cancelado" ? "default" : "outline"} size="sm">Cancelado</Button>
+
+        <Button
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          variant={showAdvancedFilters ? "default" : "outline"}
+          size="sm"
+          className="ml-auto gap-2"
+        >
+          <Filter className="w-4 h-4" />
+          Filtros Avançados
+        </Button>
       </div>
+
+      {/* Filtros Avançados */}
+      {showAdvancedFilters && (
+        <div className="professional-card p-4 mb-4 space-y-4">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold text-gray-900">Filtros Avançados</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedPartner("");
+                setSelectedOperator("");
+                setSelectedScope("");
+                setSearchQuery("");
+                setFilterStartDate("");
+                setFilterEndDate("");
+              }}
+            >
+              <XIcon className="w-4 h-4 mr-1" />
+              Limpar Filtros
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Pesquisa por texto */}
+            <div>
+              <Label>Pesquisar</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Código, Cliente, NIF, Contacto..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Filtro por Parceiro */}
+            {user?.role === 'admin' || user?.role === 'bo' ? (
+              <div>
+                <Label>Parceiro</Label>
+                <Select value={selectedPartner} onValueChange={setSelectedPartner}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os parceiros" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    {partners.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            {/* Filtro por Operadora */}
+            <div>
+              <Label>Operadora</Label>
+              <Select value={selectedOperator} onValueChange={setSelectedOperator}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as operadoras" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas</SelectItem>
+                  {operators.map(o => (
+                    <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro por Âmbito */}
+            <div>
+              <Label>Âmbito</Label>
+              <Select value={selectedScope} onValueChange={setSelectedScope}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os âmbitos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
+                  <SelectItem value="energia">Energia</SelectItem>
+                  <SelectItem value="solar">Solar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro por Data Início */}
+            <div>
+              <Label>Data de Início</Label>
+              <Input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+              />
+            </div>
+
+            {/* Filtro por Data Fim */}
+            <div>
+              <Label>Data de Fim</Label>
+              <Input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Contador de resultados */}
+          <div className="text-sm text-gray-600 pt-2 border-t">
+            {filteredSales.length} venda(s) encontrada(s) {filteredSales.length !== sales.length && `de ${sales.length} total`}
+          </div>
+        </div>
+      )}
 
       <div className="professional-card p-6">
         <div className="table-container overflow-x-auto">

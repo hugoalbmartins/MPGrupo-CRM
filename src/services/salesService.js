@@ -449,5 +449,66 @@ export const salesService = {
     }
 
     return warnings;
+  },
+
+  async uploadOperatorValidation(saleId, file) {
+    if (!file) throw new Error('No file provided');
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${saleId}_${Date.now()}.${fileExt}`;
+    const filePath = `${saleId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('operator-validations')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { error: updateError } = await supabase
+      .from('sales')
+      .update({
+        operator_doc_file: filePath,
+        operator_doc_uploaded_at: new Date().toISOString(),
+        operator_doc_uploaded_by: user.id,
+        operator_validated: true,
+        operator_validation_date: new Date().toISOString()
+      })
+      .eq('id', saleId);
+
+    if (updateError) {
+      await supabase.storage
+        .from('operator-validations')
+        .remove([filePath]);
+      throw updateError;
+    }
+
+    return { filePath };
+  },
+
+  async downloadOperatorValidation(filePath) {
+    if (!filePath) throw new Error('No file path provided');
+
+    const { data, error } = await supabase.storage
+      .from('operator-validations')
+      .download(filePath);
+
+    if (error) throw error;
+
+    const url = window.URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filePath.split('/').pop();
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return data;
   }
 };
