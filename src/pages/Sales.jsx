@@ -22,9 +22,9 @@ const Sales = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedPartner, setSelectedPartner] = useState("");
-  const [selectedOperator, setSelectedOperator] = useState("");
-  const [selectedScope, setSelectedScope] = useState("");
+  const [selectedPartner, setSelectedPartner] = useState("all");
+  const [selectedOperator, setSelectedOperator] = useState("all");
+  const [selectedScope, setSelectedScope] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
@@ -216,9 +216,9 @@ const Sales = ({ user }) => {
 
   const filteredSales = sales.filter(sale => {
     if (selectedStatus && sale.status !== selectedStatus) return false;
-    if (selectedPartner && sale.partner_id !== selectedPartner) return false;
-    if (selectedOperator && sale.operator_id !== selectedOperator) return false;
-    if (selectedScope && sale.scope !== selectedScope) return false;
+    if (selectedPartner && selectedPartner !== "all" && sale.partner_id !== selectedPartner) return false;
+    if (selectedOperator && selectedOperator !== "all" && sale.operator_id !== selectedOperator) return false;
+    if (selectedScope && selectedScope !== "all" && sale.scope !== selectedScope) return false;
     if (filterStartDate && new Date(sale.date) < new Date(filterStartDate)) return false;
     if (filterEndDate && new Date(sale.date) > new Date(filterEndDate)) return false;
     if (searchQuery) {
@@ -798,9 +798,9 @@ const Sales = ({ user }) => {
               variant="ghost"
               size="sm"
               onClick={() => {
-                setSelectedPartner("");
-                setSelectedOperator("");
-                setSelectedScope("");
+                setSelectedPartner("all");
+                setSelectedOperator("all");
+                setSelectedScope("all");
                 setSearchQuery("");
                 setFilterStartDate("");
                 setFilterEndDate("");
@@ -835,7 +835,7 @@ const Sales = ({ user }) => {
                     <SelectValue placeholder="Todos os parceiros" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     {partners.map(p => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}
@@ -852,7 +852,7 @@ const Sales = ({ user }) => {
                   <SelectValue placeholder="Todas as operadoras" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   {operators.map(o => (
                     <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
                   ))}
@@ -868,7 +868,7 @@ const Sales = ({ user }) => {
                   <SelectValue placeholder="Todos os âmbitos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
                   <SelectItem value="energia">Energia</SelectItem>
                   <SelectItem value="solar">Solar</SelectItem>
