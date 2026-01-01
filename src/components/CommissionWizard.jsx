@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ArrowRight, Save, Info, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { operatorsService } from "../services/operatorsService";
@@ -20,6 +21,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     tier_mode: 'by_quantity'
   });
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([]);
+  const [activePartnerTab, setActivePartnerTab] = useState('D2D');
 
   useEffect(() => {
     loadConfigs();
@@ -68,6 +70,10 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     return operator?.allowed_client_types || ['particular', 'empresarial'];
   };
 
+  const getPartnerTypes = () => {
+    return ['D2D', 'Rev', 'Rev+'];
+  };
+
   const handleNext = () => {
     if (step === 1 && currentConfig.commission_mode === 'per_contract') {
       setStep(3);
@@ -104,14 +110,14 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     });
   };
 
-  const addConfig = (serviceTypes, clientType) => {
+  const addConfig = (serviceTypes, clientType, partnerType) => {
     if (serviceTypes.length === 0) {
       toast.error('Selecione pelo menos um tipo de serviço');
       return;
     }
 
     const newConfig = {
-      partner_type: 'D2D',
+      partner_type: partnerType,
       client_type: clientType,
       service_type: serviceTypes[0],
       service_types: serviceTypes,
@@ -413,9 +419,9 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
               <div className="flex items-start gap-2">
                 <Info className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div className="text-sm text-blue-900">
-                  <p className="font-semibold mb-1">Configure por tipo de serviço</p>
+                  <p className="font-semibold mb-1">Configure por tipo de parceiro</p>
                   <p>
-                    Selecione um ou mais tipos de serviço para configurar em conjunto.
+                    Selecione o tipo de parceiro e configure os valores de comissão para cada tipo de serviço e cliente.
                     {currentConfig.tier_mode === 'by_monthly_value'
                       ? ' Defina intervalos de mensalidade para cada patamar.'
                       : ' Defina o número mínimo de vendas para cada patamar.'}
@@ -424,139 +430,151 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
               </div>
             </div>
 
-            <div className="space-y-6">
-              {getClientTypes().map((clientType) => (
-                <div key={clientType} className="border rounded-lg p-4">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-4 capitalize">
-                    {clientType}
-                  </h3>
+            <Tabs value={activePartnerTab} onValueChange={setActivePartnerTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                {getPartnerTypes().map((partnerType) => (
+                  <TabsTrigger key={partnerType} value={partnerType}>
+                    {partnerType}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
-                  <div className="mb-4">
-                    <Label className="mb-2 block">Selecionar Tipos de Serviço</Label>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {getServiceTypes().map((serviceType) => (
-                        <button
-                          key={serviceType}
+              {getPartnerTypes().map((partnerType) => (
+                <TabsContent key={partnerType} value={partnerType} className="space-y-6 mt-6">
+                  {getClientTypes().map((clientType) => (
+                    <div key={clientType} className="border rounded-lg p-4">
+                      <h3 className="font-semibold text-lg text-gray-900 mb-4 capitalize">
+                        {clientType}
+                      </h3>
+
+                      <div className="mb-4">
+                        <Label className="mb-2 block">Selecionar Tipos de Serviço</Label>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {getServiceTypes().map((serviceType) => (
+                            <button
+                              key={serviceType}
+                              type="button"
+                              onClick={() => toggleServiceType(serviceType)}
+                              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                                selectedServiceTypes.includes(serviceType)
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              }`}
+                            >
+                              {serviceType === 'eletricidade' ? '⚡ Eletricidade' :
+                               serviceType === 'gas' ? '🔥 Gás' : serviceType}
+                            </button>
+                          ))}
+                        </div>
+                        <Button
                           type="button"
-                          onClick={() => toggleServiceType(serviceType)}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                            selectedServiceTypes.includes(serviceType)
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
+                          variant="outline"
+                          onClick={() => addConfig(selectedServiceTypes, clientType, partnerType)}
+                          disabled={selectedServiceTypes.length === 0}
+                          className="w-full"
                         >
-                          {serviceType === 'eletricidade' ? '⚡ Eletricidade' :
-                           serviceType === 'gas' ? '🔥 Gás' : serviceType}
-                        </button>
-                      ))}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => addConfig(selectedServiceTypes, clientType)}
-                      disabled={selectedServiceTypes.length === 0}
-                      className="w-full"
-                    >
-                      + Adicionar Patamar para {selectedServiceTypes.length > 0 ? selectedServiceTypes.join(' + ') : '(selecione tipos)'}
-                    </Button>
-                  </div>
+                          + Adicionar Patamar para {selectedServiceTypes.length > 0 ? selectedServiceTypes.join(' + ') : '(selecione tipos)'}
+                        </Button>
+                      </div>
 
-                  <div className="space-y-3">
-                    {configs
-                      .map((config, index) => ({ config, index }))
-                      .filter(({ config }) => config.client_type === clientType)
-                      .map(({ config, index }) => (
-                        <Card key={index} className="border-2">
-                          <CardContent className="pt-6">
-                            <div className="flex justify-between items-center mb-4">
-                              <h4 className="font-semibold text-gray-900">
-                                {getServiceTypeLabel(config.service_types || [config.service_type])}
-                              </h4>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeConfig(index)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <Label>
-                                  {currentConfig.commission_mode === 'monthly_multiplier'
-                                    ? 'Multiplicador'
-                                    : 'Valor da Comissão (€)'}
-                                </Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  value={config.commission_value || 0}
-                                  onChange={(e) => updateConfig(index, 'commission_value', e.target.value)}
-                                  placeholder={currentConfig.commission_mode === 'monthly_multiplier' ? 'Ex: 1.5' : 'Ex: 50.00'}
-                                />
-                              </div>
-
-                              {currentConfig.tier_mode === 'by_quantity' && (
-                                <div>
-                                  <Label>Mínimo de Vendas</Label>
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    value={config.min_sales || 0}
-                                    onChange={(e) => updateConfig(index, 'min_sales', e.target.value)}
-                                    placeholder="Ex: 0, 50, 100"
-                                  />
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    A partir de quantas vendas este valor aplica
-                                  </p>
+                      <div className="space-y-3">
+                        {configs
+                          .map((config, index) => ({ config, index }))
+                          .filter(({ config }) => config.client_type === clientType && config.partner_type === partnerType)
+                          .map(({ config, index }) => (
+                            <Card key={index} className="border-2">
+                              <CardContent className="pt-6">
+                                <div className="flex justify-between items-center mb-4">
+                                  <h4 className="font-semibold text-gray-900">
+                                    {getServiceTypeLabel(config.service_types || [config.service_type])}
+                                  </h4>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeConfig(index)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
                                 </div>
-                              )}
 
-                              {currentConfig.tier_mode === 'by_monthly_value' && (
-                                <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
-                                    <Label>Mensalidade Mínima (€)</Label>
+                                    <Label>
+                                      {currentConfig.commission_mode === 'monthly_multiplier'
+                                        ? 'Multiplicador'
+                                        : 'Valor da Comissão (€)'}
+                                    </Label>
                                     <Input
                                       type="number"
                                       step="0.01"
                                       min="0"
-                                      value={config.monthly_value_min || 0}
-                                      onChange={(e) => updateConfig(index, 'monthly_value_min', e.target.value)}
-                                      placeholder="Ex: 0.00"
+                                      value={config.commission_value || 0}
+                                      onChange={(e) => updateConfig(index, 'commission_value', e.target.value)}
+                                      placeholder={currentConfig.commission_mode === 'monthly_multiplier' ? 'Ex: 1.5' : 'Ex: 50.00'}
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Valor mínimo de mensalidade
-                                    </p>
                                   </div>
-                                  <div>
-                                    <Label>Mensalidade Máxima (€)</Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={config.monthly_value_max || 0}
-                                      onChange={(e) => updateConfig(index, 'monthly_value_max', e.target.value)}
-                                      placeholder="Ex: 50.00"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Valor máximo de mensalidade (0 = sem limite)
-                                    </p>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                </div>
+
+                                  {currentConfig.tier_mode === 'by_quantity' && (
+                                    <div>
+                                      <Label>Mínimo de Vendas</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={config.min_sales || 0}
+                                        onChange={(e) => updateConfig(index, 'min_sales', e.target.value)}
+                                        placeholder="Ex: 0, 50, 100"
+                                      />
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        A partir de quantas vendas este valor aplica
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {currentConfig.tier_mode === 'by_monthly_value' && (
+                                    <>
+                                      <div>
+                                        <Label>Mensalidade Mínima (€)</Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={config.monthly_value_min || 0}
+                                          onChange={(e) => updateConfig(index, 'monthly_value_min', e.target.value)}
+                                          placeholder="Ex: 0.00"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          Valor mínimo de mensalidade
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <Label>Mensalidade Máxima (€)</Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={config.monthly_value_max || 0}
+                                          onChange={(e) => updateConfig(index, 'monthly_value_max', e.target.value)}
+                                          placeholder="Ex: 50.00"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          Valor máximo de mensalidade (0 = sem limite)
+                                        </p>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </TabsContent>
               ))}
-            </div>
+            </Tabs>
           </CardContent>
         </Card>
       )}
