@@ -15,6 +15,7 @@ interface UpdateUserRequest {
   role: string;
   position: string;
   partner_id?: string;
+  is_commissioned?: boolean;
 }
 
 Deno.serve(async (req: Request) => {
@@ -83,6 +84,7 @@ Deno.serve(async (req: Request) => {
       role: requestData.role,
       position: requestData.position,
       partner_id: requestData.partner_id || null,
+      is_commissioned: requestData.is_commissioned || false,
     };
 
     if (requestData.password) {

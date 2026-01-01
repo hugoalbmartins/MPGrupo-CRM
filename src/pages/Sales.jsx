@@ -456,9 +456,17 @@ const Sales = ({ user }) => {
                   <Select value={formData.partner_id} onValueChange={(v) => setFormData({...formData, partner_id: v})} disabled={user?.role === 'partner'}>
                     <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>
+                      {user?.role === 'admin' && user?.is_commissioned && (
+                        <SelectItem value="__admin__">📊 Venda Própria (Admin Comissionado)</SelectItem>
+                      )}
                       {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  {formData.partner_id === '__admin__' && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      ℹ️ Esta venda será registada no seu nome e receberá comissões com valores REV
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label>Âmbito *</Label>

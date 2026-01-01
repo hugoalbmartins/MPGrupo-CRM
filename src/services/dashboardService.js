@@ -7,7 +7,7 @@ export const dashboardService = {
 
     const { data: currentUser } = await supabase
       .from('users')
-      .select('role, partner_id')
+      .select('role, partner_id, is_commissioned')
       .eq('id', user.id)
       .single();
 
@@ -17,7 +17,7 @@ export const dashboardService = {
 
     switch (currentUser.role) {
       case 'admin':
-        return await getAdminDashboard(selectedYear, selectedMonth);
+        return await getAdminDashboard(selectedYear, selectedMonth, user.id, currentUser.is_commissioned);
       case 'bo':
         return await getBODashboard(selectedYear, selectedMonth);
       case 'partner':
@@ -96,7 +96,7 @@ async function getLast12MonthsData() {
   return result;
 }
 
-async function getAdminDashboard(year, month) {
+async function getAdminDashboard(year, month, adminId, isCommissioned) {
   const { start, end } = getMonthRange(year, month);
 
   const { data: sales } = await supabase
@@ -128,13 +128,19 @@ async function getAdminDashboard(year, month) {
     commission_by_type: {},
     selected_month: month,
     selected_year: year,
-    last_12_months: last12Months
+    last_12_months: last12Months,
+    admin_sales_count: 0,
+    admin_commission_pending: 0,
+    admin_commission_paid: 0
   };
 
   if (sales) {
     sales.forEach(sale => {
       const scope = sale.scope || '';
       const commission = sale.manual_commission || sale.calculated_commission || 0;
+      const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
+      const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
+      const totalCommission = commission + ddValue + feValue;
       const status = sale.status || 'Pendente';
 
       if (scope === 'telecomunicacoes') {
@@ -154,22 +160,31 @@ async function getAdminDashboard(year, month) {
         stats.by_partner[sale.partner_id] = { count: 0, commission: 0 };
       }
       stats.by_partner[sale.partner_id].count++;
-      stats.by_partner[sale.partner_id].commission += commission;
+      stats.by_partner[sale.partner_id].commission += totalCommission;
 
       stats.by_operator[sale.operator_id] = (stats.by_operator[sale.operator_id] || 0) + 1;
 
-      stats.total_commission += commission;
+      stats.total_commission += totalCommission;
 
       if (sale.paid_to_operator) {
         stats.paid_by_operator++;
         if (status === 'Ativo') {
-          stats.commission_to_pay += commission;
+          stats.commission_to_pay += totalCommission;
         }
       } else {
         stats.unpaid_by_operator++;
       }
 
-      stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + commission;
+      stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + totalCommission;
+
+      if (isCommissioned && sale.created_by_user_id === adminId && !sale.partner_id) {
+        stats.admin_sales_count++;
+        if (sale.paid_to_operator || sale.electricity_paid || sale.gas_paid) {
+          stats.admin_commission_paid += totalCommission;
+        } else {
+          stats.admin_commission_pending += totalCommission;
+        }
+      }
     });
   }
 

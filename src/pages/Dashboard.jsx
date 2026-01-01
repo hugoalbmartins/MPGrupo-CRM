@@ -116,6 +116,29 @@ const Dashboard = ({ user }) => {
   // Render different dashboards based on role
   const renderAdminDashboard = () => (
     <>
+      {user?.is_commissioned && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">Minhas Comissões (Admin Comissionado)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-600 mb-1">Comissões Previstas</p>
+              <p className="text-2xl font-bold color-purple">€{stats?.admin_commission_pending?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Vendas não pagas pela operadora</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-600 mb-1">Comissões a Receber</p>
+              <p className="text-2xl font-bold color-green">€{stats?.admin_commission_paid?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Vendas pagas pela operadora</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.admin_sales_count || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">Registadas como admin</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="stat-card">
           <div className="flex items-center justify-between">

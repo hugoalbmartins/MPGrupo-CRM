@@ -27,7 +27,8 @@ const Users = ({ user }) => {
     password: "",
     role: "bo",
     position: "",
-    partner_id: ""
+    partner_id: "",
+    is_commissioned: false
   });
 
   useEffect(() => {
@@ -78,7 +79,7 @@ const Users = ({ user }) => {
   };
 
   const resetForm = () => {
-    setFormData({ name: "", email: "", password: "", role: "bo", position: "", partner_id: "" });
+    setFormData({ name: "", email: "", password: "", role: "bo", position: "", partner_id: "", is_commissioned: false });
     setSuggestedPassword("");
     setEditMode(false);
     setEditingUserId(null);
@@ -93,7 +94,8 @@ const Users = ({ user }) => {
       password: "",
       role: userToEdit.role,
       position: userToEdit.position,
-      partner_id: userToEdit.partner_id || ""
+      partner_id: userToEdit.partner_id || "",
+      is_commissioned: userToEdit.is_commissioned || false
     });
     setDialogOpen(true);
   };
@@ -186,6 +188,23 @@ const Users = ({ user }) => {
                     </SelectContent>
                   </Select>
                 </div>
+                {formData.role === 'admin' && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is_commissioned"
+                      checked={formData.is_commissioned}
+                      onChange={(e) => setFormData({...formData, is_commissioned: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <Label htmlFor="is_commissioned" className="cursor-pointer">
+                      Administrador Comissionado
+                      <span className="block text-xs text-gray-500 font-normal">
+                        Pode registar vendas e recebe comissões (valores REV)
+                      </span>
+                    </Label>
+                  </div>
+                )}
                 {(formData.role === 'partner' || formData.role === 'partner_commercial') && (
                   <div>
                     <Label>Parceiro *</Label>

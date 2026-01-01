@@ -133,8 +133,30 @@ export async function calculateCommission(operator, saleData, supabase) {
   const customerType = saleData.customer_type || saleData.client_type || 'particular';
   const scope = saleData.scope;
 
-  const customerConfig = commissionConfig[customerType];
-  if (!customerConfig) return 0.0;
+  let partnerType = 'D2D';
+  if (saleData.isAdminSale && saleData.isCommissioned) {
+    partnerType = 'Rev';
+  } else if (saleData.partner_id) {
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('partner_type')
+      .eq('id', saleData.partner_id)
+      .maybeSingle();
+
+    partnerType = partner?.partner_type || 'D2D';
+  }
+
+  const partnerConfig = commissionConfig[partnerType];
+  if (!partnerConfig) {
+    console.warn(`No commission config found for partner type: ${partnerType}`);
+    return 0.0;
+  }
+
+  const customerConfig = partnerConfig[customerType];
+  if (!customerConfig) {
+    console.warn(`No commission config found for customer type: ${customerType} in partner type: ${partnerType}`);
+    return 0.0;
+  }
 
   let serviceConfig;
   let energySaleType;
@@ -154,21 +176,23 @@ export async function calculateCommission(operator, saleData, supabase) {
 
   let partnerSalesAtOperator = 0;
 
-  if (scope === 'energia' && energySaleType) {
+  const searchPartnerId = saleData.partner_id;
+
+  if (scope === 'energia' && energySaleType && searchPartnerId) {
     const { count: energyCount } = await supabase
       .from('sales')
       .select('*', { count: 'exact', head: true })
-      .eq('partner_id', saleData.partner_id)
+      .eq('partner_id', searchPartnerId)
       .eq('operator_id', operator.id)
       .eq('scope', 'energia')
       .or(`energy_sale_type.eq.${energySaleType},energy_sale_type.eq.dual`);
 
     partnerSalesAtOperator = energyCount || 0;
-  } else {
+  } else if (searchPartnerId) {
     const { count } = await supabase
       .from('sales')
       .select('*', { count: 'exact', head: true })
-      .eq('partner_id', saleData.partner_id)
+      .eq('partner_id', searchPartnerId)
       .eq('operator_id', operator.id);
 
     partnerSalesAtOperator = count || 0;

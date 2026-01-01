@@ -37,6 +37,7 @@ export const usersService = {
         role: userData.role,
         position: userData.position,
         partner_id: userData.partner_id || null,
+        is_commissioned: userData.is_commissioned || false,
       }),
     });
 
@@ -71,6 +72,7 @@ export const usersService = {
         role: userData.role,
         position: userData.position,
         partner_id: userData.partner_id || null,
+        is_commissioned: userData.is_commissioned || false,
       }),
     });
 

@@ -14,6 +14,7 @@ interface CreateUserRequest {
   role: string;
   position: string;
   partner_id?: string;
+  is_commissioned?: boolean;
 }
 
 Deno.serve(async (req: Request) => {
@@ -130,6 +131,7 @@ Deno.serve(async (req: Request) => {
         position: requestData.position,
         partner_id: requestData.partner_id || null,
         must_change_password: true,
+        is_commissioned: requestData.is_commissioned || false,
       })
       .select()
       .maybeSingle();

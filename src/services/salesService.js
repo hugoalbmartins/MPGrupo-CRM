@@ -109,16 +109,25 @@ export const salesService = {
       }
     }
 
-    const saleCode = await generateSaleCode(saleData.partner_id, saleData.date, supabase);
-
     const { data: { user } } = await supabase.auth.getUser();
     const { data: currentUser } = await supabase
       .from('users')
-      .select('role')
+      .select('role, is_commissioned, name')
       .eq('id', user.id)
       .maybeSingle();
 
     if (!currentUser) throw new Error('User not found');
+
+    const isAdminSale = saleData.partner_id === '__admin__';
+    if (isAdminSale && currentUser.role !== 'admin') {
+      throw new Error('Only admins can create own sales');
+    }
+    if (isAdminSale && !currentUser.is_commissioned) {
+      throw new Error('Only commissioned admins can create own sales');
+    }
+
+    const actualPartnerId = isAdminSale ? null : saleData.partner_id;
+    const saleCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
 
     const status = ['partner', 'partner_commercial'].includes(currentUser.role)
       ? 'Para registo'
@@ -134,20 +143,28 @@ export const salesService = {
 
     const commission = await calculateCommission(operator, {
       ...saleData,
-      partner_id: saleData.partner_id
+      partner_id: actualPartnerId,
+      isAdminSale,
+      isCommissioned: currentUser.is_commissioned
     }, supabase);
 
-    const { data: partner } = await supabase
-      .from('partners')
-      .select('name')
-      .eq('id', saleData.partner_id)
-      .maybeSingle();
+    let partnerName = 'Unknown';
+    if (isAdminSale) {
+      partnerName = currentUser.name + ' (Admin)';
+    } else if (actualPartnerId) {
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('name')
+        .eq('id', actualPartnerId)
+        .maybeSingle();
+      partnerName = partner?.name || 'Unknown';
+    }
 
     const insertData = {
       sale_code: saleCode,
       date: saleData.date,
-      partner_id: saleData.partner_id,
-      partner_name: partner?.name || 'Unknown',
+      partner_id: actualPartnerId,
+      partner_name: partnerName,
       created_by_user_id: user.id,
       scope: saleData.scope,
       client_type: saleData.client_type,
@@ -183,7 +200,7 @@ export const salesService = {
     if (!data) throw new Error('Sale created but not returned from database');
 
     await this.createAlert('new_sale', data.id, data.sale_code,
-      `Nova venda registada: ${data.sale_code} - ${partner?.name || 'Unknown'}`);
+      `Nova venda registada: ${data.sale_code} - ${partnerName}`);
 
     return data;
   },
