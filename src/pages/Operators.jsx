@@ -229,7 +229,7 @@ const Operators = ({ user }) => {
                     <div>
                       <Label>Tipos de Ativação Permitidos *</Label>
                       <div className="mt-2 space-y-2">
-                        {['NI', 'MC', 'REFID'].map(type => (
+                        {['NI', 'MC', 'REFID', 'M2', 'M3', 'M4'].map(type => (
                           <div key={type} className="flex items-center gap-2">
                             <input
                               type="checkbox"
@@ -242,7 +242,7 @@ const Operators = ({ user }) => {
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Selecione pelo menos um tipo</p>
+                      <p className="text-xs text-gray-500 mt-1">Selecione pelo menos um tipo de serviço</p>
                     </div>
                   </>
                 )}
