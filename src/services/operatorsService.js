@@ -149,7 +149,8 @@ export const operatorsService = {
       partner_type: config.partner_type || 'D2D',
       client_type: config.client_type,
       service_type: config.service_type,
-      commission_mode: config.commission_mode,
+      service_types: config.service_types || [config.service_type],
+      commission_mode: config.commission_mode || 'fixed_value',
       commission_value: config.commission_value || 0,
       min_sales: config.min_sales || 0,
       has_retention: config.has_retention || false,
@@ -157,6 +158,11 @@ export const operatorsService = {
       retention_months: config.retention_months || 0,
       direct_debit_value: config.direct_debit_value || 0,
       electronic_invoice_value: config.electronic_invoice_value || 0,
+      tier_mode: config.tier_mode || 'by_quantity',
+      monthly_value_min: config.monthly_value_min || 0,
+      monthly_value_max: config.monthly_value_max || 0,
+      refid_operation_type: config.refid_operation_type || 'both',
+      activation_type: config.activation_type || null,
       created_by: user?.id,
       updated_by: user?.id
     }));
