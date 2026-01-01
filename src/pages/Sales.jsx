@@ -121,6 +121,36 @@ const Sales = ({ user }) => {
       return;
     }
 
+    if (formData.scope === 'energia') {
+      const selectedOperator = operators.find(op => op.id === formData.operator_id);
+      const energyType = selectedOperator?.energy_type;
+      const saleType = energyType === 'dual' ? formData.energy_sale_type : energyType;
+
+      if (energyType === 'dual' && !formData.energy_sale_type) {
+        toast.error("Selecione o tipo de adesão (Eletricidade, Gás ou Ambos)!");
+        return;
+      }
+
+      if (saleType === 'eletricidade' || saleType === 'dual') {
+        if (!formData.cpe || !formData.power) {
+          toast.error("CPE e Potência são obrigatórios para venda de eletricidade!");
+          return;
+        }
+      }
+
+      if (saleType === 'gas' || saleType === 'dual') {
+        if (!formData.cui || !formData.tier) {
+          toast.error("CUI e Escalão são obrigatórios para venda de gás!");
+          return;
+        }
+      }
+
+      if (!formData.entry_type) {
+        toast.error("Tipo de Entrada é obrigatório!");
+        return;
+      }
+    }
+
     try {
       const submitData = { ...formData };
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
@@ -494,10 +524,20 @@ const Sales = ({ user }) => {
                   <Label>Operadora *</Label>
                   <Select value={formData.operator_id} onValueChange={(v) => {
                     const operator = operators.find(op => op.id === v);
+                    let newEnergyType = '';
+
+                    if (formData.scope === 'energia') {
+                      if (operator?.energy_type === 'dual') {
+                        newEnergyType = '';
+                      } else if (operator?.energy_type === 'eletricidade' || operator?.energy_type === 'gas') {
+                        newEnergyType = operator.energy_type;
+                      }
+                    }
+
                     setFormData({
                       ...formData,
                       operator_id: v,
-                      energy_sale_type: operator?.energy_type === 'dual' ? '' : (operator?.energy_type || ''),
+                      energy_sale_type: newEnergyType,
                       cpe: '',
                       power: '',
                       cui: '',
@@ -521,16 +561,19 @@ const Sales = ({ user }) => {
                 </div>
 
                 {formData.scope === 'energia' && operatorEnergyType === 'dual' && (
-                  <div>
-                    <Label>Tipo de Venda *</Label>
+                  <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <Label className="text-base font-semibold mb-2">O que o cliente pretende contratar? *</Label>
                     <Select value={formData.energy_sale_type} onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: ''})}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione o tipo de adesão..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="eletricidade">⚡ Apenas Eletricidade</SelectItem>
                         <SelectItem value="gas">🔥 Apenas Gás</SelectItem>
-                        <SelectItem value="dual">⚡🔥 Dual (Ambos)</SelectItem>
+                        <SelectItem value="dual">⚡🔥 Eletricidade + Gás (Dual)</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-gray-600 mt-2">
+                      Selecione se o cliente está a aderir apenas a eletricidade, apenas a gás, ou a ambos os serviços.
+                    </p>
                   </div>
                 )}
 
@@ -716,18 +759,25 @@ const Sales = ({ user }) => {
                           {/* Eletricidade - CPE + Potência */}
                           {showElectricity && (
                             <>
-                              <div>
-                                <Label>CPE * (PT0002...)</Label>
-                                <Input value={formData.cpe} onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})} placeholder="PT0002XXXXXXXXXXXX" required />
-                              </div>
-                              <div>
-                                <Label>Potência *</Label>
-                                <Select value={formData.power} onValueChange={(v) => setFormData({...formData, power: v})}>
-                                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                  <SelectContent>
-                                    {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
+                              <div className="col-span-2 bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+                                <h4 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
+                                  ⚡ Dados de Eletricidade
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>CPE * (PT0002...)</Label>
+                                    <Input value={formData.cpe} onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})} placeholder="PT0002XXXXXXXXXXXX" required />
+                                  </div>
+                                  <div>
+                                    <Label>Potência *</Label>
+                                    <Select value={formData.power} onValueChange={(v) => setFormData({...formData, power: v})}>
+                                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                      <SelectContent>
+                                        {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
                               </div>
                             </>
                           )}
@@ -735,18 +785,25 @@ const Sales = ({ user }) => {
                           {/* Gás - CUI + Escalão */}
                           {showGas && (
                             <>
-                              <div>
-                                <Label>CUI * (PT16...)</Label>
-                                <Input value={formData.cui} onChange={(e) => setFormData({...formData, cui: e.target.value.toUpperCase()})} placeholder="PT16XXXXXXXXXXXXXXXXX" required />
-                              </div>
-                              <div>
-                                <Label>Escalão *</Label>
-                                <Select value={formData.tier} onValueChange={(v) => setFormData({...formData, tier: v})}>
-                                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                  <SelectContent>
-                                    {["1", "2", "3", "4"].map(t => <SelectItem key={t} value={t}>Escalão {t}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
+                              <div className="col-span-2 bg-orange-50 border border-orange-300 rounded-lg p-4">
+                                <h4 className="font-semibold text-orange-900 mb-3 flex items-center gap-2">
+                                  🔥 Dados de Gás Natural
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>CUI * (PT16...)</Label>
+                                    <Input value={formData.cui} onChange={(e) => setFormData({...formData, cui: e.target.value.toUpperCase()})} placeholder="PT16XXXXXXXXXXXXXXXXX" required />
+                                  </div>
+                                  <div>
+                                    <Label>Escalão *</Label>
+                                    <Select value={formData.tier} onValueChange={(v) => setFormData({...formData, tier: v})}>
+                                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                      <SelectContent>
+                                        {["1", "2", "3", "4"].map(t => <SelectItem key={t} value={t}>Escalão {t}</SelectItem>)}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
                               </div>
                             </>
                           )}
