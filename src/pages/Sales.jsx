@@ -594,9 +594,22 @@ const Sales = ({ user }) => {
                   <>
                     <div>
                       <Label>Tipo Serviço *</Label>
-                      <Select value={formData.service_type} onValueChange={(v) => setFormData({...formData, service_type: v})}>
+                      <Select value={formData.service_type} onValueChange={(v) => {
+                        const newFormData = {...formData, service_type: v};
+                        if (v === 'REFID' || v === 'Refid') {
+                          newFormData.monthly_value = '';
+                        } else {
+                          newFormData.current_monthly_fee = '';
+                          newFormData.contracted_monthly_fee = '';
+                        }
+                        setFormData(newFormData);
+                      }}>
                         <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="NI">NI (Nova Instalação)</SelectItem>
+                          <SelectItem value="MC">MC (Mudança de Casa)</SelectItem>
+                          <SelectItem value="REFID">REFID (Refidelização)</SelectItem>
+                          <SelectItem value="M2">M2</SelectItem>
                           <SelectItem value="M3">M3</SelectItem>
                           <SelectItem value="M4">M4</SelectItem>
                         </SelectContent>
@@ -615,10 +628,61 @@ const Sales = ({ user }) => {
                         </Select>
                       </div>
                     )}
-                    <div>
-                      <Label>Mensalidade (€) *</Label>
-                      <Input type="number" step="0.01" value={formData.monthly_value} onChange={(e) => setFormData({...formData, monthly_value: e.target.value})} required />
-                    </div>
+
+                    {(formData.service_type === 'REFID' || formData.service_type === 'Refid') ? (
+                      <div className="col-span-2 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                          Dados REFID - Downsell/Upsell
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Mensalidade Atual (€) *</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={formData.current_monthly_fee}
+                              onChange={(e) => setFormData({...formData, current_monthly_fee: e.target.value})}
+                              required
+                              placeholder="Ex: 45.00"
+                            />
+                            <p className="text-xs text-amber-700 mt-1">Valor que o cliente paga atualmente</p>
+                          </div>
+                          <div>
+                            <Label>Mensalidade Contratada (€) *</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={formData.contracted_monthly_fee}
+                              onChange={(e) => setFormData({...formData, contracted_monthly_fee: e.target.value})}
+                              required
+                              placeholder="Ex: 35.00"
+                            />
+                            <p className="text-xs text-amber-700 mt-1">Novo valor contratado</p>
+                          </div>
+                        </div>
+                        {formData.current_monthly_fee && formData.contracted_monthly_fee && (
+                          <div className="mt-3 p-3 bg-white rounded border">
+                            <p className="text-sm font-semibold">
+                              {parseFloat(formData.current_monthly_fee) > parseFloat(formData.contracted_monthly_fee) ? (
+                                <span className="text-orange-600">Downsell: Cliente reduz mensalidade de €{formData.current_monthly_fee} para €{formData.contracted_monthly_fee}</span>
+                              ) : parseFloat(formData.current_monthly_fee) < parseFloat(formData.contracted_monthly_fee) ? (
+                                <span className="text-green-600">Upsell: Cliente aumenta mensalidade de €{formData.current_monthly_fee} para €{formData.contracted_monthly_fee}</span>
+                              ) : (
+                                <span className="text-gray-600">Mensalidades iguais</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              A comissão será calculada com base na mensalidade contratada (€{formData.contracted_monthly_fee})
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <Label>Mensalidade (€) *</Label>
+                        <Input type="number" step="0.01" value={formData.monthly_value} onChange={(e) => setFormData({...formData, monthly_value: e.target.value})} required />
+                      </div>
+                    )}
                   </>
                 )}
                 
