@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet, CheckSquare } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
 
@@ -46,12 +46,14 @@ const Layout = ({ children, user, onLogout }) => {
   if (user?.role === "admin") {
     menuItems.push(
       { path: "/operators", label: "Operadoras", icon: Building2, roles: ["admin"] },
+      { path: "/operator-validations", label: "Validação de Ativações", icon: CheckSquare, roles: ["admin"] },
       { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"] },
       { path: "/commission-reports", label: "Autos de Comissões", icon: FileSpreadsheet, roles: ["admin"] }
     );
   } else if (user?.role === "bo") {
     menuItems.push(
-      { path: "/operators", label: "Operadoras", icon: Building2, roles: ["bo"] }
+      { path: "/operators", label: "Operadoras", icon: Building2, roles: ["bo"] },
+      { path: "/operator-validations", label: "Validação de Ativações", icon: CheckSquare, roles: ["bo"] }
     );
   } else if (user?.role === "partner") {
     menuItems.push(
