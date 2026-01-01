@@ -23,6 +23,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([]);
   const [activePartnerTab, setActivePartnerTab] = useState('D2D');
   const [refidOperationType, setRefidOperationType] = useState('both');
+  const [activationType, setActivationType] = useState('M2');
 
   useEffect(() => {
     loadConfigs();
@@ -111,13 +112,14 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     });
   };
 
-  const addConfig = (serviceTypes, clientType, partnerType, refidOpType) => {
+  const addConfig = (serviceTypes, clientType, partnerType, refidOpType, actType) => {
     if (serviceTypes.length === 0) {
       toast.error('Selecione pelo menos um tipo de serviço');
       return;
     }
 
     const hasRefid = serviceTypes.includes('REFID');
+    const hasNIorMC = serviceTypes.includes('NI') || serviceTypes.includes('MC');
 
     const newConfig = {
       partner_type: partnerType,
@@ -135,12 +137,14 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       tier_mode: currentConfig.tier_mode,
       monthly_value_min: 0,
       monthly_value_max: 0,
-      refid_operation_type: hasRefid ? refidOpType : null
+      refid_operation_type: hasRefid ? refidOpType : null,
+      activation_type: hasNIorMC ? actType : null
     };
 
     setConfigs([...configs, newConfig]);
     setSelectedServiceTypes([]);
     setRefidOperationType('both');
+    setActivationType('M2');
   };
 
   const updateConfig = (index, field, value) => {
@@ -495,10 +499,31 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                           </div>
                         )}
 
+                        {(selectedServiceTypes.includes('NI') || selectedServiceTypes.includes('MC')) && (
+                          <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <Label className="text-sm font-semibold text-blue-900 mb-2 block">
+                              Tipo de Ativação
+                            </Label>
+                            <Select value={activationType} onValueChange={setActivationType}>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="M2">M2</SelectItem>
+                                <SelectItem value="M3">M3</SelectItem>
+                                <SelectItem value="M4">M4</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-blue-700 mt-1">
+                              Selecione o tipo de ativação para este tipo de serviço
+                            </p>
+                          </div>
+                        )}
+
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => addConfig(selectedServiceTypes, clientType, partnerType, refidOperationType)}
+                          onClick={() => addConfig(selectedServiceTypes, clientType, partnerType, refidOperationType, activationType)}
                           disabled={selectedServiceTypes.length === 0}
                           className="w-full"
                         >
@@ -523,6 +548,11 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                                         {config.refid_operation_type === 'both' && '⚡ Upsell e Downsell'}
                                         {config.refid_operation_type === 'upsell' && '📈 Apenas Upsell'}
                                         {config.refid_operation_type === 'downsell' && '📉 Apenas Downsell'}
+                                      </p>
+                                    )}
+                                    {config.activation_type && (
+                                      <p className="text-xs text-blue-700 mt-1">
+                                        Ativação: {config.activation_type}
                                       </p>
                                     )}
                                   </div>
