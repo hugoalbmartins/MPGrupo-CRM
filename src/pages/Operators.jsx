@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Settings, Upload, Trash2, Download } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { operatorsService } from "../services/operatorsService";
-import CommissionConfig from "../components/CommissionConfig";
 
 const Operators = ({ user }) => {
   const [operators, setOperators] = useState([]);
   const [hiddenOperators, setHiddenOperators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [hiddenDialogOpen, setHiddenDialogOpen] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState(null);
@@ -103,27 +101,6 @@ const Operators = ({ user }) => {
         : [...prev.activation_types, type];
       return { ...prev, activation_types: newTypes };
     });
-  };
-
-  const openCommissionConfig = async (operator) => {
-    try {
-      const freshOperatorData = await operatorsService.getById(operator.id);
-      setSelectedOperator(freshOperatorData);
-      setConfigDialogOpen(true);
-    } catch (error) {
-      toast.error("Erro ao carregar dados da operadora");
-    }
-  };
-
-  const handleSaveCommission = async () => {
-    try {
-      toast.success("Configuração de comissões guardada!");
-      setConfigDialogOpen(false);
-      setSelectedOperator(null);
-      fetchOperators();
-    } catch (error) {
-      toast.error("Erro ao guardar configuração");
-    }
   };
 
   const openUploadDialog = (operator) => {
@@ -342,14 +319,9 @@ const Operators = ({ user }) => {
                   </div>
                   <div className="flex gap-2">
                     {user?.role === 'admin' && (
-                      <>
-                        <Button onClick={() => openCommissionConfig(op)} size="sm" variant="ghost" title="Configurar Comissões">
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                        <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-500 hover:text-red-700">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
+                      <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-500 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     )}
                     {(user?.role === 'admin' || user?.role === 'bo') && (
                       <>
@@ -368,27 +340,6 @@ const Operators = ({ user }) => {
           </div>
         ))}
       </div>
-
-      {/* Commission Configuration Dialog */}
-      <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">
-              Configurar Comissões - {selectedOperator?.name}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedOperator && (
-            <CommissionConfig
-              operator={selectedOperator}
-              onSave={handleSaveCommission}
-              onCancel={() => {
-                setConfigDialogOpen(false);
-                setSelectedOperator(null);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Upload Documents Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
