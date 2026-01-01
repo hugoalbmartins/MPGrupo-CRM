@@ -144,28 +144,34 @@ export const operatorsService = {
       return [];
     }
 
-    const configsToInsert = configs.map(config => ({
-      operator_id: operatorId,
-      partner_type: config.partner_type || 'D2D',
-      client_type: config.client_type,
-      service_type: config.service_type,
-      service_types: config.service_types || [config.service_type],
-      commission_mode: config.commission_mode || 'fixed_value',
-      commission_value: config.commission_value || 0,
-      min_sales: config.min_sales || 0,
-      has_retention: config.has_retention || false,
-      retention_percentage: config.retention_percentage || 0,
-      retention_months: config.retention_months || 0,
-      direct_debit_value: config.direct_debit_value || 0,
-      electronic_invoice_value: config.electronic_invoice_value || 0,
-      tier_mode: config.tier_mode || 'by_quantity',
-      monthly_value_min: config.monthly_value_min || 0,
-      monthly_value_max: config.monthly_value_max || 0,
-      refid_operation_type: config.refid_operation_type || 'both',
-      activation_type: config.activation_type || null,
-      created_by: user?.id,
-      updated_by: user?.id
-    }));
+    const configsToInsert = configs.map(config => {
+      const serviceTypes = config.service_types || [config.service_type];
+      const hasRefid = serviceTypes.includes('REFID');
+      const hasNIorMC = serviceTypes.includes('NI') || serviceTypes.includes('MC');
+
+      return {
+        operator_id: operatorId,
+        partner_type: config.partner_type || 'D2D',
+        client_type: config.client_type,
+        service_type: config.service_type,
+        service_types: serviceTypes,
+        commission_mode: config.commission_mode || 'fixed_value',
+        commission_value: config.commission_value || 0,
+        min_sales: config.min_sales || 0,
+        has_retention: config.has_retention || false,
+        retention_percentage: config.retention_percentage || 0,
+        retention_months: config.retention_months || 0,
+        direct_debit_value: config.direct_debit_value || 0,
+        electronic_invoice_value: config.electronic_invoice_value || 0,
+        tier_mode: config.tier_mode || 'by_quantity',
+        monthly_value_min: config.monthly_value_min || 0,
+        monthly_value_max: config.monthly_value_max || 0,
+        refid_operation_type: hasRefid ? (config.refid_operation_type || 'both') : null,
+        activation_type: hasNIorMC ? (config.activation_type || null) : null,
+        created_by: user?.id,
+        updated_by: user?.id
+      };
+    });
 
     const { data, error } = await supabase
       .from('commission_configurations')
