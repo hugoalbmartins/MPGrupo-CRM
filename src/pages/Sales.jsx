@@ -52,7 +52,10 @@ const Sales = ({ user }) => {
   const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [pendingSubmit, setPendingSubmit] = useState(false);
-  
+  const [operatorCommissions, setOperatorCommissions] = useState([]);
+  const [availableServiceTypes, setAvailableServiceTypes] = useState([]);
+  const [availableActivationTypes, setAvailableActivationTypes] = useState([]);
+
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     partner_id: "",
@@ -110,6 +113,26 @@ const Sales = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (operatorCommissions.length === 0) {
+      toast.error("Não é possível criar venda: operadora sem comissões configuradas!");
+      return;
+    }
+
+    if (formData.scope === 'telecomunicacoes') {
+      if (availableServiceTypes.length === 0) {
+        toast.error("Operadora não tem tipos de serviço com comissões configuradas!");
+        return;
+      }
+      if (!availableServiceTypes.includes(formData.service_type)) {
+        toast.error("Tipo de serviço selecionado não tem comissão configurada!");
+        return;
+      }
+      if (availableActivationTypes.length > 0 && !formData.activation_type) {
+        toast.error("Selecione o tipo de ativação!");
+        return;
+      }
+    }
+
     if (!formData.street || !formData.postal_code || !formData.locality) {
       toast.error("Morada, código postal e localidade são obrigatórios!");
       return;
@@ -128,6 +151,28 @@ const Sales = ({ user }) => {
 
       if (energyType === 'dual' && !formData.energy_sale_type) {
         toast.error("Selecione o tipo de adesão (Eletricidade, Gás ou Ambos)!");
+        return;
+      }
+
+      const hasEletricidadeCommission = operatorCommissions.some(c =>
+        c.service_type === 'eletricidade' || (c.service_types && c.service_types.includes('eletricidade'))
+      );
+      const hasGasCommission = operatorCommissions.some(c =>
+        c.service_type === 'gas' || (c.service_types && c.service_types.includes('gas'))
+      );
+
+      if (saleType === 'eletricidade' && !hasEletricidadeCommission) {
+        toast.error("Não há comissões configuradas para vendas de eletricidade nesta operadora!");
+        return;
+      }
+
+      if (saleType === 'gas' && !hasGasCommission) {
+        toast.error("Não há comissões configuradas para vendas de gás nesta operadora!");
+        return;
+      }
+
+      if (saleType === 'dual' && (!hasEletricidadeCommission || !hasGasCommission)) {
+        toast.error("Não há comissões configuradas para vendas dual (eletricidade + gás) nesta operadora!");
         return;
       }
 
@@ -228,6 +273,47 @@ const Sales = ({ user }) => {
       observations: ""
     });
     setUploadFiles([]);
+    setOperatorCommissions([]);
+    setAvailableServiceTypes([]);
+    setAvailableActivationTypes([]);
+  };
+
+  const fetchOperatorCommissions = async (operatorId) => {
+    try {
+      const { data, error } = await supabase
+        .from('commission_configurations')
+        .select('*')
+        .eq('operator_id', operatorId);
+
+      if (error) throw error;
+
+      setOperatorCommissions(data || []);
+
+      if (data && data.length > 0) {
+        const serviceTypesSet = new Set();
+        const activationTypesSet = new Set();
+
+        data.forEach(config => {
+          if (config.service_type) {
+            serviceTypesSet.add(config.service_type);
+          }
+          if (config.activation_type) {
+            activationTypesSet.add(config.activation_type);
+          }
+        });
+
+        setAvailableServiceTypes(Array.from(serviceTypesSet));
+        setAvailableActivationTypes(Array.from(activationTypesSet));
+      } else {
+        setAvailableServiceTypes([]);
+        setAvailableActivationTypes([]);
+      }
+    } catch (error) {
+      console.error('Error fetching commissions:', error);
+      setOperatorCommissions([]);
+      setAvailableServiceTypes([]);
+      setAvailableActivationTypes([]);
+    }
   };
 
   const filteredOperators = operators.filter(op => op.scope === formData.scope);
@@ -538,11 +624,15 @@ const Sales = ({ user }) => {
                       ...formData,
                       operator_id: v,
                       energy_sale_type: newEnergyType,
+                      service_type: '',
+                      activation_type: '',
                       cpe: '',
                       power: '',
                       cui: '',
                       tier: ''
                     });
+
+                    fetchOperatorCommissions(v);
                   }}>
                     <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>
@@ -560,21 +650,69 @@ const Sales = ({ user }) => {
                   </Select>
                 </div>
 
-                {formData.scope === 'energia' && operatorEnergyType === 'dual' && (
-                  <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <Label className="text-base font-semibold mb-2">O que o cliente pretende contratar? *</Label>
-                    <Select value={formData.energy_sale_type} onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: ''})}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o tipo de adesão..." /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="eletricidade">⚡ Apenas Eletricidade</SelectItem>
-                        <SelectItem value="gas">🔥 Apenas Gás</SelectItem>
-                        <SelectItem value="dual">⚡🔥 Eletricidade + Gás (Dual)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Selecione se o cliente está a aderir apenas a eletricidade, apenas a gás, ou a ambos os serviços.
-                    </p>
-                  </div>
+                {formData.scope === 'energia' && formData.operator_id && operatorEnergyType === 'dual' && (
+                  <>
+                    {operatorCommissions.length === 0 ? (
+                      <div className="col-span-2 bg-red-50 border border-red-300 rounded-lg p-4">
+                        <p className="text-red-800 font-semibold">⚠️ Operadora sem comissões configuradas</p>
+                        <p className="text-sm text-red-600 mt-1">
+                          Não é possível registar vendas para esta operadora porque não tem comissões configuradas.
+                          Contacte o administrador para configurar as comissões.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <Label className="text-base font-semibold mb-2">O que o cliente pretende contratar? *</Label>
+                          <Select value={formData.energy_sale_type} onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: ''})}>
+                            <SelectTrigger><SelectValue placeholder="Selecione o tipo de adesão..." /></SelectTrigger>
+                            <SelectContent>
+                              {(() => {
+                                const hasEletricidade = operatorCommissions.some(c =>
+                                  c.service_type === 'eletricidade' || (c.service_types && c.service_types.includes('eletricidade'))
+                                );
+                                const hasGas = operatorCommissions.some(c =>
+                                  c.service_type === 'gas' || (c.service_types && c.service_types.includes('gas'))
+                                );
+                                return (
+                                  <>
+                                    {hasEletricidade && (
+                                      <SelectItem value="eletricidade">⚡ Apenas Eletricidade</SelectItem>
+                                    )}
+                                    {hasGas && (
+                                      <SelectItem value="gas">🔥 Apenas Gás</SelectItem>
+                                    )}
+                                    {hasEletricidade && hasGas && (
+                                      <SelectItem value="dual">⚡🔥 Eletricidade + Gás (Dual)</SelectItem>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-gray-600 mt-2">
+                            Selecione se o cliente está a aderir apenas a eletricidade, apenas a gás, ou a ambos os serviços.
+                          </p>
+                          {(() => {
+                            const hasEletricidade = operatorCommissions.some(c =>
+                              c.service_type === 'eletricidade' || (c.service_types && c.service_types.includes('eletricidade'))
+                            );
+                            const hasGas = operatorCommissions.some(c =>
+                              c.service_type === 'gas' || (c.service_types && c.service_types.includes('gas'))
+                            );
+                            if (!hasEletricidade || !hasGas) {
+                              return (
+                                <p className="text-xs text-amber-700 mt-2 font-semibold">
+                                  ⚠️ {!hasEletricidade && 'Eletricidade'}{!hasEletricidade && !hasGas && ' e '}{!hasGas && 'Gás'} sem comissões configuradas
+                                </p>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      </>
+                    )}
+                  </>
                 )}
 
                 <div>
@@ -633,40 +771,60 @@ const Sales = ({ user }) => {
                   <p className="text-xs text-gray-500 mt-1">Se diferente da morada do cliente</p>
                 </div>
 
-                {formData.scope === 'telecomunicacoes' && (
+                {formData.scope === 'telecomunicacoes' && formData.operator_id && (
                   <>
-                    <div>
-                      <Label>Tipo Serviço *</Label>
-                      <Select value={formData.service_type} onValueChange={(v) => {
-                        const newFormData = {...formData, service_type: v};
-                        if (v === 'REFID' || v === 'Refid') {
-                          newFormData.monthly_value = '';
-                        } else {
-                          newFormData.current_monthly_fee = '';
-                          newFormData.contracted_monthly_fee = '';
-                        }
-                        setFormData(newFormData);
-                      }}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="NI">NI (Nova Instalação)</SelectItem>
-                          <SelectItem value="MC">MC (Mudança de Casa)</SelectItem>
-                          <SelectItem value="REFID">REFID (Refidelização)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {currentOperator?.activation_types && currentOperator.activation_types.length > 0 && (
-                      <div>
-                        <Label>Tipo de Ativação *</Label>
-                        <Select value={formData.activation_type} onValueChange={(v) => setFormData({...formData, activation_type: v})}>
-                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                          <SelectContent>
-                            {currentOperator.activation_types.map(type => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    {operatorCommissions.length === 0 ? (
+                      <div className="col-span-2 bg-red-50 border border-red-300 rounded-lg p-4">
+                        <p className="text-red-800 font-semibold">⚠️ Operadora sem comissões configuradas</p>
+                        <p className="text-sm text-red-600 mt-1">
+                          Não é possível registar vendas para esta operadora porque não tem comissões configuradas.
+                          Contacte o administrador para configurar as comissões.
+                        </p>
                       </div>
+                    ) : (
+                      <>
+                        <div>
+                          <Label>Tipo Serviço *</Label>
+                          <Select value={formData.service_type} onValueChange={(v) => {
+                            const newFormData = {...formData, service_type: v};
+                            if (v === 'REFID' || v === 'Refid') {
+                              newFormData.monthly_value = '';
+                            } else {
+                              newFormData.current_monthly_fee = '';
+                              newFormData.contracted_monthly_fee = '';
+                            }
+                            setFormData(newFormData);
+                          }} disabled={availableServiceTypes.length === 0}>
+                            <SelectTrigger><SelectValue placeholder={availableServiceTypes.length === 0 ? "Sem tipos disponíveis" : "Selecione..."} /></SelectTrigger>
+                            <SelectContent>
+                              {availableServiceTypes.map(type => (
+                                <SelectItem key={type} value={type}>
+                                  {type === 'NI' ? 'NI (Nova Instalação)' :
+                                   type === 'MC' ? 'MC (Mudança de Casa)' :
+                                   type === 'REFID' ? 'REFID (Refidelização)' :
+                                   type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {availableServiceTypes.length === 0 && (
+                            <p className="text-xs text-red-600 mt-1">Nenhum tipo de serviço com comissão configurada</p>
+                          )}
+                        </div>
+                        {availableActivationTypes.length > 0 && (
+                          <div>
+                            <Label>Tipo de Ativação *</Label>
+                            <Select value={formData.activation_type} onValueChange={(v) => setFormData({...formData, activation_type: v})}>
+                              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                              <SelectContent>
+                                {availableActivationTypes.map(type => (
+                                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {(formData.service_type === 'REFID' || formData.service_type === 'Refid') ? (
@@ -887,7 +1045,13 @@ const Sales = ({ user }) => {
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
-                <Button type="submit" className="btn-primary">Criar Venda</Button>
+                <Button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={formData.operator_id && operatorCommissions.length === 0}
+                >
+                  Criar Venda
+                </Button>
               </div>
             </form>
           </DialogContent>
