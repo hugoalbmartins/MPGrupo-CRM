@@ -13,12 +13,10 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [step, setStep] = useState(1);
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentConfig, setCurrentConfig] = useState({
-    commission_mode: 'fixed_value',
+  const [retentionConfig, setRetentionConfig] = useState({
     has_retention: false,
     retention_percentage: 0,
-    retention_months: 0,
-    tier_mode: 'by_quantity'
+    retention_months: 0
   });
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([]);
   const [activePartnerTab, setActivePartnerTab] = useState('D2D');
@@ -40,12 +38,10 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       setConfigs(data);
 
       if (data.length > 0) {
-        setCurrentConfig({
-          commission_mode: data[0].commission_mode,
+        setRetentionConfig({
           has_retention: data[0].has_retention || false,
           retention_percentage: data[0].retention_percentage || 0,
-          retention_months: data[0].retention_months || 0,
-          tier_mode: data[0].tier_mode || 'by_quantity'
+          retention_months: data[0].retention_months || 0
         });
       }
     } catch (error) {
@@ -74,22 +70,6 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const getPartnerTypes = () => {
     return ['D2D', 'Rev', 'Rev+'];
-  };
-
-  const handleNext = () => {
-    if (step === 1 && currentConfig.commission_mode === 'per_contract') {
-      setStep(3);
-    } else {
-      setStep(step + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (step === 3 && currentConfig.commission_mode === 'per_contract') {
-      setStep(1);
-    } else {
-      setStep(step - 1);
-    }
   };
 
   const handleSaveAll = async () => {
@@ -126,15 +106,15 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       client_type: clientType,
       service_type: serviceTypes[0],
       service_types: serviceTypes,
-      commission_mode: currentConfig.commission_mode,
+      commission_mode: 'fixed_value',
       commission_value: 0,
       min_sales: 0,
-      has_retention: currentConfig.has_retention,
-      retention_percentage: currentConfig.retention_percentage,
-      retention_months: currentConfig.retention_months,
+      has_retention: retentionConfig.has_retention,
+      retention_percentage: retentionConfig.retention_percentage,
+      retention_months: retentionConfig.retention_months,
       direct_debit_value: 0,
       electronic_invoice_value: 0,
-      tier_mode: currentConfig.tier_mode,
+      tier_mode: 'by_quantity',
       monthly_value_min: 0,
       monthly_value_max: 0,
       refid_operation_type: hasRefid ? refidOpType : null,
@@ -149,7 +129,11 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const updateConfig = (index, field, value) => {
     const newConfigs = [...configs];
-    newConfigs[index][field] = parseFloat(value) || 0;
+    if (field === 'commission_mode' || field === 'tier_mode' || field === 'refid_operation_type' || field === 'activation_type') {
+      newConfigs[index][field] = value;
+    } else {
+      newConfigs[index][field] = parseFloat(value) || 0;
+    }
     setConfigs(newConfigs);
   };
 
@@ -182,7 +166,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          {[1, 2, 3].map(s => (
+          {[1, 2].map(s => (
             <div
               key={s}
               className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
@@ -194,166 +178,14 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
           ))}
         </div>
         <div className="text-sm text-gray-600">
-          Passo {step} de 3
+          Passo {step} de 2
         </div>
       </div>
 
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">Passo 1: Modo de Cálculo de Comissões</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-2">
-                <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div className="text-sm text-blue-900">
-                  <p className="font-semibold mb-1">Como funciona?</p>
-                  <p>Escolha como as comissões serão calculadas para esta operadora.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div
-                className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                  currentConfig.commission_mode === 'fixed_value'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
-                }`}
-                onClick={() => setCurrentConfig({ ...currentConfig, commission_mode: 'fixed_value' })}
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="radio"
-                    checked={currentConfig.commission_mode === 'fixed_value'}
-                    onChange={() => setCurrentConfig({ ...currentConfig, commission_mode: 'fixed_value' })}
-                    className="mt-1"
-                  />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Valor Fixo</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Comissão definida em euros para cada venda. Ideal para energia e solar.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {isTelecom && (
-                <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    currentConfig.commission_mode === 'monthly_multiplier'
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300'
-                  }`}
-                  onClick={() => setCurrentConfig({ ...currentConfig, commission_mode: 'monthly_multiplier' })}
-                >
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="radio"
-                      checked={currentConfig.commission_mode === 'monthly_multiplier'}
-                      onChange={() => setCurrentConfig({ ...currentConfig, commission_mode: 'monthly_multiplier' })}
-                      className="mt-1"
-                    />
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Múltiplo da Mensalidade</h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Comissão calculada multiplicando o valor da mensalidade. Apenas para telecomunicações.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div
-                className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                  currentConfig.commission_mode === 'per_contract'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
-                }`}
-                onClick={() => setCurrentConfig({ ...currentConfig, commission_mode: 'per_contract' })}
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="radio"
-                    checked={currentConfig.commission_mode === 'per_contract'}
-                    onChange={() => setCurrentConfig({ ...currentConfig, commission_mode: 'per_contract' })}
-                    className="mt-1"
-                  />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Definida por Contrato</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Administradores definem o valor da comissão manualmente na edição de cada venda.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {(currentConfig.commission_mode === 'fixed_value' || currentConfig.commission_mode === 'monthly_multiplier') && (
-              <div className="border-t pt-4 mt-6">
-                <Label className="text-base font-semibold mb-3 block">Modo de Patamar</Label>
-                <div className="space-y-3">
-                  <div
-                    className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
-                      currentConfig.tier_mode === 'by_quantity'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                    onClick={() => setCurrentConfig({ ...currentConfig, tier_mode: 'by_quantity' })}
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="radio"
-                        checked={currentConfig.tier_mode === 'by_quantity'}
-                        onChange={() => setCurrentConfig({ ...currentConfig, tier_mode: 'by_quantity' })}
-                        className="mt-1"
-                      />
-                      <div>
-                        <h4 className="font-semibold text-gray-900">Por Quantidade de Vendas</h4>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Comissão baseada no número de vendas realizadas
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isTelecom && (
-                    <div
-                      className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
-                        currentConfig.tier_mode === 'by_monthly_value'
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300'
-                      }`}
-                      onClick={() => setCurrentConfig({ ...currentConfig, tier_mode: 'by_monthly_value' })}
-                    >
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="radio"
-                          checked={currentConfig.tier_mode === 'by_monthly_value'}
-                          onChange={() => setCurrentConfig({ ...currentConfig, tier_mode: 'by_monthly_value' })}
-                          className="mt-1"
-                        />
-                        <div>
-                          <h4 className="font-semibold text-gray-900">Por Valor de Mensalidade</h4>
-                          <p className="text-xs text-gray-600 mt-1">
-                            Comissão baseada no intervalo do valor mensal do serviço
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {step === 2 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Passo 2: Configuração de Retenção</CardTitle>
+            <CardTitle className="text-xl">Passo 1: Configuração de Retenção (Opcional)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -361,7 +193,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                 <Info className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div className="text-sm text-blue-900">
                   <p className="font-semibold mb-1">O que é retenção?</p>
-                  <p>Parte da comissão pode ser retida temporariamente e paga ao parceiro após um período definido.</p>
+                  <p>Parte da comissão pode ser retida temporariamente e paga ao parceiro após um período definido. Esta configuração aplica-se a todas as comissões desta operadora.</p>
                 </div>
               </div>
             </div>
@@ -371,8 +203,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                 <input
                   type="checkbox"
                   id="has_retention"
-                  checked={currentConfig.has_retention}
-                  onChange={(e) => setCurrentConfig({ ...currentConfig, has_retention: e.target.checked })}
+                  checked={retentionConfig.has_retention}
+                  onChange={(e) => setRetentionConfig({ ...retentionConfig, has_retention: e.target.checked })}
                   className="w-5 h-5"
                 />
                 <Label htmlFor="has_retention" className="text-base font-semibold cursor-pointer">
@@ -380,7 +212,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                 </Label>
               </div>
 
-              {currentConfig.has_retention && (
+              {retentionConfig.has_retention && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-8">
                   <div>
                     <Label>Percentagem de Retenção (%)</Label>
@@ -389,8 +221,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                       min="0"
                       max="100"
                       step="0.1"
-                      value={currentConfig.retention_percentage}
-                      onChange={(e) => setCurrentConfig({ ...currentConfig, retention_percentage: parseFloat(e.target.value) || 0 })}
+                      value={retentionConfig.retention_percentage}
+                      onChange={(e) => setRetentionConfig({ ...retentionConfig, retention_percentage: parseFloat(e.target.value) || 0 })}
                       placeholder="Ex: 10"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -403,8 +235,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                       type="number"
                       min="0"
                       step="1"
-                      value={currentConfig.retention_months}
-                      onChange={(e) => setCurrentConfig({ ...currentConfig, retention_months: parseInt(e.target.value) || 0 })}
+                      value={retentionConfig.retention_months}
+                      onChange={(e) => setRetentionConfig({ ...retentionConfig, retention_months: parseInt(e.target.value) || 0 })}
                       placeholder="Ex: 3"
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -418,10 +250,10 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         </Card>
       )}
 
-      {step === 3 && currentConfig.commission_mode !== 'per_contract' && (
+      {step === 2 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">Passo 3: Valores de Comissão e Patamares</CardTitle>
+            <CardTitle className="text-xl">Passo 2: Valores de Comissão e Patamares</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -430,10 +262,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                 <div className="text-sm text-blue-900">
                   <p className="font-semibold mb-1">Configure por tipo de parceiro</p>
                   <p>
-                    Selecione o tipo de parceiro e configure os valores de comissão para cada tipo de serviço e cliente.
-                    {currentConfig.tier_mode === 'by_monthly_value'
-                      ? ' Defina intervalos de mensalidade para cada patamar.'
-                      : ' Defina o número mínimo de vendas para cada patamar.'}
+                    Cada configuração pode ter o seu próprio modo de cálculo e patamar. Selecione os tipos de serviço e defina como as comissões serão calculadas para cada combinação.
                   </p>
                 </div>
               </div>
@@ -527,7 +356,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                           disabled={selectedServiceTypes.length === 0}
                           className="w-full"
                         >
-                          + Adicionar Patamar para {selectedServiceTypes.length > 0 ? selectedServiceTypes.join(' + ') : '(selecione tipos)'}
+                          + Adicionar Configuração para {selectedServiceTypes.length > 0 ? selectedServiceTypes.join(' + ') : '(selecione tipos)'}
                         </Button>
                       </div>
 
@@ -545,9 +374,9 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                                     </h4>
                                     {config.refid_operation_type && (
                                       <p className="text-xs text-amber-700 mt-1">
-                                        {config.refid_operation_type === 'both' && '⚡ Upsell e Downsell'}
-                                        {config.refid_operation_type === 'upsell' && '📈 Apenas Upsell'}
-                                        {config.refid_operation_type === 'downsell' && '📉 Apenas Downsell'}
+                                        {config.refid_operation_type === 'both' && 'Upsell e Downsell'}
+                                        {config.refid_operation_type === 'upsell' && 'Apenas Upsell'}
+                                        {config.refid_operation_type === 'downsell' && 'Apenas Downsell'}
                                       </p>
                                     )}
                                     {config.activation_type && (
@@ -567,71 +396,120 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                                   </Button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>
-                                      {currentConfig.commission_mode === 'monthly_multiplier'
-                                        ? 'Multiplicador'
-                                        : 'Valor da Comissão (€)'}
-                                    </Label>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={config.commission_value || 0}
-                                      onChange={(e) => updateConfig(index, 'commission_value', e.target.value)}
-                                      placeholder={currentConfig.commission_mode === 'monthly_multiplier' ? 'Ex: 1.5' : 'Ex: 50.00'}
-                                    />
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Modo de Comissão</Label>
+                                      <Select
+                                        value={config.commission_mode || 'fixed_value'}
+                                        onValueChange={(v) => updateConfig(index, 'commission_mode', v)}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="fixed_value">Valor Fixo</SelectItem>
+                                          {isTelecom && <SelectItem value="monthly_multiplier">Múltiplo Mensalidade</SelectItem>}
+                                          <SelectItem value="per_contract">Por Contrato</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    {config.commission_mode !== 'per_contract' && (
+                                      <div>
+                                        <Label>Modo de Patamar</Label>
+                                        <Select
+                                          value={config.tier_mode || 'by_quantity'}
+                                          onValueChange={(v) => updateConfig(index, 'tier_mode', v)}
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="by_quantity">Por Quantidade</SelectItem>
+                                            {isTelecom && <SelectItem value="by_monthly_value">Por Valor Mensal</SelectItem>}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
                                   </div>
 
-                                  {currentConfig.tier_mode === 'by_quantity' && (
-                                    <div>
-                                      <Label>Mínimo de Vendas</Label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="1"
-                                        value={config.min_sales || 0}
-                                        onChange={(e) => updateConfig(index, 'min_sales', e.target.value)}
-                                        placeholder="Ex: 0, 50, 100"
-                                      />
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        A partir de quantas vendas este valor aplica
-                                      </p>
+                                  {config.commission_mode !== 'per_contract' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <Label>
+                                          {config.commission_mode === 'monthly_multiplier'
+                                            ? 'Multiplicador'
+                                            : 'Valor da Comissão (€)'}
+                                        </Label>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={config.commission_value || 0}
+                                          onChange={(e) => updateConfig(index, 'commission_value', e.target.value)}
+                                          placeholder={config.commission_mode === 'monthly_multiplier' ? 'Ex: 1.5' : 'Ex: 50.00'}
+                                        />
+                                      </div>
+
+                                      {config.tier_mode === 'by_quantity' && (
+                                        <div>
+                                          <Label>Mínimo de Vendas</Label>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            value={config.min_sales || 0}
+                                            onChange={(e) => updateConfig(index, 'min_sales', e.target.value)}
+                                            placeholder="Ex: 0, 50, 100"
+                                          />
+                                          <p className="text-xs text-gray-500 mt-1">
+                                            A partir de quantas vendas este valor aplica
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {config.tier_mode === 'by_monthly_value' && (
+                                        <>
+                                          <div>
+                                            <Label>Mensalidade Mínima (€)</Label>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              min="0"
+                                              value={config.monthly_value_min || 0}
+                                              onChange={(e) => updateConfig(index, 'monthly_value_min', e.target.value)}
+                                              placeholder="Ex: 0.00"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">
+                                              Valor mínimo de mensalidade
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <Label>Mensalidade Máxima (€)</Label>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              min="0"
+                                              value={config.monthly_value_max || 0}
+                                              onChange={(e) => updateConfig(index, 'monthly_value_max', e.target.value)}
+                                              placeholder="Ex: 50.00"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">
+                                              Valor máximo de mensalidade (0 = sem limite)
+                                            </p>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
                                   )}
 
-                                  {currentConfig.tier_mode === 'by_monthly_value' && (
-                                    <>
-                                      <div>
-                                        <Label>Mensalidade Mínima (€)</Label>
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          min="0"
-                                          value={config.monthly_value_min || 0}
-                                          onChange={(e) => updateConfig(index, 'monthly_value_min', e.target.value)}
-                                          placeholder="Ex: 0.00"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          Valor mínimo de mensalidade
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <Label>Mensalidade Máxima (€)</Label>
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          min="0"
-                                          value={config.monthly_value_max || 0}
-                                          onChange={(e) => updateConfig(index, 'monthly_value_max', e.target.value)}
-                                          placeholder="Ex: 50.00"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          Valor máximo de mensalidade (0 = sem limite)
-                                        </p>
-                                      </div>
-                                    </>
+                                  {config.commission_mode === 'per_contract' && (
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                      <p className="text-sm text-yellow-800">
+                                        <strong>Por Contrato:</strong> O valor será definido manualmente em cada venda pelos administradores.
+                                      </p>
+                                    </div>
                                   )}
                                 </div>
                               </CardContent>
@@ -647,31 +525,10 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         </Card>
       )}
 
-      {step === 3 && currentConfig.commission_mode === 'per_contract' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Passo 3: Confirmação</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-              <h3 className="font-semibold text-yellow-900 mb-2 text-lg">
-                Comissão Definida por Contrato
-              </h3>
-              <p className="text-yellow-800 mb-4">
-                Para esta operadora, os administradores definirão o valor da comissão manualmente na edição de cada venda.
-              </p>
-              <p className="text-sm text-yellow-700">
-                Não é necessário configurar valores de comissão neste momento.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="flex justify-between items-center pt-4 border-t">
         <div className="flex gap-3">
           {step > 1 && (
-            <Button type="button" variant="outline" onClick={handleBack}>
+            <Button type="button" variant="outline" onClick={() => setStep(step - 1)}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar
             </Button>
@@ -682,8 +539,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         </div>
 
         <div>
-          {step < 3 ? (
-            <Button type="button" onClick={handleNext} className="btn-primary">
+          {step < 2 ? (
+            <Button type="button" onClick={() => setStep(step + 1)} className="btn-primary">
               Próximo
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
