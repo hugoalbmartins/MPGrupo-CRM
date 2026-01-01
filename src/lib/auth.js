@@ -5,15 +5,17 @@ export const authService = {
 
   async clearInvalidSession() {
     try {
+      if (!supabase) return;
       await supabase.auth.signOut();
       localStorage.clear();
-      window.location.reload();
     } catch (error) {
       console.error('Error clearing session:', error);
     }
   },
 
   async signIn(email, password) {
+    if (!supabase) throw new Error('Supabase not initialized');
+
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -37,6 +39,8 @@ export const authService = {
   },
 
   async signUp(email, password, userMetadata) {
+    if (!supabase) throw new Error('Supabase not initialized');
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -50,21 +54,19 @@ export const authService = {
   },
 
   async signOut() {
+    if (!supabase) return;
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   },
 
   async getCurrentUser() {
     try {
+      if (!supabase) return null;
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError) {
         console.error('Session error:', sessionError);
-        if (sessionError.message?.includes('session_not_found')) {
-          await this.clearInvalidSession();
-          return null;
-        }
-        throw sessionError;
+        return null;
       }
 
       if (!session) return null;
@@ -76,24 +78,20 @@ export const authService = {
         .maybeSingle();
 
       if (error) {
-        if (error.message?.includes('session_not_found') || error.code === 'PGRST301') {
-          await this.clearInvalidSession();
-          return null;
-        }
-        throw error;
+        console.error('User data error:', error);
+        return null;
       }
 
       return userData;
     } catch (error) {
-      if (error.message?.includes('session_not_found')) {
-        await this.clearInvalidSession();
-        return null;
-      }
-      throw error;
+      console.error('Get current user error:', error);
+      return null;
     }
   },
 
   async updatePassword(newPassword) {
+    if (!supabase) throw new Error('Supabase not initialized');
+
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
@@ -102,6 +100,8 @@ export const authService = {
   },
 
   async updateUserProfile(userId, updates) {
+    if (!supabase) throw new Error('Supabase not initialized');
+
     const { data, error } = await supabase
       .from('users')
       .update(updates)
@@ -115,6 +115,9 @@ export const authService = {
   },
 
   onAuthStateChange(callback) {
+    if (!supabase) {
+      return { data: { subscription: { unsubscribe: () => {} } } };
+    }
     return supabase.auth.onAuthStateChange((event, session) => {
       callback(event, session);
     });

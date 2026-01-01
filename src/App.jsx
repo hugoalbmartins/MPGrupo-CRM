@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { authService } from "./lib/auth";
 import { supabase } from "./lib/supabase";
+import { AlertCircle } from "lucide-react";
 import Login from "./pages/Login.jsx";
 import ChangePassword from "./pages/ChangePassword.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -25,6 +26,34 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+
+  if (!supabase) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full mx-auto p-6">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Erro de Configuração
+            </h1>
+            <p className="text-gray-600 mb-4">
+              As variáveis de ambiente do Supabase não estão configuradas corretamente.
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4 text-left text-sm">
+              <p className="font-semibold text-gray-700 mb-2">Variáveis necessárias:</p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>VITE_SUPABASE_URL</li>
+                <li>VITE_SUPABASE_ANON_KEY</li>
+              </ul>
+            </div>
+            <p className="text-gray-500 text-sm mt-4">
+              Verifique o console do navegador para mais detalhes.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     checkUser();
@@ -49,9 +78,14 @@ function App() {
       if (userData) {
         setUser(userData);
         setMustChangePassword(userData.must_change_password);
+      } else {
+        setUser(null);
+        setMustChangePassword(false);
       }
     } catch (error) {
       console.error("Failed to fetch user", error);
+      setUser(null);
+      setMustChangePassword(false);
     } finally {
       setLoading(false);
     }
