@@ -113,7 +113,19 @@ const Sales = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    console.log('🚀 Submit initiated');
+    console.log('📊 Current state:', {
+      operator_id: formData.operator_id,
+      scope: formData.scope,
+      service_type: formData.service_type,
+      activation_type: formData.activation_type,
+      operatorCommissions: operatorCommissions.length,
+      availableServiceTypes: availableServiceTypes,
+      availableActivationTypes: availableActivationTypes
+    });
+
     if (operatorCommissions.length === 0) {
+      console.error('❌ No commissions found - blocking submit');
       toast.error("Não é possível criar venda: operadora sem comissões configuradas!");
       return;
     }
@@ -280,12 +292,18 @@ const Sales = ({ user }) => {
 
   const fetchOperatorCommissions = async (operatorId) => {
     try {
+      console.log('🔍 Fetching commissions for operator:', operatorId);
       const { data, error } = await supabase
         .from('commission_configurations')
         .select('*')
         .eq('operator_id', operatorId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching commissions:', error);
+        throw error;
+      }
+
+      console.log('✅ Commissions fetched:', data?.length || 0, 'records', data);
 
       setOperatorCommissions(data || []);
 
@@ -302,14 +320,21 @@ const Sales = ({ user }) => {
           }
         });
 
-        setAvailableServiceTypes(Array.from(serviceTypesSet));
-        setAvailableActivationTypes(Array.from(activationTypesSet));
+        const serviceTypes = Array.from(serviceTypesSet);
+        const activationTypes = Array.from(activationTypesSet);
+
+        console.log('📋 Available service types:', serviceTypes);
+        console.log('🎯 Available activation types:', activationTypes);
+
+        setAvailableServiceTypes(serviceTypes);
+        setAvailableActivationTypes(activationTypes);
       } else {
+        console.log('⚠️ No commissions found for this operator');
         setAvailableServiceTypes([]);
         setAvailableActivationTypes([]);
       }
     } catch (error) {
-      console.error('Error fetching commissions:', error);
+      console.error('❌ Error fetching commissions:', error);
       setOperatorCommissions([]);
       setAvailableServiceTypes([]);
       setAvailableActivationTypes([]);
@@ -609,6 +634,7 @@ const Sales = ({ user }) => {
                 <div className={formData.scope === 'energia' ? '' : 'col-span-2'}>
                   <Label>Operadora *</Label>
                   <Select value={formData.operator_id} onValueChange={(v) => {
+                    console.log('🏢 Operator selected:', v);
                     const operator = operators.find(op => op.id === v);
                     let newEnergyType = '';
 
@@ -649,6 +675,14 @@ const Sales = ({ user }) => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {formData.operator_id && (
+                  <div className="col-span-2 bg-gray-50 border border-gray-200 rounded p-2 text-xs">
+                    <strong>🔍 Debug:</strong> Comissões encontradas: {operatorCommissions.length} |
+                    Tipos Serviço: [{availableServiceTypes.join(', ') || 'nenhum'}] |
+                    Tipos Ativação: [{availableActivationTypes.join(', ') || 'nenhum'}]
+                  </div>
+                )}
 
                 {formData.scope === 'energia' && formData.operator_id && operatorEnergyType === 'dual' && (
                   <>
