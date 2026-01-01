@@ -609,9 +609,6 @@ const Sales = ({ user }) => {
                           <SelectItem value="NI">NI (Nova Instalação)</SelectItem>
                           <SelectItem value="MC">MC (Mudança de Casa)</SelectItem>
                           <SelectItem value="REFID">REFID (Refidelização)</SelectItem>
-                          <SelectItem value="M2">M2</SelectItem>
-                          <SelectItem value="M3">M3</SelectItem>
-                          <SelectItem value="M4">M4</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

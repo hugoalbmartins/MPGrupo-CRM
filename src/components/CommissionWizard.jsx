@@ -22,6 +22,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   });
   const [selectedServiceTypes, setSelectedServiceTypes] = useState([]);
   const [activePartnerTab, setActivePartnerTab] = useState('D2D');
+  const [refidOperationType, setRefidOperationType] = useState('both');
 
   useEffect(() => {
     loadConfigs();
@@ -58,7 +59,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const getServiceTypes = () => {
     if (isTelecom) {
-      return operator?.activation_types || ['NI', 'MC', 'REFID'];
+      return ['NI', 'MC', 'REFID'];
     }
     if (isEnergy) {
       return operator?.allowed_energy_types || ['eletricidade', 'gas'];
@@ -110,11 +111,13 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     });
   };
 
-  const addConfig = (serviceTypes, clientType, partnerType) => {
+  const addConfig = (serviceTypes, clientType, partnerType, refidOpType) => {
     if (serviceTypes.length === 0) {
       toast.error('Selecione pelo menos um tipo de serviço');
       return;
     }
+
+    const hasRefid = serviceTypes.includes('REFID');
 
     const newConfig = {
       partner_type: partnerType,
@@ -131,11 +134,13 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       electronic_invoice_value: 0,
       tier_mode: currentConfig.tier_mode,
       monthly_value_min: 0,
-      monthly_value_max: 0
+      monthly_value_max: 0,
+      refid_operation_type: hasRefid ? refidOpType : null
     };
 
     setConfigs([...configs, newConfig]);
     setSelectedServiceTypes([]);
+    setRefidOperationType('both');
   };
 
   const updateConfig = (index, field, value) => {
@@ -466,10 +471,34 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                             </button>
                           ))}
                         </div>
+
+                        {selectedServiceTypes.includes('REFID') && (
+                          <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <Label className="text-sm font-semibold text-amber-900 mb-2 block">
+                              Tipo de Operação REFID
+                            </Label>
+                            <Select value={refidOperationType} onValueChange={setRefidOperationType}>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="both">Ambos (Upsell e Downsell)</SelectItem>
+                                <SelectItem value="upsell">Apenas Upsell (cliente aumenta mensalidade)</SelectItem>
+                                <SelectItem value="downsell">Apenas Downsell (cliente reduz mensalidade)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-amber-700 mt-1">
+                              {refidOperationType === 'both' && 'Esta comissão aplica-se tanto a upsell como downsell'}
+                              {refidOperationType === 'upsell' && 'Esta comissão aplica-se apenas quando cliente aumenta a mensalidade'}
+                              {refidOperationType === 'downsell' && 'Esta comissão aplica-se apenas quando cliente reduz a mensalidade'}
+                            </p>
+                          </div>
+                        )}
+
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => addConfig(selectedServiceTypes, clientType, partnerType)}
+                          onClick={() => addConfig(selectedServiceTypes, clientType, partnerType, refidOperationType)}
                           disabled={selectedServiceTypes.length === 0}
                           className="w-full"
                         >
@@ -485,9 +514,18 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                             <Card key={index} className="border-2">
                               <CardContent className="pt-6">
                                 <div className="flex justify-between items-center mb-4">
-                                  <h4 className="font-semibold text-gray-900">
-                                    {getServiceTypeLabel(config.service_types || [config.service_type])}
-                                  </h4>
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900">
+                                      {getServiceTypeLabel(config.service_types || [config.service_type])}
+                                    </h4>
+                                    {config.refid_operation_type && (
+                                      <p className="text-xs text-amber-700 mt-1">
+                                        {config.refid_operation_type === 'both' && '⚡ Upsell e Downsell'}
+                                        {config.refid_operation_type === 'upsell' && '📈 Apenas Upsell'}
+                                        {config.refid_operation_type === 'downsell' && '📉 Apenas Downsell'}
+                                      </p>
+                                    )}
+                                  </div>
                                   <Button
                                     type="button"
                                     variant="ghost"
