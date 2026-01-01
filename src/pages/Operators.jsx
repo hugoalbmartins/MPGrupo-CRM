@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Upload, Trash2, Download } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { operatorsService } from "../services/operatorsService";
+import CommissionWizard from "../components/CommissionWizard";
 
 const Operators = ({ user }) => {
   const [operators, setOperators] = useState([]);
@@ -15,6 +16,7 @@ const Operators = ({ user }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [hiddenDialogOpen, setHiddenDialogOpen] = useState(false);
+  const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState(null);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -23,6 +25,8 @@ const Operators = ({ user }) => {
     scope: "telecomunicacoes",
     energy_type: "",
     activation_types: [],
+    allowed_client_types: ['particular', 'empresarial'],
+    allowed_energy_types: ['eletricidade', 'gas'],
     commission_mode: "tier",
     pays_direct_debit: false,
     pays_electronic_invoice: false
@@ -88,6 +92,8 @@ const Operators = ({ user }) => {
       scope: "telecomunicacoes",
       energy_type: "",
       activation_types: [],
+      allowed_client_types: ['particular', 'empresarial'],
+      allowed_energy_types: ['eletricidade', 'gas'],
       commission_mode: "tier",
       pays_direct_debit: false,
       pays_electronic_invoice: false
@@ -101,6 +107,40 @@ const Operators = ({ user }) => {
         : [...prev.activation_types, type];
       return { ...prev, activation_types: newTypes };
     });
+  };
+
+  const toggleClientType = (type) => {
+    setFormData(prev => {
+      const newTypes = prev.allowed_client_types.includes(type)
+        ? prev.allowed_client_types.filter(t => t !== type)
+        : [...prev.allowed_client_types, type];
+      return { ...prev, allowed_client_types: newTypes };
+    });
+  };
+
+  const toggleEnergyType = (type) => {
+    setFormData(prev => {
+      const newTypes = prev.allowed_energy_types.includes(type)
+        ? prev.allowed_energy_types.filter(t => t !== type)
+        : [...prev.allowed_energy_types, type];
+      return { ...prev, allowed_energy_types: newTypes };
+    });
+  };
+
+  const openCommissionConfig = async (operator) => {
+    try {
+      const freshOperatorData = await operatorsService.getById(operator.id);
+      setSelectedOperator(freshOperatorData);
+      setCommissionDialogOpen(true);
+    } catch (error) {
+      toast.error("Erro ao carregar dados da operadora");
+    }
+  };
+
+  const handleCommissionSave = async () => {
+    setCommissionDialogOpen(false);
+    setSelectedOperator(null);
+    fetchOperators();
   };
 
   const openUploadDialog = (operator) => {
@@ -185,51 +225,64 @@ const Operators = ({ user }) => {
                   </Select>
                 </div>
                 {formData.scope === 'telecomunicacoes' && (
-                  <div>
-                    <Label>Tipos de Ativação *</Label>
-                    <div className="mt-2 space-y-2">
-                      {['NI', 'REFID Emp', 'MC'].map(type => (
-                        <div key={type} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id={`activation-${type}`}
-                            checked={formData.activation_types.includes(type)}
-                            onChange={() => toggleActivationType(type)}
-                            className="w-4 h-4"
-                          />
-                          <Label htmlFor={`activation-${type}`} className="cursor-pointer font-normal">{type}</Label>
-                        </div>
-                      ))}
+                  <>
+                    <div>
+                      <Label>Tipos de Ativação Permitidos *</Label>
+                      <div className="mt-2 space-y-2">
+                        {['NI', 'MC', 'REFID'].map(type => (
+                          <div key={type} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`activation-${type}`}
+                              checked={formData.activation_types.includes(type)}
+                              onChange={() => toggleActivationType(type)}
+                              className="w-4 h-4"
+                            />
+                            <Label htmlFor={`activation-${type}`} className="cursor-pointer font-normal">{type}</Label>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Selecione pelo menos um tipo</p>
                     </div>
-                  </div>
+                  </>
                 )}
+                <div>
+                  <Label>Tipos de Cliente Permitidos *</Label>
+                  <div className="mt-2 space-y-2">
+                    {['particular', 'empresarial'].map(type => (
+                      <div key={type} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`client-${type}`}
+                          checked={formData.allowed_client_types.includes(type)}
+                          onChange={() => toggleClientType(type)}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor={`client-${type}`} className="cursor-pointer font-normal capitalize">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Selecione pelo menos um tipo</p>
+                </div>
                 {formData.scope === 'energia' && (
                   <>
                     <div>
-                      <Label>Tipo de Energia *</Label>
-                      <Select value={formData.energy_type} onValueChange={(v) => setFormData({...formData, energy_type: v})}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="eletricidade">Apenas Eletricidade</SelectItem>
-                          <SelectItem value="gas">Apenas Gás</SelectItem>
-                          <SelectItem value="dual">Dual (Eletricidade + Gás)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Modo de Comissão *</Label>
-                      <Select value={formData.commission_mode} onValueChange={(v) => setFormData({...formData, commission_mode: v})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="tier">Por Patamares</SelectItem>
-                          <SelectItem value="manual">Definida ao Contrato</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {formData.commission_mode === 'tier'
-                          ? 'Comissões calculadas automaticamente por patamares'
-                          : 'Comissão definida manualmente na edição de cada venda'}
-                      </p>
+                      <Label>Tipos de Energia Permitidos *</Label>
+                      <div className="mt-2 space-y-2">
+                        {['eletricidade', 'gas'].map(type => (
+                          <div key={type} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`energy-${type}`}
+                              checked={formData.allowed_energy_types.includes(type)}
+                              onChange={() => toggleEnergyType(type)}
+                              className="w-4 h-4"
+                            />
+                            <Label htmlFor={`energy-${type}`} className="cursor-pointer font-normal capitalize">{type}</Label>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Selecione pelo menos um tipo. As comissões serão configuradas separadamente para cada tipo.</p>
                     </div>
                   </>
                 )}
@@ -319,9 +372,14 @@ const Operators = ({ user }) => {
                   </div>
                   <div className="flex gap-2">
                     {user?.role === 'admin' && (
-                      <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-500 hover:text-red-700">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <>
+                        <Button onClick={() => openCommissionConfig(op)} size="sm" variant="ghost" title="Configurar Comissões">
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                        <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-500 hover:text-red-700">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
                     )}
                     {(user?.role === 'admin' || user?.role === 'bo') && (
                       <>
@@ -464,6 +522,27 @@ const Operators = ({ user }) => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Commission Configuration Dialog */}
+      <Dialog open={commissionDialogOpen} onOpenChange={setCommissionDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              Configurar Comissões - {selectedOperator?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOperator && (
+            <CommissionWizard
+              operator={selectedOperator}
+              onSave={handleCommissionSave}
+              onCancel={() => {
+                setCommissionDialogOpen(false);
+                setSelectedOperator(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
