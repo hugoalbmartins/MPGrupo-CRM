@@ -26,7 +26,6 @@ const Operators = ({ user }) => {
     energy_type: "",
     activation_types: [],
     commission_mode: "tier",
-    commission_config: {},
     pays_direct_debit: false,
     pays_electronic_invoice: false
   });
@@ -92,7 +91,6 @@ const Operators = ({ user }) => {
       energy_type: "",
       activation_types: [],
       commission_mode: "tier",
-      commission_config: {},
       pays_direct_debit: false,
       pays_electronic_invoice: false
     });
@@ -117,14 +115,8 @@ const Operators = ({ user }) => {
     }
   };
 
-  const handleSaveCommission = async (commissionConfig) => {
+  const handleSaveCommission = async () => {
     try {
-      await operatorsService.update(selectedOperator.id, {
-        name: selectedOperator.name,
-        scope: selectedOperator.scope,
-        energy_type: selectedOperator.energy_type,
-        commission_config: commissionConfig
-      });
       toast.success("Configuração de comissões guardada!");
       setConfigDialogOpen(false);
       setSelectedOperator(null);

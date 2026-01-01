@@ -56,8 +56,7 @@ export const operatorsService = {
         pays_direct_debit: operatorData.pays_direct_debit || false,
         pays_electronic_invoice: operatorData.pays_electronic_invoice || false,
         active: true,
-        hidden: false,
-        commission_config: operatorData.commission_config || {}
+        hidden: false
       })
       .select()
       .single();
@@ -70,8 +69,7 @@ export const operatorsService = {
     const updateData = {
       name: operatorData.name,
       scope: operatorData.scope,
-      energy_type: operatorData.energy_type || null,
-      commission_config: operatorData.commission_config || {}
+      energy_type: operatorData.energy_type || null
     };
 
     if (operatorData.hasOwnProperty('pays_direct_debit')) {
@@ -117,6 +115,60 @@ export const operatorsService = {
       .from('operators')
       .delete()
       .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  async getCommissionConfigs(operatorId) {
+    const { data, error } = await supabase
+      .from('commission_configurations')
+      .select('*')
+      .eq('operator_id', operatorId)
+      .order('partner_type, client_type, service_type, min_sales');
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async saveCommissionConfigs(operatorId, configs) {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    await supabase
+      .from('commission_configurations')
+      .delete()
+      .eq('operator_id', operatorId);
+
+    const configsToInsert = configs.map(config => ({
+      operator_id: operatorId,
+      partner_type: config.partner_type,
+      client_type: config.client_type,
+      service_type: config.service_type,
+      commission_mode: config.commission_mode,
+      commission_value: config.commission_value,
+      min_sales: config.min_sales || 0,
+      has_retention: config.has_retention || false,
+      retention_percentage: config.retention_percentage || 0,
+      retention_months: config.retention_months || 0,
+      direct_debit_value: config.direct_debit_value || 0,
+      electronic_invoice_value: config.electronic_invoice_value || 0,
+      created_by: user?.id,
+      updated_by: user?.id
+    }));
+
+    const { data, error } = await supabase
+      .from('commission_configurations')
+      .insert(configsToInsert)
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteCommissionConfig(configId) {
+    const { error } = await supabase
+      .from('commission_configurations')
+      .delete()
+      .eq('id', configId);
 
     if (error) throw error;
   }
