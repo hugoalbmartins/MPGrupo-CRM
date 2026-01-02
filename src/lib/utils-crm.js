@@ -228,11 +228,11 @@ export async function calculateCommission(operator, saleData, supabase) {
   }
 
   let bonuses = 0;
-  if (saleData.has_direct_debit && applicableTier.has_direct_debit_bonus) {
-    bonuses += parseFloat(applicableTier.direct_debit_value || 0);
+  if (saleData.has_direct_debit) {
+    bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
   }
-  if (saleData.has_electronic_invoice && applicableTier.has_electronic_invoice_bonus) {
-    bonuses += parseFloat(applicableTier.electronic_invoice_value || 0);
+  if (saleData.has_electronic_invoice) {
+    bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
   }
 
   return baseCommission + bonuses;

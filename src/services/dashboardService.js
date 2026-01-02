@@ -274,9 +274,6 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
     sales.forEach(sale => {
       const scope = sale.scope || '';
       const commission = sale.manual_commission || sale.calculated_commission || 0;
-      const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
-      const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
-      const totalCommission = commission + ddValue + feValue;
       const status = sale.status || 'Pendente';
 
       if (scope === 'telecomunicacoes') {
@@ -296,29 +293,27 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
         stats.by_partner[sale.partner_id] = { count: 0, commission: 0 };
       }
       stats.by_partner[sale.partner_id].count++;
-      stats.by_partner[sale.partner_id].commission += totalCommission;
+      stats.by_partner[sale.partner_id].commission += commission;
 
       stats.by_operator[sale.operator_id] = (stats.by_operator[sale.operator_id] || 0) + 1;
-
-      stats.total_commission += totalCommission;
 
       if (sale.paid_to_operator) {
         stats.paid_by_operator++;
         if (status === 'Ativo') {
-          stats.commission_to_pay += totalCommission;
+          stats.commission_to_pay += commission;
         }
       } else {
         stats.unpaid_by_operator++;
       }
 
-      stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + totalCommission;
+      stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + commission;
 
       if (isCommissioned && sale.created_by_user_id === adminId && !sale.partner_id) {
         stats.admin_sales_count++;
         if (sale.paid_to_operator || sale.electricity_paid || sale.gas_paid) {
-          stats.admin_commission_paid += totalCommission;
+          stats.admin_commission_paid += commission;
         } else {
-          stats.admin_commission_pending += totalCommission;
+          stats.admin_commission_pending += commission;
         }
       }
     });
