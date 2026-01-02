@@ -1272,7 +1272,7 @@ const Sales = ({ user }) => {
                     </div>
                   </th>
                 )}
-                {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && <th className="text-center">Ações</th>}
+                <th className="text-center">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -1300,33 +1300,31 @@ const Sales = ({ user }) => {
                         })()}
                       </td>
                     )}
-                    {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
-                      <td className="text-center">
-                        <div className="flex gap-2 justify-center">
-                          {(user?.role === 'admin' || user?.role === 'bo') && (
-                            <Button
-                              onClick={() => {
-                                setSelectedSaleId(sale.id);
-                                setDetailDialogOpen(true);
-                              }}
-                              size="sm"
-                              variant="ghost"
-                              className="text-blue-600"
-                            >
-                              Editar
-                            </Button>
-                          )}
+                    <td className="text-center">
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          onClick={() => {
+                            setSelectedSaleId(sale.id);
+                            setDetailDialogOpen(true);
+                          }}
+                          size="sm"
+                          variant="ghost"
+                          className="text-blue-600"
+                        >
+                          {(user?.role === 'admin' || user?.role === 'bo') ? 'Editar' : 'Visualizar'}
+                        </Button>
+                        {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
                           <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600">
                             Notas ({sale.notes?.length || 0})
                           </Button>
-                          {user?.role === 'admin' && (
-                            <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    )}
+                        )}
+                        {user?.role === 'admin' && (
+                          <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

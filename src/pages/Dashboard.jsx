@@ -538,6 +538,145 @@ const Dashboard = ({ user }) => {
     </>
   );
 
+  const renderManagerLevel1Dashboard = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Total Vendas</p>
+              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats?.total_partners || 0} parceiros</p>
+            </div>
+            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
+              <p className="text-2xl font-bold color-purple">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Antes de retenções</p>
+            </div>
+            <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
+              <p className="text-2xl font-bold color-green">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Após retenções</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">A Pagar</p>
+              <p className="text-2xl font-bold color-orange">€{stats?.commission_to_pay?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats?.unpaid_by_operator || 0} vendas</p>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Pagas Operador</p>
+              <p className="text-2xl font-bold color-green">{stats?.paid_by_operator || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Retenções Mês Corrente</p>
+              <p className="text-2xl font-bold color-blue">€{stats?.current_month_retentions?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">A reter das comissões</p>
+            </div>
+            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Retenções a Devolver</p>
+              <p className="text-2xl font-bold color-green">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Próximo auto (6 meses)</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Telecomunicações</p>
+              <p className="text-2xl font-bold color-cyan">{stats?.telecomunicacoes?.count || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">€{stats?.telecomunicacoes?.monthly_total?.toFixed(2) || '0.00'}/mês</p>
+            </div>
+            <div className="w-12 h-12 bg-cyan rounded-full flex items-center justify-center">
+              <Phone className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Energia</p>
+              <p className="text-2xl font-bold color-orange">{stats?.energia?.count || 0}</p>
+              <div className="text-xs text-gray-500 mt-1">
+                {stats?.energia?.electricity || 0} eletricidade, {stats?.energia?.gas || 0} gás
+                <div className="text-xs text-gray-400 mt-0.5">(das quais {stats?.energia?.dual || 0} dual)</div>
+              </div>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Solar</p>
+              <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <Sun className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
   // Prepare 12 months chart data
   const prepare12MonthsData = () => {
     if (!stats?.last_12_months) return [];
@@ -590,6 +729,8 @@ const Dashboard = ({ user }) => {
       {user?.role === 'bo' && renderBODashboard()}
       {user?.role === 'partner' && renderPartnerDashboard()}
       {user?.role === 'partner_commercial' && renderCommercialDashboard()}
+      {user?.role === 'gestor_nv1' && renderManagerLevel1Dashboard()}
+      {user?.role === 'gestor_nv2' && renderManagerLevel1Dashboard()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {statusData.length > 0 && (

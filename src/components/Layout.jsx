@@ -59,10 +59,6 @@ const Layout = ({ children, user, onLogout }) => {
     menuItems.push(
       { path: "/my-reports", label: "Meus Autos", icon: FileSpreadsheet, roles: ["partner"] }
     );
-  } else if (user?.role === "gestor_nv1") {
-    menuItems.push(
-      { path: "/commission-reports", label: "Autos de Comissões", icon: FileSpreadsheet, roles: ["gestor_nv1"] }
-    );
   } else if (user?.role === "gestor_nv2") {
     menuItems.push(
       { path: "/commission-reports", label: "Autos de Comissões", icon: FileSpreadsheet, roles: ["gestor_nv2"] }
