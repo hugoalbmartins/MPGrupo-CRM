@@ -47,6 +47,79 @@ function getMonthRange(year, month) {
   };
 }
 
+async function calculateRetentions(year, month) {
+  const { start, end } = getMonthRange(year, month);
+
+  const { data: currentSales } = await supabase
+    .from('sales')
+    .select('*, operator_id')
+    .gte('date', start.split('T')[0])
+    .lt('date', end.split('T')[0]);
+
+  let currentMonthRetentions = 0;
+
+  if (currentSales) {
+    for (const sale of currentSales) {
+      const { data: commissionConfig } = await supabase
+        .from('commission_configurations')
+        .select('has_retention, retention_percentage')
+        .eq('operator_id', sale.operator_id)
+        .eq('service_type', sale.service_type || sale.energy_sale_type || 'eletricidade')
+        .maybeSingle();
+
+      if (commissionConfig?.has_retention) {
+        const commission = parseFloat(sale.calculated_commission || 0);
+        const retentionPct = parseFloat(commissionConfig.retention_percentage || 0);
+        currentMonthRetentions += (commission * retentionPct) / 100;
+      }
+    }
+  }
+
+  const returnDate = new Date(year, month + 5, 1);
+  const returnYear = returnDate.getFullYear();
+  const returnMonth = returnDate.getMonth() + 1;
+
+  const paymentDate = new Date(year, month - 1, 1);
+  const sixMonthsAgo = new Date(paymentDate);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  const returnStartDate = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth(), 1);
+  const returnEndDate = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth() + 1, 1);
+
+  const { data: returnSales } = await supabase
+    .from('sales')
+    .select('*, operator_id')
+    .gte('date', returnStartDate.toISOString().split('T')[0])
+    .lt('date', returnEndDate.toISOString().split('T')[0]);
+
+  let retentionsToReturn = 0;
+  let returnPeriod = `${sixMonthsAgo.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}`;
+
+  if (returnSales) {
+    for (const sale of returnSales) {
+      const { data: commissionConfig } = await supabase
+        .from('commission_configurations')
+        .select('has_retention, retention_percentage')
+        .eq('operator_id', sale.operator_id)
+        .eq('service_type', sale.service_type || sale.energy_sale_type || 'eletricidade')
+        .maybeSingle();
+
+      if (commissionConfig?.has_retention) {
+        const commission = parseFloat(sale.calculated_commission || 0);
+        const retentionPct = parseFloat(commissionConfig.retention_percentage || 0);
+        retentionsToReturn += (commission * retentionPct) / 100;
+      }
+    }
+  }
+
+  return {
+    current_month: currentMonthRetentions,
+    to_return: retentionsToReturn,
+    return_period: returnPeriod,
+    return_date: `01/${String(returnMonth).padStart(2, '0')}/${returnYear}`
+  };
+}
+
 async function getLast12MonthsData() {
   const now = new Date();
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
@@ -111,6 +184,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
 
   const last12Months = await getLast12MonthsData();
 
+  const retentions = await calculateRetentions(year, month);
+
   const stats = {
     total_sales: sales?.length || 0,
     total_partners: partnerCount || 0,
@@ -131,7 +206,9 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
     last_12_months: last12Months,
     admin_sales_count: 0,
     admin_commission_pending: 0,
-    admin_commission_paid: 0
+    admin_commission_paid: 0,
+    current_month_retentions: retentions.current_month,
+    retentions_to_return: retentions.to_return
   };
 
   if (sales) {
@@ -254,6 +331,7 @@ async function getPartnerDashboard(partnerId, year, month) {
     .lt('date', end.split('T')[0]);
 
   const last12Months = await getLast12MonthsData();
+  const retentions = await calculateRetentions(year, month);
 
   const stats = {
     total_sales: sales?.length || 0,
@@ -269,7 +347,9 @@ async function getPartnerDashboard(partnerId, year, month) {
     commission_by_type: {},
     selected_month: month,
     selected_year: year,
-    last_12_months: last12Months
+    last_12_months: last12Months,
+    current_month_retentions: retentions.current_month,
+    retentions_to_return: retentions.to_return
   };
 
   if (sales) {

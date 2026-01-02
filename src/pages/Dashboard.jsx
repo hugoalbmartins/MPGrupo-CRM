@@ -189,6 +189,32 @@ const Dashboard = ({ user }) => {
             </div>
           </div>
         </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Retenções Mês Corrente</p>
+              <p className="text-2xl font-bold color-blue">€{stats?.current_month_retentions?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">A reter das comissões</p>
+            </div>
+            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Retenções a Devolver</p>
+              <p className="text-2xl font-bold color-green">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Próximo auto (6 meses)</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -288,6 +314,32 @@ const Dashboard = ({ user }) => {
             <div>
               <p className="text-sm text-gray-600 mb-1">Pagas</p>
               <p className="text-2xl font-bold color-green">€{stats?.commission_paid?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Retenções Mês Corrente</p>
+              <p className="text-2xl font-bold color-blue">€{stats?.current_month_retentions?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">A reter das comissões</p>
+            </div>
+            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Retenções a Devolver</p>
+              <p className="text-2xl font-bold color-green">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Próximo auto (6 meses)</p>
             </div>
             <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
               <CheckCircle className="w-6 h-6 text-white" />
