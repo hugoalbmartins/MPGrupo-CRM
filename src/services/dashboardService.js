@@ -433,8 +433,6 @@ async function getPartnerDashboard(partnerId, year, month) {
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
 
-      stats.total_commission += commission;
-
       if (sale.paid_to_operator) {
         stats.commission_paid += commission;
       } else {

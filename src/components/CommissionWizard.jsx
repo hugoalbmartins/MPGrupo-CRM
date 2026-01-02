@@ -459,6 +459,40 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                                     </div>
                                   )}
                                 </div>
+
+                                <div className="border-t pt-4 mt-4">
+                                  <h5 className="text-sm font-semibold mb-3">Bonus de Adesao</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <Label className="text-sm">Debito Direto (EUR)</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={config.direct_debit_bonus || 0}
+                                        onChange={(e) => updateConfig(index, 'direct_debit_bonus', e.target.value)}
+                                        placeholder="Ex: 5.00"
+                                      />
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Bonus pago pela adesao a debito direto
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-sm">Fatura Eletronica (EUR)</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={config.electronic_invoice_bonus || 0}
+                                        onChange={(e) => updateConfig(index, 'electronic_invoice_bonus', e.target.value)}
+                                        placeholder="Ex: 3.00"
+                                      />
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Bonus pago pela adesao a fatura eletronica
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </CardContent>
                           </Card>
