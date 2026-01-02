@@ -97,15 +97,26 @@ export async function generatePartnerCode(partnerType, supabase) {
 }
 
 export async function generateSaleCode(partnerId, saleDate, supabase) {
-  const { data: partner } = await supabase
-    .from('partners')
-    .select('name')
-    .eq('id', partnerId)
-    .maybeSingle();
+  let namePrefix = 'ADM';
+  let queryBuilder = supabase
+    .from('sales')
+    .select('*', { count: 'exact', head: true });
 
-  if (!partner) return 'XXX00010125';
+  if (partnerId) {
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('name')
+      .eq('id', partnerId)
+      .maybeSingle();
 
-  const namePrefix = partner.name.substring(0, 3).toUpperCase();
+    if (partner) {
+      namePrefix = partner.name.substring(0, 3).toUpperCase();
+    }
+    queryBuilder = queryBuilder.eq('partner_id', partnerId);
+  } else {
+    queryBuilder = queryBuilder.is('partner_id', null);
+  }
+
   const date = new Date(saleDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear()).slice(-2);
@@ -113,10 +124,7 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
   const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1).toISOString();
 
-  const { count } = await supabase
-    .from('sales')
-    .select('*', { count: 'exact', head: true })
-    .eq('partner_id', partnerId)
+  const { count } = await queryBuilder
     .gte('date', startOfMonth)
     .lt('date', endOfMonth);
 
@@ -135,7 +143,11 @@ export async function calculateCommission(operator, saleData, supabase) {
 
   let partnerType = 'D2D';
   if (saleData.isAdminSale && saleData.isCommissioned) {
-    partnerType = 'Rev';
+    partnerType = 'Rev_Proprio';
+    if (!commissionConfig[partnerType]) {
+      const availableTypes = Object.keys(commissionConfig);
+      partnerType = availableTypes.find(t => t.includes('Rev')) || availableTypes[0] || 'D2D';
+    }
   } else if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from('partners')

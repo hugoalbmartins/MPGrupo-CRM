@@ -114,6 +114,11 @@ const Sales = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.partner_id) {
+      toast.error("Selecione um parceiro!");
+      return;
+    }
+
     if (operatorCommissions.length === 0) {
       toast.error("Não é possível criar venda: operadora sem comissões configuradas!");
       return;

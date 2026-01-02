@@ -126,7 +126,7 @@ export const salesService = {
       throw new Error('Only commissioned admins can create own sales');
     }
 
-    const actualPartnerId = isAdminSale ? null : saleData.partner_id;
+    const actualPartnerId = isAdminSale ? null : (saleData.partner_id || null);
     const saleCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
 
     const status = ['partner', 'partner_commercial'].includes(currentUser.role)
