@@ -20,6 +20,9 @@ const CommissionReportsPartner = ({ user }) => {
   useEffect(() => {
     if (user?.partner_id) {
       fetchReports();
+    } else {
+      setLoading(false);
+      setReports([]);
     }
   }, [user, selectedYear]);
 
@@ -71,6 +74,30 @@ const CommissionReportsPartner = ({ user }) => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="spinner"></div>
+      </div>
+    );
+  }
+
+  if (!user?.partner_id) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Autos de Comissão</h1>
+          <p className="text-gray-600 mt-2">Consulte e faça download dos seus autos de comissão emitidos</p>
+        </div>
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <FileText className="w-16 h-16 text-orange-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Configuração Pendente
+              </h3>
+              <p className="text-gray-600 max-w-md mx-auto">
+                O seu utilizador ainda não está associado a um parceiro no sistema. Por favor, contacte o administrador para concluir a configuração da sua conta.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
