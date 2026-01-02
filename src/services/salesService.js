@@ -528,5 +528,43 @@ export const salesService = {
     window.URL.revokeObjectURL(url);
 
     return data;
+  },
+
+  async delete(id) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!currentUser || currentUser.role !== 'admin') {
+      throw new Error('Only administrators can delete sales');
+    }
+
+    const { data: sale } = await supabase
+      .from('sales')
+      .select('operator_doc_file')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!sale) throw new Error('Sale not found');
+
+    if (sale.operator_doc_file) {
+      await supabase.storage
+        .from('operator-validations')
+        .remove([sale.operator_doc_file]);
+    }
+
+    const { error } = await supabase
+      .from('sales')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return { success: true };
   }
 };
