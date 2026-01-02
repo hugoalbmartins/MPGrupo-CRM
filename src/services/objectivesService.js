@@ -28,10 +28,15 @@ export const objectivesService = {
     if (year) query.eq("year", year);
     if (month) query.eq("month", month);
 
-    const { data, error } = await query.order("operator:name");
+    const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
+
+    const sorted = (data || []).sort((a, b) =>
+      a.operator?.name?.localeCompare(b.operator?.name || '') || 0
+    );
+
+    return sorted;
   },
 
   async create(objective) {

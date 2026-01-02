@@ -29,6 +29,8 @@ export const dashboardService = {
         return await getPartnerDashboard(partner?.id, selectedYear, selectedMonth);
       case 'partner_commercial':
         return await getCommercialDashboard(user.id, selectedYear, selectedMonth);
+      case 'gestor_nv1':
+        return await getManagerLevel1Dashboard(user.id, selectedYear, selectedMonth);
       default:
         return { total_sales: 0 };
     }
@@ -541,4 +543,138 @@ async function getCommercialDashboard(userId, year, month) {
   }
 
   return stats;
+}
+
+async function getManagerLevel1Dashboard(managerId, year, month) {
+  const { start, end } = getMonthRange(year, month);
+
+  const { data: sales } = await supabase
+    .from('sales')
+    .select('*')
+    .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`)
+    .gte('date', start.split('T')[0])
+    .lt('date', end.split('T')[0]);
+
+  const { data: ownSales } = await supabase
+    .from('sales')
+    .select('*')
+    .eq('created_by_user_id', managerId)
+    .gte('date', start.split('T')[0])
+    .lt('date', end.split('T')[0]);
+
+  const { data: managerUser } = await supabase
+    .from('users')
+    .select('commission_type')
+    .eq('id', managerId)
+    .single();
+
+  const { data: objectives } = await supabase
+    .from('manager_objectives')
+    .select(`
+      *,
+      operator:operators(id, name, scope)
+    `)
+    .eq('manager_id', managerId)
+    .eq('year', year)
+    .eq('month', month);
+
+  let ownCommissionGross = 0;
+  let ownRetention = 0;
+
+  if (ownSales && ownSales.length > 0 && managerUser?.commission_type) {
+    const commissionType = managerUser.commission_type;
+
+    for (const sale of ownSales) {
+      const { data: configs } = await supabase
+        .from('commission_configurations')
+        .select('*')
+        .eq('operator_id', sale.operator_id)
+        .eq('partner_type', commissionType)
+        .eq('client_type', sale.client_type === 'empresarial' ? 'empresarial' : 'particular');
+
+      if (configs && configs.length > 0) {
+        const relevantConfigs = configs.filter(c => {
+          if (sale.scope === 'telecomunicacoes') {
+            return c.service_type === sale.service_type ||
+                   (c.service_types && c.service_types.includes(sale.service_type));
+          } else if (sale.scope === 'energia') {
+            if (sale.energy_sale_type === 'dual') {
+              return c.service_type === 'eletricidade' || c.service_type === 'gas';
+            } else {
+              return c.service_type === sale.energy_sale_type;
+            }
+          }
+          return false;
+        });
+
+        for (const config of relevantConfigs) {
+          if (config.commission_mode === 'fixed_value') {
+            ownCommissionGross += parseFloat(config.commission_value || 0);
+          } else if (config.commission_mode === 'monthly_multiplier' && sale.monthly_value) {
+            ownCommissionGross += parseFloat(sale.monthly_value) * parseFloat(config.commission_value || 0);
+          }
+
+          if (config.has_retention) {
+            const retValue = (parseFloat(config.commission_value || 0) * parseFloat(config.retention_percentage || 0)) / 100;
+            ownRetention += retValue;
+          }
+        }
+      }
+    }
+  }
+
+  const objectivesProgress = (objectives || []).map(obj => {
+    const operatorSales = (sales || []).filter(s => s.operator_id === obj.operator_id);
+
+    const electricityCount = operatorSales.filter(
+      s => s.scope === 'energia' && (s.energy_sale_type === 'eletricidade' || s.energy_sale_type === 'dual')
+    ).length;
+
+    const gasCount = operatorSales.filter(
+      s => s.scope === 'energia' && (s.energy_sale_type === 'gas' || s.energy_sale_type === 'dual')
+    ).length;
+
+    const tvCount = operatorSales.filter(
+      s => s.scope === 'telecomunicacoes' && s.has_tv
+    ).length;
+
+    const fiberCount = operatorSales.filter(
+      s => s.scope === 'telecomunicacoes' && (s.has_net || s.has_lr)
+    ).length;
+
+    return {
+      operator_name: obj.operator?.name,
+      operator_scope: obj.operator?.scope,
+      targets: {
+        electricity: obj.electricity_target,
+        gas: obj.gas_target,
+        tv: obj.tv_target,
+        fiber: obj.fiber_target,
+      },
+      actual: {
+        electricity: electricityCount,
+        gas: gasCount,
+        tv: tvCount,
+        fiber: fiberCount,
+      },
+      percentage: {
+        electricity: obj.electricity_target > 0 ? (electricityCount / obj.electricity_target) * 100 : 0,
+        gas: obj.gas_target > 0 ? (gasCount / obj.gas_target) * 100 : 0,
+        tv: obj.tv_target > 0 ? (tvCount / obj.tv_target) * 100 : 0,
+        fiber: obj.fiber_target > 0 ? (fiberCount / obj.fiber_target) * 100 : 0,
+      },
+    };
+  });
+
+  const last12Months = await getLast12MonthsData();
+
+  return {
+    total_sales: sales?.length || 0,
+    own_commission_gross: ownCommissionGross,
+    own_retention: ownRetention,
+    objectives_progress: objectivesProgress,
+    selected_month: month,
+    selected_year: year,
+    last_12_months: last12Months,
+  };
 }

@@ -594,6 +594,89 @@ const Dashboard = ({ user }) => {
         </div>
       </div>
 
+      {stats?.objectives_progress && stats.objectives_progress.length > 0 && (
+        <div className="professional-card p-6 mt-6">
+          <h3 className="text-xl font-semibold mb-4">Cumprimento de Objetivos Mensais</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {stats.objectives_progress.map((progress, idx) => (
+              <div key={idx} className="border rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">{progress.operator_name}</h4>
+                <div className="space-y-3">
+                  {progress.operator_scope === 'energia' && (
+                    <>
+                      {progress.targets.electricity > 0 && (
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-600">Eletricidade</span>
+                            <span className="font-semibold">{progress.actual.electricity} / {progress.targets.electricity}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(progress.percentage.electricity, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">{progress.percentage.electricity.toFixed(0)}%</span>
+                        </div>
+                      )}
+                      {progress.targets.gas > 0 && (
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-600">Gás</span>
+                            <span className="font-semibold">{progress.actual.gas} / {progress.targets.gas}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-orange-600 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(progress.percentage.gas, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">{progress.percentage.gas.toFixed(0)}%</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {progress.operator_scope === 'telecomunicacoes' && (
+                    <>
+                      {progress.targets.tv > 0 && (
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-600">TV</span>
+                            <span className="font-semibold">{progress.actual.tv} / {progress.targets.tv}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-purple-600 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(progress.percentage.tv, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">{progress.percentage.tv.toFixed(0)}%</span>
+                        </div>
+                      )}
+                      {progress.targets.fiber > 0 && (
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-600">Fibra/NET/LR</span>
+                            <span className="font-semibold">{progress.actual.fiber} / {progress.targets.fiber}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(progress.percentage.fiber, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">{progress.percentage.fiber.toFixed(0)}%</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="stat-card">
           <div className="flex items-center justify-between">
