@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound } from "lucide-react";
+import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ const Users = ({ user }) => {
   const [users, setUsers] = useState([]);
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -167,6 +169,15 @@ const Users = ({ user }) => {
     }
   };
 
+  const filteredUsers = users.filter(u => {
+    const matchesSearch =
+      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.position.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === "all" || u.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
   return (
@@ -283,54 +294,113 @@ const Users = ({ user }) => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {users.map((u) => (
-          <div key={u.id} className="professional-card p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-start gap-3">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                {getRoleIcon(u.role)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 truncate">{u.name}</h3>
-                <p className="text-sm text-gray-600">{getRoleLabel(u.role)}</p>
-                <p className="text-xs text-gray-500 mt-1 truncate">{u.email}</p>
-                <p className="text-xs text-gray-500 truncate">{u.position}</p>
-              </div>
-              {user?.role === 'admin' && (
-                <div className="flex flex-col gap-1 flex-shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openEditDialog(u)}
-                    title="Editar utilizador"
-                    className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openResetPasswordDialog(u)}
-                    title="Resetar password"
-                    className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
-                  >
-                    <KeyRound className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openDeleteDialog(u)}
-                    title="Eliminar utilizador"
-                    className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                    disabled={u.id === user?.id}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
+      <div className="professional-card p-6">
+        <div className="mb-4 flex gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Pesquisar por nome, email ou posição..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        ))}
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as funções</SelectItem>
+              <SelectItem value="admin">Administrador</SelectItem>
+              <SelectItem value="bo">Back Office</SelectItem>
+              <SelectItem value="gestor_nv1">Gestor Nível 1</SelectItem>
+              <SelectItem value="gestor_nv2">Gestor Nível 2</SelectItem>
+              <SelectItem value="partner">Parceiro</SelectItem>
+              <SelectItem value="partner_commercial">Parceiro Comercial</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Posição</th>
+                <th>Função</th>
+                {user?.role === 'admin' && <th className="text-center">Ações</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={user?.role === 'admin' ? 5 : 4} className="text-center py-8 text-gray-400">
+                    Nenhum utilizador encontrado
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          {getRoleIcon(u.role)}
+                        </div>
+                        <span className="font-medium">{u.name}</span>
+                      </div>
+                    </td>
+                    <td className="text-gray-600">{u.email}</td>
+                    <td className="text-gray-600">{u.position}</td>
+                    <td>
+                      <span className="status-badge" style={{
+                        background: u.role === 'admin' ? '#EFF6FF' : u.role === 'bo' ? '#F0FDF4' : u.role === 'partner' ? '#FDF4FF' : '#F3F4F6',
+                        color: u.role === 'admin' ? '#1E40AF' : u.role === 'bo' ? '#166534' : u.role === 'partner' ? '#86198F' : '#374151'
+                      }}>
+                        {getRoleLabel(u.role)}
+                      </span>
+                    </td>
+                    {user?.role === 'admin' && (
+                      <td className="text-center">
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openEditDialog(u)}
+                            title="Editar utilizador"
+                            className="text-blue-600 hover:bg-blue-50"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openResetPasswordDialog(u)}
+                            title="Resetar password"
+                            className="text-orange-600 hover:bg-orange-50"
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openDeleteDialog(u)}
+                            title="Eliminar utilizador"
+                            className="text-red-600 hover:bg-red-50"
+                            disabled={u.id === user?.id}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
