@@ -5,17 +5,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Info, Trash2 } from "lucide-react";
+import { Save, Trash2, Plus, Check, X, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { operatorsService } from "../services/operatorsService";
 
 const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedServiceTypes, setSelectedServiceTypes] = useState([]);
   const [activePartnerTab, setActivePartnerTab] = useState('D2D');
-  const [refidOperationType, setRefidOperationType] = useState('both');
-  const [activationType, setActivationType] = useState('M2');
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newConfig, setNewConfig] = useState(getEmptyConfig());
 
   useEffect(() => {
     loadConfigs();
@@ -36,6 +36,28 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       setLoading(false);
     }
   };
+
+  function getEmptyConfig() {
+    return {
+      partner_type: 'D2D',
+      client_type: 'particular',
+      service_type: '',
+      service_types: [],
+      commission_mode: 'fixed_value',
+      commission_value: 0,
+      min_sales: 0,
+      has_retention: false,
+      retention_percentage: 0,
+      retention_months: 0,
+      direct_debit_bonus: 0,
+      electronic_invoice_bonus: 0,
+      tier_mode: 'by_quantity',
+      monthly_value_min: 0,
+      monthly_value_max: 0,
+      refid_operation_type: null,
+      activation_type: null
+    };
+  }
 
   const isTelecom = operator?.scope === 'telecomunicacoes';
   const isEnergy = operator?.scope === 'energia';
@@ -61,7 +83,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const handleSaveAll = async () => {
     try {
       await operatorsService.saveCommissionConfigs(operator.id, configs);
-      toast.success('Configurações guardadas com sucesso!');
+      toast.success('Configurações guardadas!');
+      setEditingIndex(null);
       onSave?.();
     } catch (error) {
       console.error('Error saving configs:', error);
@@ -69,53 +92,27 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     }
   };
 
-  const toggleServiceType = (type) => {
-    setSelectedServiceTypes(prev => {
-      if (prev.includes(type)) {
-        return prev.filter(t => t !== type);
-      }
-      return [...prev, type];
-    });
-  };
-
-  const addConfig = (serviceTypes, clientType, partnerType, refidOpType, actType) => {
-    if (serviceTypes.length === 0) {
-      toast.error('Selecione pelo menos um tipo de serviço');
+  const addNewConfig = () => {
+    if (!newConfig.service_type && (!newConfig.service_types || newConfig.service_types.length === 0)) {
+      toast.error('Selecione um tipo de serviço');
       return;
     }
 
-    const hasRefid = serviceTypes.includes('REFID');
-    const hasNIorMC = serviceTypes.includes('NI') || serviceTypes.includes('MC');
-
-    const newConfig = {
-      partner_type: partnerType,
-      client_type: clientType,
-      service_type: serviceTypes[0],
-      service_types: serviceTypes,
-      commission_mode: 'fixed_value',
-      commission_value: 0,
-      min_sales: 0,
-      has_retention: false,
-      retention_percentage: 0,
-      retention_months: 0,
-      direct_debit_value: 0,
-      electronic_invoice_value: 0,
-      tier_mode: 'by_quantity',
-      monthly_value_min: 0,
-      monthly_value_max: 0,
-      refid_operation_type: hasRefid ? refidOpType : null,
-      activation_type: hasNIorMC ? actType : null
+    const configToAdd = {
+      ...newConfig,
+      partner_type: activePartnerTab,
+      service_types: newConfig.service_types.length > 0 ? newConfig.service_types : [newConfig.service_type]
     };
 
-    setConfigs([...configs, newConfig]);
-    setSelectedServiceTypes([]);
-    setRefidOperationType('both');
-    setActivationType('M2');
+    setConfigs([...configs, configToAdd]);
+    setNewConfig(getEmptyConfig());
+    setShowAddForm(false);
+    toast.success('Configuração adicionada');
   };
 
   const updateConfig = (index, field, value) => {
     const newConfigs = [...configs];
-    if (field === 'commission_mode' || field === 'tier_mode' || field === 'refid_operation_type' || field === 'activation_type' || field === 'has_retention') {
+    if (field === 'commission_mode' || field === 'tier_mode' || field === 'refid_operation_type' || field === 'activation_type' || field === 'has_retention' || field === 'client_type') {
       newConfigs[index][field] = value;
     } else {
       newConfigs[index][field] = parseFloat(value) || 0;
@@ -124,21 +121,37 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   };
 
   const removeConfig = (index) => {
+    if (!window.confirm('Remover esta configuração?')) return;
     const newConfigs = [...configs];
     newConfigs.splice(index, 1);
     setConfigs(newConfigs);
+    toast.success('Configuração removida');
   };
 
-  const getServiceTypeLabel = (serviceTypes) => {
-    if (!serviceTypes || serviceTypes.length === 0) return 'N/A';
-    if (serviceTypes.length === 1) {
-      const type = serviceTypes[0];
-      if (type === 'eletricidade') return 'Eletricidade';
-      if (type === 'gas') return 'Gas';
-      return type;
-    }
-    return serviceTypes.join(' + ');
+  const getServiceTypeLabel = (config) => {
+    const types = config.service_types || [config.service_type];
+    if (!types || types.length === 0) return 'N/A';
+    return types.map(t => {
+      if (t === 'eletricidade') return 'Eletr.';
+      if (t === 'gas') return 'Gás';
+      return t;
+    }).join('+');
   };
+
+  const getCommissionModeLabel = (mode) => {
+    if (mode === 'fixed_value') return 'Fixo';
+    if (mode === 'monthly_multiplier') return 'Mult. Mensal';
+    if (mode === 'per_contract') return 'Por Contrato';
+    return mode;
+  };
+
+  const getTierModeLabel = (mode) => {
+    if (mode === 'by_quantity') return 'Por Qtd';
+    if (mode === 'by_monthly_value') return 'Por Valor';
+    return mode;
+  };
+
+  const filteredConfigs = configs.filter(c => c.partner_type === activePartnerTab);
 
   if (loading) {
     return (
@@ -151,355 +164,445 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Configuracao de Comissoes</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center justify-between">
+            <span>Configuração de Comissões - {operator?.name}</span>
+            <Button
+              type="button"
+              onClick={handleSaveAll}
+              size="sm"
+              className="bg-slate-700 hover:bg-slate-800"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Guardar Tudo
+            </Button>
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-2">
-              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-900">
-                <p className="font-semibold mb-1">Configure por tipo de parceiro e servico</p>
-                <p>
-                  Cada configuracao pode ter o seu proprio modo de calculo, patamar e retencao. Selecione os tipos de servico e defina como as comissoes serao calculadas para cada combinacao.
-                </p>
-              </div>
-            </div>
-          </div>
-
+        <CardContent className="space-y-4">
           <Tabs value={activePartnerTab} onValueChange={setActivePartnerTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
               {getPartnerTypes().map((partnerType) => (
-                <TabsTrigger key={partnerType} value={partnerType}>
+                <TabsTrigger
+                  key={partnerType}
+                  value={partnerType}
+                  className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"
+                >
                   {partnerType}
                 </TabsTrigger>
               ))}
             </TabsList>
 
             {getPartnerTypes().map((partnerType) => (
-              <TabsContent key={partnerType} value={partnerType} className="space-y-6 mt-6">
-                {getClientTypes().map((clientType) => (
-                  <div key={clientType} className="border rounded-lg p-4">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-4 capitalize">
-                      {clientType}
-                    </h3>
+              <TabsContent key={partnerType} value={partnerType} className="mt-4">
+                <div className="space-y-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b-2 border-slate-300 bg-slate-50">
+                          <th className="text-left p-2 font-semibold">Cliente</th>
+                          <th className="text-left p-2 font-semibold">Serviço</th>
+                          <th className="text-left p-2 font-semibold">Modo</th>
+                          <th className="text-left p-2 font-semibold">Valor/Mult.</th>
+                          <th className="text-left p-2 font-semibold">Patamar</th>
+                          <th className="text-left p-2 font-semibold">Min Vendas / Range Mensal</th>
+                          <th className="text-left p-2 font-semibold">Retenção</th>
+                          <th className="text-left p-2 font-semibold">DD/FE</th>
+                          <th className="text-right p-2 font-semibold w-24">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredConfigs.length === 0 ? (
+                          <tr>
+                            <td colSpan="9" className="text-center p-8 text-gray-500">
+                              Nenhuma configuração para {partnerType}. Clique em "+ Nova Regra" para adicionar.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredConfigs.map((config, idx) => {
+                            const actualIndex = configs.indexOf(config);
+                            const isEditing = editingIndex === actualIndex;
 
-                    <div className="mb-4">
-                      <Label className="mb-2 block">Selecionar Tipos de Servico</Label>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {getServiceTypes().map((serviceType) => (
-                          <button
-                            key={serviceType}
-                            type="button"
-                            onClick={() => toggleServiceType(serviceType)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                              selectedServiceTypes.includes(serviceType)
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            {serviceType === 'eletricidade' ? 'Eletricidade' :
-                             serviceType === 'gas' ? 'Gas' : serviceType}
-                          </button>
-                        ))}
-                      </div>
-
-                      {selectedServiceTypes.includes('REFID') && (
-                        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                          <Label className="text-sm font-semibold text-amber-900 mb-2 block">
-                            Tipo de Operacao REFID
-                          </Label>
-                          <Select value={refidOperationType} onValueChange={setRefidOperationType}>
-                            <SelectTrigger className="bg-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="both">Ambos (Upsell e Downsell)</SelectItem>
-                              <SelectItem value="upsell">Apenas Upsell (cliente aumenta mensalidade)</SelectItem>
-                              <SelectItem value="downsell">Apenas Downsell (cliente reduz mensalidade)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-amber-700 mt-1">
-                            {refidOperationType === 'both' && 'Esta comissao aplica-se tanto a upsell como downsell'}
-                            {refidOperationType === 'upsell' && 'Esta comissao aplica-se apenas quando cliente aumenta a mensalidade'}
-                            {refidOperationType === 'downsell' && 'Esta comissao aplica-se apenas quando cliente reduz a mensalidade'}
-                          </p>
-                        </div>
-                      )}
-
-                      {(selectedServiceTypes.includes('NI') || selectedServiceTypes.includes('MC')) && (
-                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <Label className="text-sm font-semibold text-blue-900 mb-2 block">
-                            Tipo de Ativacao
-                          </Label>
-                          <Select value={activationType} onValueChange={setActivationType}>
-                            <SelectTrigger className="bg-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="M2">M2</SelectItem>
-                              <SelectItem value="M3">M3</SelectItem>
-                              <SelectItem value="M4">M4</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-blue-700 mt-1">
-                            Selecione o tipo de ativacao para este tipo de servico
-                          </p>
-                        </div>
-                      )}
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => addConfig(selectedServiceTypes, clientType, partnerType, refidOperationType, activationType)}
-                        disabled={selectedServiceTypes.length === 0}
-                        className="w-full"
-                      >
-                        + Adicionar Configuracao para {selectedServiceTypes.length > 0 ? selectedServiceTypes.join(' + ') : '(selecione tipos)'}
-                      </Button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {configs
-                        .map((config, index) => ({ config, index }))
-                        .filter(({ config }) => config.client_type === clientType && config.partner_type === partnerType)
-                        .map(({ config, index }) => (
-                          <Card key={index} className="border-2">
-                            <CardContent className="pt-6">
-                              <div className="flex justify-between items-center mb-4">
-                                <div>
-                                  <h4 className="font-semibold text-gray-900">
-                                    {getServiceTypeLabel(config.service_types || [config.service_type])}
-                                  </h4>
-                                  {config.refid_operation_type && (
-                                    <p className="text-xs text-amber-700 mt-1">
-                                      {config.refid_operation_type === 'both' && 'Upsell e Downsell'}
-                                      {config.refid_operation_type === 'upsell' && 'Apenas Upsell'}
-                                      {config.refid_operation_type === 'downsell' && 'Apenas Downsell'}
-                                    </p>
-                                  )}
-                                  {config.activation_type && (
-                                    <p className="text-xs text-blue-700 mt-1">
-                                      Ativacao: {config.activation_type}
-                                    </p>
-                                  )}
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeConfig(index)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Modo de Comissao</Label>
+                            return (
+                              <tr key={actualIndex} className="border-b border-slate-200 hover:bg-slate-50">
+                                <td className="p-2">
+                                  {isEditing ? (
                                     <Select
-                                      value={config.commission_mode || 'fixed_value'}
-                                      onValueChange={(v) => updateConfig(index, 'commission_mode', v)}
+                                      value={config.client_type}
+                                      onValueChange={(v) => updateConfig(actualIndex, 'client_type', v)}
                                     >
-                                      <SelectTrigger>
+                                      <SelectTrigger className="h-8 text-xs">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="fixed_value">Valor Fixo</SelectItem>
-                                        {isTelecom && <SelectItem value="monthly_multiplier">Multiplo Mensalidade</SelectItem>}
+                                        {getClientTypes().map(ct => (
+                                          <SelectItem key={ct} value={ct}>{ct}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <span className="capitalize">{config.client_type}</span>
+                                  )}
+                                </td>
+
+                                <td className="p-2">
+                                  <div>
+                                    <span className="font-medium">{getServiceTypeLabel(config)}</span>
+                                    {config.activation_type && (
+                                      <span className="ml-1 text-xs text-blue-600">({config.activation_type})</span>
+                                    )}
+                                    {config.refid_operation_type && (
+                                      <span className="ml-1 text-xs text-amber-600">
+                                        ({config.refid_operation_type === 'both' ? 'Up+Down' : config.refid_operation_type === 'upsell' ? 'Up' : 'Down'})
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                <td className="p-2">
+                                  {isEditing ? (
+                                    <Select
+                                      value={config.commission_mode}
+                                      onValueChange={(v) => updateConfig(actualIndex, 'commission_mode', v)}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="fixed_value">Fixo</SelectItem>
+                                        {isTelecom && <SelectItem value="monthly_multiplier">Mult. Mensal</SelectItem>}
                                         <SelectItem value="per_contract">Por Contrato</SelectItem>
                                       </SelectContent>
                                     </Select>
-                                  </div>
+                                  ) : (
+                                    <span>{getCommissionModeLabel(config.commission_mode)}</span>
+                                  )}
+                                </td>
 
+                                <td className="p-2">
                                   {config.commission_mode !== 'per_contract' && (
-                                    <div>
-                                      <Label>Modo de Patamar</Label>
+                                    isEditing ? (
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        className="h-8 text-xs"
+                                        value={config.commission_value || 0}
+                                        onChange={(e) => updateConfig(actualIndex, 'commission_value', e.target.value)}
+                                      />
+                                    ) : (
+                                      <span>{config.commission_value?.toFixed(2) || '0.00'}</span>
+                                    )
+                                  )}
+                                  {config.commission_mode === 'per_contract' && (
+                                    <span className="text-xs text-gray-500">Manual</span>
+                                  )}
+                                </td>
+
+                                <td className="p-2">
+                                  {config.commission_mode !== 'per_contract' && (
+                                    isEditing ? (
                                       <Select
-                                        value={config.tier_mode || 'by_quantity'}
-                                        onValueChange={(v) => updateConfig(index, 'tier_mode', v)}
+                                        value={config.tier_mode}
+                                        onValueChange={(v) => updateConfig(actualIndex, 'tier_mode', v)}
                                       >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="h-8 text-xs">
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="by_quantity">Por Quantidade</SelectItem>
-                                          {isTelecom && <SelectItem value="by_monthly_value">Por Valor Mensal</SelectItem>}
+                                          <SelectItem value="by_quantity">Por Qtd</SelectItem>
+                                          {isTelecom && <SelectItem value="by_monthly_value">Por Valor</SelectItem>}
                                         </SelectContent>
                                       </Select>
-                                    </div>
+                                    ) : (
+                                      <span>{getTierModeLabel(config.tier_mode)}</span>
+                                    )
                                   )}
-                                </div>
+                                </td>
 
-                                {config.commission_mode !== 'per_contract' && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                      <Label>
-                                        {config.commission_mode === 'monthly_multiplier'
-                                          ? 'Multiplicador'
-                                          : 'Valor da Comissao (EUR)'}
-                                      </Label>
+                                <td className="p-2">
+                                  {config.commission_mode !== 'per_contract' && (
+                                    <>
+                                      {config.tier_mode === 'by_quantity' && (
+                                        isEditing ? (
+                                          <Input
+                                            type="number"
+                                            className="h-8 text-xs"
+                                            value={config.min_sales || 0}
+                                            onChange={(e) => updateConfig(actualIndex, 'min_sales', e.target.value)}
+                                          />
+                                        ) : (
+                                          <span>{config.min_sales || 0} vendas</span>
+                                        )
+                                      )}
+                                      {config.tier_mode === 'by_monthly_value' && (
+                                        isEditing ? (
+                                          <div className="flex gap-1 items-center">
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              className="h-8 text-xs w-20"
+                                              value={config.monthly_value_min || 0}
+                                              onChange={(e) => updateConfig(actualIndex, 'monthly_value_min', e.target.value)}
+                                            />
+                                            <span className="text-xs">a</span>
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              className="h-8 text-xs w-20"
+                                              value={config.monthly_value_max || 0}
+                                              onChange={(e) => updateConfig(actualIndex, 'monthly_value_max', e.target.value)}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span className="text-xs">
+                                            {config.monthly_value_min?.toFixed(2) || '0.00'}€ - {config.monthly_value_max > 0 ? `${config.monthly_value_max.toFixed(2)}€` : '∞'}
+                                          </span>
+                                        )
+                                      )}
+                                    </>
+                                  )}
+                                </td>
+
+                                <td className="p-2">
+                                  {isEditing ? (
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-1">
+                                        <input
+                                          type="checkbox"
+                                          checked={config.has_retention}
+                                          onChange={(e) => updateConfig(actualIndex, 'has_retention', e.target.checked)}
+                                          className="w-3 h-3"
+                                        />
+                                        <span className="text-xs">Ativo</span>
+                                      </div>
+                                      {config.has_retention && (
+                                        <div className="flex gap-1 text-xs">
+                                          <Input
+                                            type="number"
+                                            step="0.1"
+                                            className="h-7 text-xs w-12"
+                                            value={config.retention_percentage || 0}
+                                            onChange={(e) => updateConfig(actualIndex, 'retention_percentage', e.target.value)}
+                                          />
+                                          <span>%</span>
+                                          <Input
+                                            type="number"
+                                            className="h-7 text-xs w-12"
+                                            value={config.retention_months || 0}
+                                            onChange={(e) => updateConfig(actualIndex, 'retention_months', e.target.value)}
+                                          />
+                                          <span>m</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    config.has_retention ? (
+                                      <span className="text-xs text-green-700">
+                                        {config.retention_percentage}% / {config.retention_months}m
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">Não</span>
+                                    )
+                                  )}
+                                </td>
+
+                                <td className="p-2">
+                                  {isEditing ? (
+                                    <div className="flex gap-1 text-xs">
                                       <Input
                                         type="number"
                                         step="0.01"
-                                        min="0"
-                                        value={config.commission_value || 0}
-                                        onChange={(e) => updateConfig(index, 'commission_value', e.target.value)}
-                                        placeholder={config.commission_mode === 'monthly_multiplier' ? 'Ex: 1.5' : 'Ex: 50.00'}
-                                      />
-                                    </div>
-
-                                    {config.tier_mode === 'by_quantity' && (
-                                      <div>
-                                        <Label>Minimo de Vendas</Label>
-                                        <Input
-                                          type="number"
-                                          min="0"
-                                          step="1"
-                                          value={config.min_sales || 0}
-                                          onChange={(e) => updateConfig(index, 'min_sales', e.target.value)}
-                                          placeholder="Ex: 0, 50, 100"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          A partir de quantas vendas este valor aplica
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {config.tier_mode === 'by_monthly_value' && (
-                                      <>
-                                        <div>
-                                          <Label>Mensalidade Minima (EUR)</Label>
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={config.monthly_value_min || 0}
-                                            onChange={(e) => updateConfig(index, 'monthly_value_min', e.target.value)}
-                                            placeholder="Ex: 0.00"
-                                          />
-                                          <p className="text-xs text-gray-500 mt-1">
-                                            Valor minimo de mensalidade
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <Label>Mensalidade Maxima (EUR)</Label>
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={config.monthly_value_max || 0}
-                                            onChange={(e) => updateConfig(index, 'monthly_value_max', e.target.value)}
-                                            placeholder="Ex: 50.00"
-                                          />
-                                          <p className="text-xs text-gray-500 mt-1">
-                                            Valor maximo de mensalidade (0 = sem limite)
-                                          </p>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                )}
-
-                                {config.commission_mode === 'per_contract' && (
-                                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                    <p className="text-sm text-yellow-800">
-                                      <strong>Por Contrato:</strong> O valor sera definido manualmente em cada venda pelos administradores.
-                                    </p>
-                                  </div>
-                                )}
-
-                                <div className="border-t pt-4 mt-4">
-                                  <div className="flex items-center gap-3 mb-3">
-                                    <input
-                                      type="checkbox"
-                                      id={`has_retention_${index}`}
-                                      checked={config.has_retention || false}
-                                      onChange={(e) => updateConfig(index, 'has_retention', e.target.checked)}
-                                      className="w-4 h-4"
-                                    />
-                                    <Label htmlFor={`has_retention_${index}`} className="text-sm font-semibold cursor-pointer">
-                                      Aplicar retencao de comissoes
-                                    </Label>
-                                  </div>
-
-                                  {config.has_retention && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-7">
-                                      <div>
-                                        <Label className="text-sm">Percentagem de Retencao (%)</Label>
-                                        <Input
-                                          type="number"
-                                          min="0"
-                                          max="100"
-                                          step="0.1"
-                                          value={config.retention_percentage || 0}
-                                          onChange={(e) => updateConfig(index, 'retention_percentage', e.target.value)}
-                                          placeholder="Ex: 10"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          Percentagem da comissao a reter temporariamente
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <Label className="text-sm">Periodo de Retencao (meses)</Label>
-                                        <Input
-                                          type="number"
-                                          min="0"
-                                          step="1"
-                                          value={config.retention_months || 0}
-                                          onChange={(e) => updateConfig(index, 'retention_months', e.target.value)}
-                                          placeholder="Ex: 3"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          Numero de meses ate liberacao da retencao
-                                        </p>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="border-t pt-4 mt-4">
-                                  <h5 className="text-sm font-semibold mb-3">Bonus de Adesao</h5>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                      <Label className="text-sm">Debito Direto (EUR)</Label>
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
+                                        className="h-7 text-xs w-16"
                                         value={config.direct_debit_bonus || 0}
-                                        onChange={(e) => updateConfig(index, 'direct_debit_bonus', e.target.value)}
-                                        placeholder="Ex: 5.00"
+                                        onChange={(e) => updateConfig(actualIndex, 'direct_debit_bonus', e.target.value)}
+                                        placeholder="DD"
                                       />
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Bonus pago pela adesao a debito direto
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm">Fatura Eletronica (EUR)</Label>
                                       <Input
                                         type="number"
-                                        min="0"
                                         step="0.01"
+                                        className="h-7 text-xs w-16"
                                         value={config.electronic_invoice_bonus || 0}
-                                        onChange={(e) => updateConfig(index, 'electronic_invoice_bonus', e.target.value)}
-                                        placeholder="Ex: 3.00"
+                                        onChange={(e) => updateConfig(actualIndex, 'electronic_invoice_bonus', e.target.value)}
+                                        placeholder="FE"
                                       />
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Bonus pago pela adesao a fatura eletronica
-                                      </p>
                                     </div>
+                                  ) : (
+                                    <span className="text-xs">
+                                      {config.direct_debit_bonus > 0 || config.electronic_invoice_bonus > 0 ? (
+                                        <>
+                                          {config.direct_debit_bonus > 0 && `DD: ${config.direct_debit_bonus.toFixed(2)}€`}
+                                          {config.direct_debit_bonus > 0 && config.electronic_invoice_bonus > 0 && ' | '}
+                                          {config.electronic_invoice_bonus > 0 && `FE: ${config.electronic_invoice_bonus.toFixed(2)}€`}
+                                        </>
+                                      ) : (
+                                        <span className="text-gray-400">-</span>
+                                      )}
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td className="p-2 text-right">
+                                  <div className="flex gap-1 justify-end">
+                                    {isEditing ? (
+                                      <>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => setEditingIndex(null)}
+                                          className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                        >
+                                          <Check className="w-4 h-4" />
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setEditingIndex(actualIndex)}
+                                        className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                      >
+                                        <Edit2 className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => removeConfig(actualIndex)}
+                                      className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
                                   </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                    </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                ))}
+
+                  {showAddForm ? (
+                    <Card className="border-2 border-blue-200 bg-blue-50">
+                      <CardContent className="pt-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                          <div>
+                            <Label className="text-xs">Cliente</Label>
+                            <Select value={newConfig.client_type} onValueChange={(v) => setNewConfig({...newConfig, client_type: v})}>
+                              <SelectTrigger className="h-8 text-xs bg-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getClientTypes().map(ct => (
+                                  <SelectItem key={ct} value={ct}>{ct}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label className="text-xs">Serviço</Label>
+                            <Select value={newConfig.service_type} onValueChange={(v) => setNewConfig({...newConfig, service_type: v, service_types: [v]})}>
+                              <SelectTrigger className="h-8 text-xs bg-white">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getServiceTypes().map(st => (
+                                  <SelectItem key={st} value={st}>
+                                    {st === 'eletricidade' ? 'Eletricidade' : st === 'gas' ? 'Gás' : st}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {(newConfig.service_type === 'NI' || newConfig.service_type === 'MC') && (
+                            <div>
+                              <Label className="text-xs">Ativação</Label>
+                              <Select value={newConfig.activation_type || 'M2'} onValueChange={(v) => setNewConfig({...newConfig, activation_type: v})}>
+                                <SelectTrigger className="h-8 text-xs bg-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="M2">M2</SelectItem>
+                                  <SelectItem value="M3">M3</SelectItem>
+                                  <SelectItem value="M4">M4</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          {newConfig.service_type === 'REFID' && (
+                            <div>
+                              <Label className="text-xs">Op. REFID</Label>
+                              <Select value={newConfig.refid_operation_type || 'both'} onValueChange={(v) => setNewConfig({...newConfig, refid_operation_type: v})}>
+                                <SelectTrigger className="h-8 text-xs bg-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="both">Ambos</SelectItem>
+                                  <SelectItem value="upsell">Upsell</SelectItem>
+                                  <SelectItem value="downsell">Downsell</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          <div>
+                            <Label className="text-xs">Modo Comissão</Label>
+                            <Select value={newConfig.commission_mode} onValueChange={(v) => setNewConfig({...newConfig, commission_mode: v})}>
+                              <SelectTrigger className="h-8 text-xs bg-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="fixed_value">Fixo</SelectItem>
+                                {isTelecom && <SelectItem value="monthly_multiplier">Mult. Mensal</SelectItem>}
+                                <SelectItem value="per_contract">Por Contrato</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setShowAddForm(false);
+                              setNewConfig(getEmptyConfig());
+                            }}
+                            className="h-8"
+                          >
+                            <X className="w-3 h-3 mr-1" />
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={addNewConfig}
+                            className="h-8 bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Adicionar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAddForm(true)}
+                      className="w-full border-dashed border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova Regra para {partnerType}
+                    </Button>
+                  )}
+                </div>
               </TabsContent>
             ))}
           </Tabs>
@@ -511,9 +614,9 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
           Cancelar
         </Button>
 
-        <Button type="button" onClick={handleSaveAll} className="btn-primary">
+        <Button type="button" onClick={handleSaveAll} className="bg-slate-700 hover:bg-slate-800">
           <Save className="w-4 h-4 mr-2" />
-          Guardar Configuracao
+          Guardar Tudo
         </Button>
       </div>
     </div>
