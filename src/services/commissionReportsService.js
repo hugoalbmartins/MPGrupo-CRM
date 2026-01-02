@@ -1,18 +1,25 @@
 import { supabase } from '../lib/supabase';
 
 export const commissionReportsService = {
-  async getAll(year = null) {
+  async getAll(year = null, month = null) {
     let query = supabase
       .from('commission_reports')
       .select(`
         *,
         partner:partners(id, name, email),
-        creator:users!commission_reports_created_by_fkey(id, name, email)
+        creator:users!commission_reports_created_by_fkey(id, name, email),
+        validator:users!commission_reports_paid_validated_by_fkey(id, name, email)
       `)
+      .order('year', { ascending: false })
+      .order('month', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (year) {
       query = query.eq('year', year);
+    }
+
+    if (month) {
+      query = query.eq('month', month);
     }
 
     const { data, error } = await query;
@@ -137,5 +144,48 @@ export const commissionReportsService = {
       .eq('id', reportId);
 
     if (error) throw error;
+  },
+
+  async isMonthAvailableForEmission(month, year) {
+    const { data, error } = await supabase.rpc('is_month_available_for_emission', {
+      p_month: month,
+      p_year: year
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getSettledSalesForPartner(partnerId, month, year) {
+    const { data, error } = await supabase.rpc('get_settled_sales_for_partner', {
+      p_partner_id: partnerId,
+      p_month: month,
+      p_year: year
+    });
+
+    if (error) throw error;
+    return (data || []).map(row => row.sale_id);
+  },
+
+  async validatePayment(reportId, adminId) {
+    const { error } = await supabase.rpc('validate_commission_report_payment', {
+      p_report_id: reportId,
+      p_admin_id: adminId
+    });
+
+    if (error) throw error;
+  },
+
+  async getLatestEmittedReport() {
+    const { data, error } = await supabase
+      .from('commission_reports')
+      .select('month, year')
+      .order('year', { ascending: false })
+      .order('month', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
   }
 };

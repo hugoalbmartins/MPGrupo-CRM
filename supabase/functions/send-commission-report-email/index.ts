@@ -18,6 +18,7 @@ interface EmailPayload {
   filePath: string;
   fileName: string;
   version: number;
+  salesIds?: string[];
 }
 
 Deno.serve(async (req: Request) => {
@@ -29,7 +30,7 @@ Deno.serve(async (req: Request) => {
     console.log("[CommissionReport] Starting email process");
 
     const payload: EmailPayload = await req.json();
-    const { partnerId, partnerEmail, partnerName, month, year, userId, filePath, fileName, version } = payload;
+    const { partnerId, partnerEmail, partnerName, month, year, userId, filePath, fileName, version, salesIds } = payload;
 
     if (!partnerId || !partnerEmail || !partnerName || !month || !year || !userId || !filePath || !fileName || !version) {
       return new Response(
@@ -70,6 +71,7 @@ Deno.serve(async (req: Request) => {
         file_name: fileName,
         file_path: filePath,
         created_by: userId,
+        sales_included: salesIds || [],
       })
       .select()
       .single();
