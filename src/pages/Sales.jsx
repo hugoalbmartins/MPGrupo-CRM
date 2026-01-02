@@ -22,6 +22,7 @@ const Sales = ({ user }) => {
   const [operators, setOperators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState("sales");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPartner, setSelectedPartner] = useState("all");
   const [selectedOperator, setSelectedOperator] = useState("all");
@@ -87,7 +88,8 @@ const Sales = ({ user }) => {
     has_net: false,
     has_lr: false,
     mobile_count: 0,
-    observations: ""
+    observations: "",
+    is_proposal: false
   });
 
   useEffect(() => {
@@ -284,7 +286,8 @@ const Sales = ({ user }) => {
       has_net: false,
       has_lr: false,
       mobile_count: 0,
-      observations: ""
+      observations: "",
+      is_proposal: false
     });
     setUploadFiles([]);
     setOperatorCommissions([]);
@@ -345,6 +348,11 @@ const Sales = ({ user }) => {
   };
 
   const filteredSales = sales.filter(sale => {
+    if (viewMode === "proposals") {
+      if (sale.status !== "Em proposta") return false;
+    } else {
+      if (sale.status === "Em proposta") return false;
+    }
     if (selectedStatus && sale.status !== selectedStatus) return false;
     if (selectedPartner && selectedPartner !== "all" && sale.partner_id !== selectedPartner) return false;
     if (selectedOperator && selectedOperator !== "all" && sale.operator_id !== selectedOperator) return false;
@@ -1110,6 +1118,24 @@ const Sales = ({ user }) => {
                 )}
 
                 <div className="col-span-2">
+                  <div className="flex items-center space-x-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="is_proposal"
+                      checked={formData.is_proposal}
+                      onChange={(e) => setFormData({...formData, is_proposal: e.target.checked})}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <Label htmlFor="is_proposal" className="cursor-pointer font-medium text-blue-900">
+                      Esta venda é uma proposta?
+                    </Label>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    ℹ️ Propostas ficam no estado "Em proposta" e aparecem apenas no separador Propostas
+                  </p>
+                </div>
+
+                <div className="col-span-2">
                   <Label>Observações</Label>
                   <Textarea value={formData.observations} onChange={(e) => setFormData({...formData, observations: e.target.value})} rows={3} />
                 </div>
@@ -1145,25 +1171,67 @@ const Sales = ({ user }) => {
       </div>
       </div>
 
-      {/* Filtros de Status (sempre visíveis) */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <Button onClick={() => setSelectedStatus("")} variant={selectedStatus === "" ? "default" : "outline"} size="sm">Todas</Button>
-        <Button onClick={() => setSelectedStatus("Para registo")} variant={selectedStatus === "Para registo" ? "default" : "outline"} size="sm">Para registo</Button>
-        <Button onClick={() => setSelectedStatus("Pendente")} variant={selectedStatus === "Pendente" ? "default" : "outline"} size="sm">Pendente</Button>
-        <Button onClick={() => setSelectedStatus("Concluido")} variant={selectedStatus === "Concluido" ? "default" : "outline"} size="sm">Concluído</Button>
-        <Button onClick={() => setSelectedStatus("Ativo")} variant={selectedStatus === "Ativo" ? "default" : "outline"} size="sm">Ativo</Button>
-        <Button onClick={() => setSelectedStatus("Cancelado")} variant={selectedStatus === "Cancelado" ? "default" : "outline"} size="sm">Cancelado</Button>
-
+      {/* Seletor Vendas/Propostas */}
+      <div className="flex gap-2 mb-4 p-1 bg-gray-100 rounded-lg w-fit">
         <Button
-          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          variant={showAdvancedFilters ? "default" : "outline"}
+          onClick={() => {
+            setViewMode("sales");
+            setSelectedStatus("");
+          }}
+          variant={viewMode === "sales" ? "default" : "ghost"}
           size="sm"
-          className="ml-auto gap-2"
+          className={viewMode === "sales" ? "bg-[#1F4E78] text-white hover:bg-[#16395A]" : ""}
         >
-          <Filter className="w-4 h-4" />
-          Filtros Avançados
+          Vendas
+        </Button>
+        <Button
+          onClick={() => {
+            setViewMode("proposals");
+            setSelectedStatus("");
+          }}
+          variant={viewMode === "proposals" ? "default" : "ghost"}
+          size="sm"
+          className={viewMode === "proposals" ? "bg-[#1F4E78] text-white hover:bg-[#16395A]" : ""}
+        >
+          Propostas
         </Button>
       </div>
+
+      {/* Filtros de Status (sempre visíveis) */}
+      {viewMode === "sales" && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Button onClick={() => setSelectedStatus("")} variant={selectedStatus === "" ? "default" : "outline"} size="sm">Todas</Button>
+          <Button onClick={() => setSelectedStatus("Para registo")} variant={selectedStatus === "Para registo" ? "default" : "outline"} size="sm">Para registo</Button>
+          <Button onClick={() => setSelectedStatus("Pendente")} variant={selectedStatus === "Pendente" ? "default" : "outline"} size="sm">Pendente</Button>
+          <Button onClick={() => setSelectedStatus("Concluido")} variant={selectedStatus === "Concluido" ? "default" : "outline"} size="sm">Concluído</Button>
+          <Button onClick={() => setSelectedStatus("Ativo")} variant={selectedStatus === "Ativo" ? "default" : "outline"} size="sm">Ativo</Button>
+          <Button onClick={() => setSelectedStatus("Cancelado")} variant={selectedStatus === "Cancelado" ? "default" : "outline"} size="sm">Cancelado</Button>
+
+          <Button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            variant={showAdvancedFilters ? "default" : "outline"}
+            size="sm"
+            className="ml-auto gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filtros Avançados
+          </Button>
+        </div>
+      )}
+
+      {viewMode === "proposals" && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            variant={showAdvancedFilters ? "default" : "outline"}
+            size="sm"
+            className="gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filtros Avançados
+          </Button>
+        </div>
+      )}
 
       {/* Filtros Avançados */}
       {showAdvancedFilters && (

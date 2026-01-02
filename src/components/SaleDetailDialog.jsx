@@ -15,6 +15,7 @@ import { salesService } from "../services/salesService";
 import { supabase } from "../lib/supabase";
 
 const STATUSES = [
+  "Em proposta",
   "Pendente",
   "Para registo",
   "Registado",

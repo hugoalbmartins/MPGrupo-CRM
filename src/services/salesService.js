@@ -168,9 +168,14 @@ export const salesService = {
     const actualPartnerId = isAdminSale ? null : (saleData.partner_id || null);
     const saleCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
 
-    const status = ['partner', 'partner_commercial'].includes(currentUser.role)
-      ? 'Para registo'
-      : 'Pendente';
+    let status;
+    if (saleData.is_proposal) {
+      status = 'Em proposta';
+    } else if (['partner', 'partner_commercial'].includes(currentUser.role)) {
+      status = 'Para registo';
+    } else {
+      status = 'Pendente';
+    }
 
     const { data: operator } = await supabase
       .from('operators')
