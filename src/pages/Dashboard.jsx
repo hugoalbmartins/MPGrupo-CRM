@@ -156,10 +156,24 @@ const Dashboard = ({ user }) => {
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Comissões Totais</p>
-              <p className="text-2xl font-bold color-purple">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+              <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
+              <p className="text-2xl font-bold color-purple">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Antes de retenções</p>
             </div>
             <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
+              <p className="text-2xl font-bold color-green">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Após retenções</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -288,10 +302,24 @@ const Dashboard = ({ user }) => {
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Comissões Totais</p>
-              <p className="text-2xl font-bold color-purple">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+              <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
+              <p className="text-2xl font-bold color-purple">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Antes de retenções</p>
             </div>
             <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+              <Award className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
+              <p className="text-2xl font-bold color-green">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs text-gray-500 mt-1">Após retenções</p>
+            </div>
+            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>

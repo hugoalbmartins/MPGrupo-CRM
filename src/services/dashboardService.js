@@ -60,12 +60,20 @@ async function calculateRetentions(year, month) {
 
   if (currentSales) {
     for (const sale of currentSales) {
-      const { data: commissionConfig } = await supabase
+      const serviceTypeToMatch = sale.scope === 'energia'
+        ? (sale.energy_sale_type || 'eletricidade')
+        : sale.service_type;
+
+      if (!serviceTypeToMatch) continue;
+
+      const { data: commissionConfigs } = await supabase
         .from('commission_configurations')
         .select('has_retention, retention_percentage')
         .eq('operator_id', sale.operator_id)
-        .eq('service_type', sale.service_type || sale.energy_sale_type || 'eletricidade')
-        .maybeSingle();
+        .eq('service_type', serviceTypeToMatch)
+        .limit(1);
+
+      const commissionConfig = commissionConfigs?.[0];
 
       if (commissionConfig?.has_retention) {
         const commission = parseFloat(sale.calculated_commission || 0);
@@ -97,12 +105,20 @@ async function calculateRetentions(year, month) {
 
   if (returnSales) {
     for (const sale of returnSales) {
-      const { data: commissionConfig } = await supabase
+      const serviceTypeToMatch = sale.scope === 'energia'
+        ? (sale.energy_sale_type || 'eletricidade')
+        : sale.service_type;
+
+      if (!serviceTypeToMatch) continue;
+
+      const { data: commissionConfigs } = await supabase
         .from('commission_configurations')
         .select('has_retention, retention_percentage')
         .eq('operator_id', sale.operator_id)
-        .eq('service_type', sale.service_type || sale.energy_sale_type || 'eletricidade')
-        .maybeSingle();
+        .eq('service_type', serviceTypeToMatch)
+        .limit(1);
+
+      const commissionConfig = commissionConfigs?.[0];
 
       if (commissionConfig?.has_retention) {
         const commission = parseFloat(sale.calculated_commission || 0);
@@ -117,6 +133,46 @@ async function calculateRetentions(year, month) {
     to_return: retentionsToReturn,
     return_period: returnPeriod,
     return_date: `01/${String(returnMonth).padStart(2, '0')}/${returnYear}`
+  };
+}
+
+async function calculateNetCommission(sales) {
+  let totalGross = 0;
+  let totalRetention = 0;
+
+  if (!sales || sales.length === 0) {
+    return { gross: 0, retention: 0, net: 0 };
+  }
+
+  for (const sale of sales) {
+    const commission = parseFloat(sale.calculated_commission || sale.manual_commission || 0);
+    totalGross += commission;
+
+    const serviceTypeToMatch = sale.scope === 'energia'
+      ? (sale.energy_sale_type || 'eletricidade')
+      : sale.service_type;
+
+    if (!serviceTypeToMatch) continue;
+
+    const { data: commissionConfigs } = await supabase
+      .from('commission_configurations')
+      .select('has_retention, retention_percentage')
+      .eq('operator_id', sale.operator_id)
+      .eq('service_type', serviceTypeToMatch)
+      .limit(1);
+
+    const commissionConfig = commissionConfigs?.[0];
+
+    if (commissionConfig?.has_retention) {
+      const retentionPct = parseFloat(commissionConfig.retention_percentage || 0);
+      totalRetention += (commission * retentionPct) / 100;
+    }
+  }
+
+  return {
+    gross: totalGross,
+    retention: totalRetention,
+    net: totalGross - totalRetention
   };
 }
 
@@ -185,6 +241,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
   const last12Months = await getLast12MonthsData();
 
   const retentions = await calculateRetentions(year, month);
+  const netCommissions = await calculateNetCommission(sales);
 
   const stats = {
     total_sales: sales?.length || 0,
@@ -196,7 +253,9 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
     by_status: {},
     by_partner: {},
     by_operator: {},
-    total_commission: 0,
+    total_commission_gross: netCommissions.gross,
+    total_commission: netCommissions.net,
+    total_retention: netCommissions.retention,
     commission_to_pay: 0,
     paid_by_operator: 0,
     unpaid_by_operator: 0,
@@ -332,6 +391,7 @@ async function getPartnerDashboard(partnerId, year, month) {
 
   const last12Months = await getLast12MonthsData();
   const retentions = await calculateRetentions(year, month);
+  const netCommissions = await calculateNetCommission(sales);
 
   const stats = {
     total_sales: sales?.length || 0,
@@ -340,7 +400,9 @@ async function getPartnerDashboard(partnerId, year, month) {
     solar: { count: 0 },
     dual: { count: 0 },
     by_status: {},
-    total_commission: 0,
+    total_commission_gross: netCommissions.gross,
+    total_commission: netCommissions.net,
+    total_retention: netCommissions.retention,
     commission_pending: 0,
     commission_paid: 0,
     commission_by_status: {},
