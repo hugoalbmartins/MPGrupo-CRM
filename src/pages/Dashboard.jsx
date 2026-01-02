@@ -5,6 +5,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { dashboardService } from "../services/dashboardService";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
+import { operatorsService } from "../services/operatorsService";
 
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState(null);
@@ -12,6 +13,7 @@ const Dashboard = ({ user }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [partnerStats, setPartnerStats] = useState([]);
+  const [operators, setOperators] = useState([]);
 
   useEffect(() => {
     fetchStats();
@@ -34,10 +36,13 @@ const Dashboard = ({ user }) => {
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
 
-      const [sales, partners] = await Promise.all([
+      const [sales, partners, allOperators] = await Promise.all([
         salesService.getAll(),
-        partnersService.getAll()
+        partnersService.getAll(),
+        operatorsService.getAll()
       ]);
+
+      setOperators(allOperators.filter(op => !op.hidden));
 
       const currentMonthSales = sales.filter(sale => {
         const saleDate = new Date(sale.date);
@@ -47,39 +52,34 @@ const Dashboard = ({ user }) => {
       const partnerMap = {};
 
       currentMonthSales.forEach(sale => {
-        if (!partnerMap[sale.partner_id]) {
-          const partner = partners.find(p => p.id === sale.partner_id);
-          partnerMap[sale.partner_id] = {
-            name: partner?.name || 'Desconhecido',
-            telecom: { nos: 0, meo: 0, vodafone: 0 },
-            energy: { galp: 0, edp: 0, endesa: 0, goldenergy: 0 },
-            solar: 0,
+        const partnerId = sale.partner_id || 'admin_commissioned';
+
+        if (!partnerMap[partnerId]) {
+          let partnerName = 'Desconhecido';
+
+          if (partnerId === 'admin_commissioned') {
+            partnerName = user?.name ? `${user.name} (Admin)` : 'Admin Comissionado';
+          } else {
+            const partner = partners.find(p => p.id === partnerId);
+            partnerName = partner?.name || 'Desconhecido';
+          }
+
+          partnerMap[partnerId] = {
+            name: partnerName,
+            operators: {},
             total: 0
           };
         }
 
         const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
-        const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
-        const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
-        const totalComm = commission + ddValue + feValue;
+        const operatorName = sale.operator_name || 'Desconhecido';
 
-        const scope = (sale.scope || '').toLowerCase();
-        const operator = (sale.operator?.name || '').toLowerCase();
-
-        if (scope === 'telecomunicações' || scope === 'telecom') {
-          if (operator.includes('nos')) partnerMap[sale.partner_id].telecom.nos++;
-          else if (operator.includes('meo')) partnerMap[sale.partner_id].telecom.meo++;
-          else if (operator.includes('vodafone')) partnerMap[sale.partner_id].telecom.vodafone++;
-        } else if (scope === 'energia') {
-          if (operator.includes('galp')) partnerMap[sale.partner_id].energy.galp++;
-          else if (operator.includes('edp')) partnerMap[sale.partner_id].energy.edp++;
-          else if (operator.includes('endesa')) partnerMap[sale.partner_id].energy.endesa++;
-          else if (operator.includes('golden')) partnerMap[sale.partner_id].energy.goldenergy++;
-        } else if (scope === 'solar') {
-          partnerMap[sale.partner_id].solar++;
+        if (!partnerMap[partnerId].operators[operatorName]) {
+          partnerMap[partnerId].operators[operatorName] = 0;
         }
 
-        partnerMap[sale.partner_id].total += totalComm;
+        partnerMap[partnerId].operators[operatorName]++;
+        partnerMap[partnerId].total += commission;
       });
 
       const sortedStats = Object.values(partnerMap)
@@ -119,15 +119,25 @@ const Dashboard = ({ user }) => {
       {user?.is_commissioned && (
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h3 className="text-lg font-semibold text-blue-900 mb-3">Minhas Comissões (Admin Comissionado)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-600 mb-1">Comissões Previstas</p>
-              <p className="text-2xl font-bold color-purple">€{stats?.admin_commission_pending?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">Vendas não pagas pela operadora</p>
+              <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
+              <p className="text-2xl font-bold color-purple">€{((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)).toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Total antes retenções</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-600 mb-1">Comissões a Receber</p>
-              <p className="text-2xl font-bold color-green">€{stats?.admin_commission_paid?.toFixed(2) || '0.00'}</p>
+              <p className="text-sm text-gray-600 mb-1">Retenções</p>
+              <p className="text-2xl font-bold color-blue">€{(stats?.admin_retention || 0).toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Valor retido</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
+              <p className="text-2xl font-bold color-green">€{(((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)) - (stats?.admin_retention || 0)).toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Após retenções</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <p className="text-sm text-gray-600 mb-1">A Receber</p>
+              <p className="text-2xl font-bold text-gray-900">€{((stats?.admin_commission_paid || 0) - (stats?.admin_retention || 0) * ((stats?.admin_commission_paid || 0) / ((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0) || 1))).toFixed(2)}</p>
               <p className="text-xs text-gray-500 mt-1">Vendas pagas pela operadora</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-sm">
@@ -231,7 +241,7 @@ const Dashboard = ({ user }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
@@ -250,6 +260,10 @@ const Dashboard = ({ user }) => {
             <div>
               <p className="text-sm text-gray-600 mb-1">Energia</p>
               <p className="text-2xl font-bold color-orange">{stats?.energia?.count || 0}</p>
+              <div className="text-xs text-gray-500 mt-1">
+                {stats?.energia?.electricity || 0} eletricidade, {stats?.energia?.gas || 0} gás
+                <div className="text-xs text-gray-400 mt-0.5">(das quais {stats?.energia?.dual || 0} dual)</div>
+              </div>
             </div>
             <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
               <Zap className="w-6 h-6 text-white" />
@@ -265,18 +279,6 @@ const Dashboard = ({ user }) => {
             </div>
             <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
               <Sun className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Dual</p>
-              <p className="text-2xl font-bold text-gray-700">{stats?.dual?.count || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center">
-              <ShoppingCart className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -626,7 +628,7 @@ const Dashboard = ({ user }) => {
       </div>
 
       {/* Partners Stats for Current Month */}
-      {partnerStats.length > 0 && (
+      {partnerStats.length > 0 && operators.length > 0 && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Parceiro - {months[new Date().getMonth()]} {new Date().getFullYear()}</h3>
           <div className="overflow-x-auto">
@@ -634,14 +636,9 @@ const Dashboard = ({ user }) => {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-700">Parceiro</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">NOS</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">MEO</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Vodafone</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Galp</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">EDP</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Endesa</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Goldenergy</th>
-                  <th className="text-center py-3 px-2 font-semibold text-gray-700">Solar</th>
+                  {operators.map((op) => (
+                    <th key={op.id} className="text-center py-3 px-2 font-semibold text-gray-700">{op.name}</th>
+                  ))}
                   <th className="text-right py-3 px-4 font-semibold text-gray-700">Total Comissões</th>
                 </tr>
               </thead>
@@ -649,14 +646,11 @@ const Dashboard = ({ user }) => {
                 {partnerStats.map((partner, index) => (
                   <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 font-medium text-gray-900">{partner.name}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.telecom.nos || '-'}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.telecom.meo || '-'}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.telecom.vodafone || '-'}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.galp || '-'}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.edp || '-'}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.endesa || '-'}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.energy.goldenergy || '-'}</td>
-                    <td className="text-center py-3 px-2 text-gray-600">{partner.solar || '-'}</td>
+                    {operators.map((op) => (
+                      <td key={op.id} className="text-center py-3 px-2 text-gray-600">
+                        {partner.operators[op.name] || '-'}
+                      </td>
+                    ))}
                     <td className="text-right py-3 px-4 font-bold text-blue-600">€{partner.total.toFixed(2)}</td>
                   </tr>
                 ))}

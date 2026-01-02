@@ -247,7 +247,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
     total_sales: sales?.length || 0,
     total_partners: partnerCount || 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
-    energia: { count: 0 },
+    energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     dual: { count: 0 },
     by_status: {},
@@ -266,12 +266,13 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
     admin_sales_count: 0,
     admin_commission_pending: 0,
     admin_commission_paid: 0,
+    admin_retention: 0,
     current_month_retentions: retentions.current_month,
     retentions_to_return: retentions.to_return
   };
 
   if (sales) {
-    sales.forEach(sale => {
+    for (const sale of sales) {
       const scope = sale.scope || '';
       const commission = sale.manual_commission || sale.calculated_commission || 0;
       const status = sale.status || 'Pendente';
@@ -281,6 +282,17 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
         stats.energia.count++;
+
+        const energyType = sale.energy_sale_type || 'eletricidade';
+        if (energyType === 'eletricidade') {
+          stats.energia.electricity++;
+        } else if (energyType === 'gas') {
+          stats.energia.gas++;
+        } else if (energyType === 'dual') {
+          stats.energia.dual++;
+          stats.energia.electricity++;
+          stats.energia.gas++;
+        }
       } else if (scope === 'solar') {
         stats.solar.count++;
       } else if (scope === 'dual') {
@@ -315,8 +327,28 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
         } else {
           stats.admin_commission_pending += commission;
         }
+
+        const serviceTypeToMatch = sale.scope === 'energia'
+          ? (sale.energy_sale_type || 'eletricidade')
+          : sale.service_type;
+
+        if (serviceTypeToMatch) {
+          const { data: commissionConfigs } = await supabase
+            .from('commission_configurations')
+            .select('has_retention, retention_percentage')
+            .eq('operator_id', sale.operator_id)
+            .eq('service_type', serviceTypeToMatch)
+            .limit(1);
+
+          const commissionConfig = commissionConfigs?.[0];
+
+          if (commissionConfig?.has_retention) {
+            const retentionPct = parseFloat(commissionConfig.retention_percentage || 0);
+            stats.admin_retention += (commission * retentionPct) / 100;
+          }
+        }
       }
-    });
+    }
   }
 
   return stats;
@@ -336,7 +368,7 @@ async function getBODashboard(year, month) {
   const stats = {
     total_sales: sales?.length || 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
-    energia: { count: 0 },
+    energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     dual: { count: 0 },
     by_status: {},
@@ -356,6 +388,17 @@ async function getBODashboard(year, month) {
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
         stats.energia.count++;
+
+        const energyType = sale.energy_sale_type || 'eletricidade';
+        if (energyType === 'eletricidade') {
+          stats.energia.electricity++;
+        } else if (energyType === 'gas') {
+          stats.energia.gas++;
+        } else if (energyType === 'dual') {
+          stats.energia.dual++;
+          stats.energia.electricity++;
+          stats.energia.gas++;
+        }
       } else if (scope === 'solar') {
         stats.solar.count++;
       } else if (scope === 'dual') {
@@ -391,7 +434,7 @@ async function getPartnerDashboard(partnerId, year, month) {
   const stats = {
     total_sales: sales?.length || 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
-    energia: { count: 0 },
+    energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     dual: { count: 0 },
     by_status: {},
@@ -420,6 +463,17 @@ async function getPartnerDashboard(partnerId, year, month) {
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
         stats.energia.count++;
+
+        const energyType = sale.energy_sale_type || 'eletricidade';
+        if (energyType === 'eletricidade') {
+          stats.energia.electricity++;
+        } else if (energyType === 'gas') {
+          stats.energia.gas++;
+        } else if (energyType === 'dual') {
+          stats.energia.dual++;
+          stats.energia.electricity++;
+          stats.energia.gas++;
+        }
       } else if (scope === 'solar') {
         stats.solar.count++;
       } else if (scope === 'dual') {
