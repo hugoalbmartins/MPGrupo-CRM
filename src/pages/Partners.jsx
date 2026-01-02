@@ -377,12 +377,11 @@ const Partners = ({ user }) => {
                   </div>
                   <div>
                     <Label>Gestor Responsável (Opcional)</Label>
-                    <Select value={formData.manager_id} onValueChange={(v) => setFormData({...formData, manager_id: v})}>
+                    <Select value={formData.manager_id || undefined} onValueChange={(v) => setFormData({...formData, manager_id: v})}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um gestor..." />
+                        <SelectValue placeholder="Nenhum gestor atribuído" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Nenhum</SelectItem>
                         {managers.map((manager) => (
                           <SelectItem key={manager.id} value={manager.id}>
                             {manager.name} ({manager.role === 'gestor_nv1' ? 'Gestor Nível 1' : 'Gestor Nível 2'})
