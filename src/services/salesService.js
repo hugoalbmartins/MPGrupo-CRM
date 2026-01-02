@@ -246,7 +246,7 @@ export const salesService = {
     return data;
   },
 
-  async addNote(saleId, content) {
+  async addNote(saleId, content, attachments = []) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: currentUser } = await supabase
       .from('users')
@@ -269,7 +269,8 @@ export const salesService = {
       content,
       author: currentUser.name,
       author_role: currentUser.role,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      attachments: attachments || []
     };
 
     const newNotes = [...(sale.notes || []), note];

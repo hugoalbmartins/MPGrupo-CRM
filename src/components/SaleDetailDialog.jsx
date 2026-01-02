@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { X, Edit2, Save, History, MessageSquare, AlertTriangle, CheckCircle, Upload, FileText, Download } from "lucide-react";
+import { X, Edit2, Save, History, MessageSquare, AlertTriangle, CheckCircle, Upload, FileText, Download, Paperclip } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { salesService } from "../services/salesService";
+import { supabase } from "../lib/supabase";
 
 const STATUSES = [
   "Pendente",
@@ -558,6 +559,41 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                      {note.attachments && note.attachments.length > 0 && (
+                        <div className="mt-3 space-y-1 border-t pt-2">
+                          <p className="text-xs text-gray-500 font-medium mb-1">Anexos:</p>
+                          {note.attachments.map((attachment) => (
+                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-blue-600">
+                              <Paperclip className="w-3 h-3" />
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const { data, error } = await supabase.storage
+                                      .from('sales-documents')
+                                      .download(attachment.path);
+                                    if (error) throw error;
+                                    const url = URL.createObjectURL(data);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = attachment.filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                    toast.success("Download concluído!");
+                                  } catch (error) {
+                                    console.error('Error downloading:', error);
+                                    toast.error("Erro ao descarregar ficheiro");
+                                  }
+                                }}
+                                className="hover:underline"
+                              >
+                                {attachment.filename}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (

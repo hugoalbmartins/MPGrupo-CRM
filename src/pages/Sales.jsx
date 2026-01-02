@@ -488,7 +488,32 @@ const Sales = ({ user }) => {
     if (!newNote.trim()) return;
 
     try {
-      await salesService.addNote(selectedSaleForNotes.id, newNote);
+      const attachments = [];
+
+      if (noteAttachments.length > 0) {
+        for (const file of noteAttachments) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${selectedSaleForNotes.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('sales-documents')
+            .upload(fileName, file);
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw uploadError;
+          }
+
+          attachments.push({
+            id: crypto.randomUUID(),
+            filename: file.name,
+            path: fileName,
+            uploaded_at: new Date().toISOString()
+          });
+        }
+      }
+
+      await salesService.addNote(selectedSaleForNotes.id, newNote, attachments);
       toast.success("Nota adicionada!");
       setNewNote("");
       setNoteAttachments([]);
@@ -1527,6 +1552,40 @@ const Sales = ({ user }) => {
                         </span>
                       </div>
                       <p className="text-sm text-gray-700">{note.content}</p>
+                      {note.attachments && note.attachments.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {note.attachments.map((attachment) => (
+                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-blue-600">
+                              <Paperclip className="w-3 h-3" />
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const { data, error } = await supabase.storage
+                                      .from('sales-documents')
+                                      .download(attachment.path);
+                                    if (error) throw error;
+                                    const url = URL.createObjectURL(data);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = attachment.filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                    toast.success("Download concluído!");
+                                  } catch (error) {
+                                    console.error('Error downloading:', error);
+                                    toast.error("Erro ao descarregar ficheiro");
+                                  }
+                                }}
+                                className="hover:underline"
+                              >
+                                {attachment.filename}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                   {selectedSaleForNotes.notes.length > 3 && (

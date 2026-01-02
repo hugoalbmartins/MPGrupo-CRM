@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { operatorsService } from "../services/operatorsService";
 import CommissionWizard from "../components/CommissionWizard";
+import { supabase } from "../lib/supabase";
 
 const Operators = ({ user }) => {
   const [operators, setOperators] = useState([]);
@@ -157,12 +158,46 @@ const Operators = ({ user }) => {
 
     setUploading(true);
     try {
+      const uploadedDocs = [];
+
+      for (const file of uploadFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedOperator.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('operator-documents')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
+        }
+
+        uploadedDocs.push({
+          id: crypto.randomUUID(),
+          filename: file.name,
+          path: fileName,
+          uploaded_at: new Date().toISOString()
+        });
+      }
+
+      const existingDocs = selectedOperator.documents || [];
+      const updatedDocs = [...existingDocs, ...uploadedDocs];
+
+      const { error: updateError } = await supabase
+        .from('operators')
+        .update({ documents: updatedDocs })
+        .eq('id', selectedOperator.id);
+
+      if (updateError) throw updateError;
+
       toast.success(`${uploadFiles.length} documento(s) enviado(s) com sucesso!`);
       setUploadDialogOpen(false);
       setUploadFiles([]);
       fetchOperators();
     } catch (error) {
-      toast.error("Erro ao enviar documentos");
+      console.error('Error uploading documents:', error);
+      toast.error("Erro ao enviar documentos: " + (error.message || 'Erro desconhecido'));
     } finally {
       setUploading(false);
     }
@@ -172,15 +207,65 @@ const Operators = ({ user }) => {
     if (!window.confirm("Tem a certeza que deseja eliminar este documento?")) return;
 
     try {
+      const operator = operators.find(op => op.id === operatorId);
+      if (!operator) return;
+
+      const doc = operator.documents?.find(d => d.id === docId);
+      if (!doc) return;
+
+      const { error: storageError } = await supabase.storage
+        .from('operator-documents')
+        .remove([doc.path]);
+
+      if (storageError) {
+        console.error('Storage delete error:', storageError);
+      }
+
+      const updatedDocs = operator.documents.filter(d => d.id !== docId);
+
+      const { error: updateError } = await supabase
+        .from('operators')
+        .update({ documents: updatedDocs })
+        .eq('id', operatorId);
+
+      if (updateError) throw updateError;
+
       toast.success("Documento eliminado com sucesso!");
       fetchOperators();
     } catch (error) {
+      console.error('Error deleting document:', error);
       toast.error("Erro ao eliminar documento");
     }
   };
 
-  const handleDownloadDocument = (operatorId, docId, filename) => {
-    toast.info("Funcionalidade de download será implementada em breve");
+  const handleDownloadDocument = async (operatorId, docId, filename) => {
+    try {
+      const operator = operators.find(op => op.id === operatorId);
+      if (!operator) return;
+
+      const doc = operator.documents?.find(d => d.id === docId);
+      if (!doc) return;
+
+      const { data, error } = await supabase.storage
+        .from('operator-documents')
+        .download(doc.path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Download concluído!");
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast.error("Erro ao descarregar documento");
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
