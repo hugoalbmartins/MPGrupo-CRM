@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Search, Upload, File, Download, Trash2 } from "lucide-react";
+import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ const Partners = ({ user }) => {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sortColumn, setSortColumn] = useState("name");
+  const [sortDirection, setSortDirection] = useState("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState(null);
   const [generatedPassword, setGeneratedPassword] = useState("");
@@ -208,11 +211,74 @@ const Partners = ({ user }) => {
     setFormData({ ...formData, communication_emails: newEmails });
   };
 
-  const filteredPartners = partners.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.partner_code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (column) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="w-4 h-4 inline ml-1 text-gray-400" />;
+    }
+    return sortDirection === "asc" ?
+      <ArrowUp className="w-4 h-4 inline ml-1 text-blue-600" /> :
+      <ArrowDown className="w-4 h-4 inline ml-1 text-blue-600" />;
+  };
+
+  const filteredAndSortedPartners = partners
+    .filter(p => {
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.partner_code.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === "all" || p.partner_type === typeFilter;
+      return matchesSearch && matchesType;
+    })
+    .sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortColumn) {
+        case "code":
+          aValue = a.partner_code;
+          bValue = b.partner_code;
+          break;
+        case "name":
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case "type":
+          aValue = a.partner_type;
+          bValue = b.partner_type;
+          break;
+        case "email":
+          aValue = a.email;
+          bValue = b.email;
+          break;
+        case "phone":
+          aValue = a.phone;
+          bValue = b.phone;
+          break;
+        case "contact":
+          aValue = a.contact_person;
+          bValue = b.contact_person;
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        const comparison = aValue.localeCompare(bValue);
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+
+      return sortDirection === "asc" ?
+        (aValue > bValue ? 1 : -1) :
+        (aValue < bValue ? 1 : -1);
+    });
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
@@ -421,32 +487,61 @@ const Partners = ({ user }) => {
       </div>
 
       <div className="professional-card p-6">
-        <div className="mb-4">
-          <div className="relative">
+        <div className="mb-4 flex gap-4">
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+            <Input
+              type="text"
+              placeholder="Pesquisar por código, nome ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="D2D">D2D</SelectItem>
+              <SelectItem value="Rev">Rev</SelectItem>
+              <SelectItem value="Rev+">Rev+</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="table-container">
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Email</th>
-                <th>Telefone</th>
-                <th>Contacto</th>
+                <th onClick={() => handleSort("code")} className="cursor-pointer hover:bg-gray-50">
+                  Código{getSortIcon("code")}
+                </th>
+                <th onClick={() => handleSort("name")} className="cursor-pointer hover:bg-gray-50">
+                  Nome{getSortIcon("name")}
+                </th>
+                <th onClick={() => handleSort("type")} className="cursor-pointer hover:bg-gray-50">
+                  Tipo{getSortIcon("type")}
+                </th>
+                <th onClick={() => handleSort("email")} className="cursor-pointer hover:bg-gray-50">
+                  Email{getSortIcon("email")}
+                </th>
+                <th onClick={() => handleSort("phone")} className="cursor-pointer hover:bg-gray-50">
+                  Telefone{getSortIcon("phone")}
+                </th>
+                <th onClick={() => handleSort("contact")} className="cursor-pointer hover:bg-gray-50">
+                  Contacto{getSortIcon("contact")}
+                </th>
                 {user?.role === 'admin' && <th className="text-center">Documentos</th>}
                 {user?.role === 'admin' && <th className="text-center">Ações</th>}
               </tr>
             </thead>
             <tbody>
-              {filteredPartners.length === 0 ? (
+              {filteredAndSortedPartners.length === 0 ? (
                 <tr><td colSpan={user?.role === 'admin' ? 8 : 6} className="text-center py-8 text-gray-400">Nenhum parceiro encontrado</td></tr>
               ) : (
-                filteredPartners.map((partner) => (
+                filteredAndSortedPartners.map((partner) => (
                   <tr key={partner.id}>
                     <td className="font-semibold text-blue-600">{partner.partner_code}</td>
                     <td className="font-medium">{partner.name}</td>

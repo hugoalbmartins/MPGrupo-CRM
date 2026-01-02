@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search } from "lucide-react";
+import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ const Users = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [sortColumn, setSortColumn] = useState("name");
+  const [sortDirection, setSortDirection] = useState("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -169,14 +171,66 @@ const Users = ({ user }) => {
     }
   };
 
-  const filteredUsers = users.filter(u => {
-    const matchesSearch =
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.position.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === "all" || u.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (column) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="w-4 h-4 inline ml-1 text-gray-400" />;
+    }
+    return sortDirection === "asc" ?
+      <ArrowUp className="w-4 h-4 inline ml-1 text-blue-600" /> :
+      <ArrowDown className="w-4 h-4 inline ml-1 text-blue-600" />;
+  };
+
+  const filteredAndSortedUsers = users
+    .filter(u => {
+      const matchesSearch =
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.position.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesRole = roleFilter === "all" || u.role === roleFilter;
+      return matchesSearch && matchesRole;
+    })
+    .sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortColumn) {
+        case "name":
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case "email":
+          aValue = a.email;
+          bValue = b.email;
+          break;
+        case "position":
+          aValue = a.position;
+          bValue = b.position;
+          break;
+        case "role":
+          aValue = a.role;
+          bValue = b.role;
+          break;
+        default:
+          return 0;
+      }
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        const comparison = aValue.localeCompare(bValue);
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+
+      return sortDirection === "asc" ?
+        (aValue > bValue ? 1 : -1) :
+        (aValue < bValue ? 1 : -1);
+    });
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
@@ -326,22 +380,30 @@ const Users = ({ user }) => {
           <table>
             <thead>
               <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Posição</th>
-                <th>Função</th>
+                <th onClick={() => handleSort("name")} className="cursor-pointer hover:bg-gray-50">
+                  Nome{getSortIcon("name")}
+                </th>
+                <th onClick={() => handleSort("email")} className="cursor-pointer hover:bg-gray-50">
+                  Email{getSortIcon("email")}
+                </th>
+                <th onClick={() => handleSort("position")} className="cursor-pointer hover:bg-gray-50">
+                  Posição{getSortIcon("position")}
+                </th>
+                <th onClick={() => handleSort("role")} className="cursor-pointer hover:bg-gray-50">
+                  Função{getSortIcon("role")}
+                </th>
                 {user?.role === 'admin' && <th className="text-center">Ações</th>}
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length === 0 ? (
+              {filteredAndSortedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={user?.role === 'admin' ? 5 : 4} className="text-center py-8 text-gray-400">
                     Nenhum utilizador encontrado
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => (
+                filteredAndSortedUsers.map((u) => (
                   <tr key={u.id}>
                     <td>
                       <div className="flex items-center gap-3">
