@@ -211,7 +211,7 @@ const Sales = ({ user }) => {
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
 
       if (!pendingSubmit) {
-        const result = await salesService.checkWarningsAndCreateSale(submitData);
+        const result = await salesService.checkWarningsAndCreateSale(submitData, uploadFiles);
 
         if (result.warnings) {
           setValidationWarnings(result.warnings);
@@ -224,7 +224,7 @@ const Sales = ({ user }) => {
         resetForm();
         fetchData();
       } else {
-        await salesService.create(submitData);
+        await salesService.create(submitData, uploadFiles);
         toast.success("Venda criada com sucesso!");
         setDialogOpen(false);
         resetForm();

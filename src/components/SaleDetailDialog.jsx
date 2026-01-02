@@ -225,12 +225,15 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
           </div>
         ) : sale ? (
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-100 p-1 rounded-lg">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg">
               <TabsTrigger value="details" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
                 Detalhes
               </TabsTrigger>
               <TabsTrigger value="notes" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
                 Notas {sale.notes?.length > 0 && `(${sale.notes.length})`}
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
+                Anexos {sale.attachments?.length > 0 && `(${sale.attachments.length})`}
               </TabsTrigger>
               <TabsTrigger value="history" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
                 Histórico {auditLogs.length > 0 && `(${auditLogs.length})`}
@@ -620,6 +623,64 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                 >
                   {savingNote ? "A adicionar..." : "Adicionar Nota"}
                 </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="attachments" className="space-y-4 mt-4">
+              <div className="space-y-3">
+                {sale.attachments && sale.attachments.length > 0 ? (
+                  sale.attachments.map((attachment) => (
+                    <div key={attachment.id} className="p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Paperclip className="w-5 h-5 text-[#1F4E78]" />
+                          <div>
+                            <p className="font-medium text-sm">{attachment.filename}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(attachment.uploaded_at).toLocaleString('pt-PT')}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              const { data, error } = await supabase.storage
+                                .from('sales-documents')
+                                .download(attachment.path);
+
+                              if (error) throw error;
+
+                              const url = window.URL.createObjectURL(data);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = attachment.filename;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              window.URL.revokeObjectURL(url);
+
+                              toast.success('Ficheiro transferido com sucesso');
+                            } catch (error) {
+                              console.error('Error downloading file:', error);
+                              toast.error('Erro ao transferir ficheiro');
+                            }
+                          }}
+                          className="gap-1"
+                        >
+                          <Download className="w-4 h-4" />
+                          Transferir
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Paperclip className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum anexo disponível</p>
+                  </div>
+                )}
               </div>
             </TabsContent>
 

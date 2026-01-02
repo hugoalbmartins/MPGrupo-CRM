@@ -55,7 +55,7 @@ export const salesService = {
     return data;
   },
 
-  async checkWarningsAndCreateSale(saleData) {
+  async checkWarningsAndCreateSale(saleData, files = []) {
     const saleDate = new Date(saleData.date);
     if (saleDate > new Date()) {
       throw new Error('Cannot create sales with future dates');
@@ -87,10 +87,49 @@ export const salesService = {
       return { warnings };
     }
 
-    return await this.create(saleData);
+    return await this.create(saleData, files);
   },
 
-  async create(saleData) {
+  async uploadAttachments(saleId, files) {
+    if (!files || files.length === 0) return [];
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const attachments = [];
+
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const timestamp = Date.now();
+      const randomId = crypto.randomUUID();
+      const fileName = `${saleId}_${timestamp}_${randomId}.${fileExt}`;
+      const filePath = `${saleId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('sales-documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        continue;
+      }
+
+      attachments.push({
+        id: randomId,
+        filename: file.name,
+        path: filePath,
+        uploaded_at: new Date().toISOString(),
+        uploaded_by: user.id
+      });
+    }
+
+    return attachments;
+  },
+
+  async create(saleData, files = []) {
     const saleDate = new Date(saleData.date);
     if (saleDate > new Date()) {
       throw new Error('Cannot create sales with future dates');
@@ -187,7 +226,8 @@ export const salesService = {
       cui: saleData.cui?.toUpperCase() || null,
       tier: saleData.tier || null,
       observations: saleData.observations || null,
-      calculated_commission: commission
+      calculated_commission: commission,
+      attachments: []
     };
 
     const { data, error } = await supabase
@@ -198,6 +238,23 @@ export const salesService = {
 
     if (error) throw error;
     if (!data) throw new Error('Sale created but not returned from database');
+
+    if (files && files.length > 0) {
+      const attachments = await this.uploadAttachments(data.id, files);
+
+      if (attachments.length > 0) {
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update({ attachments })
+          .eq('id', data.id);
+
+        if (updateError) {
+          console.error('Error updating sale with attachments:', updateError);
+        } else {
+          data.attachments = attachments;
+        }
+      }
+    }
 
     await this.createAlert('new_sale', data.id, data.sale_code,
       `Nova venda registada: ${data.sale_code} - ${partnerName}`);
