@@ -77,6 +77,15 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing required fields");
     }
 
+    // Validate email for specific roles
+    const restrictedRoles = ['admin', 'bo', 'gestor_nv1', 'gestor_nv2'];
+    if (restrictedRoles.includes(requestData.role)) {
+      const emailDomain = requestData.email.split('@')[1];
+      if (emailDomain !== 'mpgrupo.pt' && emailDomain !== 'marciopinto.pt') {
+        throw new Error(`Users with role ${requestData.role} must have email ending in @mpgrupo.pt or @marciopinto.pt`);
+      }
+    }
+
     const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers();
     const userAlreadyExists = existingAuthUser?.users?.some(u => u.email === requestData.email);
     

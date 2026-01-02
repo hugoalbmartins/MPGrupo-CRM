@@ -73,6 +73,43 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+    let inactivityTimer;
+
+    const resetTimer = () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+
+      inactivityTimer = setTimeout(async () => {
+        console.log('Auto-logout due to inactivity');
+        await authService.signOut();
+        setUser(null);
+        setMustChangePassword(false);
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+    activityEvents.forEach(event => {
+      document.addEventListener(event, resetTimer, true);
+    });
+
+    resetTimer();
+
+    return () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+      }
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, resetTimer, true);
+      });
+    };
+  }, [user]);
+
   const checkUser = async () => {
     try {
       const userData = await authService.getCurrentUser();

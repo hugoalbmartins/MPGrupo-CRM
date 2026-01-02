@@ -123,6 +123,8 @@ const Users = ({ user }) => {
     switch (role) {
       case 'admin': return <Shield className="w-5 h-5 text-blue-600" />;
       case 'bo': return <Briefcase className="w-5 h-5 text-green-600" />;
+      case 'gestor_nv1': return <Briefcase className="w-5 h-5 text-cyan-600" />;
+      case 'gestor_nv2': return <Briefcase className="w-5 h-5 text-teal-600" />;
       case 'partner': return <UserIcon className="w-5 h-5 text-purple-600" />;
       case 'partner_commercial': return <UserIcon className="w-5 h-5 text-orange-600" />;
       default: return <UserIcon className="w-5 h-5" />;
@@ -133,6 +135,8 @@ const Users = ({ user }) => {
     switch (role) {
       case 'admin': return 'Administrador';
       case 'bo': return 'Back Office';
+      case 'gestor_nv1': return 'Gestor Nível 1';
+      case 'gestor_nv2': return 'Gestor Nível 2';
       case 'partner': return 'Parceiro';
       case 'partner_commercial': return 'Parceiro Comercial';
       default: return role;
@@ -183,6 +187,8 @@ const Users = ({ user }) => {
                     <SelectContent>
                       <SelectItem value="admin">Administrador</SelectItem>
                       <SelectItem value="bo">Back Office</SelectItem>
+                      <SelectItem value="gestor_nv1">Gestor Nível 1</SelectItem>
+                      <SelectItem value="gestor_nv2">Gestor Nível 2</SelectItem>
                       <SelectItem value="partner">Parceiro</SelectItem>
                       <SelectItem value="partner_commercial">Parceiro Comercial</SelectItem>
                     </SelectContent>

@@ -78,6 +78,15 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing required fields");
     }
 
+    // Validate email for specific roles
+    const restrictedRoles = ['admin', 'bo', 'gestor_nv1', 'gestor_nv2'];
+    if (restrictedRoles.includes(requestData.role)) {
+      const emailDomain = requestData.email.split('@')[1];
+      if (emailDomain !== 'mpgrupo.pt' && emailDomain !== 'marciopinto.pt') {
+        throw new Error(`Users with role ${requestData.role} must have email ending in @mpgrupo.pt or @marciopinto.pt`);
+      }
+    }
+
     const updateData: any = {
       name: requestData.name,
       email: requestData.email,
@@ -86,6 +95,24 @@ Deno.serve(async (req: Request) => {
       partner_id: requestData.partner_id || null,
       is_commissioned: requestData.is_commissioned || false,
     };
+
+    // Update auth.users email if it changed
+    const { data: currentUserData } = await supabaseAdmin
+      .from("users")
+      .select("email")
+      .eq("id", requestData.userId)
+      .maybeSingle();
+
+    if (currentUserData && currentUserData.email !== requestData.email) {
+      const { error: emailUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
+        requestData.userId,
+        { email: requestData.email }
+      );
+
+      if (emailUpdateError) {
+        throw new Error(`Failed to update auth email: ${emailUpdateError.message}`);
+      }
+    }
 
     if (requestData.password) {
       const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(

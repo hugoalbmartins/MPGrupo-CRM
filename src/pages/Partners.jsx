@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { partnersService } from "../services/partnersService";
+import { usersService } from "../services/usersService";
 import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
 
 const Partners = ({ user }) => {
@@ -19,6 +20,7 @@ const Partners = ({ user }) => {
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
   const [selectedPartnerForDocs, setSelectedPartnerForDocs] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [managers, setManagers] = useState([]);
   const [formData, setFormData] = useState({
     partner_type: "D2D",
     name: "",
@@ -33,10 +35,12 @@ const Partners = ({ user }) => {
     nif: "",
     crc: "",
     iban: "",
+    manager_id: "",
   });
 
   useEffect(() => {
     fetchPartners();
+    fetchManagers();
   }, []);
 
   const fetchPartners = async () => {
@@ -47,6 +51,16 @@ const Partners = ({ user }) => {
       toast.error("Erro ao carregar parceiros");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchManagers = async () => {
+    try {
+      const users = await usersService.getAll();
+      const managerUsers = users.filter(u => u.role === 'gestor_nv1' || u.role === 'gestor_nv2');
+      setManagers(managerUsers);
+    } catch (error) {
+      console.error("Erro ao carregar gestores:", error);
     }
   };
 
@@ -117,6 +131,7 @@ const Partners = ({ user }) => {
       name: partner.name,
       email: partner.email,
       communication_emails: partner.communication_emails.length > 0 ? partner.communication_emails : [""],
+      manager_id: partner.manager_id || "",
       phone: partner.phone,
       contact_person: partner.contact_person,
       street: partner.street,
@@ -178,6 +193,7 @@ const Partners = ({ user }) => {
       locality: "",
       nif: "",
       crc: "",
+      manager_id: "",
       iban: "",
     });
   };
@@ -358,6 +374,23 @@ const Partners = ({ user }) => {
                       maxLength={25}
                     />
                     <p className="text-xs text-gray-500 mt-1">IBAN para receber pagamento de comissões</p>
+                  </div>
+                  <div>
+                    <Label>Gestor Responsável (Opcional)</Label>
+                    <Select value={formData.manager_id} onValueChange={(v) => setFormData({...formData, manager_id: v})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um gestor..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Nenhum</SelectItem>
+                        {managers.map((manager) => (
+                          <SelectItem key={manager.id} value={manager.id}>
+                            {manager.name} ({manager.role === 'gestor_nv1' ? 'Gestor Nível 1' : 'Gestor Nível 2'})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">Gestor que terá acesso às vendas deste parceiro</p>
                   </div>
                 </div>
                 <div>
