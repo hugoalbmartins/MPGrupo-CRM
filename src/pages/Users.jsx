@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2 } from "lucide-react";
+import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ const Users = ({ user }) => {
   const [suggestedPassword, setSuggestedPassword] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [userToReset, setUserToReset] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -116,6 +119,27 @@ const Users = ({ user }) => {
       fetchData();
     } catch (error) {
       toast.error(error.message || "Erro ao eliminar utilizador");
+    }
+  };
+
+  const openResetPasswordDialog = (userToReset) => {
+    setUserToReset(userToReset);
+    const generatedPassword = generateStrongPassword();
+    setNewPassword(generatedPassword);
+    setResetPasswordDialogOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!userToReset || !newPassword) return;
+
+    try {
+      await usersService.resetPassword(userToReset.id, newPassword);
+      toast.success(`Password resetada! Nova password: ${newPassword}`, { duration: 10000 });
+      setResetPasswordDialogOpen(false);
+      setUserToReset(null);
+      setNewPassword("");
+    } catch (error) {
+      toast.error(error.message || "Erro ao resetar password");
     }
   };
 
@@ -286,6 +310,15 @@ const Users = ({ user }) => {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => openResetPasswordDialog(u)}
+                    title="Resetar password"
+                    className="h-8 w-8 p-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => openDeleteDialog(u)}
                     title="Eliminar utilizador"
                     className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
@@ -299,6 +332,49 @@ const Users = ({ user }) => {
           </div>
         ))}
       </div>
+
+      <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resetar Password</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <div>
+                Vai resetar a password do utilizador <strong>{userToReset?.name}</strong> ({userToReset?.email}).
+              </div>
+              <div className="bg-orange-50 border border-orange-200 rounded-md p-3">
+                <Label className="text-sm font-semibold text-orange-900">Nova Password</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    type="text"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="flex-1 font-mono"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => setNewPassword(generateStrongPassword())}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Gerar
+                  </Button>
+                </div>
+                <p className="text-xs text-orange-700 mt-2">
+                  <strong>Importante:</strong> Copie esta password e forneça-a ao utilizador. O utilizador terá que mudar a password no próximo login.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setUserToReset(null); setNewPassword(""); }}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetPassword} className="bg-orange-600 hover:bg-orange-700">
+              Resetar Password
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

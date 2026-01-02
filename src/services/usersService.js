@@ -133,5 +133,34 @@ export const usersService = {
 
     if (error) throw error;
     return true;
+  },
+
+  async resetPassword(userId, newPassword) {
+    if (!validatePassword(newPassword)) {
+      throw new Error('Password must be 8+ chars with 1 uppercase, 1 digit, 1 special char');
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/reset-user-password`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        new_password: newPassword,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to reset password');
+    }
+
+    return result;
   }
 };
