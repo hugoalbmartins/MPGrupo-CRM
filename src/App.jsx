@@ -18,6 +18,7 @@ import Forms from "./pages/Forms.jsx";
 import CommissionReports from "./pages/CommissionReports.jsx";
 import CommissionReportsPartner from "./pages/CommissionReportsPartner.jsx";
 import OperatorValidations from "./pages/OperatorValidations.jsx";
+import Objectives from "./pages/Objectives.jsx";
 import Layout from "./components/Layout.jsx";
 import "@/App.css";
 
@@ -214,6 +215,7 @@ function App() {
             {user?.role === "admin" && (
               <>
                 <Route path="/operators" element={<Operators user={user} />} />
+                <Route path="/objectives" element={<Objectives user={user} />} />
                 <Route path="/users" element={<Users user={user} />} />
                 <Route path="/commission-reports" element={<CommissionReports user={user} />} />
                 <Route path="/operator-validations" element={<OperatorValidations user={user} />} />

@@ -546,7 +546,7 @@ const Dashboard = ({ user }) => {
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Vendas</p>
               <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats?.total_partners || 0} parceiros</p>
+              <p className="text-xs text-gray-500 mt-1">Próprias e de parceiros</p>
             </div>
             <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-white" />
@@ -557,9 +557,9 @@ const Dashboard = ({ user }) => {
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
-              <p className="text-2xl font-bold color-purple">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">Antes de retenções</p>
+              <p className="text-sm text-gray-600 mb-1">Minhas Comissões Brutas</p>
+              <p className="text-2xl font-bold color-purple">€{(stats?.own_commission_gross || 0).toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Vendas próprias</p>
             </div>
             <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
               <Award className="w-6 h-6 text-white" />
@@ -570,47 +570,9 @@ const Dashboard = ({ user }) => {
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
-              <p className="text-2xl font-bold color-green">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">Após retenções</p>
-            </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
-              <Award className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">A Pagar</p>
-              <p className="text-2xl font-bold color-orange">€{stats?.commission_to_pay?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats?.unpaid_by_operator || 0} vendas</p>
-            </div>
-            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
-              <Award className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Pagas Operador</p>
-              <p className="text-2xl font-bold color-green">{stats?.paid_by_operator || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Retenções Mês Corrente</p>
-              <p className="text-2xl font-bold color-blue">€{stats?.current_month_retentions?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">A reter das comissões</p>
+              <p className="text-sm text-gray-600 mb-1">Minhas Retenções</p>
+              <p className="text-2xl font-bold color-blue">€{(stats?.own_retention || 0).toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">A reter temporariamente</p>
             </div>
             <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
               <Award className="w-6 h-6 text-white" />
@@ -621,12 +583,12 @@ const Dashboard = ({ user }) => {
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Retenções a Devolver</p>
-              <p className="text-2xl font-bold color-green">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">Próximo auto (6 meses)</p>
+              <p className="text-sm text-gray-600 mb-1">Minhas Comissões Líquidas</p>
+              <p className="text-2xl font-bold color-green">€{((stats?.own_commission_gross || 0) - (stats?.own_retention || 0)).toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Após retenções</p>
             </div>
             <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-white" />
+              <Award className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
@@ -730,7 +692,6 @@ const Dashboard = ({ user }) => {
       {user?.role === 'partner' && renderPartnerDashboard()}
       {user?.role === 'partner_commercial' && renderCommercialDashboard()}
       {user?.role === 'gestor_nv1' && renderManagerLevel1Dashboard()}
-      {user?.role === 'gestor_nv2' && renderManagerLevel1Dashboard()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {statusData.length > 0 && (

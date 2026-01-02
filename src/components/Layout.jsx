@@ -36,17 +36,18 @@ const Layout = ({ children, user, onLogout }) => {
   };
 
   const menuItems = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1", "gestor_nv2"] },
-    { path: "/partners", label: "Parceiros", icon: Users, roles: ["admin", "bo", "partner", "gestor_nv1", "gestor_nv2"] },
-    { path: "/sales", label: "Vendas", icon: ShoppingCart, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1", "gestor_nv2"] },
-    { path: "/forms", label: "Formulários", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1", "gestor_nv2"] },
-    { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1", "gestor_nv2"], badge: unreadCount },
+    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"] },
+    { path: "/partners", label: "Parceiros", icon: Users, roles: ["admin", "bo", "partner", "gestor_nv1"] },
+    { path: "/sales", label: "Vendas", icon: ShoppingCart, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"] },
+    { path: "/forms", label: "Formulários", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"] },
+    { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], badge: unreadCount },
   ];
 
   if (user?.role === "admin") {
     menuItems.push(
       { path: "/operators", label: "Operadoras", icon: Building2, roles: ["admin"] },
       { path: "/operator-validations", label: "Validação de Ativações", icon: CheckSquare, roles: ["admin"] },
+      { path: "/objectives", label: "Objetivos", icon: CheckSquare, roles: ["admin"] },
       { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"] },
       { path: "/commission-reports", label: "Autos de Comissões", icon: FileSpreadsheet, roles: ["admin"] }
     );
@@ -58,10 +59,6 @@ const Layout = ({ children, user, onLogout }) => {
   } else if (user?.role === "partner") {
     menuItems.push(
       { path: "/my-reports", label: "Meus Autos", icon: FileSpreadsheet, roles: ["partner"] }
-    );
-  } else if (user?.role === "gestor_nv2") {
-    menuItems.push(
-      { path: "/commission-reports", label: "Autos de Comissões", icon: FileSpreadsheet, roles: ["gestor_nv2"] }
     );
   }
 

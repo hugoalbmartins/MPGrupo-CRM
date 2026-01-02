@@ -83,6 +83,10 @@ const Sales = ({ user }) => {
     tier: "",
     has_direct_debit: false,
     has_electronic_invoice: false,
+    has_tv: false,
+    has_net: false,
+    has_lr: false,
+    mobile_count: 0,
     observations: ""
   });
 
@@ -276,6 +280,10 @@ const Sales = ({ user }) => {
       tier: "",
       has_direct_debit: false,
       has_electronic_invoice: false,
+      has_tv: false,
+      has_net: false,
+      has_lr: false,
+      mobile_count: 0,
       observations: ""
     });
     setUploadFiles([]);
@@ -912,9 +920,56 @@ const Sales = ({ user }) => {
                         <Input type="number" step="0.01" value={formData.monthly_value} onChange={(e) => setFormData({...formData, monthly_value: e.target.value})} required />
                       </div>
                     )}
+
+                    <div className="col-span-2 border-t pt-4 mt-2">
+                      <Label className="text-base font-semibold mb-3 block">Serviços Contratados</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="has_tv"
+                            checked={formData.has_tv}
+                            onChange={(e) => setFormData({...formData, has_tv: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <Label htmlFor="has_tv" className="cursor-pointer">TV</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="has_net"
+                            checked={formData.has_net}
+                            onChange={(e) => setFormData({...formData, has_net: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <Label htmlFor="has_net" className="cursor-pointer">NET/Fibra</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="has_lr"
+                            checked={formData.has_lr}
+                            onChange={(e) => setFormData({...formData, has_lr: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <Label htmlFor="has_lr" className="cursor-pointer">Linha Fixa/LR</Label>
+                        </div>
+                        <div>
+                          <Label htmlFor="mobile_count" className="text-sm">Móveis</Label>
+                          <Input
+                            id="mobile_count"
+                            type="number"
+                            min="0"
+                            value={formData.mobile_count}
+                            onChange={(e) => setFormData({...formData, mobile_count: parseInt(e.target.value) || 0})}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
-                
+
                 {/* Solar - CPE + Potência */}
                 {formData.scope === 'solar' && (
                   <>
