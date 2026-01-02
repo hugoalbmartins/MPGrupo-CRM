@@ -597,82 +597,93 @@ const Dashboard = ({ user }) => {
       {stats?.objectives_progress && stats.objectives_progress.length > 0 && (
         <div className="professional-card p-6 mt-6">
           <h3 className="text-xl font-semibold mb-4">Cumprimento de Objetivos Mensais</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {stats.objectives_progress.map((progress, idx) => (
-              <div key={idx} className="border rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">{progress.operator_name}</h4>
-                <div className="space-y-3">
-                  {progress.operator_scope === 'energia' && (
-                    <>
-                      {progress.targets.electricity > 0 && (
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-600">Eletricidade</span>
-                            <span className="font-semibold">{progress.actual.electricity} / {progress.targets.electricity}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full transition-all"
-                              style={{ width: `${Math.min(progress.percentage.electricity, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500">{progress.percentage.electricity.toFixed(0)}%</span>
-                        </div>
-                      )}
-                      {progress.targets.gas > 0 && (
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-600">Gás</span>
-                            <span className="font-semibold">{progress.actual.gas} / {progress.targets.gas}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-orange-600 h-2 rounded-full transition-all"
-                              style={{ width: `${Math.min(progress.percentage.gas, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500">{progress.percentage.gas.toFixed(0)}%</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {progress.operator_scope === 'telecomunicacoes' && (
-                    <>
-                      {progress.targets.tv > 0 && (
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-600">TV</span>
-                            <span className="font-semibold">{progress.actual.tv} / {progress.targets.tv}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-purple-600 h-2 rounded-full transition-all"
-                              style={{ width: `${Math.min(progress.percentage.tv, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500">{progress.percentage.tv.toFixed(0)}%</span>
-                        </div>
-                      )}
-                      {progress.targets.fiber > 0 && (
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-600">Fibra/NET/LR</span>
-                            <span className="font-semibold">{progress.actual.fiber} / {progress.targets.fiber}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-green-600 h-2 rounded-full transition-all"
-                              style={{ width: `${Math.min(progress.percentage.fiber, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500">{progress.percentage.fiber.toFixed(0)}%</span>
-                        </div>
-                      )}
-                    </>
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stats.objectives_progress.map((progress, idx) => {
+              const objectives = [];
+
+              if (progress.operator_scope === 'energia') {
+                if (progress.targets.electricity > 0) {
+                  objectives.push({
+                    name: 'Eletricidade',
+                    actual: progress.actual.electricity,
+                    target: progress.targets.electricity,
+                    remaining: Math.max(0, progress.targets.electricity - progress.actual.electricity),
+                    percentage: progress.percentage.electricity,
+                    color: '#2563eb'
+                  });
+                }
+                if (progress.targets.gas > 0) {
+                  objectives.push({
+                    name: 'Gás',
+                    actual: progress.actual.gas,
+                    target: progress.targets.gas,
+                    remaining: Math.max(0, progress.targets.gas - progress.actual.gas),
+                    percentage: progress.percentage.gas,
+                    color: '#ea580c'
+                  });
+                }
+              }
+
+              if (progress.operator_scope === 'telecomunicacoes') {
+                if (progress.targets.tv > 0) {
+                  objectives.push({
+                    name: 'TV',
+                    actual: progress.actual.tv,
+                    target: progress.targets.tv,
+                    remaining: Math.max(0, progress.targets.tv - progress.actual.tv),
+                    percentage: progress.percentage.tv,
+                    color: '#9333ea'
+                  });
+                }
+                if (progress.targets.fiber > 0) {
+                  objectives.push({
+                    name: 'Fibra/NET',
+                    actual: progress.actual.fiber,
+                    target: progress.targets.fiber,
+                    remaining: Math.max(0, progress.targets.fiber - progress.actual.fiber),
+                    percentage: progress.percentage.fiber,
+                    color: '#16a34a'
+                  });
+                }
+              }
+
+              return objectives.map((objective, objIdx) => (
+                <div key={`${idx}-${objIdx}`} className="border rounded-lg p-4 flex flex-col items-center">
+                  <h4 className="font-semibold text-gray-900 mb-2">{progress.operator_name}</h4>
+                  <p className="text-sm text-gray-600 mb-4">{objective.name}</p>
+
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Atingido', value: objective.actual },
+                          { name: 'Restante', value: objective.remaining }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        dataKey="value"
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        <Cell fill={objective.color} />
+                        <Cell fill="#e5e7eb" />
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  <div className="text-center mt-4">
+                    <p className="text-2xl font-bold" style={{ color: objective.color }}>
+                      {objective.percentage.toFixed(0)}%
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {objective.actual} / {objective.target}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })}
           </div>
         </div>
       )}
