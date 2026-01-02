@@ -34,6 +34,35 @@ export const dashboardService = {
       default:
         return { total_sales: 0 };
     }
+  },
+
+  async getProposalStats() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('role, partner_id, is_commissioned')
+      .eq('id', user.id)
+      .single();
+
+    switch (currentUser.role) {
+      case 'admin':
+        return await getAdminProposalStats(user.id, currentUser.is_commissioned);
+      case 'bo':
+        return await getBOProposalStats();
+      case 'partner':
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        return await getPartnerProposalStats(partner?.id);
+      case 'gestor_nv1':
+        return await getManagerProposalStats(user.id);
+      default:
+        return { total_proposals: 0 };
+    }
   }
 };
 
@@ -677,4 +706,238 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     selected_year: year,
     last_12_months: last12Months,
   };
+}
+
+async function getAdminProposalStats(adminId, isCommissioned) {
+  const { data: proposals } = await supabase
+    .from('sales')
+    .select('*, partners(name)')
+    .eq('status', 'Em proposta');
+
+  const now = new Date();
+  const stats = {
+    total_proposals: proposals?.length || 0,
+    total_commission: 0,
+    own_commission: 0,
+    by_age: {
+      up_to_7: 0,
+      from_7_to_14: 0,
+      over_14: 0
+    },
+    by_scope: {
+      telecomunicacoes: 0,
+      energia: 0,
+      solar: 0,
+      dual: 0
+    },
+    by_partner: {}
+  };
+
+  if (proposals) {
+    for (const proposal of proposals) {
+      const createdDate = new Date(proposal.created_at);
+      const daysElapsed = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+      const commission = parseFloat(proposal.manual_commission || proposal.calculated_commission || 0);
+
+      stats.total_commission += commission;
+
+      if (daysElapsed <= 7) {
+        stats.by_age.up_to_7++;
+      } else if (daysElapsed <= 14) {
+        stats.by_age.from_7_to_14++;
+      } else {
+        stats.by_age.over_14++;
+      }
+
+      stats.by_scope[proposal.scope] = (stats.by_scope[proposal.scope] || 0) + 1;
+
+      const partnerKey = proposal.partner_id || 'admin_commissioned';
+      const partnerName = proposal.partner_id
+        ? (proposal.partners?.name || 'Desconhecido')
+        : 'Admin Comissionado';
+
+      if (!stats.by_partner[partnerKey]) {
+        stats.by_partner[partnerKey] = {
+          name: partnerName,
+          count: 0,
+          commission: 0
+        };
+      }
+      stats.by_partner[partnerKey].count++;
+      stats.by_partner[partnerKey].commission += commission;
+
+      if (isCommissioned && proposal.created_by_user_id === adminId && !proposal.partner_id) {
+        stats.own_commission += commission;
+      }
+    }
+  }
+
+  return stats;
+}
+
+async function getBOProposalStats() {
+  const { data: proposals } = await supabase
+    .from('sales')
+    .select('*, partners(name)')
+    .eq('status', 'Em proposta');
+
+  const now = new Date();
+  const stats = {
+    total_proposals: proposals?.length || 0,
+    by_age: {
+      up_to_7: 0,
+      from_7_to_14: 0,
+      over_14: 0
+    },
+    by_scope: {
+      telecomunicacoes: 0,
+      energia: 0,
+      solar: 0,
+      dual: 0
+    },
+    by_partner: {}
+  };
+
+  if (proposals) {
+    proposals.forEach(proposal => {
+      const createdDate = new Date(proposal.created_at);
+      const daysElapsed = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+
+      if (daysElapsed <= 7) {
+        stats.by_age.up_to_7++;
+      } else if (daysElapsed <= 14) {
+        stats.by_age.from_7_to_14++;
+      } else {
+        stats.by_age.over_14++;
+      }
+
+      stats.by_scope[proposal.scope] = (stats.by_scope[proposal.scope] || 0) + 1;
+
+      const partnerKey = proposal.partner_id || 'admin';
+      const partnerName = proposal.partners?.name || 'Admin';
+
+      if (!stats.by_partner[partnerKey]) {
+        stats.by_partner[partnerKey] = {
+          name: partnerName,
+          count: 0
+        };
+      }
+      stats.by_partner[partnerKey].count++;
+    });
+  }
+
+  return stats;
+}
+
+async function getPartnerProposalStats(partnerId) {
+  const { data: proposals } = await supabase
+    .from('sales')
+    .select('*')
+    .eq('partner_id', partnerId)
+    .eq('status', 'Em proposta');
+
+  const now = new Date();
+  const stats = {
+    total_proposals: proposals?.length || 0,
+    total_commission: 0,
+    by_age: {
+      up_to_7: 0,
+      from_7_to_14: 0,
+      over_14: 0
+    },
+    by_scope: {
+      telecomunicacoes: 0,
+      energia: 0,
+      solar: 0,
+      dual: 0
+    }
+  };
+
+  if (proposals) {
+    proposals.forEach(proposal => {
+      const createdDate = new Date(proposal.created_at);
+      const daysElapsed = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+      const commission = parseFloat(proposal.manual_commission || proposal.calculated_commission || 0);
+
+      stats.total_commission += commission;
+
+      if (daysElapsed <= 7) {
+        stats.by_age.up_to_7++;
+      } else if (daysElapsed <= 14) {
+        stats.by_age.from_7_to_14++;
+      } else {
+        stats.by_age.over_14++;
+      }
+
+      stats.by_scope[proposal.scope] = (stats.by_scope[proposal.scope] || 0) + 1;
+    });
+  }
+
+  return stats;
+}
+
+async function getManagerProposalStats(managerId) {
+  const { data: proposals } = await supabase
+    .from('sales')
+    .select('*, partners(name)')
+    .eq('status', 'Em proposta')
+    .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`);
+
+  const now = new Date();
+  const stats = {
+    total_proposals: proposals?.length || 0,
+    total_commission: 0,
+    own_commission: 0,
+    by_age: {
+      up_to_7: 0,
+      from_7_to_14: 0,
+      over_14: 0
+    },
+    by_scope: {
+      telecomunicacoes: 0,
+      energia: 0,
+      solar: 0,
+      dual: 0
+    },
+    by_partner: {}
+  };
+
+  if (proposals) {
+    for (const proposal of proposals) {
+      const createdDate = new Date(proposal.created_at);
+      const daysElapsed = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+      const commission = parseFloat(proposal.manual_commission || proposal.calculated_commission || 0);
+
+      stats.total_commission += commission;
+
+      if (daysElapsed <= 7) {
+        stats.by_age.up_to_7++;
+      } else if (daysElapsed <= 14) {
+        stats.by_age.from_7_to_14++;
+      } else {
+        stats.by_age.over_14++;
+      }
+
+      stats.by_scope[proposal.scope] = (stats.by_scope[proposal.scope] || 0) + 1;
+
+      const partnerKey = proposal.partner_id || 'own';
+      const partnerName = proposal.partners?.name || 'Vendas Próprias';
+
+      if (!stats.by_partner[partnerKey]) {
+        stats.by_partner[partnerKey] = {
+          name: partnerName,
+          count: 0,
+          commission: 0
+        };
+      }
+      stats.by_partner[partnerKey].count++;
+      stats.by_partner[partnerKey].commission += commission;
+
+      if (proposal.created_by_user_id === managerId) {
+        stats.own_commission += commission;
+      }
+    }
+  }
+
+  return stats;
 }
