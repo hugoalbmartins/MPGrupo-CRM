@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster, toast } from "@/components/ui/sonner";
 import { authService } from "./lib/auth";
 import { supabase } from "./lib/supabase";
 import { AlertCircle } from "lucide-react";
@@ -28,6 +28,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [logoutReason, setLogoutReason] = useState(null);
 
   if (!supabase) {
     return (
@@ -87,6 +88,7 @@ function App() {
 
       inactivityTimer = setTimeout(async () => {
         console.log('Auto-logout due to inactivity');
+        setLogoutReason('inactivity');
         await authService.signOut();
         setUser(null);
         setMustChangePassword(false);
@@ -149,6 +151,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
+      setLogoutReason('manual');
       await authService.signOut();
       setUser(null);
       setMustChangePassword(false);
@@ -171,6 +174,16 @@ function App() {
       </div>
     );
   }
+
+  useEffect(() => {
+    if (!user && logoutReason === 'inactivity') {
+      toast.warning('Sessão terminada por inatividade', {
+        description: 'A sua sessão foi terminada automaticamente devido a 30 minutos de inatividade. Por favor, faça login novamente.',
+        duration: 8000,
+      });
+      setLogoutReason(null);
+    }
+  }, [user, logoutReason]);
 
   if (!user) {
     return (
