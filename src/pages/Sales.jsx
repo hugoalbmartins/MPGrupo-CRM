@@ -11,8 +11,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
+import { energyPointsService } from "../services/energyPointsService";
 import { supabase } from "../lib/supabase";
 import SaleDetailDialog from "../components/SaleDetailDialog";
+import EnergyPointsManager from "../components/EnergyPointsManager";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
@@ -89,7 +91,8 @@ const Sales = ({ user }) => {
     has_lr: false,
     mobile_count: 0,
     observations: "",
-    is_proposal: false
+    is_proposal: false,
+    energy_points: []
   });
 
   useEffect(() => {
@@ -188,17 +191,27 @@ const Sales = ({ user }) => {
         return;
       }
 
-      if (saleType === 'eletricidade' || saleType === 'dual') {
-        if (!formData.cpe || !formData.power) {
-          toast.error("CPE e Potência são obrigatórios para venda de eletricidade!");
-          return;
-        }
+      if (!formData.energy_points || formData.energy_points.length === 0) {
+        toast.error("Adicione pelo menos um ponto de energia (CPE/CUI)!");
+        return;
       }
 
-      if (saleType === 'gas' || saleType === 'dual') {
-        if (!formData.cui || !formData.tier) {
-          toast.error("CUI e Escalão são obrigatórios para venda de gás!");
-          return;
+      for (let i = 0; i < formData.energy_points.length; i++) {
+        const point = formData.energy_points[i];
+
+        if (saleType === 'eletricidade' || saleType === 'dual') {
+          if (!point.point_code || !point.power_kva) {
+            toast.error(`Ponto ${i + 1}: CPE e Potência são obrigatórios!`);
+            return;
+          }
+        }
+
+        if (saleType === 'gas' || saleType === 'dual') {
+          const cuiField = saleType === 'dual' ? 'cui_code' : 'point_code';
+          if (!point[cuiField] || !point.tier) {
+            toast.error(`Ponto ${i + 1}: CUI e Escalão são obrigatórios!`);
+            return;
+          }
         }
       }
 
@@ -212,6 +225,17 @@ const Sales = ({ user }) => {
       const submitData = { ...formData };
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
 
+      if (formData.scope === 'energia' && formData.energy_points && formData.energy_points.length > 0) {
+        const firstPoint = formData.energy_points[0];
+        submitData.cpe = firstPoint.point_code || '';
+        submitData.power = firstPoint.power_kva || '';
+        submitData.cui = firstPoint.cui_code || firstPoint.point_code || '';
+        submitData.tier = firstPoint.tier || '';
+      }
+
+      const energyPoints = submitData.energy_points;
+      delete submitData.energy_points;
+
       if (!pendingSubmit) {
         const result = await salesService.checkWarningsAndCreateSale(submitData, uploadFiles);
 
@@ -221,12 +245,21 @@ const Sales = ({ user }) => {
           return;
         }
 
+        if (result.sale && energyPoints && energyPoints.length > 0) {
+          await energyPointsService.replacePointsForSale(result.sale.id, energyPoints);
+        }
+
         toast.success("Venda criada com sucesso!");
         setDialogOpen(false);
         resetForm();
         fetchData();
       } else {
-        await salesService.create(submitData, uploadFiles);
+        const createdSale = await salesService.create(submitData, uploadFiles);
+
+        if (createdSale && energyPoints && energyPoints.length > 0) {
+          await energyPointsService.replacePointsForSale(createdSale.id, energyPoints);
+        }
+
         toast.success("Venda criada com sucesso!");
         setDialogOpen(false);
         resetForm();
@@ -286,6 +319,7 @@ const Sales = ({ user }) => {
       has_net: false,
       has_lr: false,
       mobile_count: 0,
+      energy_points: [],
       observations: "",
       is_proposal: false
     });
@@ -416,12 +450,14 @@ const Sales = ({ user }) => {
       }
 
       // Preparar dados para Excel
-      const excelData = dataToExport.map(sale => {
+      const excelData = [];
+
+      for (const sale of dataToExport) {
         const partner = partners.find(p => p.id === sale.partner_id);
         const operator = operators.find(o => o.id === sale.operator_id);
         const commission = sale.manual_commission || sale.calculated_commission || 0;
 
-        return {
+        const baseData = {
           'Código': sale.sale_code,
           'Data': new Date(sale.date).toLocaleDateString('pt-PT'),
           'Parceiro': partner?.name || '',
@@ -437,20 +473,86 @@ const Sales = ({ user }) => {
           'Tipo Serviço': sale.service_type || '',
           'Tipo Ativação': sale.activation_type || '',
           'Valor Mensal': sale.monthly_value ? `€${sale.monthly_value}` : '',
-          'Tipo Venda Energia': sale.energy_sale_type || '',
-          'CPE': sale.cpe || '',
-          'Potência': sale.power || '',
-          'CUI': sale.cui || '',
-          'Escalão': sale.tier || '',
-          'Tipo Entrada': sale.entry_type || '',
-          'Status': sale.status,
-          'Nº Requisição': sale.request_number || '',
-          'Comissão': `€${commission.toFixed(2)}`,
-          'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
-          'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
-          'Observações': sale.observations || ''
+          'Tipo Venda Energia': sale.energy_sale_type || ''
         };
-      });
+
+        if (sale.scope === 'energia' && sale.is_multipoint) {
+          try {
+            const points = await energyPointsService.getPointsBySaleId(sale.id);
+
+            if (points && points.length > 0) {
+              for (let i = 0; i < points.length; i++) {
+                const point = points[i];
+                excelData.push({
+                  ...baseData,
+                  'Ponto': `${i + 1}/${points.length}`,
+                  'Tipo Ponto': point.point_type.toUpperCase(),
+                  'CPE': point.point_type === 'cpe' ? point.point_code : '',
+                  'Potência': point.power_kva || '',
+                  'CUI': point.point_type === 'cui' ? point.point_code : '',
+                  'Escalão': point.tier || '',
+                  'Estado Ativação': point.activation_status,
+                  'Data Ativação': point.activation_date ? new Date(point.activation_date).toLocaleDateString('pt-PT') : '',
+                  'Pago Operador': point.operator_paid ? 'Sim' : 'Não',
+                  'Tipo Entrada': sale.entry_type || '',
+                  'Status': sale.status,
+                  'Nº Requisição': sale.request_number || '',
+                  'Comissão': `€${commission.toFixed(2)}`,
+                  'Paga Operador Venda': sale.paid_to_operator ? 'Sim' : 'Não',
+                  'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
+                  'Observações': sale.observations || ''
+                });
+              }
+            } else {
+              excelData.push({
+                ...baseData,
+                'CPE': sale.cpe || '',
+                'Potência': sale.power || '',
+                'CUI': sale.cui || '',
+                'Escalão': sale.tier || '',
+                'Tipo Entrada': sale.entry_type || '',
+                'Status': sale.status,
+                'Nº Requisição': sale.request_number || '',
+                'Comissão': `€${commission.toFixed(2)}`,
+                'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
+                'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
+                'Observações': sale.observations || ''
+              });
+            }
+          } catch (error) {
+            console.error('Erro ao buscar pontos de energia:', error);
+            excelData.push({
+              ...baseData,
+              'CPE': sale.cpe || '',
+              'Potência': sale.power || '',
+              'CUI': sale.cui || '',
+              'Escalão': sale.tier || '',
+              'Tipo Entrada': sale.entry_type || '',
+              'Status': sale.status,
+              'Nº Requisição': sale.request_number || '',
+              'Comissão': `€${commission.toFixed(2)}`,
+              'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
+              'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
+              'Observações': sale.observations || ''
+            });
+          }
+        } else {
+          excelData.push({
+            ...baseData,
+            'CPE': sale.cpe || '',
+            'Potência': sale.power || '',
+            'CUI': sale.cui || '',
+            'Escalão': sale.tier || '',
+            'Tipo Entrada': sale.entry_type || '',
+            'Status': sale.status,
+            'Nº Requisição': sale.request_number || '',
+            'Comissão': `€${commission.toFixed(2)}`,
+            'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
+            'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
+            'Observações': sale.observations || ''
+          });
+        }
+      }
 
       // Criar workbook e worksheet
       const XLSX = await import('xlsx');
@@ -462,7 +564,7 @@ const Sales = ({ user }) => {
       const fileName = `vendas_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
-      toast.success(`Exportadas ${dataToExport.length} vendas`);
+      toast.success(`Exportadas ${dataToExport.length} vendas (${excelData.length} linhas)`);
       setExportDialogOpen(false);
     } catch (error) {
       console.error(error);
@@ -1003,63 +1105,20 @@ const Sales = ({ user }) => {
                     {/* Determinar que campos mostrar baseado no tipo de operadora e tipo de venda */}
                     {(() => {
                       const saleType = operatorEnergyType === 'dual' ? formData.energy_sale_type : operatorEnergyType;
-                      const showElectricity = saleType === 'eletricidade' || saleType === 'dual';
-                      const showGas = saleType === 'gas' || saleType === 'dual';
+
+                      if (!saleType) return null;
 
                       return (
-                        <>
-                          {/* Eletricidade - CPE + Potência */}
-                          {showElectricity && (
-                            <>
-                              <div className="col-span-2 bg-yellow-50 border border-yellow-300 rounded-lg p-4">
-                                <h4 className="font-semibold text-yellow-900 mb-3 flex items-center gap-2">
-                                  ⚡ Dados de Eletricidade
-                                </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>CPE * (PT0002...)</Label>
-                                    <Input value={formData.cpe} onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})} placeholder="PT0002XXXXXXXXXXXX" required />
-                                  </div>
-                                  <div>
-                                    <Label>Potência *</Label>
-                                    <Select value={formData.power} onValueChange={(v) => setFormData({...formData, power: v})}>
-                                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                      <SelectContent>
-                                        {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {/* Gás - CUI + Escalão */}
-                          {showGas && (
-                            <>
-                              <div className="col-span-2 bg-orange-50 border border-orange-300 rounded-lg p-4">
-                                <h4 className="font-semibold text-orange-900 mb-3 flex items-center gap-2">
-                                  🔥 Dados de Gás Natural
-                                </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>CUI * (PT16...)</Label>
-                                    <Input value={formData.cui} onChange={(e) => setFormData({...formData, cui: e.target.value.toUpperCase()})} placeholder="PT16XXXXXXXXXXXXXXXXX" required />
-                                  </div>
-                                  <div>
-                                    <Label>Escalão *</Label>
-                                    <Select value={formData.tier} onValueChange={(v) => setFormData({...formData, tier: v})}>
-                                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                      <SelectContent>
-                                        {["1", "2", "3", "4"].map(t => <SelectItem key={t} value={t}>Escalão {t}</SelectItem>)}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </>
+                        <div className="col-span-2">
+                          <EnergyPointsManager
+                            saleType={saleType}
+                            points={formData.energy_points}
+                            onChange={(points) => {
+                              setFormData({...formData, energy_points: points});
+                            }}
+                            isNew={true}
+                          />
+                        </div>
                       );
                     })()}
 

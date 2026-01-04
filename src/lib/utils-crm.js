@@ -254,3 +254,21 @@ export function formatDateTime(date) {
   if (!date) return '';
   return new Date(date).toLocaleString('pt-PT');
 }
+
+export function getSaleUnitCount(sale) {
+  if (!sale) return 0;
+
+  if (sale.is_multipoint && sale.multipoint_count > 0) {
+    return sale.multipoint_count;
+  }
+
+  return 1;
+}
+
+export function getTotalUnitsFromSales(sales) {
+  if (!sales || !Array.isArray(sales)) return 0;
+
+  return sales.reduce((total, sale) => {
+    return total + getSaleUnitCount(sale);
+  }, 0);
+}
