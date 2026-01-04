@@ -30,35 +30,9 @@ function App() {
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [logoutReason, setLogoutReason] = useState(null);
 
-  if (!supabase) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full mx-auto p-6">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Erro de Configuração
-            </h1>
-            <p className="text-gray-600 mb-4">
-              As variáveis de ambiente do Supabase não estão configuradas corretamente.
-            </p>
-            <div className="bg-gray-50 rounded-lg p-4 text-left text-sm">
-              <p className="font-semibold text-gray-700 mb-2">Variáveis necessárias:</p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1">
-                <li>VITE_SUPABASE_URL</li>
-                <li>VITE_SUPABASE_ANON_KEY</li>
-              </ul>
-            </div>
-            <p className="text-gray-500 text-sm mt-4">
-              Verifique o console do navegador para mais detalhes.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
+    if (!supabase) return;
+
     checkUser();
 
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
@@ -78,7 +52,7 @@ function App() {
   useEffect(() => {
     if (!user) return;
 
-    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
     let inactivityTimer;
 
     const resetTimer = () => {
@@ -112,6 +86,44 @@ function App() {
       });
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user && logoutReason === 'inactivity') {
+      toast.warning('Sessão terminada por inatividade', {
+        description: 'A sua sessão foi terminada automaticamente devido a 30 minutos de inatividade. Por favor, faça login novamente.',
+        duration: 8000,
+      });
+      setLogoutReason(null);
+    }
+  }, [user, logoutReason]);
+
+  if (!supabase) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full mx-auto p-6">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Erro de Configuração
+            </h1>
+            <p className="text-gray-600 mb-4">
+              As variáveis de ambiente do Supabase não estão configuradas corretamente.
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4 text-left text-sm">
+              <p className="font-semibold text-gray-700 mb-2">Variáveis necessárias:</p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>VITE_SUPABASE_URL</li>
+                <li>VITE_SUPABASE_ANON_KEY</li>
+              </ul>
+            </div>
+            <p className="text-gray-500 text-sm mt-4">
+              Verifique o console do navegador para mais detalhes.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const checkUser = async () => {
     try {
@@ -174,16 +186,6 @@ function App() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!user && logoutReason === 'inactivity') {
-      toast.warning('Sessão terminada por inatividade', {
-        description: 'A sua sessão foi terminada automaticamente devido a 30 minutos de inatividade. Por favor, faça login novamente.',
-        duration: 8000,
-      });
-      setLogoutReason(null);
-    }
-  }, [user, logoutReason]);
 
   if (!user) {
     return (
