@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye, Mail, Check, X, ChevronLeft, ChevronRight, Archive } from "lucide-react";
+import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye, Mail, Check, X, ChevronLeft, ChevronRight, Archive, BellOff } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { alertsService } from "../services/alertsService";
 import { salesService } from "../services/salesService";
 import { usersService } from "../services/usersService";
+import { systemSettingsService } from "../services/systemSettingsService";
 
 const Alerts = ({ user }) => {
   const navigate = useNavigate();
@@ -24,10 +25,15 @@ const Alerts = ({ user }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalAlerts, setTotalAlerts] = useState(0);
   const [filter, setFilter] = useState('all');
+  const [alertsSuspended, setAlertsSuspended] = useState(false);
+  const [suspensionLoading, setSuspensionLoading] = useState(false);
 
   useEffect(() => {
     fetchAlerts();
     fetchEmailPreference();
+    if (user?.role === 'admin') {
+      fetchAlertsSuspensionStatus();
+    }
 
     const interval = setInterval(() => fetchAlerts(), 30000);
 
@@ -68,6 +74,32 @@ const Alerts = ({ user }) => {
       }
     } catch (error) {
       console.error("Erro ao carregar preferências:", error);
+    }
+  };
+
+  const fetchAlertsSuspensionStatus = async () => {
+    try {
+      const status = await systemSettingsService.getAlertsSuspensionStatus();
+      setAlertsSuspended(status.suspended);
+    } catch (error) {
+      console.error("Erro ao carregar estado de suspensão:", error);
+    }
+  };
+
+  const handleToggleAlertsSuspension = async (suspended) => {
+    setSuspensionLoading(true);
+    try {
+      await systemSettingsService.setAlertsSuspension(suspended);
+      setAlertsSuspended(suspended);
+      toast.success(
+        suspended
+          ? "Criação de alertas suspensa globalmente"
+          : "Criação de alertas reativada"
+      );
+    } catch (error) {
+      toast.error("Erro ao atualizar suspensão de alertas");
+    } finally {
+      setSuspensionLoading(false);
     }
   };
 
@@ -181,26 +213,61 @@ const Alerts = ({ user }) => {
       </div>
 
       {user?.role === 'admin' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-blue-600" />
-              <div>
-                <Label htmlFor="email-alerts" className="text-sm font-semibold text-gray-900 cursor-pointer">
-                  Receber Alertas por Email
-                </Label>
-                <p className="text-xs text-gray-600 mt-1">
-                  Desative para receber alertas apenas na aplicação
-                </p>
+        <>
+          <div className={`rounded-lg p-4 border ${
+            alertsSuspended
+              ? 'bg-red-50 border-red-200'
+              : 'bg-green-50 border-green-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {alertsSuspended ? (
+                  <BellOff className="w-5 h-5 text-red-600" />
+                ) : (
+                  <Bell className="w-5 h-5 text-green-600" />
+                )}
+                <div>
+                  <Label htmlFor="global-alerts-suspension" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                    Suspensão Global de Alertas
+                  </Label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {alertsSuspended
+                      ? 'Nenhum alerta novo será criado no sistema enquanto estiver suspenso'
+                      : 'Os alertas estão a ser criados normalmente no sistema'
+                    }
+                  </p>
+                </div>
               </div>
+              <Switch
+                id="global-alerts-suspension"
+                checked={alertsSuspended}
+                onCheckedChange={handleToggleAlertsSuspension}
+                disabled={suspensionLoading}
+              />
             </div>
-            <Switch
-              id="email-alerts"
-              checked={emailAlertsEnabled}
-              onCheckedChange={handleToggleEmailAlerts}
-            />
           </div>
-        </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Mail className="w-5 h-5 text-blue-600" />
+                <div>
+                  <Label htmlFor="email-alerts" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                    Receber Alertas por Email
+                  </Label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Desative para receber alertas apenas na aplicação
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="email-alerts"
+                checked={emailAlertsEnabled}
+                onCheckedChange={handleToggleEmailAlerts}
+              />
+            </div>
+          </div>
+        </>
       )}
 
       <div className="flex justify-between items-center gap-4 flex-wrap">
