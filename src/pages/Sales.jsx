@@ -1793,7 +1793,7 @@ const Sales = ({ user }) => {
       <SalesImport
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
-        onImportComplete={fetchSales}
+        onImportComplete={fetchData}
       />
     </div>
   );
