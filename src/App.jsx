@@ -20,6 +20,7 @@ import CommissionReportsPartner from "./pages/CommissionReportsPartner.jsx";
 import OperatorValidations from "./pages/OperatorValidations.jsx";
 import Objectives from "./pages/Objectives.jsx";
 import Layout from "./components/Layout.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import "@/App.css";
 
 export { supabase };
@@ -218,7 +219,7 @@ function App() {
             <Route path="/" element={<Dashboard user={user} />} />
             <Route path="/dashboard" element={<Dashboard user={user} />} />
             <Route path="/partners" element={<Partners user={user} />} />
-            <Route path="/sales" element={<Sales user={user} />} />
+            <Route path="/sales" element={<ErrorBoundary><Sales user={user} /></ErrorBoundary>} />
             <Route path="/alerts" element={<Alerts user={user} />} />
             <Route path="/alerts/archived" element={<AlertsArchived user={user} />} />
             <Route path="/profile" element={<Profile user={user} />} />

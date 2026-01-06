@@ -3,15 +3,19 @@ import { toast } from "sonner";
 import { Upload, Download, FileSpreadsheet, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { salesService } from "../services/salesService";
+import * as ProgressPrimitive from "@radix-ui/react-progress";
 
 const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState(null);
+
+  if (!open) {
+    return null;
+  }
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -421,7 +425,15 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
                   <span>A importar vendas...</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
-                <Progress value={progress} />
+                <ProgressPrimitive.Root
+                  className="relative h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                  value={progress}
+                >
+                  <ProgressPrimitive.Indicator
+                    className="h-full w-full flex-1 bg-blue-600 transition-all"
+                    style={{ transform: `translateX(-${100 - (progress || 0)}%)` }}
+                  />
+                </ProgressPrimitive.Root>
               </div>
             )}
 
