@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { energyPointsService } from "../services/energyPointsService";
 import { supabase } from "../lib/supabase";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import EnergyPointsManager from "../components/EnergyPointsManager";
+import SalesImport from "../components/SalesImport";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
@@ -35,6 +36,7 @@ const Sales = ({ user }) => {
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [sortField, setSortField] = useState("created_at");
   const [sortDirection, setSortDirection] = useState("desc");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -458,9 +460,8 @@ const Sales = ({ user }) => {
         const commission = sale.manual_commission || sale.calculated_commission || 0;
 
         const baseData = {
-          'Código': sale.sale_code,
           'Data': new Date(sale.date).toLocaleDateString('pt-PT'),
-          'Parceiro': partner?.name || '',
+          'ID Parceiro': sale.partner_id || '',
           'Âmbito': sale.scope,
           'Tipo Cliente': sale.client_type,
           'Nome Cliente': sale.client_name,
@@ -468,14 +469,16 @@ const Sales = ({ user }) => {
           'Contacto': sale.client_contact,
           'Email': sale.client_email || '',
           'IBAN': sale.client_iban || '',
+          'Débito Direto': sale.has_direct_debit ? 'Sim' : 'Não',
+          'Fatura Eletrónica': sale.has_electronic_invoice ? 'Sim' : 'Não',
           'Morada': sale.street || '',
           'Código Postal': sale.postal_code || '',
           'Localidade': sale.locality || '',
           'Morada Instalação': sale.installation_address || '',
-          'Operadora': operator?.name || '',
+          'ID Operadora': sale.operator_id || '',
           'Tipo Serviço': sale.service_type || '',
           'Tipo Ativação': sale.activation_type || '',
-          'Valor Mensal': sale.monthly_value ? `€${sale.monthly_value}` : '',
+          'Valor Mensal': sale.monthly_value || '',
           'Tipo Venda Energia': sale.energy_sale_type || '',
           'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
           'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : ''
@@ -701,6 +704,16 @@ const Sales = ({ user }) => {
               </div>
             </DialogContent>
           </Dialog>
+          {(user?.role === 'admin' || user?.role === 'backoffice') && (
+            <Button
+              variant="outline"
+              className="border-blue-500 text-blue-600 hover:bg-blue-50"
+              onClick={() => setImportDialogOpen(true)}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Excel
+            </Button>
+          )}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Nova Venda</Button>
@@ -1776,6 +1789,12 @@ const Sales = ({ user }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <SalesImport
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportComplete={fetchSales}
+      />
     </div>
   );
 };
