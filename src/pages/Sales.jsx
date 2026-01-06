@@ -468,12 +468,17 @@ const Sales = ({ user }) => {
           'Contacto': sale.client_contact,
           'Email': sale.client_email || '',
           'IBAN': sale.client_iban || '',
+          'Morada': sale.street || '',
+          'Código Postal': sale.postal_code || '',
+          'Localidade': sale.locality || '',
           'Morada Instalação': sale.installation_address || '',
           'Operadora': operator?.name || '',
           'Tipo Serviço': sale.service_type || '',
           'Tipo Ativação': sale.activation_type || '',
           'Valor Mensal': sale.monthly_value ? `€${sale.monthly_value}` : '',
-          'Tipo Venda Energia': sale.energy_sale_type || ''
+          'Tipo Venda Energia': sale.energy_sale_type || '',
+          'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
+          'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : ''
         };
 
         if (sale.scope === 'energia' && sale.is_multipoint) {
@@ -493,13 +498,11 @@ const Sales = ({ user }) => {
                   'Escalão': point.tier || '',
                   'Estado Ativação': point.activation_status,
                   'Data Ativação': point.activation_date ? new Date(point.activation_date).toLocaleDateString('pt-PT') : '',
-                  'Pago Operador': point.operator_paid ? 'Sim' : 'Não',
+                  'Pago Operador Ponto': point.operator_paid ? 'Sim' : 'Não',
                   'Tipo Entrada': sale.entry_type || '',
                   'Status': sale.status,
                   'Nº Requisição': sale.request_number || '',
                   'Comissão': `€${commission.toFixed(2)}`,
-                  'Paga Operador Venda': sale.paid_to_operator ? 'Sim' : 'Não',
-                  'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
                   'Observações': sale.observations || ''
                 });
               }
@@ -514,8 +517,6 @@ const Sales = ({ user }) => {
                 'Status': sale.status,
                 'Nº Requisição': sale.request_number || '',
                 'Comissão': `€${commission.toFixed(2)}`,
-                'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
-                'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
                 'Observações': sale.observations || ''
               });
             }
@@ -531,8 +532,6 @@ const Sales = ({ user }) => {
               'Status': sale.status,
               'Nº Requisição': sale.request_number || '',
               'Comissão': `€${commission.toFixed(2)}`,
-              'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
-              'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
               'Observações': sale.observations || ''
             });
           }
@@ -547,8 +546,6 @@ const Sales = ({ user }) => {
             'Status': sale.status,
             'Nº Requisição': sale.request_number || '',
             'Comissão': `€${commission.toFixed(2)}`,
-            'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
-            'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : '',
             'Observações': sale.observations || ''
           });
         }
