@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { salesService } from "../services/salesService";
+import { operatorsService } from "../services/operatorsService";
+import { partnersService } from "../services/partnersService";
 import { supabase } from "../lib/supabase";
 
 const STATUSES = [
@@ -36,12 +38,28 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
   const [savingEdit, setSavingEdit] = useState(false);
   const [operatorDoc, setOperatorDoc] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [operators, setOperators] = useState([]);
+  const [partners, setPartners] = useState([]);
 
   useEffect(() => {
     if (open && saleId) {
       fetchSaleDetails();
+      loadOperatorsAndPartners();
     }
   }, [open, saleId]);
+
+  const loadOperatorsAndPartners = async () => {
+    try {
+      const [operatorsData, partnersData] = await Promise.all([
+        operatorsService.getAll(),
+        partnersService.getAll()
+      ]);
+      setOperators(operatorsData);
+      setPartners(partnersData);
+    } catch (error) {
+      console.error("Erro ao carregar operadoras e parceiros:", error);
+    }
+  };
 
   const fetchSaleDetails = async () => {
     try {
@@ -57,7 +75,21 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
         request_number: saleData.request_number || "",
         paid_to_operator: saleData.paid_to_operator || false,
         payment_date: saleData.payment_date || "",
-        manual_commission: saleData.manual_commission || ""
+        manual_commission: saleData.manual_commission || "",
+        partner_id: saleData.partner_id || "",
+        operator_id: saleData.operator_id || "",
+        monthly_value: saleData.monthly_value || "",
+        client_name: saleData.client_name || "",
+        client_nif: saleData.client_nif || "",
+        client_contact: saleData.client_contact || "",
+        client_email: saleData.client_email || "",
+        client_iban: saleData.client_iban || "",
+        street: saleData.street || "",
+        postal_code: saleData.postal_code || "",
+        locality: saleData.locality || "",
+        installation_address: saleData.installation_address || "",
+        has_direct_debit: saleData.has_direct_debit || false,
+        has_electronic_invoice: saleData.has_electronic_invoice || false
       });
     } catch (error) {
       toast.error("Erro ao carregar detalhes da venda");
@@ -388,6 +420,181 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     )}
                   </div>
 
+                  {user?.role === 'admin' && (
+                    <>
+                      <div className="pt-4 border-t space-y-4">
+                        <h3 className="font-semibold text-lg">Dados Comerciais</h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Parceiro *</Label>
+                            <Select
+                              value={editData.partner_id}
+                              onValueChange={(v) => setEditData({...editData, partner_id: v})}
+                            >
+                              <SelectTrigger><SelectValue placeholder="Selecione parceiro" /></SelectTrigger>
+                              <SelectContent>
+                                {partners.map((partner) => (
+                                  <SelectItem key={partner.id} value={partner.id}>
+                                    {partner.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label>Operadora *</Label>
+                            <Select
+                              value={editData.operator_id}
+                              onValueChange={(v) => setEditData({...editData, operator_id: v})}
+                            >
+                              <SelectTrigger><SelectValue placeholder="Selecione operadora" /></SelectTrigger>
+                              <SelectContent>
+                                {operators.map((operator) => (
+                                  <SelectItem key={operator.id} value={operator.id}>
+                                    {operator.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>Valor Mensal (€)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={editData.monthly_value}
+                            onChange={(e) => setEditData({...editData, monthly_value: e.target.value})}
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t space-y-4">
+                        <h3 className="font-semibold text-lg">Dados do Cliente</h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Nome do Cliente *</Label>
+                            <Input
+                              value={editData.client_name}
+                              onChange={(e) => setEditData({...editData, client_name: e.target.value})}
+                              placeholder="Nome completo"
+                            />
+                          </div>
+
+                          <div>
+                            <Label>NIF *</Label>
+                            <Input
+                              value={editData.client_nif}
+                              onChange={(e) => setEditData({...editData, client_nif: e.target.value})}
+                              placeholder="000000000"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Contacto *</Label>
+                            <Input
+                              value={editData.client_contact}
+                              onChange={(e) => setEditData({...editData, client_contact: e.target.value})}
+                              placeholder="Telefone"
+                            />
+                          </div>
+
+                          <div>
+                            <Label>Email</Label>
+                            <Input
+                              type="email"
+                              value={editData.client_email}
+                              onChange={(e) => setEditData({...editData, client_email: e.target.value})}
+                              placeholder="email@exemplo.com"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>IBAN</Label>
+                          <Input
+                            value={editData.client_iban}
+                            onChange={(e) => setEditData({...editData, client_iban: e.target.value})}
+                            placeholder="PT50 0000 0000 0000 0000 0000 0"
+                          />
+                        </div>
+
+                        <div className="flex gap-4">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="has_direct_debit"
+                              checked={editData.has_direct_debit}
+                              onChange={(e) => setEditData({...editData, has_direct_debit: e.target.checked})}
+                              className="w-4 h-4"
+                            />
+                            <Label htmlFor="has_direct_debit">Débito Direto</Label>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="has_electronic_invoice"
+                              checked={editData.has_electronic_invoice}
+                              onChange={(e) => setEditData({...editData, has_electronic_invoice: e.target.checked})}
+                              className="w-4 h-4"
+                            />
+                            <Label htmlFor="has_electronic_invoice">Fatura Eletrónica</Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t space-y-4">
+                        <h3 className="font-semibold text-lg">Moradas</h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Morada</Label>
+                            <Input
+                              value={editData.street}
+                              onChange={(e) => setEditData({...editData, street: e.target.value})}
+                              placeholder="Rua, número"
+                            />
+                          </div>
+
+                          <div>
+                            <Label>Código Postal</Label>
+                            <Input
+                              value={editData.postal_code}
+                              onChange={(e) => setEditData({...editData, postal_code: e.target.value})}
+                              placeholder="0000-000"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>Localidade</Label>
+                          <Input
+                            value={editData.locality}
+                            onChange={(e) => setEditData({...editData, locality: e.target.value})}
+                            placeholder="Cidade"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Morada de Instalação</Label>
+                          <Input
+                            value={editData.installation_address}
+                            onChange={(e) => setEditData({...editData, installation_address: e.target.value})}
+                            placeholder="Endereço completo de instalação"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   <div className="flex gap-2 justify-end pt-4 border-t">
                     <Button
                       variant="outline"
@@ -398,7 +605,21 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           request_number: sale.request_number || "",
                           paid_to_operator: sale.paid_to_operator || false,
                           payment_date: sale.payment_date || "",
-                          manual_commission: sale.manual_commission || ""
+                          manual_commission: sale.manual_commission || "",
+                          partner_id: sale.partner_id || "",
+                          operator_id: sale.operator_id || "",
+                          monthly_value: sale.monthly_value || "",
+                          client_name: sale.client_name || "",
+                          client_nif: sale.client_nif || "",
+                          client_contact: sale.client_contact || "",
+                          client_email: sale.client_email || "",
+                          client_iban: sale.client_iban || "",
+                          street: sale.street || "",
+                          postal_code: sale.postal_code || "",
+                          locality: sale.locality || "",
+                          installation_address: sale.installation_address || "",
+                          has_direct_debit: sale.has_direct_debit || false,
+                          has_electronic_invoice: sale.has_electronic_invoice || false
                         });
                       }}
                     >
