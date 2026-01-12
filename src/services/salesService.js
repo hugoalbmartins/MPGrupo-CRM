@@ -130,40 +130,64 @@ export const salesService = {
   },
 
   async findPartnerByNameOrCode(nameOrCode) {
-    const { data: partners, error } = await supabase
+    const searchTerm = nameOrCode.trim();
+
+    const { data: byCode } = await supabase
       .from('partners')
       .select('id, name, code')
-      .or(`name.ilike.%${nameOrCode}%,code.ilike.%${nameOrCode}%`);
+      .ilike('code', searchTerm);
+
+    if (byCode && byCode.length > 0) {
+      return byCode[0];
+    }
+
+    const { data: byExactName } = await supabase
+      .from('partners')
+      .select('id, name, code')
+      .ilike('name', searchTerm);
+
+    if (byExactName && byExactName.length > 0) {
+      return byExactName[0];
+    }
+
+    const { data: byPartialName, error } = await supabase
+      .from('partners')
+      .select('id, name, code')
+      .ilike('name', `%${searchTerm}%`);
 
     if (error) throw error;
 
-    if (!partners || partners.length === 0) {
+    if (!byPartialName || byPartialName.length === 0) {
       return null;
     }
 
-    const exactMatch = partners.find(p =>
-      p.code?.toLowerCase() === nameOrCode.toLowerCase() ||
-      p.name?.toLowerCase() === nameOrCode.toLowerCase()
-    );
-
-    return exactMatch || partners[0];
+    return byPartialName[0];
   },
 
   async findOperatorByName(name) {
-    const { data: operators, error } = await supabase
+    const searchTerm = name.trim();
+
+    const { data: byExactName } = await supabase
       .from('operators')
       .select('id, name')
-      .ilike('name', `%${name}%`);
+      .ilike('name', searchTerm);
+
+    if (byExactName && byExactName.length > 0) {
+      return byExactName[0];
+    }
+
+    const { data: byPartialName, error } = await supabase
+      .from('operators')
+      .select('id, name')
+      .ilike('name', `%${searchTerm}%`);
 
     if (error) throw error;
 
-    if (!operators || operators.length === 0) {
+    if (!byPartialName || byPartialName.length === 0) {
       return null;
     }
 
-    const exactMatch = operators.find(o => o.name?.toLowerCase() === name.toLowerCase());
-
-    return exactMatch || operators[0];
+    return byPartialName[0];
   },
 
   async createSale(saleData, files = []) {
