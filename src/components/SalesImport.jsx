@@ -120,6 +120,56 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
     return null;
   };
 
+  const normalizeScope = (value) => {
+    if (!value) return null;
+
+    const str = String(value).trim().toLowerCase();
+    if (!str) return null;
+
+    const normalized = str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (normalized.includes('telecomunicac') || normalized.includes('telco')) {
+      return 'telecomunicacoes';
+    }
+
+    if (normalized === 'energia') {
+      return 'energia';
+    }
+
+    if (normalized === 'solar') {
+      return 'solar';
+    }
+
+    if (normalized === 'dual') {
+      return 'dual';
+    }
+
+    return null;
+  };
+
+  const normalizeClientType = (value) => {
+    if (!value) return null;
+
+    const str = String(value).trim().toLowerCase();
+    if (!str) return null;
+
+    const normalized = str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (normalized.includes('particula')) {
+      return 'particular';
+    }
+
+    if (normalized.includes('empresar')) {
+      return 'empresarial';
+    }
+
+    return null;
+  };
+
   const handleImport = async () => {
     if (!file) {
       toast.error("Selecione um ficheiro para importar");
@@ -156,8 +206,8 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
           const saleData = {
             date: parseDate(row['Data']),
             partner_id: row['ID Parceiro'],
-            scope: row['Âmbito'],
-            client_type: row['Tipo Cliente'],
+            scope: normalizeScope(row['Âmbito']),
+            client_type: normalizeClientType(row['Tipo Cliente']),
             client_name: row['Nome Cliente'],
             client_nif: row['NIF'],
             client_contact: row['Contacto'],
@@ -193,10 +243,10 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             throw new Error("ID Parceiro em falta");
           }
           if (!saleData.scope) {
-            throw new Error("Âmbito em falta");
+            throw new Error(`Âmbito inválido: "${row['Âmbito']}". Valores válidos: telecomunicacoes, energia, solar, dual`);
           }
           if (!saleData.client_type) {
-            throw new Error("Tipo Cliente em falta");
+            throw new Error(`Tipo Cliente inválido: "${row['Tipo Cliente']}". Valores válidos: particular, empresarial`);
           }
           if (!saleData.client_name) {
             throw new Error("Nome Cliente em falta");
