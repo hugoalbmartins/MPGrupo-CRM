@@ -331,12 +331,32 @@ const Sales = ({ user }) => {
     setAvailableActivationTypes([]);
   };
 
-  const fetchOperatorCommissions = async (operatorId) => {
+  const fetchOperatorCommissions = async (operatorId, partnerId = null, clientType = null) => {
     try {
-      const { data, error } = await supabase
+      let partnerType = 'D2D';
+      const partnerIdToUse = partnerId || formData.partner_id;
+      const clientTypeToUse = clientType || formData.client_type;
+
+      if (partnerIdToUse === '__admin__') {
+        partnerType = 'Rev';
+      } else if (partnerIdToUse) {
+        const selectedPartner = partners.find(p => p.id === partnerIdToUse);
+        if (selectedPartner) {
+          partnerType = selectedPartner.partner_type;
+        }
+      }
+
+      let query = supabase
         .from('commission_configurations')
         .select('*')
-        .eq('operator_id', operatorId);
+        .eq('operator_id', operatorId)
+        .eq('partner_type', partnerType);
+
+      if (clientTypeToUse) {
+        query = query.eq('client_type', clientTypeToUse);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -349,6 +369,9 @@ const Sales = ({ user }) => {
         data.forEach(config => {
           if (config.service_type) {
             serviceTypesSet.add(config.service_type);
+          }
+          if (config.service_types && Array.isArray(config.service_types)) {
+            config.service_types.forEach(st => serviceTypesSet.add(st));
           }
           if (config.activation_type) {
             activationTypesSet.add(config.activation_type);
@@ -728,7 +751,12 @@ const Sales = ({ user }) => {
                 </div>
                 <div>
                   <Label>Parceiro *</Label>
-                  <Select value={formData.partner_id} onValueChange={(v) => setFormData({...formData, partner_id: v})} disabled={user?.role === 'partner'}>
+                  <Select value={formData.partner_id} onValueChange={(v) => {
+                    setFormData({...formData, partner_id: v});
+                    if (formData.operator_id) {
+                      fetchOperatorCommissions(formData.operator_id, v, formData.client_type);
+                    }
+                  }} disabled={user?.role === 'partner'}>
                     <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>
                       {user?.role === 'admin' && user?.is_commissioned && (
@@ -756,7 +784,12 @@ const Sales = ({ user }) => {
                 </div>
                 <div>
                   <Label>Tipo de Cliente *</Label>
-                  <Select value={formData.client_type} onValueChange={(v) => setFormData({...formData, client_type: v})}>
+                  <Select value={formData.client_type} onValueChange={(v) => {
+                    setFormData({...formData, client_type: v});
+                    if (formData.operator_id) {
+                      fetchOperatorCommissions(formData.operator_id, formData.partner_id, v);
+                    }
+                  }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="particular">Particular</SelectItem>

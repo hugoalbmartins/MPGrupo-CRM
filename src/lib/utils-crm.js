@@ -170,19 +170,34 @@ export async function calculateCommission(operator, saleData, supabase) {
     .eq('client_type', clientType)
     .eq('partner_type', partnerType);
 
-  if (serviceType) {
-    query = query.eq('service_type', serviceType);
-  }
-
   if (activationType) {
     query = query.eq('activation_type', activationType);
   }
 
   query = query.order('min_sales', { ascending: false });
 
-  const { data: commissionConfigs, error } = await query;
+  const { data: allCommissionConfigs, error } = await query;
 
-  if (error || !commissionConfigs || commissionConfigs.length === 0) {
+  if (error) {
+    console.warn(`Error fetching commission configs for operator: ${operator.name}`, error);
+    return 0.0;
+  }
+
+  let commissionConfigs = allCommissionConfigs || [];
+
+  if (serviceType && commissionConfigs.length > 0) {
+    commissionConfigs = commissionConfigs.filter(config => {
+      if (config.service_type === serviceType) {
+        return true;
+      }
+      if (config.service_types && Array.isArray(config.service_types)) {
+        return config.service_types.includes(serviceType);
+      }
+      return false;
+    });
+  }
+
+  if (commissionConfigs.length === 0) {
     console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}`);
     return 0.0;
   }
