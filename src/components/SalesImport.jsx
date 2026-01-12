@@ -95,6 +95,31 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
     return isNaN(num) ? null : num;
   };
 
+  const normalizeEnergySaleType = (value) => {
+    if (!value) return null;
+
+    const str = String(value).trim().toLowerCase();
+    if (!str) return null;
+
+    const normalized = str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (normalized === 'eletricidade' || normalized === 'electricidade' || normalized === 'eletrico' || normalized === 'electrico') {
+      return 'eletricidade';
+    }
+
+    if (normalized === 'gas' || normalized === 'gás') {
+      return 'gas';
+    }
+
+    if (normalized === 'dual') {
+      return 'dual';
+    }
+
+    return null;
+  };
+
   const handleImport = async () => {
     if (!file) {
       toast.error("Selecione um ficheiro para importar");
@@ -148,7 +173,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             service_type: row['Tipo Serviço'] || null,
             activation_type: row['Tipo Ativação'] || null,
             monthly_value: parseNumericValue(row['Valor Mensal']),
-            energy_sale_type: row['Tipo Venda Energia'] || null,
+            energy_sale_type: normalizeEnergySaleType(row['Tipo Venda Energia']),
             paid_to_operator: parseBooleanValue(row['Paga Operador']),
             payment_date: parseDate(row['Data Pagamento']),
             cpe: row['CPE'] || null,
