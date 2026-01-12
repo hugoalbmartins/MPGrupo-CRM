@@ -134,8 +134,8 @@ export const salesService = {
 
     const { data: byCode } = await supabase
       .from('partners')
-      .select('id, name, code')
-      .ilike('code', searchTerm);
+      .select('id, name, partner_code')
+      .ilike('partner_code', searchTerm);
 
     if (byCode && byCode.length > 0) {
       return byCode[0];
@@ -143,7 +143,7 @@ export const salesService = {
 
     const { data: byExactName } = await supabase
       .from('partners')
-      .select('id, name, code')
+      .select('id, name, partner_code')
       .ilike('name', searchTerm);
 
     if (byExactName && byExactName.length > 0) {
@@ -152,7 +152,7 @@ export const salesService = {
 
     const { data: byPartialName, error } = await supabase
       .from('partners')
-      .select('id, name, code')
+      .select('id, name, partner_code')
       .ilike('name', `%${searchTerm}%`);
 
     if (error) throw error;
