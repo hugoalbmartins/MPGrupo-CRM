@@ -47,7 +47,21 @@ const Sales = ({ user }) => {
     request_number: "",
     paid_to_operator: false,
     payment_date: "",
-    manual_commission: ""
+    manual_commission: "",
+    partner_id: "",
+    operator_id: "",
+    monthly_value: "",
+    client_name: "",
+    client_nif: "",
+    client_contact: "",
+    client_email: "",
+    client_iban: "",
+    street: "",
+    postal_code: "",
+    locality: "",
+    installation_address: "",
+    has_direct_debit: false,
+    has_electronic_invoice: false
   });
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
@@ -602,7 +616,21 @@ const Sales = ({ user }) => {
       request_number: sale.request_number || "",
       paid_to_operator: sale.paid_to_operator || false,
       payment_date: sale.payment_date ? sale.payment_date.split('T')[0] : "",
-      manual_commission: sale.manual_commission || ""
+      manual_commission: sale.manual_commission || "",
+      partner_id: sale.partner_id || "",
+      operator_id: sale.operator_id || "",
+      monthly_value: sale.monthly_value || "",
+      client_name: sale.client_name || "",
+      client_nif: sale.client_nif || "",
+      client_contact: sale.client_contact || "",
+      client_email: sale.client_email || "",
+      client_iban: sale.client_iban || "",
+      street: sale.street || "",
+      postal_code: sale.postal_code || "",
+      locality: sale.locality || "",
+      installation_address: sale.installation_address || "",
+      has_direct_debit: sale.has_direct_debit || false,
+      has_electronic_invoice: sale.has_electronic_invoice || false
     });
     setEditDialogOpen(true);
   };
@@ -1560,7 +1588,7 @@ const Sales = ({ user }) => {
 
       {/* Edit Sale Dialog (Admin/BO) */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Venda - {editingSale?.sale_code}</DialogTitle>
           </DialogHeader>
@@ -1657,7 +1685,178 @@ const Sales = ({ user }) => {
               );
             })()}
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="font-semibold text-lg">Dados Comerciais</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Parceiro *</Label>
+                  <Select
+                    value={editFormData.partner_id}
+                    onValueChange={(v) => setEditFormData({...editFormData, partner_id: v})}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione parceiro" /></SelectTrigger>
+                    <SelectContent>
+                      {partners.map((partner) => (
+                        <SelectItem key={partner.id} value={partner.id}>
+                          {partner.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Operadora *</Label>
+                  <Select
+                    value={editFormData.operator_id}
+                    onValueChange={(v) => setEditFormData({...editFormData, operator_id: v})}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione operadora" /></SelectTrigger>
+                    <SelectContent>
+                      {operators.map((operator) => (
+                        <SelectItem key={operator.id} value={operator.id}>
+                          {operator.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label>Valor Mensal (€)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.monthly_value}
+                  onChange={(e) => setEditFormData({...editFormData, monthly_value: e.target.value})}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="font-semibold text-lg">Dados do Cliente</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Nome do Cliente *</Label>
+                  <Input
+                    value={editFormData.client_name}
+                    onChange={(e) => setEditFormData({...editFormData, client_name: e.target.value})}
+                    placeholder="Nome completo"
+                  />
+                </div>
+
+                <div>
+                  <Label>NIF *</Label>
+                  <Input
+                    value={editFormData.client_nif}
+                    onChange={(e) => setEditFormData({...editFormData, client_nif: e.target.value})}
+                    placeholder="000000000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Contacto *</Label>
+                  <Input
+                    value={editFormData.client_contact}
+                    onChange={(e) => setEditFormData({...editFormData, client_contact: e.target.value})}
+                    placeholder="Telefone"
+                  />
+                </div>
+
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={editFormData.client_email}
+                    onChange={(e) => setEditFormData({...editFormData, client_email: e.target.value})}
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>IBAN</Label>
+                <Input
+                  value={editFormData.client_iban}
+                  onChange={(e) => setEditFormData({...editFormData, client_iban: e.target.value})}
+                  placeholder="PT50..."
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit_direct_debit"
+                    checked={editFormData.has_direct_debit}
+                    onChange={(e) => setEditFormData({...editFormData, has_direct_debit: e.target.checked})}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="edit_direct_debit">Débito Direto</Label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit_electronic_invoice"
+                    checked={editFormData.has_electronic_invoice}
+                    onChange={(e) => setEditFormData({...editFormData, has_electronic_invoice: e.target.checked})}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="edit_electronic_invoice">Fatura Eletrónica</Label>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="font-semibold text-lg">Moradas</h3>
+
+              <div>
+                <Label>Morada</Label>
+                <Input
+                  value={editFormData.street}
+                  onChange={(e) => setEditFormData({...editFormData, street: e.target.value})}
+                  placeholder="Rua, número, andar"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Código Postal</Label>
+                  <Input
+                    value={editFormData.postal_code}
+                    onChange={(e) => setEditFormData({...editFormData, postal_code: e.target.value})}
+                    placeholder="0000-000"
+                  />
+                </div>
+
+                <div>
+                  <Label>Localidade</Label>
+                  <Input
+                    value={editFormData.locality}
+                    onChange={(e) => setEditFormData({...editFormData, locality: e.target.value})}
+                    placeholder="Cidade"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Morada de Instalação</Label>
+                <Input
+                  value={editFormData.installation_address}
+                  onChange={(e) => setEditFormData({...editFormData, installation_address: e.target.value})}
+                  placeholder="Se diferente da morada principal"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Cancelar
               </Button>
