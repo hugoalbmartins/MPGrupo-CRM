@@ -129,6 +129,70 @@ export const salesService = {
     return attachments;
   },
 
+  async findPartnerByNameOrCode(nameOrCode) {
+    const { data: partners, error } = await supabase
+      .from('partners')
+      .select('id, name, code')
+      .or(`name.ilike.%${nameOrCode}%,code.ilike.%${nameOrCode}%`);
+
+    if (error) throw error;
+
+    if (!partners || partners.length === 0) {
+      return null;
+    }
+
+    const exactMatch = partners.find(p =>
+      p.code?.toLowerCase() === nameOrCode.toLowerCase() ||
+      p.name?.toLowerCase() === nameOrCode.toLowerCase()
+    );
+
+    return exactMatch || partners[0];
+  },
+
+  async findOperatorByName(name) {
+    const { data: operators, error } = await supabase
+      .from('operators')
+      .select('id, name')
+      .ilike('name', `%${name}%`);
+
+    if (error) throw error;
+
+    if (!operators || operators.length === 0) {
+      return null;
+    }
+
+    const exactMatch = operators.find(o => o.name?.toLowerCase() === name.toLowerCase());
+
+    return exactMatch || operators[0];
+  },
+
+  async createSale(saleData, files = []) {
+    let partnerId = saleData.partner_id;
+    let operatorId = saleData.operator_id;
+
+    if (partnerId && typeof partnerId === 'string' && isNaN(partnerId)) {
+      const partner = await this.findPartnerByNameOrCode(partnerId);
+      if (!partner) {
+        throw new Error(`Parceiro não encontrado: ${partnerId}`);
+      }
+      partnerId = partner.id;
+    }
+
+    if (operatorId && typeof operatorId === 'string' && isNaN(operatorId)) {
+      const operator = await this.findOperatorByName(operatorId);
+      if (!operator) {
+        throw new Error(`Operadora não encontrada: ${operatorId}`);
+      }
+      operatorId = operator.id;
+    }
+
+    return await this.create({
+      ...saleData,
+      partner_id: partnerId,
+      operator_id: operatorId
+    }, files);
+  },
+
   async create(saleData, files = []) {
     const saleDate = new Date(saleData.date);
     if (saleDate > new Date()) {

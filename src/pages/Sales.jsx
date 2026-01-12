@@ -484,7 +484,7 @@ const Sales = ({ user }) => {
 
         const baseData = {
           'Data': new Date(sale.date).toLocaleDateString('pt-PT'),
-          'ID Parceiro': sale.partner_id || '',
+          'ID Parceiro': partner?.code || partner?.name || sale.partner_id || '',
           'Âmbito': sale.scope,
           'Tipo Cliente': sale.client_type,
           'Nome Cliente': sale.client_name,
@@ -498,7 +498,7 @@ const Sales = ({ user }) => {
           'Código Postal': sale.postal_code || '',
           'Localidade': sale.locality || '',
           'Morada Instalação': sale.installation_address || '',
-          'ID Operadora': sale.operator_id || '',
+          'ID Operadora': operator?.name || sale.operator_id || '',
           'Tipo Serviço': sale.service_type || '',
           'Tipo Ativação': sale.activation_type || '',
           'Valor Mensal': sale.monthly_value || '',
