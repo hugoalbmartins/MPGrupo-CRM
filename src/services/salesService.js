@@ -197,9 +197,19 @@ export const salesService = {
     if (partnerId && typeof partnerId === 'string' && isNaN(partnerId)) {
       const partner = await this.findPartnerByNameOrCode(partnerId);
       if (!partner) {
-        throw new Error(`Parceiro não encontrado: ${partnerId}`);
+        const { data: unknownPartner } = await supabase
+          .from('partners')
+          .select('id')
+          .eq('partner_code', 'DESCONHECIDO')
+          .maybeSingle();
+
+        if (!unknownPartner) {
+          throw new Error(`Parceiro não encontrado: ${partnerId}`);
+        }
+        partnerId = unknownPartner.id;
+      } else {
+        partnerId = partner.id;
       }
-      partnerId = partner.id;
     }
 
     if (operatorId && typeof operatorId === 'string' && isNaN(operatorId)) {
