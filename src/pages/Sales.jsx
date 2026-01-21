@@ -12,7 +12,7 @@ import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
 import { energyPointsService } from "../services/energyPointsService";
-import { recalculateAllCommissions } from "../services/commissionRecalculator";
+import { recalculateAllCommissions, recalculateSaleCommission } from "../services/commissionRecalculator";
 import { supabase } from "../lib/supabase";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import EnergyPointsManager from "../components/EnergyPointsManager";
@@ -770,6 +770,14 @@ const Sales = ({ user }) => {
       }
 
       await salesService.update(editingSale.id, editFormData);
+
+      try {
+        await recalculateSaleCommission(editingSale.id);
+        console.log('Commission recalculated successfully for sale:', editingSale.id);
+      } catch (commissionError) {
+        console.error('Error recalculating commission:', commissionError);
+      }
+
       toast.success("Venda atualizada com sucesso!");
       setEditDialogOpen(false);
       fetchData();
