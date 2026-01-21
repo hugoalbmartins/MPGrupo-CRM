@@ -378,7 +378,9 @@ export const salesService = {
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
-      if (updateData[key] !== null && updateData[key] !== undefined && updateData[key] !== '') {
+      if (key === 'partner_id') {
+        updates[key] = updateData[key] === null || updateData[key] === '' ? null : updateData[key];
+      } else if (updateData[key] !== null && updateData[key] !== undefined && updateData[key] !== '') {
         if (key === 'manual_commission') {
           updates[key] = parseFloat(updateData[key]) || null;
         } else {

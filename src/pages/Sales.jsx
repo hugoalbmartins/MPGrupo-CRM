@@ -720,7 +720,7 @@ const Sales = ({ user }) => {
       paid_to_operator: sale.paid_to_operator || false,
       payment_date: sale.payment_date ? sale.payment_date.split('T')[0] : "",
       manual_commission: sale.manual_commission || "",
-      partner_id: sale.partner_id || "",
+      partner_id: sale.partner_id || (sale.partner_id === null && user?.is_commissioned ? "admin_commissioned" : ""),
       operator_id: sale.operator_id || "",
       scope: sale.scope || "",
       client_type: sale.client_type || sale.customer_type || "particular",
@@ -771,11 +771,13 @@ const Sales = ({ user }) => {
 
       await salesService.update(editingSale.id, editFormData);
 
-      try {
-        await recalculateSaleCommission(editingSale.id);
-        console.log('Commission recalculated successfully for sale:', editingSale.id);
-      } catch (commissionError) {
-        console.error('Error recalculating commission:', commissionError);
+      if (!editFormData.manual_commission) {
+        try {
+          await recalculateSaleCommission(editingSale.id);
+          console.log('Commission recalculated successfully for sale:', editingSale.id);
+        } catch (commissionError) {
+          console.error('Error recalculating commission:', commissionError);
+        }
       }
 
       toast.success("Venda atualizada com sucesso!");
@@ -1868,11 +1870,14 @@ const Sales = ({ user }) => {
               <div>
                 <Label>Parceiro *</Label>
                 <Select
-                  value={editFormData.partner_id}
-                  onValueChange={(v) => setEditFormData({...editFormData, partner_id: v})}
+                  value={editFormData.partner_id || ""}
+                  onValueChange={(v) => setEditFormData({...editFormData, partner_id: v === "admin_commissioned" ? null : v})}
                 >
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
+                    {user?.is_commissioned && (
+                      <SelectItem value="admin_commissioned">Venda Própria (Admin Comissionado)</SelectItem>
+                    )}
                     {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -2273,11 +2278,12 @@ const Sales = ({ user }) => {
               )}
 
               {(() => {
-                const saleOperator = operators.find(op => op.id === editingSale?.operator_id);
-                const shouldShowCommission = (saleOperator?.commission_mode === 'manual' || editingSale?.scope === 'solar');
+                const saleOperator = operators.find(op => op.id === editFormData.operator_id);
                 const canEditCommission = user?.role === 'admin';
+                const hasAutomaticCommission = saleOperator?.commission_mode !== 'manual' && editFormData.scope !== 'solar';
+                const commissionChanged = editFormData.manual_commission !== (editingSale?.manual_commission || '');
 
-                return shouldShowCommission && (
+                return (
                   <div className="col-span-2">
                     <Label>Comissão Manual (€) {!canEditCommission && <span className="text-red-500">*Apenas Administradores</span>}</Label>
                     <Input
@@ -2285,12 +2291,23 @@ const Sales = ({ user }) => {
                       step="0.01"
                       value={editFormData.manual_commission}
                       onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
-                      placeholder="Definir comissão"
+                      placeholder={hasAutomaticCommission ? "Deixar vazio para cálculo automático" : "Definir comissão"}
                       disabled={!canEditCommission}
                       className={!canEditCommission ? "bg-gray-100 cursor-not-allowed" : ""}
                     />
+                    {hasAutomaticCommission && commissionChanged && editFormData.manual_commission && (
+                      <Alert className="mt-2 bg-amber-50 border-amber-300">
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                        <AlertDescription className="text-amber-900 text-sm">
+                          <strong>Atenção:</strong> Esta operadora tem comissão automática. Ao definir um valor manual,
+                          você está sobrescrevendo o cálculo automático. Deixe o campo vazio para manter o cálculo automático.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">
-                      {saleOperator?.commission_mode === 'manual'
+                      {hasAutomaticCommission
+                        ? 'Operadora com cálculo automático de comissão'
+                        : saleOperator?.commission_mode === 'manual'
                         ? 'Operadora com comissão definida ao contrato'
                         : 'Comissão para venda Solar'}
                       {!canEditCommission && ' - Apenas administradores podem definir comissões manuais'}
