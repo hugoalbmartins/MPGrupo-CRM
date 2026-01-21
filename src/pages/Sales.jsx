@@ -54,7 +54,11 @@ const Sales = ({ user }) => {
     manual_commission: "",
     partner_id: "",
     operator_id: "",
+    scope: "",
+    client_type: "",
     monthly_value: "",
+    current_monthly_fee: "",
+    contracted_monthly_fee: "",
     client_name: "",
     client_nif: "",
     client_contact: "",
@@ -64,8 +68,21 @@ const Sales = ({ user }) => {
     postal_code: "",
     locality: "",
     installation_address: "",
+    service_type: "",
+    activation_type: "",
+    energy_sale_type: "",
+    cpe: "",
+    power: "",
+    cui: "",
+    tier: "",
+    entry_type: "",
     has_direct_debit: false,
-    has_electronic_invoice: false
+    has_electronic_invoice: false,
+    has_tv: false,
+    has_net: false,
+    has_lr: false,
+    mobile_count: 0,
+    observations: ""
   });
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
@@ -705,18 +722,35 @@ const Sales = ({ user }) => {
       manual_commission: sale.manual_commission || "",
       partner_id: sale.partner_id || "",
       operator_id: sale.operator_id || "",
+      scope: sale.scope || "",
+      client_type: sale.client_type || sale.customer_type || "particular",
       monthly_value: sale.monthly_value || "",
-      client_name: sale.client_name || "",
-      client_nif: sale.client_nif || "",
-      client_contact: sale.client_contact || "",
+      current_monthly_fee: sale.current_monthly_fee || "",
+      contracted_monthly_fee: sale.contracted_monthly_fee || "",
+      client_name: sale.client_name || sale.customer_name || "",
+      client_nif: sale.client_nif || sale.nif || "",
+      client_contact: sale.client_contact || sale.contact || "",
       client_email: sale.client_email || "",
       client_iban: sale.client_iban || "",
       street: sale.street || "",
       postal_code: sale.postal_code || "",
       locality: sale.locality || "",
       installation_address: sale.installation_address || "",
+      service_type: sale.service_type || "",
+      activation_type: sale.activation_type || "",
+      energy_sale_type: sale.energy_sale_type || "",
+      cpe: sale.cpe || "",
+      power: sale.power || "",
+      cui: sale.cui || "",
+      tier: sale.tier || "",
+      entry_type: sale.entry_type || "",
       has_direct_debit: sale.has_direct_debit || false,
-      has_electronic_invoice: sale.has_electronic_invoice || false
+      has_electronic_invoice: sale.has_electronic_invoice || false,
+      has_tv: sale.has_tv || false,
+      has_net: sale.has_net || false,
+      has_lr: sale.has_lr || false,
+      mobile_count: sale.mobile_count || 0,
+      observations: sale.observations || ""
     });
     setEditDialogOpen(true);
   };
@@ -1774,215 +1808,390 @@ const Sales = ({ user }) => {
             <DialogDescription>Altere os campos necessários</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
-            <div>
-              <Label>Data da Venda *</Label>
-              <Input
-                type="date"
-                value={editFormData.date}
-                max={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">Data não pode ser futura</p>
-            </div>
-
-            <div>
-              <Label>Status *</Label>
-              <Select
-                value={editFormData.status}
-                onValueChange={(v) => {
-                  const newFormData = {...editFormData, status: v};
-                  if (v !== 'Ativo') {
-                    newFormData.paid_to_operator = false;
-                    newFormData.payment_date = "";
-                  }
-                  setEditFormData(newFormData);
-                }}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Para registo">Para registo</SelectItem>
-                  <SelectItem value="Pendente">Pendente</SelectItem>
-                  <SelectItem value="Concluido">Concluído</SelectItem>
-                  <SelectItem value="Ativo">Ativo</SelectItem>
-                  <SelectItem value="Cancelado">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {editingSale?.scope === 'telecomunicacoes' && (
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Requisição (REQ)</Label>
-                <Input
-                  value={editFormData.request_number}
-                  onChange={(e) => setEditFormData({...editFormData, request_number: e.target.value})}
-                  placeholder="Número de requisição"
-                />
-              </div>
-            )}
-
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="paid_to_operator"
-                  checked={editFormData.paid_to_operator}
-                  onChange={(e) => setEditFormData({...editFormData, paid_to_operator: e.target.checked})}
-                  disabled={editFormData.status !== 'Ativo'}
-                  className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <Label htmlFor="paid_to_operator" className={editFormData.status !== 'Ativo' ? 'text-gray-400' : ''}>
-                  Paga pelo Operador
-                </Label>
-              </div>
-              {editFormData.status !== 'Ativo' && (
-                <p className="text-xs text-gray-500">Apenas disponível para vendas com estado "Ativo"</p>
-              )}
-            </div>
-
-            {editFormData.paid_to_operator && (
-              <div>
-                <Label>Data de Pagamento</Label>
+                <Label>Data da Venda *</Label>
                 <Input
                   type="date"
-                  value={editFormData.payment_date}
-                  onChange={(e) => setEditFormData({...editFormData, payment_date: e.target.value})}
+                  value={editFormData.date}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
+                  required
                 />
-              </div>
-            )}
-
-            {(() => {
-              const saleOperator = operators.find(op => op.id === editingSale?.operator_id);
-              const shouldShowCommission = (saleOperator?.commission_mode === 'manual' || editingSale?.scope === 'solar');
-              const canEditCommission = user?.role === 'admin';
-
-              return shouldShowCommission && (
-                <div>
-                  <Label>Comissão Manual (€) {!canEditCommission && <span className="text-red-500">*Apenas Administradores</span>}</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={editFormData.manual_commission}
-                    onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
-                    placeholder="Definir comissão"
-                    disabled={!canEditCommission}
-                    className={!canEditCommission ? "bg-gray-100 cursor-not-allowed" : ""}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {saleOperator?.commission_mode === 'manual'
-                      ? 'Operadora com comissão definida ao contrato'
-                      : 'Comissão para venda Solar'}
-                    {!canEditCommission && ' - Apenas administradores podem definir comissões manuais'}
-                  </p>
-                </div>
-              );
-            })()}
-
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="font-semibold text-lg">Dados Comerciais</h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Parceiro *</Label>
-                  <Select
-                    value={editFormData.partner_id}
-                    onValueChange={(v) => setEditFormData({...editFormData, partner_id: v})}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Selecione parceiro" /></SelectTrigger>
-                    <SelectContent>
-                      {partners.map((partner) => (
-                        <SelectItem key={partner.id} value={partner.id}>
-                          {partner.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Operadora *</Label>
-                  <Select
-                    value={editFormData.operator_id}
-                    onValueChange={(v) => setEditFormData({...editFormData, operator_id: v})}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Selecione operadora" /></SelectTrigger>
-                    <SelectContent>
-                      {operators.map((operator) => (
-                        <SelectItem key={operator.id} value={operator.id}>
-                          {operator.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <p className="text-xs text-gray-500 mt-1">Data não pode ser futura</p>
               </div>
 
               <div>
-                <Label>Valor Mensal (€)</Label>
+                <Label>Status *</Label>
+                <Select
+                  value={editFormData.status}
+                  onValueChange={(v) => {
+                    const newFormData = {...editFormData, status: v};
+                    if (v !== 'Ativo') {
+                      newFormData.paid_to_operator = false;
+                      newFormData.payment_date = "";
+                    }
+                    setEditFormData(newFormData);
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Para registo">Para registo</SelectItem>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                    <SelectItem value="Concluido">Concluído</SelectItem>
+                    <SelectItem value="Ativo">Ativo</SelectItem>
+                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                    <SelectItem value="Em proposta">Em proposta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Parceiro *</Label>
+                <Select
+                  value={editFormData.partner_id}
+                  onValueChange={(v) => setEditFormData({...editFormData, partner_id: v})}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Tipo de Cliente *</Label>
+                <Select value={editFormData.client_type} onValueChange={(v) => setEditFormData({...editFormData, client_type: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="particular">Particular</SelectItem>
+                    <SelectItem value="empresarial">Empresarial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Operadora *</Label>
+                <Select
+                  value={editFormData.operator_id}
+                  onValueChange={(v) => setEditFormData({...editFormData, operator_id: v})}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {operators.map(op => (
+                      <SelectItem key={op.id} value={op.id}>
+                        {op.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="col-span-2 bg-amber-100 border border-amber-300 rounded-lg p-3">
+                <p className="text-sm text-amber-900 font-semibold">
+                  🔒 Nome e NIF do cliente não podem ser alterados
+                </p>
+              </div>
+
+              <div>
+                <Label>Nome Cliente (Bloqueado)</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  value={editFormData.monthly_value}
-                  onChange={(e) => setEditFormData({...editFormData, monthly_value: e.target.value})}
-                  placeholder="0.00"
+                  value={editFormData.client_name}
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
                 />
-              </div>
-            </div>
-
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="font-semibold text-lg">Dados do Cliente</h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Nome do Cliente *</Label>
-                  <Input
-                    value={editFormData.client_name}
-                    onChange={(e) => setEditFormData({...editFormData, client_name: e.target.value})}
-                    placeholder="Nome completo"
-                  />
-                </div>
-
-                <div>
-                  <Label>NIF *</Label>
-                  <Input
-                    value={editFormData.client_nif}
-                    onChange={(e) => setEditFormData({...editFormData, client_nif: e.target.value})}
-                    placeholder="000000000"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Contacto *</Label>
-                  <Input
-                    value={editFormData.client_contact}
-                    onChange={(e) => setEditFormData({...editFormData, client_contact: e.target.value})}
-                    placeholder="Telefone"
-                  />
-                </div>
-
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={editFormData.client_email}
-                    onChange={(e) => setEditFormData({...editFormData, client_email: e.target.value})}
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
               </div>
 
               <div>
-                <Label>IBAN</Label>
+                <Label>NIF Cliente (Bloqueado)</Label>
+                <Input
+                  value={editFormData.client_nif}
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <Label>Contacto Cliente *</Label>
+                <Input
+                  value={editFormData.client_contact}
+                  onChange={(e) => setEditFormData({...editFormData, client_contact: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>Email Cliente</Label>
+                <Input
+                  type="email"
+                  value={editFormData.client_email}
+                  onChange={(e) => setEditFormData({...editFormData, client_email: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <Label>IBAN Cliente</Label>
                 <Input
                   value={editFormData.client_iban}
                   onChange={(e) => setEditFormData({...editFormData, client_iban: e.target.value})}
-                  placeholder="PT50..."
                 />
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="col-span-2">
+                <Label>Morada do Cliente *</Label>
+                <Input
+                  value={editFormData.street}
+                  onChange={(e) => setEditFormData({...editFormData, street: e.target.value})}
+                  placeholder="Rua, Avenida, número, andar, etc."
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>Código Postal *</Label>
+                <Input
+                  value={editFormData.postal_code}
+                  onChange={(e) => setEditFormData({...editFormData, postal_code: e.target.value})}
+                  placeholder="0000-000"
+                  pattern="\d{4}-\d{3}"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>Localidade *</Label>
+                <Input
+                  value={editFormData.locality}
+                  onChange={(e) => setEditFormData({...editFormData, locality: e.target.value})}
+                  placeholder="Ex: Lisboa, Porto, etc."
+                  required
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label>Morada de Instalação/Fornecimento</Label>
+                <Input
+                  value={editFormData.installation_address}
+                  onChange={(e) => setEditFormData({...editFormData, installation_address: e.target.value})}
+                />
+                <p className="text-xs text-gray-500 mt-1">Se diferente da morada do cliente</p>
+              </div>
+
+              {editFormData.scope === 'telecomunicacoes' && (
+                <>
+                  <div>
+                    <Label>Tipo de Serviço</Label>
+                    <Select value={editFormData.service_type} onValueChange={(v) => setEditFormData({...editFormData, service_type: v})}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="NI">NI (Nova Instalação)</SelectItem>
+                        <SelectItem value="MC">MC (Mudança de Casa)</SelectItem>
+                        <SelectItem value="REFID">REFID (Refidelização)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Tipo de Ativação</Label>
+                    <Select value={editFormData.activation_type} onValueChange={(v) => setEditFormData({...editFormData, activation_type: v})}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Fast">Fast</SelectItem>
+                        <SelectItem value="Normal">Normal</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Requisição (REQ)</Label>
+                    <Input
+                      value={editFormData.request_number}
+                      onChange={(e) => setEditFormData({...editFormData, request_number: e.target.value})}
+                      placeholder="Número de requisição"
+                    />
+                  </div>
+
+                  {(editFormData.service_type === 'REFID' || editFormData.service_type === 'Refid') ? (
+                    <>
+                      <div>
+                        <Label>Mensalidade Atual (€)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={editFormData.current_monthly_fee}
+                          onChange={(e) => setEditFormData({...editFormData, current_monthly_fee: e.target.value})}
+                          placeholder="Ex: 45.00"
+                        />
+                      </div>
+                      <div>
+                        <Label>Mensalidade Contratada (€)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={editFormData.contracted_monthly_fee}
+                          onChange={(e) => setEditFormData({...editFormData, contracted_monthly_fee: e.target.value})}
+                          placeholder="Ex: 35.00"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <Label>Mensalidade (€)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.monthly_value}
+                        onChange={(e) => setEditFormData({...editFormData, monthly_value: e.target.value})}
+                      />
+                    </div>
+                  )}
+
+                  <div className="col-span-2 border-t pt-4">
+                    <Label className="text-base font-semibold mb-3 block">Serviços Contratados</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="edit_has_tv"
+                          checked={editFormData.has_tv}
+                          onChange={(e) => setEditFormData({...editFormData, has_tv: e.target.checked})}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="edit_has_tv" className="cursor-pointer">TV</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="edit_has_net"
+                          checked={editFormData.has_net}
+                          onChange={(e) => setEditFormData({...editFormData, has_net: e.target.checked})}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="edit_has_net" className="cursor-pointer">NET/Fibra</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="edit_has_lr"
+                          checked={editFormData.has_lr}
+                          onChange={(e) => setEditFormData({...editFormData, has_lr: e.target.checked})}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="edit_has_lr" className="cursor-pointer">Linha Fixa/LR</Label>
+                      </div>
+                      <div>
+                        <Label htmlFor="edit_mobile_count" className="text-sm">Móveis</Label>
+                        <Input
+                          id="edit_mobile_count"
+                          type="number"
+                          min="0"
+                          value={editFormData.mobile_count}
+                          onChange={(e) => setEditFormData({...editFormData, mobile_count: parseInt(e.target.value) || 0})}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {editFormData.scope === 'solar' && (
+                <>
+                  <div>
+                    <Label>CPE</Label>
+                    <Input
+                      value={editFormData.cpe}
+                      onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
+                      placeholder="PT0002XXXXXXXXXXXX"
+                    />
+                  </div>
+                  <div>
+                    <Label>Potência</Label>
+                    <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+
+              {editFormData.scope === 'energia' && (
+                <>
+                  <div>
+                    <Label>Tipo de Venda Energia</Label>
+                    <Select value={editFormData.energy_sale_type} onValueChange={(v) => setEditFormData({...editFormData, energy_sale_type: v})}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="eletricidade">Eletricidade</SelectItem>
+                        <SelectItem value="gas">Gás</SelectItem>
+                        <SelectItem value="dual">Dual (Eletricidade + Gás)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Tipo de Entrada</Label>
+                    <Select value={editFormData.entry_type} onValueChange={(v) => setEditFormData({...editFormData, entry_type: v})}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
+                        <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
+                        <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(editFormData.energy_sale_type === 'eletricidade' || editFormData.energy_sale_type === 'dual') && (
+                    <>
+                      <div>
+                        <Label>CPE</Label>
+                        <Input
+                          value={editFormData.cpe}
+                          onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
+                          placeholder="PT0002XXXXXXXXXXXX"
+                        />
+                      </div>
+                      <div>
+                        <Label>Potência</Label>
+                        <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
+                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+
+                  {(editFormData.energy_sale_type === 'gas' || editFormData.energy_sale_type === 'dual') && (
+                    <>
+                      <div>
+                        <Label>CUI</Label>
+                        <Input
+                          value={editFormData.cui}
+                          onChange={(e) => setEditFormData({...editFormData, cui: e.target.value.toUpperCase()})}
+                          placeholder="PT16XXXXXXXXXXXXXX"
+                        />
+                      </div>
+                      <div>
+                        <Label>Escalão</Label>
+                        <Select value={editFormData.tier} onValueChange={(v) => setEditFormData({...editFormData, tier: v})}>
+                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Escalão 1">Escalão 1</SelectItem>
+                            <SelectItem value="Escalão 2">Escalão 2</SelectItem>
+                            <SelectItem value="Escalão 3">Escalão 3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              <div className="col-span-2 flex items-center gap-4 border-t pt-4">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -1991,9 +2200,8 @@ const Sales = ({ user }) => {
                     onChange={(e) => setEditFormData({...editFormData, has_direct_debit: e.target.checked})}
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="edit_direct_debit">Débito Direto</Label>
+                  <Label htmlFor="edit_direct_debit">Débito Direto (DD)</Label>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -2002,51 +2210,75 @@ const Sales = ({ user }) => {
                     onChange={(e) => setEditFormData({...editFormData, has_electronic_invoice: e.target.checked})}
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="edit_electronic_invoice">Fatura Eletrónica</Label>
+                  <Label htmlFor="edit_electronic_invoice">Fatura Eletrónica (FE)</Label>
                 </div>
               </div>
-            </div>
 
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="font-semibold text-lg">Moradas</h3>
-
-              <div>
-                <Label>Morada</Label>
-                <Input
-                  value={editFormData.street}
-                  onChange={(e) => setEditFormData({...editFormData, street: e.target.value})}
-                  placeholder="Rua, número, andar"
+              <div className="col-span-2">
+                <Label>Observações</Label>
+                <Textarea
+                  value={editFormData.observations}
+                  onChange={(e) => setEditFormData({...editFormData, observations: e.target.value})}
+                  rows={3}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Código Postal</Label>
-                  <Input
-                    value={editFormData.postal_code}
-                    onChange={(e) => setEditFormData({...editFormData, postal_code: e.target.value})}
-                    placeholder="0000-000"
+              <div className="col-span-2 flex flex-col gap-2 border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit_paid_to_operator"
+                    checked={editFormData.paid_to_operator}
+                    onChange={(e) => setEditFormData({...editFormData, paid_to_operator: e.target.checked})}
+                    disabled={editFormData.status !== 'Ativo'}
+                    className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
+                  <Label htmlFor="edit_paid_to_operator" className={editFormData.status !== 'Ativo' ? 'text-gray-400' : ''}>
+                    Paga pelo Operador
+                  </Label>
                 </div>
-
-                <div>
-                  <Label>Localidade</Label>
-                  <Input
-                    value={editFormData.locality}
-                    onChange={(e) => setEditFormData({...editFormData, locality: e.target.value})}
-                    placeholder="Cidade"
-                  />
-                </div>
+                {editFormData.status !== 'Ativo' && (
+                  <p className="text-xs text-gray-500">Apenas disponível para vendas com estado "Ativo"</p>
+                )}
               </div>
 
-              <div>
-                <Label>Morada de Instalação</Label>
-                <Input
-                  value={editFormData.installation_address}
-                  onChange={(e) => setEditFormData({...editFormData, installation_address: e.target.value})}
-                  placeholder="Se diferente da morada principal"
-                />
-              </div>
+              {editFormData.paid_to_operator && (
+                <div className="col-span-2">
+                  <Label>Data de Pagamento</Label>
+                  <Input
+                    type="date"
+                    value={editFormData.payment_date}
+                    onChange={(e) => setEditFormData({...editFormData, payment_date: e.target.value})}
+                  />
+                </div>
+              )}
+
+              {(() => {
+                const saleOperator = operators.find(op => op.id === editingSale?.operator_id);
+                const shouldShowCommission = (saleOperator?.commission_mode === 'manual' || editingSale?.scope === 'solar');
+                const canEditCommission = user?.role === 'admin';
+
+                return shouldShowCommission && (
+                  <div className="col-span-2">
+                    <Label>Comissão Manual (€) {!canEditCommission && <span className="text-red-500">*Apenas Administradores</span>}</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editFormData.manual_commission}
+                      onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
+                      placeholder="Definir comissão"
+                      disabled={!canEditCommission}
+                      className={!canEditCommission ? "bg-gray-100 cursor-not-allowed" : ""}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {saleOperator?.commission_mode === 'manual'
+                        ? 'Operadora com comissão definida ao contrato'
+                        : 'Comissão para venda Solar'}
+                      {!canEditCommission && ' - Apenas administradores podem definir comissões manuais'}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
@@ -2054,7 +2286,7 @@ const Sales = ({ user }) => {
                 Cancelar
               </Button>
               <Button type="submit" className="btn-primary">
-                Guardar
+                Guardar Alterações
               </Button>
             </div>
           </form>
