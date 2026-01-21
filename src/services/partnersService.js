@@ -39,7 +39,7 @@ export const partnersService = {
     const { data, error } = await supabase
       .from('partners')
       .select('*')
-      .order('partner_code');
+      .order('name', { ascending: true });
 
     if (error) throw error;
     return data || [];

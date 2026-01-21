@@ -382,9 +382,6 @@ export const salesService = {
       }
     }
 
-    await this.createAlert('new_sale', data.id, data.sale_code,
-      `Nova venda registada: ${data.sale_code} - ${partnerName}`);
-
     return data;
   },
 
@@ -419,14 +416,6 @@ export const salesService = {
 
     if (error) throw error;
     if (!data) throw new Error('Sale update failed');
-
-    if (updateData.status && oldSale.status !== updateData.status) {
-      await this.createAlert('status_change', data.id, data.sale_code,
-        `Status alterado para ${updateData.status}: ${data.sale_code}`);
-    } else {
-      await this.createAlert('sale_updated', data.id, data.sale_code,
-        `Venda atualizada: ${data.sale_code}`);
-    }
 
     return data;
   },
@@ -470,145 +459,7 @@ export const salesService = {
     if (error) throw error;
     if (!data) throw new Error('Failed to add note to sale');
 
-    await this.createAlert('note_added', saleId, sale.sale_code,
-      `Nova nota adicionada em ${sale.sale_code} por ${currentUser.name}`);
-
     return note;
-  },
-
-  async createAlert(type, saleId, saleCode, message) {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data: currentUser } = await supabase
-      .from('users')
-      .select('name')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!currentUser) throw new Error('User not found');
-
-    const { data: sale } = await supabase
-      .from('sales')
-      .select('partner_id, created_by_user_id, client_name, client_nif, scope')
-      .eq('id', saleId)
-      .maybeSingle();
-
-    if (!sale) throw new Error('Sale not found');
-
-    const userIds = [];
-
-    if (sale.partner_id) {
-      const { data: partner } = await supabase
-        .from('partners')
-        .select('user_id')
-        .eq('id', sale.partner_id)
-        .maybeSingle();
-
-      if (partner?.user_id) userIds.push(partner.user_id);
-    }
-
-    if (sale.created_by_user_id) userIds.push(sale.created_by_user_id);
-
-    const { data: adminUsers } = await supabase
-      .from('users')
-      .select('id')
-      .in('role', ['admin', 'bo']);
-
-    if (adminUsers) {
-      userIds.push(...adminUsers.map(u => u.id));
-    }
-
-    const uniqueUserIds = [...new Set(userIds)].filter(id => id !== user.id);
-
-    const { error: alertError } = await supabase.from('alerts').insert({
-      type,
-      sale_id: saleId,
-      sale_code: saleCode,
-      message,
-      user_ids: uniqueUserIds.length > 0 ? uniqueUserIds : [],
-      created_by: user.id,
-      created_by_name: currentUser.name
-    });
-
-    if (alertError) {
-      console.error('Error creating alert:', alertError);
-      return;
-    }
-
-    const { data: recipientUsers } = await supabase
-      .from('users')
-      .select('email, name')
-      .in('id', uniqueUserIds);
-
-    if (recipientUsers && recipientUsers.length > 0) {
-      const scopeTranslation = {
-        telecomunicacoes: 'Telecomunicações',
-        energia: 'Energia',
-        solar: 'Solar',
-        dual: 'Dual'
-      };
-
-      const emailSubject = `${sale.client_name} - ${sale.client_nif} - ${scopeTranslation[sale.scope] || sale.scope}`;
-
-      const emailBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); padding: 30px; text-align: center;">
-            <h1 style="color: #FFFFFF; margin: 0; font-size: 24px;">MP GRUPO</h1>
-            <p style="color: #FFFFFF; margin: 5px 0 0 0; font-size: 14px;">Sales CRM</p>
-          </div>
-
-          <div style="padding: 30px; background-color: #FFFFFF;">
-            <h2 style="color: #1E293B; margin-top: 0;">Notificação de Venda</h2>
-            <p style="color: #475569; line-height: 1.6;">${message}</p>
-
-            <div style="background-color: #F8FAFC; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 5px 0; color: #475569;"><strong>Código:</strong> ${saleCode}</p>
-              <p style="margin: 5px 0; color: #475569;"><strong>Cliente:</strong> ${sale.client_name}</p>
-              <p style="margin: 5px 0; color: #475569;"><strong>NIF:</strong> ${sale.client_nif}</p>
-              <p style="margin: 5px 0; color: #475569;"><strong>Tipo:</strong> ${scopeTranslation[sale.scope] || sale.scope}</p>
-            </div>
-
-            <p style="color: #64748B; font-size: 14px; margin-top: 30px;">
-              Melhores cumprimentos,<br>
-              <strong>Gestão de vendas da Grupo MarcioPinto</strong>
-            </p>
-          </div>
-
-          <div style="background-color: #F8FAFC; padding: 20px; text-align: center; border-top: 1px solid #E2E8F0;">
-            <p style="color: #94A3B8; font-size: 12px; margin: 0;">
-              Esta é uma notificação automática do sistema de gestão de vendas MP GRUPO.
-            </p>
-          </div>
-        </div>
-      `;
-
-      (async () => {
-        for (const recipient of recipientUsers) {
-          try {
-            const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-alert-email`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  to: recipient.email,
-                  subject: emailSubject,
-                  html: emailBody,
-                }),
-              }
-            );
-
-            if (!response.ok) {
-              console.error(`Failed to send email to ${recipient.email}`);
-            }
-          } catch (error) {
-            console.error(`Error sending email to ${recipient.email}:`, error);
-          }
-        }
-      })();
-    }
   },
 
   async getAuditLogs(saleId) {
