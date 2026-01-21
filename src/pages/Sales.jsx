@@ -94,6 +94,8 @@ const Sales = ({ user }) => {
     service_type: "",
     activation_type: "",
     monthly_value: "",
+    current_monthly_fee: "",
+    contracted_monthly_fee: "",
     energy_sale_type: "",
     cpe: "",
     power: "",
@@ -240,6 +242,13 @@ const Sales = ({ user }) => {
     try {
       const submitData = { ...formData };
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
+      if (submitData.current_monthly_fee) submitData.current_monthly_fee = parseFloat(submitData.current_monthly_fee);
+      if (submitData.contracted_monthly_fee) submitData.contracted_monthly_fee = parseFloat(submitData.contracted_monthly_fee);
+
+      if (submitData.service_type !== 'REFID' && submitData.service_type !== 'Refid') {
+        delete submitData.current_monthly_fee;
+        delete submitData.contracted_monthly_fee;
+      }
 
       if (formData.scope === 'energia' && formData.energy_points && formData.energy_points.length > 0) {
         const selectedOperator = operators.find(op => op.id === formData.operator_id);
@@ -336,6 +345,8 @@ const Sales = ({ user }) => {
       service_type: "",
       activation_type: "",
       monthly_value: "",
+      current_monthly_fee: "",
+      contracted_monthly_fee: "",
       energy_sale_type: "",
       cpe: "",
       power: "",
