@@ -71,6 +71,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
       setSale(saleData);
       setAuditLogs(logs);
       setEditData({
+        date: saleData.date ? saleData.date.split('T')[0] : "",
         status: saleData.status,
         request_number: saleData.request_number || "",
         paid_to_operator: saleData.paid_to_operator || false,
@@ -102,6 +103,18 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
   const handleSaveEdit = async () => {
     try {
       setSavingEdit(true);
+
+      if (editData.date) {
+        const selectedDate = new Date(editData.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (selectedDate > today) {
+          toast.error("Data de venda não pode ser futura");
+          setSavingEdit(false);
+          return;
+        }
+      }
 
       if (editData.request_number && sale.scope === 'telecomunicacoes') {
         const isDuplicate = await salesService.checkDuplicateRequisition(
@@ -286,6 +299,17 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                   </Alert>
 
                   <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Data da Venda</Label>
+                      <Input
+                        type="date"
+                        value={editData.date}
+                        max={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Data não pode ser futura</p>
+                    </div>
+
                     <div>
                       <Label>Estado</Label>
                       <Select
@@ -601,6 +625,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                       onClick={() => {
                         setIsEditing(false);
                         setEditData({
+                          date: sale.date ? sale.date.split('T')[0] : "",
                           status: sale.status,
                           request_number: sale.request_number || "",
                           paid_to_operator: sale.paid_to_operator || false,

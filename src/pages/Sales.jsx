@@ -41,9 +41,12 @@ const Sales = ({ user }) => {
   const [sortField, setSortField] = useState("created_at");
   const [sortDirection, setSortDirection] = useState("desc");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
   const [editFormData, setEditFormData] = useState({
+    date: "",
     status: "",
     request_number: "",
     paid_to_operator: false,
@@ -76,6 +79,8 @@ const Sales = ({ user }) => {
   const [operatorCommissions, setOperatorCommissions] = useState([]);
   const [availableServiceTypes, setAvailableServiceTypes] = useState([]);
   const [availableActivationTypes, setAvailableActivationTypes] = useState([]);
+  const [recalcDialogOpen, setRecalcDialogOpen] = useState(false);
+  const [recalcStartDate, setRecalcStartDate] = useState("");
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -472,7 +477,7 @@ const Sales = ({ user }) => {
   const sortedSales = [...filteredSales].sort((a, b) => {
     let aValue = a[sortField];
     let bValue = b[sortField];
-    
+
     // Handle nested values
     if (sortField === 'partner_name') {
       aValue = partners.find(p => p.id === a.partner_id)?.name || '';
@@ -482,19 +487,29 @@ const Sales = ({ user }) => {
       aValue = operators.find(o => o.id === a.operator_id)?.name || '';
       bValue = operators.find(o => o.id === b.operator_id)?.name || '';
     }
-    
+
     // Handle null/undefined
     if (aValue == null) aValue = '';
     if (bValue == null) bValue = '';
-    
+
     // Sort
     if (typeof aValue === 'string') {
-      return sortDirection === 'asc' 
-        ? aValue.localeCompare(bValue) 
+      return sortDirection === 'asc'
+        ? aValue.localeCompare(bValue)
         : bValue.localeCompare(aValue);
     }
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
+
+  const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSales = sortedSales.slice(startIndex, endIndex);
+
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToLastPage = () => setCurrentPage(totalPages);
+  const goToPreviousPage = () => setCurrentPage(prev => Math.max(1, prev - 1));
+  const goToNextPage = () => setCurrentPage(prev => Math.min(totalPages, prev + 1));
 
   const handleExportExcel = async () => {
     try {
@@ -637,18 +652,39 @@ const Sales = ({ user }) => {
   };
 
   const handleRecalculateCommissions = async () => {
-    if (!window.confirm('Tem certeza que deseja recalcular todas as comissões? Esta operação pode demorar alguns minutos.')) {
-      return;
-    }
-
     try {
       setLoading(true);
       toast.info('Recalculando comissões...');
 
-      const result = await recalculateAllCommissions();
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recalculate-commissions`;
+      const { data: { session } } = await supabase.auth.getSession();
 
-      toast.success(`Comissões recalculadas! ${result.success} atualizadas, ${result.skipped} ignoradas, ${result.failed} falharam`);
+      const requestBody = recalcStartDate ? { startDate: recalcStartDate } : {};
 
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to recalculate commissions: ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown error');
+      }
+
+      toast.success(`Comissões recalculadas! ${result.success_count} atualizadas, ${result.skipped} ignoradas, ${result.failed} falharam`);
+
+      setRecalcDialogOpen(false);
+      setRecalcStartDate("");
       await fetchData();
     } catch (error) {
       console.error('Erro ao recalcular comissões:', error);
@@ -661,6 +697,7 @@ const Sales = ({ user }) => {
   const openEditDialog = (sale) => {
     setEditingSale(sale);
     setEditFormData({
+      date: sale.date ? sale.date.split('T')[0] : "",
       status: sale.status || "",
       request_number: sale.request_number || "",
       paid_to_operator: sale.paid_to_operator || false,
@@ -687,6 +724,17 @@ const Sales = ({ user }) => {
   const handleUpdateSale = async (e) => {
     e.preventDefault();
     try {
+      if (editFormData.date) {
+        const selectedDate = new Date(editFormData.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (selectedDate > today) {
+          toast.error("Data de venda não pode ser futura");
+          return;
+        }
+      }
+
       await salesService.update(editingSale.id, editFormData);
       toast.success("Venda atualizada com sucesso!");
       setEditDialogOpen(false);
@@ -818,7 +866,7 @@ const Sales = ({ user }) => {
               <Button
                 variant="outline"
                 className="border-purple-500 text-purple-600 hover:bg-purple-50"
-                onClick={handleRecalculateCommissions}
+                onClick={() => setRecalcDialogOpen(true)}
                 disabled={loading}
               >
                 <ArrowUpDown className="w-4 h-4 mr-2" />
@@ -1596,7 +1644,7 @@ const Sales = ({ user }) => {
               {filteredSales.length === 0 ? (
                 <tr><td colSpan={user?.role === 'partner_commercial' ? 7 : 9} className="text-center py-8 text-gray-400">Nenhuma venda encontrada</td></tr>
               ) : (
-                sortedSales.map((sale) => (
+                paginatedSales.map((sale) => (
                   <tr key={sale.id}>
                     <td>
                       <span className="font-semibold text-gray-900">
@@ -1648,6 +1696,74 @@ const Sales = ({ user }) => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {filteredSales.length > 0 && (
+          <div className="mt-4 flex items-center justify-between border-t pt-4">
+            <div className="text-sm text-gray-600">
+              A mostrar {startIndex + 1} a {Math.min(endIndex, sortedSales.length)} de {sortedSales.length} vendas
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToFirstPage}
+                disabled={currentPage === 1}
+              >
+                Primeira
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNum = index + 1;
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={currentPage === pageNum ? "bg-[#1F4E78] text-white hover:bg-[#16395A]" : ""}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                    return <span key={pageNum} className="px-2">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+              >
+                Próxima
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToLastPage}
+                disabled={currentPage === totalPages}
+              >
+                Última
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Edit Sale Dialog (Admin/BO) */}
@@ -1658,6 +1774,18 @@ const Sales = ({ user }) => {
             <DialogDescription>Altere os campos necessários</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
+            <div>
+              <Label>Data da Venda *</Label>
+              <Input
+                type="date"
+                value={editFormData.date}
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Data não pode ser futura</p>
+            </div>
+
             <div>
               <Label>Status *</Label>
               <Select
@@ -2094,6 +2222,56 @@ const Sales = ({ user }) => {
         onOpenChange={setImportDialogOpen}
         onImportComplete={fetchData}
       />
+
+      {/* Recalculate Commissions Dialog */}
+      <Dialog open={recalcDialogOpen} onOpenChange={setRecalcDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Recalcular Comissões</DialogTitle>
+            <DialogDescription>
+              Escolha a data a partir da qual as comissões devem ser recalculadas. Vendas anteriores a esta data não serão afetadas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Data de Início (opcional)</Label>
+              <Input
+                type="date"
+                value={recalcStartDate}
+                onChange={(e) => setRecalcStartDate(e.target.value)}
+                placeholder="Deixe vazio para recalcular todas"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Se deixar vazio, todas as comissões serão recalculadas desde sempre.
+                Se selecionar uma data (ex: 01/01/2024), apenas vendas a partir desta data serão recalculadas.
+              </p>
+            </div>
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <AlertDescription>
+                Esta operação pode demorar alguns minutos dependendo do número de vendas.
+                As comissões serão recalculadas com base nas configurações atuais.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => {
+                setRecalcDialogOpen(false);
+                setRecalcStartDate("");
+              }}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleRecalculateCommissions}
+                disabled={loading}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                <span className="text-white">{loading ? "A recalcular..." : "Recalcular"}</span>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

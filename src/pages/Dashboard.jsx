@@ -3,6 +3,11 @@ import { toast } from "sonner";
 import { ShoppingCart, Phone, Zap, Sun, Award, CheckCircle, Clock, TrendingUp } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import SaleDetailDialog from "../components/SaleDetailDialog";
+import { supabase } from "../lib/supabase";
 import { dashboardService } from "../services/dashboardService";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
@@ -16,6 +21,11 @@ const Dashboard = ({ user }) => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [partnerStats, setPartnerStats] = useState([]);
   const [operators, setOperators] = useState([]);
+  const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
+  const [proposalFilter, setProposalFilter] = useState(null);
+  const [filteredProposals, setFilteredProposals] = useState([]);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedSaleId, setSelectedSaleId] = useState(null);
 
   useEffect(() => {
     fetchStats();
@@ -40,6 +50,50 @@ const Dashboard = ({ user }) => {
       setProposalStats(data);
     } catch (error) {
       console.error("Erro ao carregar estatísticas de propostas:", error);
+    }
+  };
+
+  const handleProposalCardClick = async (filterType) => {
+    try {
+      const { data: proposals } = await supabase
+        .from('sales')
+        .select('*, partners(name), operators(name)')
+        .eq('status', 'Em proposta')
+        .order('created_at', { ascending: false });
+
+      if (!proposals) {
+        setFilteredProposals([]);
+        return;
+      }
+
+      const now = new Date();
+      let filtered = [];
+
+      if (filterType === 'all') {
+        filtered = proposals;
+      } else if (filterType === 'up_to_7') {
+        filtered = proposals.filter(p => {
+          const daysElapsed = Math.floor((now - new Date(p.created_at)) / (1000 * 60 * 60 * 24));
+          return daysElapsed <= 7;
+        });
+      } else if (filterType === 'from_7_to_14') {
+        filtered = proposals.filter(p => {
+          const daysElapsed = Math.floor((now - new Date(p.created_at)) / (1000 * 60 * 60 * 24));
+          return daysElapsed > 7 && daysElapsed <= 14;
+        });
+      } else if (filterType === 'over_14') {
+        filtered = proposals.filter(p => {
+          const daysElapsed = Math.floor((now - new Date(p.created_at)) / (1000 * 60 * 60 * 24));
+          return daysElapsed > 14;
+        });
+      }
+
+      setFilteredProposals(filtered);
+      setProposalFilter(filterType);
+      setProposalDialogOpen(true);
+    } catch (error) {
+      console.error('Erro ao buscar propostas:', error);
+      toast.error('Erro ao buscar propostas');
     }
   };
 
@@ -720,12 +774,12 @@ const Dashboard = ({ user }) => {
     return (
       <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="stat-card">
+          <div className="stat-card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProposalCardClick('all')}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Propostas</p>
                 <p className="text-3xl font-bold text-gray-900">{proposalStats.total_proposals || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">Em análise</p>
+                <p className="text-xs text-gray-500 mt-1">Em análise · Clique para ver</p>
               </div>
               <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
@@ -733,12 +787,12 @@ const Dashboard = ({ user }) => {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProposalCardClick('up_to_7')}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Até 7 Dias</p>
                 <p className="text-3xl font-bold color-green">{proposalStats.by_age?.up_to_7 || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">Propostas recentes</p>
+                <p className="text-xs text-gray-500 mt-1">Propostas recentes · Clique para ver</p>
               </div>
               <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-white" />
@@ -746,12 +800,12 @@ const Dashboard = ({ user }) => {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProposalCardClick('from_7_to_14')}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">7 a 14 Dias</p>
                 <p className="text-3xl font-bold color-orange">{proposalStats.by_age?.from_7_to_14 || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">Requer atenção</p>
+                <p className="text-xs text-gray-500 mt-1">Requer atenção · Clique para ver</p>
               </div>
               <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
@@ -759,12 +813,12 @@ const Dashboard = ({ user }) => {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProposalCardClick('over_14')}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Mais de 14 Dias</p>
                 <p className="text-3xl font-bold text-red-600">{proposalStats.by_age?.over_14 || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">Urgente</p>
+                <p className="text-xs text-gray-500 mt-1">Urgente · Clique para ver</p>
               </div>
               <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
@@ -1143,6 +1197,88 @@ const Dashboard = ({ user }) => {
           )}
         </>
       )}
+
+      {/* Proposals List Dialog */}
+      <Dialog open={proposalDialogOpen} onOpenChange={setProposalDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Propostas - {proposalFilter === 'all' ? 'Todas' : proposalFilter === 'up_to_7' ? 'Até 7 Dias' : proposalFilter === 'from_7_to_14' ? '7 a 14 Dias' : 'Mais de 14 Dias'}
+            </DialogTitle>
+            <DialogDescription>
+              {filteredProposals.length} proposta(s) encontrada(s)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            {filteredProposals.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">Nenhuma proposta encontrada</p>
+            ) : (
+              filteredProposals.map((proposal) => {
+                const daysElapsed = Math.floor((new Date() - new Date(proposal.created_at)) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={proposal.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-bold text-gray-900">{proposal.sale_code}</span>
+                          <Badge variant={daysElapsed <= 7 ? 'default' : daysElapsed <= 14 ? 'warning' : 'destructive'}>
+                            {daysElapsed} dias
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Cliente: </span>
+                            <span className="font-semibold">{proposal.client_name}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Parceiro: </span>
+                            <span className="font-semibold">{proposal.partners?.name || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Operadora: </span>
+                            <span className="font-semibold">{proposal.operators?.name || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Data: </span>
+                            <span className="font-semibold">{new Date(proposal.date).toLocaleDateString('pt-PT')}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedSaleId(proposal.id);
+                            setDetailDialogOpen(true);
+                          }}
+                          className="bg-[#1F4E78] hover:bg-[#16395A] text-white"
+                        >
+                          Ver Detalhes
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sale Detail Dialog */}
+      <SaleDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        saleId={selectedSaleId}
+        user={user}
+        onSaleUpdated={() => {
+          fetchStats();
+          fetchProposalStats();
+          if (proposalFilter) {
+            handleProposalCardClick(proposalFilter);
+          }
+        }}
+      />
     </div>
   );
 };

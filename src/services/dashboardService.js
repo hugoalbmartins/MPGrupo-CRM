@@ -263,7 +263,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
     .from('sales')
     .select('*')
     .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0]);
+    .lt('date', end.split('T')[0])
+    .neq('status', 'Em proposta');
 
   const { count: partnerCount } = await supabase
     .from('partners')
@@ -392,7 +393,8 @@ async function getBODashboard(year, month) {
     .from('sales')
     .select('*')
     .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0]);
+    .lt('date', end.split('T')[0])
+    .neq('status', 'Em proposta');
 
   const last12Months = await getLast12MonthsData();
 
@@ -456,7 +458,8 @@ async function getPartnerDashboard(partnerId, year, month) {
     .select('*')
     .eq('partner_id', partnerId)
     .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0]);
+    .lt('date', end.split('T')[0])
+    .neq('status', 'Em proposta');
 
   const last12Months = await getLast12MonthsData();
   const retentions = await calculateRetentions(year, month);
@@ -535,7 +538,8 @@ async function getCommercialDashboard(userId, year, month) {
     .select('*')
     .eq('created_by_user_id', userId)
     .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0]);
+    .lt('date', end.split('T')[0])
+    .neq('status', 'Em proposta');
 
   const last12Months = await getLast12MonthsData();
 
@@ -582,14 +586,16 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     .select('*')
     .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`)
     .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0]);
+    .lt('date', end.split('T')[0])
+    .neq('status', 'Em proposta');
 
   const { data: ownSales } = await supabase
     .from('sales')
     .select('*')
     .eq('created_by_user_id', managerId)
     .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0]);
+    .lt('date', end.split('T')[0])
+    .neq('status', 'Em proposta');
 
   const { data: managerUser } = await supabase
     .from('users')

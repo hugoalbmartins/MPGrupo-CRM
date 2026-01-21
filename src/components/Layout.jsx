@@ -67,7 +67,7 @@ const Layout = ({ children, user, onLogout }) => {
   return (
     <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)' }}>
       {/* Sidebar Desktop */}
-      <aside className="hidden md:flex md:flex-col w-72 bg-white shadow-xl" style={{ borderRight: '1px solid #E2E8F0' }}>
+      <aside className="hidden md:flex md:flex-col w-72 bg-white shadow-xl fixed h-screen" style={{ borderRight: '1px solid #E2E8F0' }}>
         {/* Logo */}
         <div className="relative p-6 pb-8" style={{
           background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
@@ -214,7 +214,7 @@ const Layout = ({ children, user, onLogout }) => {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto md:ml-72">
         {/* Header with Alerts */}
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
           <div className="flex items-center gap-3">
