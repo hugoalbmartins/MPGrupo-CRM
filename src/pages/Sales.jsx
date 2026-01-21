@@ -12,6 +12,7 @@ import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
 import { energyPointsService } from "../services/energyPointsService";
+import { recalculateAllCommissions } from "../services/commissionRecalculator";
 import { supabase } from "../lib/supabase";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import EnergyPointsManager from "../components/EnergyPointsManager";
@@ -635,6 +636,28 @@ const Sales = ({ user }) => {
     }
   };
 
+  const handleRecalculateCommissions = async () => {
+    if (!window.confirm('Tem certeza que deseja recalcular todas as comissões? Esta operação pode demorar alguns minutos.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      toast.info('Recalculando comissões...');
+
+      const result = await recalculateAllCommissions();
+
+      toast.success(`Comissões recalculadas! ${result.success} atualizadas, ${result.skipped} ignoradas, ${result.failed} falharam`);
+
+      await fetchSales();
+    } catch (error) {
+      console.error('Erro ao recalcular comissões:', error);
+      toast.error('Erro ao recalcular comissões');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openEditDialog = (sale) => {
     setEditingSale(sale);
     setEditFormData({
@@ -783,14 +806,25 @@ const Sales = ({ user }) => {
             </DialogContent>
           </Dialog>
           {(user?.role === 'admin' || user?.role === 'backoffice') && (
-            <Button
-              variant="outline"
-              className="border-blue-500 text-blue-600 hover:bg-blue-50"
-              onClick={() => setImportDialogOpen(true)}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Importar Excel
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                onClick={() => setImportDialogOpen(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Importar Excel
+              </Button>
+              <Button
+                variant="outline"
+                className="border-purple-500 text-purple-600 hover:bg-purple-50"
+                onClick={handleRecalculateCommissions}
+                disabled={loading}
+              >
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                Recalcular Comissões
+              </Button>
+            </>
           )}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
