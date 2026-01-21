@@ -649,7 +649,7 @@ const Sales = ({ user }) => {
 
       toast.success(`Comissões recalculadas! ${result.success} atualizadas, ${result.skipped} ignoradas, ${result.failed} falharam`);
 
-      await fetchSales();
+      await fetchData();
     } catch (error) {
       console.error('Erro ao recalcular comissões:', error);
       toast.error('Erro ao recalcular comissões');

@@ -105,9 +105,16 @@ O sistema processará todas as vendas e:
 
 1. `/src/lib/utils-crm.js` - Lógica de cálculo REFID
 2. `/src/services/salesService.js` - Adiciona campos refid ao insert
-3. `/src/services/commissionRecalculator.js` - Serviço de recálculo
-4. `/src/pages/Sales.jsx` - Botão de recálculo na UI
+3. `/src/services/commissionRecalculator.js` - Serviço de recálculo (chama edge function)
+4. `/src/pages/Sales.jsx` - Botão de recálculo na UI (corrigido para chamar fetchData)
 5. `/supabase/functions/recalculate-commissions/index.ts` - Edge function
+
+## Correções Aplicadas
+
+### Erro: fetchSales is not defined
+- **Problema**: Chamada a função inexistente `fetchSales()`
+- **Correção**: Alterado para `fetchData()` (linha 652 de Sales.jsx)
+- **Data**: 21/01/2026
 
 ## Scripts Disponíveis
 
