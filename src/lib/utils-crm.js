@@ -100,7 +100,7 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   let namePrefix = 'ADM';
   let queryBuilder = supabase
     .from('sales')
-    .select('*', { count: 'exact', head: true });
+    .select('sale_code');
 
   if (partnerId) {
     const { data: partner } = await supabase
@@ -124,11 +124,11 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
   const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1).toISOString();
 
-  const { count } = await queryBuilder
+  const { data: salesInMonth } = await queryBuilder
     .gte('date', startOfMonth)
     .lt('date', endOfMonth);
 
-  const sequence = String((count || 0) + 1).padStart(4, '0');
+  const sequence = String((salesInMonth?.length || 0) + 1).padStart(4, '0');
   return `${namePrefix}${sequence}${month}${year}`;
 }
 

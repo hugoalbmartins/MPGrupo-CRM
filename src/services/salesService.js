@@ -264,7 +264,28 @@ export const salesService = {
     }
 
     const actualPartnerId = isAdminSale ? null : (saleData.partner_id || null);
-    const saleCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
+
+    let saleCode;
+    let retries = 0;
+    const maxRetries = 5;
+
+    while (retries < maxRetries) {
+      saleCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
+      const { data: existing } = await supabase
+        .from('sales')
+        .select('id')
+        .eq('sale_code', saleCode)
+        .maybeSingle();
+
+      if (!existing) break;
+
+      retries++;
+      if (retries >= maxRetries) {
+        throw new Error('Failed to generate unique sale code after multiple attempts');
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100 * retries));
+    }
 
     let status;
     if (saleData.is_proposal) {
@@ -475,13 +496,16 @@ export const salesService = {
 
     const userIds = [];
 
-    const { data: partner } = await supabase
-      .from('partners')
-      .select('user_id')
-      .eq('id', sale.partner_id)
-      .maybeSingle();
+    if (sale.partner_id) {
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('user_id')
+        .eq('id', sale.partner_id)
+        .maybeSingle();
 
-    if (partner?.user_id) userIds.push(partner.user_id);
+      if (partner?.user_id) userIds.push(partner.user_id);
+    }
+
     if (sale.created_by_user_id) userIds.push(sale.created_by_user_id);
 
     const { data: adminUsers } = await supabase
@@ -495,15 +519,20 @@ export const salesService = {
 
     const uniqueUserIds = [...new Set(userIds)].filter(id => id !== user.id);
 
-    await supabase.from('alerts').insert({
+    const { error: alertError } = await supabase.from('alerts').insert({
       type,
       sale_id: saleId,
       sale_code: saleCode,
       message,
-      user_ids: uniqueUserIds,
+      user_ids: uniqueUserIds.length > 0 ? uniqueUserIds : [],
       created_by: user.id,
       created_by_name: currentUser.name
     });
+
+    if (alertError) {
+      console.error('Error creating alert:', alertError);
+      return;
+    }
 
     const { data: recipientUsers } = await supabase
       .from('users')
