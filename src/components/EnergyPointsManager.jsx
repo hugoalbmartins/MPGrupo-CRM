@@ -36,7 +36,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
       power_kva: '',
       tier: '',
       activation_status: 'pending',
-      activation_date: '',
+      activation_date: null,
       operator_paid: false
     };
   };
@@ -80,9 +80,10 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
 
   const handlePointChange = (index, field, value) => {
     const updated = [...localPoints];
+    const finalValue = field === 'activation_date' && value === '' ? null : value;
     updated[index] = {
       ...updated[index],
-      [field]: value
+      [field]: finalValue
     };
     setLocalPoints(updated);
     onChange(updated);

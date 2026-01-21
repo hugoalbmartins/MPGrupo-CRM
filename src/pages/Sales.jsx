@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -242,11 +242,24 @@ const Sales = ({ user }) => {
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
 
       if (formData.scope === 'energia' && formData.energy_points && formData.energy_points.length > 0) {
+        const selectedOperator = operators.find(op => op.id === formData.operator_id);
+        const energyType = selectedOperator?.energy_type;
+        const saleType = energyType === 'dual' ? formData.energy_sale_type : energyType;
+
         const firstPoint = formData.energy_points[0];
-        submitData.cpe = firstPoint.point_code || '';
-        submitData.power = firstPoint.power_kva || '';
-        submitData.cui = firstPoint.cui_code || firstPoint.point_code || '';
-        submitData.tier = firstPoint.tier || '';
+
+        if (saleType === 'eletricidade' || saleType === 'dual') {
+          submitData.cpe = firstPoint.point_code || '';
+          submitData.power = firstPoint.power_kva || '';
+        }
+
+        if (saleType === 'gas') {
+          submitData.cui = firstPoint.point_code || '';
+          submitData.tier = firstPoint.tier || '';
+        } else if (saleType === 'dual') {
+          submitData.cui = firstPoint.cui_code || '';
+          submitData.tier = firstPoint.tier || '';
+        }
       }
 
       const energyPoints = submitData.energy_points;
@@ -547,12 +560,13 @@ const Sales = ({ user }) => {
                 });
               }
             } else {
+              const showCUI = sale.energy_sale_type !== 'eletricidade';
               excelData.push({
                 ...baseData,
                 'CPE': sale.cpe || '',
                 'Potência': sale.power || '',
-                'CUI': sale.cui || '',
-                'Escalão': sale.tier || '',
+                'CUI': showCUI ? (sale.cui || '') : '',
+                'Escalão': showCUI ? (sale.tier || '') : '',
                 'Tipo Entrada': sale.entry_type || '',
                 'Status': sale.status,
                 'Nº Requisição': sale.request_number || '',
@@ -562,12 +576,13 @@ const Sales = ({ user }) => {
             }
           } catch (error) {
             console.error('Erro ao buscar pontos de energia:', error);
+            const showCUI = sale.energy_sale_type !== 'eletricidade';
             excelData.push({
               ...baseData,
               'CPE': sale.cpe || '',
               'Potência': sale.power || '',
-              'CUI': sale.cui || '',
-              'Escalão': sale.tier || '',
+              'CUI': showCUI ? (sale.cui || '') : '',
+              'Escalão': showCUI ? (sale.tier || '') : '',
               'Tipo Entrada': sale.entry_type || '',
               'Status': sale.status,
               'Nº Requisição': sale.request_number || '',
@@ -725,6 +740,7 @@ const Sales = ({ user }) => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Exportar Vendas para Excel</DialogTitle>
+                <DialogDescription>Selecione o formato de exportação</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
@@ -770,7 +786,10 @@ const Sales = ({ user }) => {
               <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Nova Venda</Button>
             </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle className="text-2xl">Nova Venda</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Nova Venda</DialogTitle>
+              <DialogDescription>Preencha os dados da nova venda</DialogDescription>
+            </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1591,6 +1610,7 @@ const Sales = ({ user }) => {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Venda - {editingSale?.sale_code}</DialogTitle>
+            <DialogDescription>Altere os campos necessários</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
             <div>
@@ -1886,6 +1906,7 @@ const Sales = ({ user }) => {
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
                 Aviso de Validação
               </DialogTitle>
+              <DialogDescription>Os seguintes avisos foram detectados</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <Alert className="bg-amber-50 border-amber-200">
@@ -1920,6 +1941,7 @@ const Sales = ({ user }) => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
+            <DialogDescription>Visualize e adicione notas a esta venda</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {/* Add Note */}
