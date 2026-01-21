@@ -1701,17 +1701,28 @@ const Sales = ({ user }) => {
                     )}
                     <td className="text-center">
                       <div className="flex gap-2 justify-center">
-                        <Button
-                          onClick={() => {
-                            setSelectedSaleId(sale.id);
-                            setDetailDialogOpen(true);
-                          }}
-                          size="sm"
-                          variant="ghost"
-                          className="text-blue-600"
-                        >
-                          {(user?.role === 'admin' || user?.role === 'bo') ? 'Editar' : 'Visualizar'}
-                        </Button>
+                        {(user?.role === 'admin' || user?.role === 'bo') ? (
+                          <Button
+                            onClick={() => openEditDialog(sale)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-600"
+                          >
+                            Editar
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => {
+                              setSelectedSaleId(sale.id);
+                              setDetailDialogOpen(true);
+                            }}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-600"
+                          >
+                            Visualizar
+                          </Button>
+                        )}
                         {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
                           <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600">
                             Notas ({sale.notes?.length || 0})
