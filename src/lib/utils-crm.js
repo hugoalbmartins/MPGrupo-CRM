@@ -233,7 +233,12 @@ export async function calculateCommission(operator, saleData, supabase) {
   let baseCommission = 0;
 
   if (applicableTier.commission_mode === 'monthly_multiplier') {
-    const monthlyValue = parseFloat(saleData.monthly_value || 0);
+    let monthlyValue = parseFloat(saleData.monthly_value || 0);
+
+    if ((saleData.service_type === 'REFID' || saleData.service_type === 'Refid') && saleData.contracted_monthly_fee) {
+      monthlyValue = parseFloat(saleData.contracted_monthly_fee);
+    }
+
     const multiplier = parseFloat(applicableTier.commission_value || 0);
     baseCommission = monthlyValue * multiplier;
   } else if (applicableTier.commission_mode === 'fixed_value') {

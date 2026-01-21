@@ -322,6 +322,8 @@ export const salesService = {
       service_type: saleData.service_type || null,
       activation_type: saleData.activation_type || null,
       monthly_value: saleData.monthly_value || null,
+      current_monthly_fee: saleData.current_monthly_fee || null,
+      contracted_monthly_fee: saleData.contracted_monthly_fee || null,
       energy_sale_type: saleData.energy_sale_type || null,
       cpe: saleData.cpe?.toUpperCase() || null,
       power: saleData.power || null,
