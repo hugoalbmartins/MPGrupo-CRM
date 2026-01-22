@@ -47,12 +47,40 @@ async function calculateCommission(
     partnerType = partner?.partner_type || "D2D";
   }
 
+  if (scope === "energia" && saleData.energy_sale_type === "dual") {
+    const electricityCommission = await calculateSingleEnergyCommission(
+      operator,
+      { ...saleData, energy_sale_type: "eletricidade" },
+      supabase,
+      "eletricidade",
+      clientType,
+      partnerType
+    );
+
+    const gasCommission = await calculateSingleEnergyCommission(
+      operator,
+      { ...saleData, energy_sale_type: "gas" },
+      supabase,
+      "gas",
+      clientType,
+      partnerType
+    );
+
+    console.log(`Dual sale ${saleData.sale_code}: Electricity=${electricityCommission}, Gas=${gasCommission}, Total=${electricityCommission + gasCommission}`);
+    return electricityCommission + gasCommission;
+  }
+
   let serviceType = null;
   let activationType = null;
+  let refidOperationType = null;
 
   if (scope === "telecomunicacoes") {
     serviceType = saleData.service_type;
     activationType = saleData.activation_type;
+
+    if (serviceType === "REFID" || serviceType === "Refid") {
+      refidOperationType = saleData.refid_type;
+    }
   } else if (scope === "energia") {
     serviceType = saleData.energy_sale_type || operator.energy_type || "eletricidade";
   }
@@ -66,6 +94,10 @@ async function calculateCommission(
 
   if (activationType) {
     query = query.eq("activation_type", activationType);
+  }
+
+  if (refidOperationType) {
+    query = query.eq("refid_operation_type", refidOperationType);
   }
 
   query = query.order("min_sales", { ascending: false });
@@ -92,7 +124,7 @@ async function calculateCommission(
   }
 
   if (commissionConfigs.length === 0) {
-    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}`);
+    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}, refid_type: ${refidOperationType}`);
     return 0.0;
   }
 
@@ -137,6 +169,90 @@ async function calculateCommission(
     baseCommission = monthlyValue * multiplier;
   } else if (applicableTier.commission_mode === "fixed_value") {
     baseCommission = parseFloat(applicableTier.commission_value || 0);
+  } else {
+    baseCommission = parseFloat(applicableTier.commission_value || 0);
+  }
+
+  let bonuses = 0;
+  if (saleData.has_direct_debit) {
+    bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
+  }
+  if (saleData.has_electronic_invoice) {
+    bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
+  }
+
+  return baseCommission + bonuses;
+}
+
+async function calculateSingleEnergyCommission(
+  operator: any,
+  saleData: any,
+  supabase: any,
+  energyType: string,
+  clientType: string,
+  partnerType: string
+): Promise<number> {
+  let query = supabase
+    .from("commission_configurations")
+    .select("*")
+    .eq("operator_id", operator.id)
+    .eq("client_type", clientType)
+    .eq("partner_type", partnerType)
+    .order("min_sales", { ascending: false });
+
+  const { data: allCommissionConfigs, error } = await query;
+
+  if (error || !allCommissionConfigs || allCommissionConfigs.length === 0) {
+    console.warn(`No commission configs found for energy type: ${energyType}`);
+    return 0.0;
+  }
+
+  let commissionConfigs = allCommissionConfigs.filter((config: CommissionConfig) => {
+    if (config.service_type === energyType) {
+      return true;
+    }
+    if (config.service_types && Array.isArray(config.service_types)) {
+      return config.service_types.includes(energyType);
+    }
+    return false;
+  });
+
+  if (commissionConfigs.length === 0) {
+    console.warn(`No commission config found for energy type: ${energyType}`);
+    return 0.0;
+  }
+
+  const searchPartnerId = saleData.partner_id;
+  let partnerSalesAtOperator = 0;
+
+  if (searchPartnerId) {
+    const countQuery = supabase
+      .from("sales")
+      .select("*", { count: "exact", head: true })
+      .eq("partner_id", searchPartnerId)
+      .eq("operator_id", operator.id)
+      .eq("scope", "energia");
+
+    const { count } = await countQuery;
+    partnerSalesAtOperator = count || 0;
+  }
+
+  const applicableTier = commissionConfigs.find(
+    (config: CommissionConfig) => partnerSalesAtOperator >= (config.min_sales || 0)
+  ) || commissionConfigs[commissionConfigs.length - 1];
+
+  if (!applicableTier) {
+    return 0.0;
+  }
+
+  let baseCommission = 0;
+
+  if (applicableTier.commission_mode === "fixed_value") {
+    baseCommission = parseFloat(applicableTier.commission_value || 0);
+  } else if (applicableTier.commission_mode === "monthly_multiplier") {
+    const monthlyValue = parseFloat(saleData.monthly_value || 0);
+    const multiplier = parseFloat(applicableTier.commission_value || 0);
+    baseCommission = monthlyValue * multiplier;
   } else {
     baseCommission = parseFloat(applicableTier.commission_value || 0);
   }
