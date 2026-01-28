@@ -2,13 +2,15 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, ChevronLeft, ChevronRight, User, Target
+  FileText, FileSpreadsheet, CheckSquare, ChevronLeft, ChevronRight, User, Target,
+  ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
 import Breadcrumbs from "./ui/breadcrumbs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
@@ -71,17 +73,23 @@ const Layout = ({ children, user, onLogout }) => {
 
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    if (onLogout) onLogout();
+    navigate('/login');
+  };
+
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="min-h-screen flex bg-gradient-to-br from-blue-50/30 via-white to-blue-50/30">
-        {/* Sidebar Desktop */}
+      <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+        {/* Desktop Sidebar */}
         <motion.aside
           initial={false}
           animate={{ width: sidebarCollapsed ? 80 : 280 }}
-          className="hidden md:flex md:flex-col fixed h-screen glass-sidebar shadow-2xl z-30"
+          className="hidden lg:flex lg:flex-col fixed h-screen glass-sidebar shadow-2xl shadow-navy-900/20 z-30"
         >
-          {/* Logo */}
-          <div className="relative p-6 border-b border-slate-700/50">
+          {/* Logo Section */}
+          <div className="relative p-6 border-b border-navy-700/50">
             <AnimatePresence mode="wait">
               {!sidebarCollapsed ? (
                 <motion.div
@@ -91,12 +99,12 @@ const Layout = ({ children, user, onLogout }) => {
                   exit={{ opacity: 0 }}
                   className="flex items-center gap-3"
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-blue-400/50">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
                     <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <h1 className="text-base font-bold tracking-tight text-white">MP GRUPO</h1>
-                    <p className="text-xs font-medium text-blue-200">Sales CRM</p>
+                    <p className="text-xs font-medium text-gold-400">Sales CRM</p>
                   </div>
                 </motion.div>
               ) : (
@@ -107,7 +115,7 @@ const Layout = ({ children, user, onLogout }) => {
                   exit={{ opacity: 0 }}
                   className="flex justify-center"
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-blue-400/50">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
                     <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
                   </div>
                 </motion.div>
@@ -115,15 +123,16 @@ const Layout = ({ children, user, onLogout }) => {
             </AnimatePresence>
           </div>
 
-          {/* Collapse Button */}
+          {/* Collapse Toggle */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors z-40"
+            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-gradient-to-r from-gold-400 to-gold-500 text-navy-900 flex items-center justify-center shadow-lg hover:shadow-gold-glow transition-all duration-300 z-40 hover:scale-110"
           >
             {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
+          {/* Navigation Menu */}
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-modern">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -132,10 +141,10 @@ const Layout = ({ children, user, onLogout }) => {
                   <TooltipTrigger asChild>
                     <Link
                       to={item.path}
-                      className={`group flex items-center px-4 py-3.5 rounded-xl transition-all duration-200 relative overflow-hidden ${
+                      className={`group flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
                         isActive
-                          ? "nav-item-active"
-                          : "nav-item"
+                          ? "nav-item-active transform scale-105"
+                          : "nav-item hover:scale-105"
                       }`}
                     >
                       <Icon className={`w-5 h-5 ${sidebarCollapsed ? '' : 'mr-3'} transition-transform group-hover:scale-110 flex-shrink-0`} />
@@ -155,15 +164,15 @@ const Layout = ({ children, user, onLogout }) => {
                         <motion.span
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className={`${sidebarCollapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg`}
+                          className={`${sidebarCollapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg ring-2 ring-white`}
                         >
-                          {item.badge > 9 ? '9+' : item.badge}
+                          {item.badge > 99 ? '99+' : item.badge}
                         </motion.span>
                       )}
                     </Link>
                   </TooltipTrigger>
                   {sidebarCollapsed && (
-                    <TooltipContent side="right" className="bg-[#0F2942] text-white border-blue-800">
+                    <TooltipContent side="right" className="bg-navy-900 text-white border-gold-400/50">
                       <p>{item.label}</p>
                     </TooltipContent>
                   )}
@@ -172,12 +181,13 @@ const Layout = ({ children, user, onLogout }) => {
             })}
           </nav>
 
-          <div className="border-t border-slate-700/50 p-4">
+          {/* User Profile Section */}
+          <div className="border-t border-navy-700/50 p-4 space-y-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
                   to="/profile"
-                  className={`block px-4 py-3 mb-2 rounded-xl hover:bg-slate-800/50 transition-all ${sidebarCollapsed ? 'flex justify-center' : ''}`}
+                  className={`block px-4 py-3 rounded-xl hover:bg-white/10 transition-all duration-300 ${sidebarCollapsed ? 'flex justify-center' : ''}`}
                 >
                   <AnimatePresence mode="wait">
                     {!sidebarCollapsed ? (
@@ -188,13 +198,13 @@ const Layout = ({ children, user, onLogout }) => {
                         exit={{ opacity: 0 }}
                       >
                         <p className="text-xs text-slate-400 font-medium mb-2">Conectado como</p>
-                        <div className="flex items-center gap-2">
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-blue-600 to-blue-500 ring-2 ring-blue-400/30">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow">
                             {user?.name?.charAt(0) || 'U'}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-white text-sm truncate">{user?.name}</p>
-                            <p className="text-xs text-slate-400 truncate">{user?.position}</p>
+                            <p className="text-xs text-gold-400 truncate">{user?.position || user?.role}</p>
                           </div>
                         </div>
                       </motion.div>
@@ -204,7 +214,7 @@ const Layout = ({ children, user, onLogout }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-blue-600 to-blue-500 ring-2 ring-blue-400/30"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow"
                       >
                         {user?.name?.charAt(0) || 'U'}
                       </motion.div>
@@ -213,9 +223,8 @@ const Layout = ({ children, user, onLogout }) => {
                 </Link>
               </TooltipTrigger>
               {sidebarCollapsed && (
-                <TooltipContent side="right" className="bg-[#0F2942] text-white border-blue-800">
-                  <p className="font-semibold">{user?.name}</p>
-                  <p className="text-xs text-blue-200">{user?.position}</p>
+                <TooltipContent side="right" className="bg-navy-900 text-white border-gold-400/50">
+                  <p>{user?.name}</p>
                 </TooltipContent>
               )}
             </Tooltip>
@@ -223,26 +232,15 @@ const Layout = ({ children, user, onLogout }) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={onLogout}
-                  className={`flex items-center w-full px-4 py-3 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all group font-medium ${sidebarCollapsed ? 'justify-center' : ''}`}
+                  onClick={handleLogout}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-300 ${sidebarCollapsed ? 'justify-center' : ''}`}
                 >
-                  <LogOut className={`w-5 h-5 ${sidebarCollapsed ? '' : 'mr-3'} group-hover:transform group-hover:translate-x-1 transition-transform flex-shrink-0`} />
-                  <AnimatePresence>
-                    {!sidebarCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: "auto" }}
-                        exit={{ opacity: 0, width: 0 }}
-                        className="text-sm whitespace-nowrap"
-                      >
-                        Sair
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+                  <LogOut className="w-5 h-5 flex-shrink-0" />
+                  {!sidebarCollapsed && <span className="text-sm font-medium">Sair</span>}
                 </button>
               </TooltipTrigger>
               {sidebarCollapsed && (
-                <TooltipContent side="right" className="bg-[#0F2942] text-white border-blue-800">
+                <TooltipContent side="right" className="bg-navy-900 text-white border-gold-400/50">
                   <p>Sair</p>
                 </TooltipContent>
               )}
@@ -250,43 +248,36 @@ const Layout = ({ children, user, onLogout }) => {
           </div>
         </motion.aside>
 
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="md:hidden fixed top-4 left-4 z-50 p-3 glass-card hover:shadow-lg transition-all"
-        >
-          {sidebarOpen ? <X className="w-5 h-5 text-slate-700" /> : <Menu className="w-5 h-5 text-slate-700" />}
-        </button>
+        {/* Mobile Header & Navigation */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-40 glass-card border-b border-navy-100/40 backdrop-blur-xl">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50">
+                <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold text-navy-900">MP GRUPO</h1>
+                <p className="text-xs text-gold-600">Sales CRM</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-xl hover:bg-navy-50 transition-colors"
+            >
+              {sidebarOpen ? <X className="w-6 h-6 text-navy-900" /> : <Menu className="w-6 h-6 text-navy-900" />}
+            </button>
+          </div>
 
-        {/* Sidebar Mobile */}
-        <AnimatePresence>
-          {sidebarOpen && (
-            <>
+          {/* Mobile Accordion Menu */}
+          <AnimatePresence>
+            {sidebarOpen && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setSidebarOpen(false)}
-                className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-              />
-              <motion.aside
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                transition={{ type: "spring", damping: 30 }}
-                className="md:hidden fixed inset-y-0 left-0 w-72 z-50 flex flex-col glass-sidebar shadow-2xl"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="border-t border-navy-100/40 overflow-hidden"
               >
-                <div className="flex items-center p-6 border-b border-blue-900/30 mt-16">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-blue-400/50">
-                    <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="ml-3">
-                    <h1 className="text-base font-bold text-white">MP GRUPO</h1>
-                    <p className="text-xs text-blue-200">Sales CRM</p>
-                  </div>
-                </div>
-
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
+                <div className="p-4 space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-modern">
                   {filteredMenuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path;
@@ -295,146 +286,74 @@ const Layout = ({ children, user, onLogout }) => {
                         key={item.path}
                         to={item.path}
                         onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center px-4 py-3.5 rounded-xl transition-all ${
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                           isActive
-                            ? "nav-item-active"
-                            : "nav-item"
+                            ? "bg-gradient-to-r from-gold-400 to-gold-500 text-navy-900 shadow-lg"
+                            : "hover:bg-navy-50 text-navy-700"
                         }`}
                       >
-                        <Icon className="w-5 h-5 mr-3" />
-                        <span className="text-sm font-medium">{item.label}</span>
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-medium flex-1">{item.label}</span>
                         {item.badge > 0 && (
-                          <span className="ml-auto text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600">
-                            {item.badge > 9 ? '9+' : item.badge}
+                          <span className="text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg">
+                            {item.badge > 99 ? '99+' : item.badge}
                           </span>
                         )}
                       </Link>
                     );
                   })}
-                </nav>
 
-                <div className="border-t border-blue-900/30 p-4">
-                  <div className="px-4 py-3 mb-2 rounded-xl bg-white/5">
-                    <p className="text-xs text-blue-200 mb-2">Conectado como</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-blue-600 to-blue-500">
-                        {user?.name?.charAt(0) || 'U'}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-white text-sm">{user?.name}</p>
-                        <p className="text-xs text-blue-200">{user?.position}</p>
-                      </div>
-                    </div>
+                  <div className="pt-4 mt-4 border-t border-navy-100/40 space-y-2">
+                    <Link
+                      to="/profile"
+                      onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-navy-50 text-navy-700 transition-all"
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="text-sm font-medium">Perfil</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 transition-all"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      <span className="text-sm font-medium">Sair</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={onLogout}
-                    className="flex items-center w-full px-4 py-3 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all"
-                  >
-                    <LogOut className="w-5 h-5 mr-3" />
-                    <span className="text-sm font-medium">Sair</span>
-                  </button>
                 </div>
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-        {/* Main Content */}
+        {/* Main Content Area */}
         <motion.main
           initial={false}
-          animate={{ marginLeft: sidebarCollapsed ? 80 : 280 }}
-          className="flex-1 overflow-auto hidden md:block"
+          animate={{
+            marginLeft: window.innerWidth >= 1024 ? (sidebarCollapsed ? 80 : 280) : 0,
+          }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="flex-1 flex flex-col min-h-screen"
         >
-          {/* Header with Alerts */}
-          <div className="glass-card sticky top-0 z-20 px-6 py-4 flex justify-between items-center border-b border-blue-100/60">
-            <div className="flex items-center gap-4 flex-1">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">
-                  {filteredMenuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
-                </h2>
-                <p className="text-xs text-gray-600">
-                  {new Date().toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Alerts Bell */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => navigate('/alerts')}
-                    className="relative p-3 hover:bg-blue-50 rounded-xl transition-all group"
-                  >
-                    <Bell className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
-                    {unreadCount > 0 && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg animate-pulse"
-                      >
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </motion.span>
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Alertas {unreadCount > 0 && `(${unreadCount})`}</p>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* User Profile */}
-              <Link
-                to="/profile"
-                className="flex items-center gap-3 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm bg-gradient-to-r from-blue-600 to-blue-500 shadow-md">
-                  {user?.name?.charAt(0) || 'U'}
-                </div>
-                <div className="hidden lg:block">
-                  <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-                  <p className="text-xs text-gray-600">
-                    {user?.role === 'admin' ? 'Administrador' : user?.role === 'bo' ? 'Back Office' : 'Parceiro'}
-                  </p>
-                </div>
-              </Link>
+          {/* Breadcrumbs Bar */}
+          <div className="sticky top-0 z-20 glass-card border-b border-navy-100/40 backdrop-blur-xl mt-0 lg:mt-0 pt-20 lg:pt-0">
+            <div className="px-6 py-4">
+              <Breadcrumbs />
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto p-6">
-            <Breadcrumbs />
+          {/* Page Content */}
+          <div className="flex-1 p-6 lg:p-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-full"
             >
               {children}
             </motion.div>
           </div>
         </motion.main>
-
-        {/* Mobile Main Content */}
-        <main className="flex-1 overflow-auto md:hidden w-full">
-          <div className="glass-card sticky top-0 z-20 px-6 py-4 border-b border-blue-100/60 mt-16">
-            <h2 className="text-lg font-bold text-gray-900">
-              {filteredMenuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
-            </h2>
-            <p className="text-xs text-gray-600">
-              {new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </p>
-          </div>
-
-          <div className="p-4">
-            <Breadcrumbs />
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {children}
-            </motion.div>
-          </div>
-        </main>
       </div>
     </TooltipProvider>
   );
