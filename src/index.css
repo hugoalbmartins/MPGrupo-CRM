@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 215 25% 97%;
-    --foreground: 215 25% 10%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 10%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 10%;
-    --primary: 239 84% 67%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 20% 65%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 215 20% 95%;
-    --muted-foreground: 215 15% 45%;
-    --accent: 239 84% 67%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 215 20% 88%;
-    --input: 215 20% 88%;
-    --ring: 239 84% 67%;
-    --radius: 1rem;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    --radius: 0.75rem;
   }
 }
 
@@ -32,46 +32,46 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 text-foreground font-sans;
+    @apply bg-gradient-to-br from-blue-50/30 via-white to-blue-50/30 text-foreground font-sans;
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl rounded-2xl border border-slate-200/50 shadow-xl shadow-slate-200/50;
+    @apply bg-white/90 backdrop-blur-sm rounded-xl border border-blue-100/60 shadow-lg shadow-blue-900/5;
   }
 
   .glass-card-hover {
-    @apply hover:shadow-2xl hover:shadow-slate-200/60 hover:border-slate-300/50 transition-all duration-300;
+    @apply hover:shadow-xl hover:shadow-blue-900/10 hover:border-blue-200/80 transition-all duration-300;
   }
 
   .glass-sidebar {
-    @apply bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 backdrop-blur-xl border-r border-slate-700/50;
+    @apply bg-gradient-to-b from-[#0F2942] via-[#1a3a52] to-[#0F2942] backdrop-blur-xl border-r border-blue-900/30;
   }
 
   .btn-primary {
-    @apply bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-300 rounded-xl font-semibold;
+    @apply bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 rounded-lg font-semibold;
   }
 
   .btn-secondary {
-    @apply bg-gradient-to-r from-slate-600 to-slate-500 hover:from-slate-700 hover:to-slate-600 text-white shadow-lg shadow-slate-500/30 hover:shadow-xl hover:shadow-slate-500/40 transition-all duration-300 rounded-xl font-semibold;
+    @apply bg-gradient-to-r from-slate-600 to-slate-500 hover:from-slate-700 hover:to-slate-600 text-white shadow-lg shadow-slate-500/25 hover:shadow-xl hover:shadow-slate-500/30 transition-all duration-300 rounded-lg font-semibold;
   }
 
   .stat-card {
-    @apply glass-card p-6 glass-card-hover transform hover:-translate-y-1 cursor-pointer;
+    @apply glass-card p-6 glass-card-hover transform hover:-translate-y-1;
   }
 
   .nav-item-active {
-    @apply bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/50;
+    @apply bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/40;
   }
 
   .nav-item {
-    @apply text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200;
+    @apply text-blue-200 hover:text-white hover:bg-white/10 transition-all duration-200;
   }
 
   .input-glass {
-    @apply bg-white/50 backdrop-blur-sm border-slate-300/50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200;
+    @apply bg-white border-blue-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200;
   }
 
   .table-glass {
@@ -79,17 +79,21 @@
   }
 
   .table-header {
-    @apply bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200/50;
+    @apply bg-gradient-to-r from-blue-50/50 to-blue-100/30 border-b border-blue-200/50;
   }
 
   .table-row {
-    @apply hover:bg-indigo-50/30 transition-colors duration-150 border-b border-slate-100/50;
+    @apply hover:bg-blue-50/50 transition-colors duration-150 border-b border-blue-100/30;
+  }
+
+  .professional-card {
+    @apply bg-white rounded-xl border border-blue-100/60 shadow-lg shadow-blue-900/5;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-gradient-to-r from-indigo-600 to-indigo-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent;
   }
 
   .animate-fade-in {
@@ -103,6 +107,18 @@
   .animate-scale-in {
     animation: scaleIn 0.3s ease-out;
   }
+
+  .bg-blue { @apply bg-blue-600; }
+  .bg-purple { @apply bg-purple-600; }
+  .bg-green { @apply bg-green-600; }
+  .bg-orange { @apply bg-orange-600; }
+  .bg-cyan { @apply bg-cyan-600; }
+
+  .color-blue { @apply text-blue-600; }
+  .color-purple { @apply text-purple-600; }
+  .color-green { @apply text-green-600; }
+  .color-orange { @apply text-orange-600; }
+  .color-cyan { @apply text-cyan-600; }
 }
 
 @keyframes fadeIn {

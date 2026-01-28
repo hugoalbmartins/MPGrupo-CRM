@@ -73,7 +73,7 @@ const Layout = ({ children, user, onLogout }) => {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50">
+      <div className="min-h-screen flex bg-gradient-to-br from-blue-50/30 via-white to-blue-50/30">
         {/* Sidebar Desktop */}
         <motion.aside
           initial={false}
@@ -91,12 +91,12 @@ const Layout = ({ children, user, onLogout }) => {
                   exit={{ opacity: 0 }}
                   className="flex items-center gap-3"
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-indigo-500/50">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-blue-400/50">
                     <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <h1 className="text-base font-bold tracking-tight text-white">MP GRUPO</h1>
-                    <p className="text-xs font-medium text-slate-400">Sales CRM</p>
+                    <p className="text-xs font-medium text-blue-200">Sales CRM</p>
                   </div>
                 </motion.div>
               ) : (
@@ -107,7 +107,7 @@ const Layout = ({ children, user, onLogout }) => {
                   exit={{ opacity: 0 }}
                   className="flex justify-center"
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-indigo-500/50">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-blue-400/50">
                     <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
                   </div>
                 </motion.div>
@@ -118,7 +118,7 @@ const Layout = ({ children, user, onLogout }) => {
           {/* Collapse Button */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-colors z-40"
+            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors z-40"
           >
             {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -163,7 +163,7 @@ const Layout = ({ children, user, onLogout }) => {
                     </Link>
                   </TooltipTrigger>
                   {sidebarCollapsed && (
-                    <TooltipContent side="right" className="bg-slate-900 text-white border-slate-700">
+                    <TooltipContent side="right" className="bg-[#0F2942] text-white border-blue-800">
                       <p>{item.label}</p>
                     </TooltipContent>
                   )}
@@ -189,7 +189,7 @@ const Layout = ({ children, user, onLogout }) => {
                       >
                         <p className="text-xs text-slate-400 font-medium mb-2">Conectado como</p>
                         <div className="flex items-center gap-2">
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 ring-2 ring-indigo-500/30">
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-blue-600 to-blue-500 ring-2 ring-blue-400/30">
                             {user?.name?.charAt(0) || 'U'}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -204,7 +204,7 @@ const Layout = ({ children, user, onLogout }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 ring-2 ring-indigo-500/30"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-blue-600 to-blue-500 ring-2 ring-blue-400/30"
                       >
                         {user?.name?.charAt(0) || 'U'}
                       </motion.div>
@@ -213,9 +213,9 @@ const Layout = ({ children, user, onLogout }) => {
                 </Link>
               </TooltipTrigger>
               {sidebarCollapsed && (
-                <TooltipContent side="right" className="bg-slate-900 text-white border-slate-700">
+                <TooltipContent side="right" className="bg-[#0F2942] text-white border-blue-800">
                   <p className="font-semibold">{user?.name}</p>
-                  <p className="text-xs text-slate-400">{user?.position}</p>
+                  <p className="text-xs text-blue-200">{user?.position}</p>
                 </TooltipContent>
               )}
             </Tooltip>
@@ -242,7 +242,7 @@ const Layout = ({ children, user, onLogout }) => {
                 </button>
               </TooltipTrigger>
               {sidebarCollapsed && (
-                <TooltipContent side="right" className="bg-slate-900 text-white border-slate-700">
+                <TooltipContent side="right" className="bg-[#0F2942] text-white border-blue-800">
                   <p>Sair</p>
                 </TooltipContent>
               )}
@@ -276,13 +276,13 @@ const Layout = ({ children, user, onLogout }) => {
                 transition={{ type: "spring", damping: 30 }}
                 className="md:hidden fixed inset-y-0 left-0 w-72 z-50 flex flex-col glass-sidebar shadow-2xl"
               >
-                <div className="flex items-center p-6 border-b border-slate-700/50 mt-16">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-indigo-500/50">
+                <div className="flex items-center p-6 border-b border-blue-900/30 mt-16">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-blue-400/50">
                     <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
                   </div>
                   <div className="ml-3">
                     <h1 className="text-base font-bold text-white">MP GRUPO</h1>
-                    <p className="text-xs text-slate-400">Sales CRM</p>
+                    <p className="text-xs text-blue-200">Sales CRM</p>
                   </div>
                 </div>
 
@@ -313,16 +313,16 @@ const Layout = ({ children, user, onLogout }) => {
                   })}
                 </nav>
 
-                <div className="border-t border-slate-700/50 p-4">
-                  <div className="px-4 py-3 mb-2 rounded-xl bg-slate-800/30">
-                    <p className="text-xs text-slate-400 mb-2">Conectado como</p>
+                <div className="border-t border-blue-900/30 p-4">
+                  <div className="px-4 py-3 mb-2 rounded-xl bg-white/5">
+                    <p className="text-xs text-blue-200 mb-2">Conectado como</p>
                     <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-indigo-600 to-indigo-500">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-gradient-to-r from-blue-600 to-blue-500">
                         {user?.name?.charAt(0) || 'U'}
                       </div>
                       <div>
                         <p className="font-semibold text-white text-sm">{user?.name}</p>
-                        <p className="text-xs text-slate-400">{user?.position}</p>
+                        <p className="text-xs text-blue-200">{user?.position}</p>
                       </div>
                     </div>
                   </div>
@@ -346,13 +346,13 @@ const Layout = ({ children, user, onLogout }) => {
           className="flex-1 overflow-auto hidden md:block"
         >
           {/* Header with Alerts */}
-          <div className="glass-card sticky top-0 z-20 px-6 py-4 flex justify-between items-center border-b border-slate-200/50">
+          <div className="glass-card sticky top-0 z-20 px-6 py-4 flex justify-between items-center border-b border-blue-100/60">
             <div className="flex items-center gap-4 flex-1">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
+                <h2 className="text-lg font-bold text-gray-900">
                   {filteredMenuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
                 </h2>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-gray-600">
                   {new Date().toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
               </div>
@@ -364,9 +364,9 @@ const Layout = ({ children, user, onLogout }) => {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => navigate('/alerts')}
-                    className="relative p-3 hover:bg-slate-100 rounded-xl transition-all group"
+                    className="relative p-3 hover:bg-blue-50 rounded-xl transition-all group"
                   >
-                    <Bell className="w-5 h-5 text-slate-600 group-hover:text-indigo-600 transition-colors" />
+                    <Bell className="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors" />
                     {unreadCount > 0 && (
                       <motion.span
                         initial={{ scale: 0 }}
@@ -386,14 +386,14 @@ const Layout = ({ children, user, onLogout }) => {
               {/* User Profile */}
               <Link
                 to="/profile"
-                className="flex items-center gap-3 hover:bg-slate-100 px-3 py-2 rounded-xl transition-all"
+                className="flex items-center gap-3 hover:bg-blue-50 px-3 py-2 rounded-xl transition-all"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-md">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm bg-gradient-to-r from-blue-600 to-blue-500 shadow-md">
                   {user?.name?.charAt(0) || 'U'}
                 </div>
                 <div className="hidden lg:block">
-                  <p className="text-sm font-semibold text-slate-900">{user?.name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
+                  <p className="text-xs text-gray-600">
                     {user?.role === 'admin' ? 'Administrador' : user?.role === 'bo' ? 'Back Office' : 'Parceiro'}
                   </p>
                 </div>
@@ -415,11 +415,11 @@ const Layout = ({ children, user, onLogout }) => {
 
         {/* Mobile Main Content */}
         <main className="flex-1 overflow-auto md:hidden w-full">
-          <div className="glass-card sticky top-0 z-20 px-6 py-4 border-b border-slate-200/50 mt-16">
-            <h2 className="text-lg font-bold text-slate-900">
+          <div className="glass-card sticky top-0 z-20 px-6 py-4 border-b border-blue-100/60 mt-16">
+            <h2 className="text-lg font-bold text-gray-900">
               {filteredMenuItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-gray-600">
               {new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
