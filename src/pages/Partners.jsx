@@ -358,7 +358,9 @@ const Partners = ({ user }) => {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="D2D">D2D</SelectItem>
-                        <SelectItem value="Rev">Rev</SelectItem>
+                        <SelectItem value="Rev1">Rev1</SelectItem>
+                        <SelectItem value="Rev2">Rev2</SelectItem>
+                        <SelectItem value="Rev3">Rev3</SelectItem>
                         <SelectItem value="Rev+">Rev+</SelectItem>
                       </SelectContent>
                     </Select>
@@ -505,7 +507,9 @@ const Partners = ({ user }) => {
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
               <SelectItem value="D2D">D2D</SelectItem>
-              <SelectItem value="Rev">Rev</SelectItem>
+              <SelectItem value="Rev1">Rev1</SelectItem>
+              <SelectItem value="Rev2">Rev2</SelectItem>
+              <SelectItem value="Rev3">Rev3</SelectItem>
               <SelectItem value="Rev+">Rev+</SelectItem>
             </SelectContent>
           </Select>

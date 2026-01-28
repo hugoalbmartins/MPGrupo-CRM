@@ -77,7 +77,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   };
 
   const getPartnerTypes = () => {
-    return ['D2D', 'Rev', 'Rev+'];
+    return ['D2D', 'Rev1', 'Rev2', 'Rev3', 'Rev+'];
   };
 
   const handleSaveAll = async () => {

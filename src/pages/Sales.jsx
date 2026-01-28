@@ -399,7 +399,7 @@ const Sales = ({ user }) => {
       const clientTypeToUse = clientType || formData.client_type;
 
       if (partnerIdToUse === '__admin__') {
-        partnerType = 'Rev';
+        partnerType = 'Rev1';
       } else if (partnerIdToUse) {
         const selectedPartner = partners.find(p => p.id === partnerIdToUse);
         if (selectedPartner) {

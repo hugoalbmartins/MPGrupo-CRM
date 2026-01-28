@@ -219,7 +219,7 @@ export async function calculateCommission(operator, saleData, supabase) {
 
   let partnerType = 'D2D';
   if (saleData.isAdminSale && saleData.isCommissioned) {
-    partnerType = 'Rev';
+    partnerType = 'Rev1';
   } else if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from('partners')
