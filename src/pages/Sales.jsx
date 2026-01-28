@@ -1962,12 +1962,20 @@ const Sales = ({ user }) => {
               </div>
 
               <div className="col-span-2">
+                <Alert>
+                  <AlertTriangle className="w-4 h-4" />
+                  <AlertDescription>
+                    Os campos de morada não podem ser alterados após a criação da venda
+                  </AlertDescription>
+                </Alert>
+              </div>
+
+              <div className="col-span-2">
                 <Label>Morada do Cliente *</Label>
                 <Input
                   value={editFormData.street}
-                  onChange={(e) => setEditFormData({...editFormData, street: e.target.value})}
-                  placeholder="Rua, Avenida, número, andar, etc."
-                  required
+                  disabled
+                  className="bg-gray-100"
                 />
               </div>
 
@@ -1975,10 +1983,8 @@ const Sales = ({ user }) => {
                 <Label>Código Postal *</Label>
                 <Input
                   value={editFormData.postal_code}
-                  onChange={(e) => setEditFormData({...editFormData, postal_code: e.target.value})}
-                  placeholder="0000-000"
-                  pattern="\d{4}-\d{3}"
-                  required
+                  disabled
+                  className="bg-gray-100"
                 />
               </div>
 
@@ -1986,9 +1992,8 @@ const Sales = ({ user }) => {
                 <Label>Localidade *</Label>
                 <Input
                   value={editFormData.locality}
-                  onChange={(e) => setEditFormData({...editFormData, locality: e.target.value})}
-                  placeholder="Ex: Lisboa, Porto, etc."
-                  required
+                  disabled
+                  className="bg-gray-100"
                 />
               </div>
 
@@ -1996,7 +2001,8 @@ const Sales = ({ user }) => {
                 <Label>Morada de Instalação/Fornecimento</Label>
                 <Input
                   value={editFormData.installation_address}
-                  onChange={(e) => setEditFormData({...editFormData, installation_address: e.target.value})}
+                  disabled
+                  className="bg-gray-100"
                 />
                 <p className="text-xs text-gray-500 mt-1">Se diferente da morada do cliente</p>
               </div>

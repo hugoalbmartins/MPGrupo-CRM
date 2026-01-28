@@ -394,10 +394,16 @@ export const salesService = {
 
     if (!oldSale) throw new Error('Sale not found');
 
+    const PROTECTED_ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
+
     const updates = {};
     Object.keys(updateData).forEach(key => {
+      if (PROTECTED_ADDRESS_FIELDS.includes(key)) {
+        return;
+      }
+
       if (key === 'partner_id') {
-        updates[key] = updateData[key] === null || updateData[key] === '' ? null : updateData[key];
+        updates[key] = updateData[key] === null || updateData[key] === '' || updateData[key] === 'admin_commissioned' ? null : updateData[key];
       } else if (updateData[key] !== null && updateData[key] !== undefined && updateData[key] !== '') {
         if (key === 'manual_commission') {
           updates[key] = parseFloat(updateData[key]) || null;

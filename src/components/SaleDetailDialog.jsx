@@ -577,14 +577,20 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                       <div className="pt-4 border-t space-y-4">
                         <h3 className="font-semibold text-lg">Moradas</h3>
+                        <Alert>
+                          <AlertTriangle className="w-4 h-4" />
+                          <AlertDescription>
+                            Os campos de morada não podem ser alterados após a criação da venda
+                          </AlertDescription>
+                        </Alert>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label>Morada</Label>
                             <Input
                               value={editData.street}
-                              onChange={(e) => setEditData({...editData, street: e.target.value})}
-                              placeholder="Rua, número"
+                              disabled
+                              className="bg-gray-100"
                             />
                           </div>
 
@@ -592,8 +598,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             <Label>Código Postal</Label>
                             <Input
                               value={editData.postal_code}
-                              onChange={(e) => setEditData({...editData, postal_code: e.target.value})}
-                              placeholder="0000-000"
+                              disabled
+                              className="bg-gray-100"
                             />
                           </div>
                         </div>
@@ -602,8 +608,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           <Label>Localidade</Label>
                           <Input
                             value={editData.locality}
-                            onChange={(e) => setEditData({...editData, locality: e.target.value})}
-                            placeholder="Cidade"
+                            disabled
+                            className="bg-gray-100"
                           />
                         </div>
 
@@ -611,8 +617,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           <Label>Morada de Instalação</Label>
                           <Input
                             value={editData.installation_address}
-                            onChange={(e) => setEditData({...editData, installation_address: e.target.value})}
-                            placeholder="Endereço completo de instalação"
+                            disabled
+                            className="bg-gray-100"
                           />
                         </div>
                       </div>
