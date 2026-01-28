@@ -87,6 +87,18 @@ async function calculateRetentions(year, month) {
     .gte('date', start.split('T')[0])
     .lt('date', end.split('T')[0]);
 
+  const { data: allCommissionConfigs } = await supabase
+    .from('commission_configurations')
+    .select('operator_id, service_type, has_retention, retention_percentage');
+
+  const configMap = {};
+  if (allCommissionConfigs) {
+    allCommissionConfigs.forEach(config => {
+      const key = `${config.operator_id}_${config.service_type}`;
+      configMap[key] = config;
+    });
+  }
+
   let currentMonthRetentions = 0;
 
   if (currentSales) {
@@ -97,14 +109,8 @@ async function calculateRetentions(year, month) {
 
       if (!serviceTypeToMatch) continue;
 
-      const { data: commissionConfigs } = await supabase
-        .from('commission_configurations')
-        .select('has_retention, retention_percentage')
-        .eq('operator_id', sale.operator_id)
-        .eq('service_type', serviceTypeToMatch)
-        .limit(1);
-
-      const commissionConfig = commissionConfigs?.[0];
+      const key = `${sale.operator_id}_${serviceTypeToMatch}`;
+      const commissionConfig = configMap[key];
 
       if (commissionConfig?.has_retention) {
         const commission = parseFloat(sale.calculated_commission || 0);
@@ -113,10 +119,6 @@ async function calculateRetentions(year, month) {
       }
     }
   }
-
-  const returnDate = new Date(year, month + 5, 1);
-  const returnYear = returnDate.getFullYear();
-  const returnMonth = returnDate.getMonth() + 1;
 
   const paymentDate = new Date(year, month - 1, 1);
   const sixMonthsAgo = new Date(paymentDate);
@@ -142,14 +144,8 @@ async function calculateRetentions(year, month) {
 
       if (!serviceTypeToMatch) continue;
 
-      const { data: commissionConfigs } = await supabase
-        .from('commission_configurations')
-        .select('has_retention, retention_percentage')
-        .eq('operator_id', sale.operator_id)
-        .eq('service_type', serviceTypeToMatch)
-        .limit(1);
-
-      const commissionConfig = commissionConfigs?.[0];
+      const key = `${sale.operator_id}_${serviceTypeToMatch}`;
+      const commissionConfig = configMap[key];
 
       if (commissionConfig?.has_retention) {
         const commission = parseFloat(sale.calculated_commission || 0);
@@ -158,6 +154,10 @@ async function calculateRetentions(year, month) {
       }
     }
   }
+
+  const returnDate = new Date(year, month + 5, 1);
+  const returnYear = returnDate.getFullYear();
+  const returnMonth = returnDate.getMonth() + 1;
 
   return {
     current_month: currentMonthRetentions,
@@ -175,6 +175,18 @@ async function calculateNetCommission(sales) {
     return { gross: 0, retention: 0, net: 0 };
   }
 
+  const { data: allCommissionConfigs } = await supabase
+    .from('commission_configurations')
+    .select('operator_id, service_type, has_retention, retention_percentage');
+
+  const configMap = {};
+  if (allCommissionConfigs) {
+    allCommissionConfigs.forEach(config => {
+      const key = `${config.operator_id}_${config.service_type}`;
+      configMap[key] = config;
+    });
+  }
+
   for (const sale of sales) {
     const commission = parseFloat(sale.calculated_commission || sale.manual_commission || 0);
     totalGross += commission;
@@ -185,14 +197,8 @@ async function calculateNetCommission(sales) {
 
     if (!serviceTypeToMatch) continue;
 
-    const { data: commissionConfigs } = await supabase
-      .from('commission_configurations')
-      .select('has_retention, retention_percentage')
-      .eq('operator_id', sale.operator_id)
-      .eq('service_type', serviceTypeToMatch)
-      .limit(1);
-
-    const commissionConfig = commissionConfigs?.[0];
+    const key = `${sale.operator_id}_${serviceTypeToMatch}`;
+    const commissionConfig = configMap[key];
 
     if (commissionConfig?.has_retention) {
       const retentionPct = parseFloat(commissionConfig.retention_percentage || 0);
@@ -259,18 +265,32 @@ async function getLast12MonthsData() {
 async function getAdminDashboard(year, month, adminId, isCommissioned) {
   const { start, end } = getMonthRange(year, month);
 
-  const { data: sales } = await supabase
-    .from('sales')
-    .select('*')
-    .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0])
-    .neq('status', 'Em proposta');
+  const [salesResult, partnerCountResult, last12Months, allCommissionConfigs] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('*')
+      .gte('date', start.split('T')[0])
+      .lt('date', end.split('T')[0])
+      .neq('status', 'Em proposta'),
+    supabase
+      .from('partners')
+      .select('*', { count: 'exact', head: true }),
+    getLast12MonthsData(),
+    supabase
+      .from('commission_configurations')
+      .select('operator_id, service_type, has_retention, retention_percentage')
+  ]);
 
-  const { count: partnerCount } = await supabase
-    .from('partners')
-    .select('*', { count: 'exact', head: true });
+  const sales = salesResult.data;
+  const partnerCount = partnerCountResult.count;
 
-  const last12Months = await getLast12MonthsData();
+  const configMap = {};
+  if (allCommissionConfigs.data) {
+    allCommissionConfigs.data.forEach(config => {
+      const key = `${config.operator_id}_${config.service_type}`;
+      configMap[key] = config;
+    });
+  }
 
   const retentions = await calculateRetentions(year, month);
   const netCommissions = await calculateNetCommission(sales);
@@ -365,14 +385,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
           : sale.service_type;
 
         if (serviceTypeToMatch) {
-          const { data: commissionConfigs } = await supabase
-            .from('commission_configurations')
-            .select('has_retention, retention_percentage')
-            .eq('operator_id', sale.operator_id)
-            .eq('service_type', serviceTypeToMatch)
-            .limit(1);
-
-          const commissionConfig = commissionConfigs?.[0];
+          const key = `${sale.operator_id}_${serviceTypeToMatch}`;
+          const commissionConfig = configMap[key];
 
           if (commissionConfig?.has_retention) {
             const retentionPct = parseFloat(commissionConfig.retention_percentage || 0);
@@ -389,14 +403,17 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
 async function getBODashboard(year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const { data: sales } = await supabase
-    .from('sales')
-    .select('*')
-    .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0])
-    .neq('status', 'Em proposta');
+  const [salesResult, last12Months] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('*')
+      .gte('date', start.split('T')[0])
+      .lt('date', end.split('T')[0])
+      .neq('status', 'Em proposta'),
+    getLast12MonthsData()
+  ]);
 
-  const last12Months = await getLast12MonthsData();
+  const sales = salesResult.data;
 
   const stats = {
     total_sales: sales?.length || 0,
@@ -453,15 +470,18 @@ async function getBODashboard(year, month) {
 async function getPartnerDashboard(partnerId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const { data: sales } = await supabase
-    .from('sales')
-    .select('*')
-    .eq('partner_id', partnerId)
-    .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0])
-    .neq('status', 'Em proposta');
+  const [salesResult, last12Months] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('*')
+      .eq('partner_id', partnerId)
+      .gte('date', start.split('T')[0])
+      .lt('date', end.split('T')[0])
+      .neq('status', 'Em proposta'),
+    getLast12MonthsData()
+  ]);
 
-  const last12Months = await getLast12MonthsData();
+  const sales = salesResult.data;
   const retentions = await calculateRetentions(year, month);
   const netCommissions = await calculateNetCommission(sales);
 
@@ -533,15 +553,18 @@ async function getPartnerDashboard(partnerId, year, month) {
 async function getCommercialDashboard(userId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const { data: sales } = await supabase
-    .from('sales')
-    .select('*')
-    .eq('created_by_user_id', userId)
-    .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0])
-    .neq('status', 'Em proposta');
+  const [salesResult, last12Months] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('*')
+      .eq('created_by_user_id', userId)
+      .gte('date', start.split('T')[0])
+      .lt('date', end.split('T')[0])
+      .neq('status', 'Em proposta'),
+    getLast12MonthsData()
+  ]);
 
-  const last12Months = await getLast12MonthsData();
+  const sales = salesResult.data;
 
   const stats = {
     total_sales: sales?.length || 0,
@@ -581,37 +604,56 @@ async function getCommercialDashboard(userId, year, month) {
 async function getManagerLevel1Dashboard(managerId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const { data: sales } = await supabase
-    .from('sales')
-    .select('*')
-    .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`)
-    .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0])
-    .neq('status', 'Em proposta');
+  const [salesResult, ownSalesResult, managerUserResult, objectivesResult, last12Months, allCommissionConfigs] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('*')
+      .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`)
+      .gte('date', start.split('T')[0])
+      .lt('date', end.split('T')[0])
+      .neq('status', 'Em proposta'),
+    supabase
+      .from('sales')
+      .select('*')
+      .eq('created_by_user_id', managerId)
+      .gte('date', start.split('T')[0])
+      .lt('date', end.split('T')[0])
+      .neq('status', 'Em proposta'),
+    supabase
+      .from('users')
+      .select('commission_type')
+      .eq('id', managerId)
+      .single(),
+    supabase
+      .from('manager_objectives')
+      .select(`
+        *,
+        operator:operators(id, name, scope)
+      `)
+      .eq('manager_id', managerId)
+      .eq('year', year)
+      .eq('month', month),
+    getLast12MonthsData(),
+    supabase
+      .from('commission_configurations')
+      .select('*')
+  ]);
 
-  const { data: ownSales } = await supabase
-    .from('sales')
-    .select('*')
-    .eq('created_by_user_id', managerId)
-    .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0])
-    .neq('status', 'Em proposta');
+  const sales = salesResult.data;
+  const ownSales = ownSalesResult.data;
+  const managerUser = managerUserResult.data;
+  const objectives = objectivesResult.data;
 
-  const { data: managerUser } = await supabase
-    .from('users')
-    .select('commission_type')
-    .eq('id', managerId)
-    .single();
-
-  const { data: objectives } = await supabase
-    .from('manager_objectives')
-    .select(`
-      *,
-      operator:operators(id, name, scope)
-    `)
-    .eq('manager_id', managerId)
-    .eq('year', year)
-    .eq('month', month);
+  const configMap = {};
+  if (allCommissionConfigs.data) {
+    allCommissionConfigs.data.forEach(config => {
+      const key = `${config.operator_id}_${config.partner_type}_${config.client_type}_${config.service_type}`;
+      if (!configMap[key]) {
+        configMap[key] = [];
+      }
+      configMap[key].push(config);
+    });
+  }
 
   let ownCommissionGross = 0;
   let ownRetention = 0;
@@ -620,14 +662,11 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     const commissionType = managerUser.commission_type;
 
     for (const sale of ownSales) {
-      const { data: configs } = await supabase
-        .from('commission_configurations')
-        .select('*')
-        .eq('operator_id', sale.operator_id)
-        .eq('partner_type', commissionType)
-        .eq('client_type', sale.client_type === 'empresarial' ? 'empresarial' : 'particular');
+      const clientType = sale.client_type === 'empresarial' ? 'empresarial' : 'particular';
+      const key = `${sale.operator_id}_${commissionType}_${clientType}_${sale.service_type}`;
+      const configs = configMap[key] || [];
 
-      if (configs && configs.length > 0) {
+      if (configs.length > 0) {
         const relevantConfigs = configs.filter(c => {
           if (sale.scope === 'telecomunicacoes') {
             return c.service_type === sale.service_type ||
@@ -701,10 +740,11 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     };
   });
 
-  const last12Months = await getLast12MonthsData();
-
-  return {
+  const stats = {
     total_sales: sales?.length || 0,
+    telecomunicacoes: { count: 0, monthly_total: 0 },
+    energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
+    solar: { count: 0 },
     own_commission_gross: ownCommissionGross,
     own_retention: ownRetention,
     objectives_progress: objectivesProgress,
@@ -712,6 +752,34 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     selected_year: year,
     last_12_months: last12Months,
   };
+
+  if (sales) {
+    sales.forEach(sale => {
+      const scope = sale.scope || '';
+
+      if (scope === 'telecomunicacoes') {
+        stats.telecomunicacoes.count++;
+        stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
+      } else if (scope === 'energia') {
+        stats.energia.count++;
+
+        const energyType = sale.energy_sale_type || 'eletricidade';
+        if (energyType === 'eletricidade') {
+          stats.energia.electricity++;
+        } else if (energyType === 'gas') {
+          stats.energia.gas++;
+        } else if (energyType === 'dual') {
+          stats.energia.dual++;
+          stats.energia.electricity++;
+          stats.energia.gas++;
+        }
+      } else if (scope === 'solar') {
+        stats.solar.count++;
+      }
+    });
+  }
+
+  return stats;
 }
 
 async function getAdminProposalStats(adminId, isCommissioned) {

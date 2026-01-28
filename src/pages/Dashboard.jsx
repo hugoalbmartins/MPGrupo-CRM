@@ -102,18 +102,25 @@ const Dashboard = ({ user }) => {
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
 
-      const [sales, partners, allOperators] = await Promise.all([
-        salesService.getAll(),
-        partnersService.getAll(),
-        operatorsService.getAll()
+      const startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
+      const endDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+
+      const [salesResult, partnersResult, operatorsResult] = await Promise.all([
+        supabase
+          .from('sales')
+          .select('*, partners(name), operators(name)')
+          .gte('date', startDate)
+          .lt('date', endDate)
+          .neq('status', 'Em proposta'),
+        supabase.from('partners').select('id, name'),
+        supabase.from('operators').select('id, name').eq('hidden', false)
       ]);
 
-      setOperators(allOperators.filter(op => !op.hidden));
+      const currentMonthSales = salesResult.data || [];
+      const partners = partnersResult.data || [];
+      const allOperators = operatorsResult.data || [];
 
-      const currentMonthSales = sales.filter(sale => {
-        const saleDate = new Date(sale.date);
-        return saleDate.getMonth() + 1 === currentMonth && saleDate.getFullYear() === currentYear;
-      });
+      setOperators(allOperators);
 
       const partnerMap = {};
 
@@ -126,7 +133,7 @@ const Dashboard = ({ user }) => {
           if (partnerId === 'admin_commissioned') {
             partnerName = user?.name ? `${user.name} (Admin)` : 'Admin Comissionado';
           } else {
-            const partner = partners.find(p => p.id === partnerId);
+            const partner = sale.partners || partners.find(p => p.id === partnerId);
             partnerName = partner?.name || 'Desconhecido';
           }
 
@@ -138,7 +145,7 @@ const Dashboard = ({ user }) => {
         }
 
         const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
-        const operatorName = sale.operator_name || 'Desconhecido';
+        const operatorName = sale.operators?.name || 'Desconhecido';
 
         if (!partnerMap[partnerId].operators[operatorName]) {
           partnerMap[partnerId].operators[operatorName] = 0;
@@ -173,7 +180,27 @@ const Dashboard = ({ user }) => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 h-32">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map(i => (
+            <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 h-80">
+              <div className="h-5 bg-gray-200 rounded w-1/3 mb-4"></div>
+              <div className="h-64 bg-gray-100 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#06B6D4'];
