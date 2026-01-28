@@ -31,18 +31,19 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
   font-size: 2rem;
-  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  background: linear-gradient(135deg, #0F172A 0%, #1e293b 50%, #0F172A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Professional Card */
+/* Professional Card - Navy & Gold Theme */
 .professional-card {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.02);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -55,24 +56,24 @@ h1 {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #3B82F6, #06B6D4, #8B5CF6);
+  background: linear-gradient(90deg, #0f172a, #fbbf24, #0f172a);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .professional-card:hover {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 12px 48px 0 rgba(15, 23, 42, 0.15);
   transform: translateY(-4px);
-  border-color: #CBD5E1;
+  border-color: rgba(251, 191, 36, 0.5);
 }
 
 .professional-card:hover::before {
   opacity: 1;
 }
 
-/* Primary Button */
+/* Primary Button - Navy Theme */
 .btn-primary {
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: white;
   font-weight: 600;
   padding: 12px 24px;
@@ -84,6 +85,7 @@ h1 {
   letter-spacing: 0.01em;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
 }
 
 .btn-primary::before {
@@ -93,7 +95,7 @@ h1 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #334e68 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -104,7 +106,7 @@ h1 {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.25), 0 4px 8px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.4);
 }
 
 .btn-primary:active {
@@ -124,20 +126,21 @@ h1 {
   z-index: 1;
 }
 
-/* Secondary Button */
+/* Secondary Button - Navy Theme */
 .btn-secondary {
   background: white;
-  color: #3B82F6;
+  color: #0f172a;
   font-weight: 600;
   padding: 10px 20px;
   border-radius: 8px;
-  border: 2px solid #3B82F6;
+  border: 2px solid #1e293b;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: #EFF6FF;
+  background: #f0f4f8;
+  border-color: #fbbf24;
 }
 
 /* Inputs */
@@ -154,8 +157,8 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12);
   background: #FAFCFF;
   transform: translateY(-1px);
 }
@@ -205,12 +208,14 @@ input::placeholder, textarea::placeholder {
   color: #991B1B;
 }
 
-/* Stats Card */
+/* Stats Card - Navy & Gold Theme */
 .stat-card {
-  background: white;
-  border-radius: 16px;
-  padding: 28px;
-  border: 1px solid #E2E8F0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -223,7 +228,7 @@ input::placeholder, textarea::placeholder {
   right: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.05) 0%, transparent 70%);
   pointer-events: none;
   transition: transform 0.6s ease;
 }
@@ -234,8 +239,8 @@ input::placeholder, textarea::placeholder {
 
 .stat-card:hover {
   transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
-  border-color: #CBD5E1;
+  box-shadow: 0 12px 48px 0 rgba(15, 23, 42, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
 }
 
 /* Table */
@@ -300,8 +305,8 @@ table {
 }
 
 thead {
-  background: linear-gradient(to bottom, #F8FAFC 0%, #F1F5F9 100%);
-  border-bottom: 2px solid #E2E8F0;
+  background: linear-gradient(to bottom, #f0f4f8 0%, #d9e2ec 100%);
+  border-bottom: 2px solid rgba(15, 23, 42, 0.2);
 }
 
 thead th {
@@ -309,7 +314,7 @@ thead th {
   text-align: left;
   font-weight: 700;
   font-size: 0.813rem;
-  color: #475569;
+  color: #0f172a;
   text-transform: uppercase;
   letter-spacing: 0.7px;
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
@@ -349,10 +354,10 @@ tbody td {
   background: #94A3B8;
 }
 
-/* Loading Spinner */
+/* Loading Spinner - Navy & Gold */
 .spinner {
   border: 3px solid #E2E8F0;
-  border-top-color: #3B82F6;
+  border-top-color: #0f172a;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -363,20 +368,24 @@ tbody td {
   to { transform: rotate(360deg); }
 }
 
-/* Color utilities for dashboards */
-.color-blue { color: #3B82F6; }
+/* Color utilities for dashboards - Navy & Gold accents */
+.color-blue { color: #0f172a; }
 .color-green { color: #10B981; }
 .color-purple { color: #8B5CF6; }
 .color-orange { color: #F59E0B; }
 .color-red { color: #EF4444; }
 .color-cyan { color: #06B6D4; }
+.color-navy { color: #0f172a; }
+.color-gold { color: #fbbf24; }
 
-.bg-blue { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+.bg-blue { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
 .bg-green { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
 .bg-purple { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); }
 .bg-orange { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
 .bg-red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
 .bg-cyan { background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%); }
+.bg-navy { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+.bg-gold { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
 
 /* Dialog Improvements - Cores Mais Claras */
 [role="dialog"] {
