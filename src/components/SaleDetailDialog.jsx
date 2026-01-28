@@ -413,7 +413,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               />
                               <label
                                 htmlFor="operator-doc-upload"
-                                className="flex-1 cursor-pointer bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                                className="flex-1 cursor-pointer bg-gray-50 border-2 border-dashed border-navy-200/60 rounded-lg p-4 hover:bg-gray-100 transition-colors"
                               >
                                 <div className="flex items-center gap-3">
                                   <FileText className="w-5 h-5 text-gray-400" />
@@ -659,7 +659,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     <Button
                       onClick={handleSaveEdit}
                       disabled={savingEdit}
-                      className="bg-[#1F4E78] hover:bg-[#16395A] text-white"
+                      className="btn-primary"
                     >
                       <Save className="w-4 h-4 mr-2" />
                       <span className="text-white">{savingEdit ? "A guardar..." : "Guardar"}</span>
@@ -691,7 +691,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                  <div className="glass-card p-5">
                     <h3 className="font-bold text-lg text-[#1F4E78] mb-4 flex items-center gap-2">
                       <div className="w-1 h-6 bg-[#1F4E78] rounded"></div>
                       Informação do Cliente
@@ -700,34 +700,34 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                       <div>
                         <Label className="text-gray-500 text-xs uppercase">Nome</Label>
-                        <p className="font-semibold text-gray-900 mt-1">{sale.client_name}</p>
+                        <p className="font-semibold text-navy-900 mt-1">{sale.client_name}</p>
                       </div>
 
                       <div>
                         <Label className="text-gray-500 text-xs uppercase">NIF</Label>
-                        <p className="font-semibold text-gray-900 mt-1">{sale.client_nif}</p>
+                        <p className="font-semibold text-navy-900 mt-1">{sale.client_nif}</p>
                       </div>
 
                       <div>
                         <Label className="text-gray-500 text-xs uppercase">Tipo</Label>
-                        <p className="font-semibold text-gray-900 mt-1 capitalize">{sale.client_type}</p>
+                        <p className="font-semibold text-navy-900 mt-1 capitalize">{sale.client_type}</p>
                       </div>
 
                       <div>
                         <Label className="text-gray-500 text-xs uppercase">Contacto</Label>
-                        <p className="font-semibold text-gray-900 mt-1">{sale.client_contact}</p>
+                        <p className="font-semibold text-navy-900 mt-1">{sale.client_contact}</p>
                       </div>
 
                       {sale.client_email && (
                         <div className="col-span-2">
                           <Label className="text-gray-500 text-xs uppercase">Email</Label>
-                          <p className="font-semibold text-gray-900 mt-1">{sale.client_email}</p>
+                          <p className="font-semibold text-navy-900 mt-1">{sale.client_email}</p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                  <div className="glass-card p-5">
                     <h3 className="font-bold text-lg text-[#1F4E78] mb-4 flex items-center gap-2">
                       <div className="w-1 h-6 bg-[#1F4E78] rounded"></div>
                       Detalhes da Venda
@@ -736,25 +736,25 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                       <div>
                         <Label className="text-gray-500 text-xs uppercase">Parceiro</Label>
-                        <p className="font-semibold text-gray-900 mt-1">{sale.partner_name}</p>
+                        <p className="font-semibold text-navy-900 mt-1">{sale.partner_name}</p>
                       </div>
 
                       <div>
                         <Label className="text-gray-500 text-xs uppercase">Operador</Label>
-                        <p className="font-semibold text-gray-900 mt-1">{sale.operator_name}</p>
+                        <p className="font-semibold text-navy-900 mt-1">{sale.operator_name}</p>
                       </div>
 
                       {sale.request_number && (
                         <div>
                           <Label className="text-gray-500 text-xs uppercase">Requisição</Label>
-                          <p className="font-semibold text-gray-900 mt-1">{sale.request_number}</p>
+                          <p className="font-semibold text-navy-900 mt-1">{sale.request_number}</p>
                         </div>
                       )}
 
                       {sale.monthly_value && (
                         <div>
                           <Label className="text-gray-500 text-xs uppercase">Valor Mensal</Label>
-                          <p className="font-semibold text-gray-900 mt-1">€{parseFloat(sale.monthly_value).toFixed(2)}</p>
+                          <p className="font-semibold text-navy-900 mt-1">€{parseFloat(sale.monthly_value).toFixed(2)}</p>
                         </div>
                       )}
 
@@ -770,14 +770,14 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                       {sale.cpe && (
                         <div>
                           <Label className="text-gray-500 text-xs uppercase">CPE</Label>
-                          <p className="font-semibold text-gray-900 mt-1">{sale.cpe}</p>
+                          <p className="font-semibold text-navy-900 mt-1">{sale.cpe}</p>
                         </div>
                       )}
 
                       {sale.cui && (
                         <div>
                           <Label className="text-gray-500 text-xs uppercase">CUI</Label>
-                          <p className="font-semibold text-gray-900 mt-1">{sale.cui}</p>
+                          <p className="font-semibold text-navy-900 mt-1">{sale.cui}</p>
                         </div>
                       )}
 

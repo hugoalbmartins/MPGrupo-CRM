@@ -237,7 +237,7 @@ const Users = ({ user }) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Utilizadores</h1>
+        <h1 className="text-3xl font-bold text-navy-900">Utilizadores</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); generatePassword(); }} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Utilizador</Button>
@@ -348,7 +348,7 @@ const Users = ({ user }) => {
         </Dialog>
       </div>
 
-      <div className="professional-card p-6">
+      <div className="glass-card p-6">
         <div className="mb-4 flex gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

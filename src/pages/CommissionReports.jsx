@@ -1020,7 +1020,7 @@ const CommissionReports = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Autos de Comissões</h1>
+          <h1 className="text-3xl font-bold text-navy-900">Autos de Comissões</h1>
           <p className="text-gray-600 mt-1">Gere autos de comissões para parceiros (apenas vendas pagas)</p>
         </div>
       </div>
@@ -1236,7 +1236,7 @@ const CommissionReports = ({ user }) => {
                 <div key={report.id} className={`flex items-center justify-between p-4 border rounded-lg ${report.paid_validated_at ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50'}`}>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-navy-900">
                         {report.partner?.name || 'Parceiro Desconhecido'}
                       </span>
                       {report.paid_validated_at && (

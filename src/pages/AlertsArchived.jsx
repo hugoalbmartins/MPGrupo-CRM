@@ -82,7 +82,7 @@ const AlertsArchived = ({ user }) => {
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Alertas Arquivados</h1>
+          <h1 className="text-3xl font-bold text-navy-900">Alertas Arquivados</h1>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Bell className="w-4 h-4" />
@@ -111,7 +111,7 @@ const AlertsArchived = ({ user }) => {
       </div>
 
       {alerts.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div className="glass-card p-12 text-center">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">
             {filter === 'all' ? 'Nenhum alerta arquivado' : filter === 'unread' ? 'Nenhum alerta arquivado não lido' : 'Nenhum alerta arquivado lido'}
@@ -125,7 +125,7 @@ const AlertsArchived = ({ user }) => {
               return (
                 <div
                   key={alert.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md"
+                  className="glass-card p-4 transition-all glass-card-hover"
                 >
                   <div className="flex items-start gap-4">
                     <div className="mt-1">{getAlertIcon(alert.type)}</div>
@@ -133,7 +133,7 @@ const AlertsArchived = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className={`text-sm ${unread ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                          <p className={`text-sm ${unread ? 'font-semibold text-navy-900' : 'text-gray-700'}`}>
                             {alert.message}
                           </p>
                           <div className="flex items-center gap-3 mt-1">
@@ -211,31 +211,31 @@ const AlertsArchived = ({ user }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Código</label>
-                  <p className="text-gray-900">{selectedSale.sale_code}</p>
+                  <p className="text-navy-900">{selectedSale.sale_code}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Data</label>
-                  <p className="text-gray-900">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
+                  <p className="text-navy-900">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Âmbito</label>
-                  <p className="text-gray-900 capitalize">{selectedSale.scope}</p>
+                  <p className="text-navy-900 capitalize">{selectedSale.scope}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Tipo Cliente</label>
-                  <p className="text-gray-900 capitalize">{selectedSale.client_type}</p>
+                  <p className="text-navy-900 capitalize">{selectedSale.client_type}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Nome Cliente</label>
-                  <p className="text-gray-900">{selectedSale.client_name}</p>
+                  <p className="text-navy-900">{selectedSale.client_name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">NIF</label>
-                  <p className="text-gray-900">{selectedSale.client_nif}</p>
+                  <p className="text-navy-900">{selectedSale.client_nif}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Status</label>
-                  <p className="text-gray-900">
+                  <p className="text-navy-900">
                     <span className={`status-badge status-${selectedSale.status.toLowerCase().replace(' ', '-')}`}>
                       {selectedSale.status}
                     </span>

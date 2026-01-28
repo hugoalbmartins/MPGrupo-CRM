@@ -165,13 +165,13 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center justify-between text-navy-900">
             <span>Configuração de Comissões - {operator?.name}</span>
             <Button
               type="button"
               onClick={handleSaveAll}
               size="sm"
-              className="bg-slate-700 hover:bg-slate-800"
+              className="btn-primary"
             >
               <Save className="w-4 h-4 mr-2" />
               Guardar Tudo
@@ -180,12 +180,12 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs value={activePartnerTab} onValueChange={setActivePartnerTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-100">
+            <TabsList className="grid w-full grid-cols-3 bg-navy-50">
               {getPartnerTypes().map((partnerType) => (
                 <TabsTrigger
                   key={partnerType}
                   value={partnerType}
-                  className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-navy-900 data-[state=active]:to-navy-800 data-[state=active]:text-white"
                 >
                   {partnerType}
                 </TabsTrigger>
@@ -198,7 +198,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
                       <thead>
-                        <tr className="border-b-2 border-slate-300 bg-slate-50">
+                        <tr className="table-header">
                           <th className="text-left p-2 font-semibold">Cliente</th>
                           <th className="text-left p-2 font-semibold">Serviço</th>
                           <th className="text-left p-2 font-semibold">Modo</th>
@@ -223,7 +223,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                             const isEditing = editingIndex === actualIndex;
 
                             return (
-                              <tr key={actualIndex} className="border-b border-slate-200 hover:bg-slate-50">
+                              <tr key={actualIndex} className="table-row">
                                 <td className="p-2">
                                   {isEditing ? (
                                     <Select
@@ -596,7 +596,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                       type="button"
                       variant="outline"
                       onClick={() => setShowAddForm(true)}
-                      className="w-full border-dashed border-2 border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+                      className="w-full border-dashed border-2 border-navy-200/60 hover:border-gold-400 hover:bg-gold-50/30 transition-all duration-200"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Nova Regra para {partnerType}
@@ -614,7 +614,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
           Cancelar
         </Button>
 
-        <Button type="button" onClick={handleSaveAll} className="bg-slate-700 hover:bg-slate-800">
+        <Button type="button" onClick={handleSaveAll} className="btn-primary">
           <Save className="w-4 h-4 mr-2" />
           Guardar Tudo
         </Button>

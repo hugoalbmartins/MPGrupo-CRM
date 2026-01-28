@@ -274,13 +274,13 @@ const Operators = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Operadoras</h1>
+          <h1 className="text-3xl font-bold text-navy-900">Operadoras</h1>
           {hiddenOperators.length > 0 && (
             <Button
               onClick={() => setHiddenDialogOpen(true)}
               variant="outline"
               size="sm"
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-navy-900"
             >
               Ver Desativadas ({hiddenOperators.length})
             </Button>
@@ -434,8 +434,8 @@ const Operators = ({ user }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {['telecomunicacoes', 'energia', 'solar'].map(scope => (
-          <div key={scope} className="professional-card p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 capitalize">{scope}</h2>
+          <div key={scope} className="glass-card p-6">
+            <h2 className="text-xl font-semibold text-navy-900 mb-4 capitalize">{scope}</h2>
             <div className="space-y-2">
               {operators.filter(op => op.scope === scope).map(op => (
                 <div key={op.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">

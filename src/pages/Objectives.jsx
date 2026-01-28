@@ -224,7 +224,7 @@ const Objectives = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Objetivos</h1>
+          <h1 className="text-3xl font-bold text-navy-900">Objetivos</h1>
           <p className="text-gray-600 mt-1">Gerir objetivos por gestor</p>
         </div>
         <Button onClick={() => {
@@ -236,7 +236,7 @@ const Objectives = ({ user }) => {
         </Button>
       </div>
 
-      <div className="professional-card p-6">
+      <div className="glass-card p-6">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-blue-600" />
           Objetivos por Gestor
@@ -245,7 +245,7 @@ const Objectives = ({ user }) => {
         {groupedObjectives.length === 0 ? (
           <div className="text-center py-12">
             <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-navy-900 mb-2">
               Nenhum objetivo definido
             </h3>
             <p className="text-gray-600 mb-4">
@@ -376,7 +376,7 @@ const Objectives = ({ user }) => {
               <div className="space-y-4">
                 {operators.map(operator => (
                   <div key={operator.id} className="border rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-3">{operator.name}</h4>
+                    <h4 className="font-semibold text-navy-900 mb-3">{operator.name}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {operator.scope === "energia" && (
                         <>
@@ -469,7 +469,7 @@ const Objectives = ({ user }) => {
 
                 return (
                   <div key={operator.id} className="border rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 mb-3">{operator.name}</h4>
+                    <h4 className="font-semibold text-navy-900 mb-3">{operator.name}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {operator.scope === "energia" && (
                         <>

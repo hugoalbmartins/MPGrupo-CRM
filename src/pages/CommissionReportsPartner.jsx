@@ -82,14 +82,14 @@ const CommissionReportsPartner = ({ user }) => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Autos de Comissão</h1>
+          <h1 className="text-3xl font-bold text-navy-900">Autos de Comissão</h1>
           <p className="text-gray-600 mt-2">Consulte e faça download dos seus autos de comissão emitidos</p>
         </div>
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
               <FileText className="w-16 h-16 text-orange-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-navy-900 mb-2">
                 Configuração Pendente
               </h3>
               <p className="text-gray-600 max-w-md mx-auto">
@@ -106,7 +106,7 @@ const CommissionReportsPartner = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Autos de Comissão</h1>
+          <h1 className="text-3xl font-bold text-navy-900">Autos de Comissão</h1>
           <p className="text-gray-600 mt-2">Consulte e faça download dos seus autos de comissão emitidos</p>
         </div>
 
@@ -138,7 +138,7 @@ const CommissionReportsPartner = ({ user }) => {
           <CardContent className="py-12">
             <div className="text-center">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-navy-900 mb-2">
                 Nenhum auto disponível
               </h3>
               <p className="text-gray-600">

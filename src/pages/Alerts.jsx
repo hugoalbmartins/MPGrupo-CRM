@@ -195,7 +195,7 @@ const Alerts = ({ user }) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-900">Alertas</h1>
+        <h1 className="text-3xl font-bold text-navy-900">Alertas</h1>
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -227,7 +227,7 @@ const Alerts = ({ user }) => {
                   <Bell className="w-5 h-5 text-green-600" />
                 )}
                 <div>
-                  <Label htmlFor="global-alerts-suspension" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                  <Label htmlFor="global-alerts-suspension" className="text-sm font-semibold text-navy-900 cursor-pointer">
                     Suspensão Global de Alertas
                   </Label>
                   <p className="text-xs text-gray-600 mt-1">
@@ -252,7 +252,7 @@ const Alerts = ({ user }) => {
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-blue-600" />
                 <div>
-                  <Label htmlFor="email-alerts" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                  <Label htmlFor="email-alerts" className="text-sm font-semibold text-navy-900 cursor-pointer">
                     Receber Alertas por Email
                   </Label>
                   <p className="text-xs text-gray-600 mt-1">
@@ -313,7 +313,7 @@ const Alerts = ({ user }) => {
       </div>
 
       {alerts.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div className="glass-card p-12 text-center">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">
             {filter === 'all' ? 'Nenhum alerta' : filter === 'unread' ? 'Nenhum alerta não lido' : 'Nenhum alerta lido'}
@@ -328,7 +328,7 @@ const Alerts = ({ user }) => {
               return (
                 <div
                   key={alert.id}
-                  className={`bg-white rounded-xl shadow-sm border p-4 transition-all ${
+                  className={`glass-card p-4 transition-all ${
                     unread ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
                   } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
                 >
@@ -343,7 +343,7 @@ const Alerts = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className={`text-sm ${unread ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                          <p className={`text-sm ${unread ? 'font-semibold text-navy-900' : 'text-gray-700'}`}>
                             {alert.message}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
@@ -418,31 +418,31 @@ const Alerts = ({ user }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Código</label>
-                  <p className="text-gray-900">{selectedSale.sale_code}</p>
+                  <p className="text-navy-900">{selectedSale.sale_code}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Data</label>
-                  <p className="text-gray-900">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
+                  <p className="text-navy-900">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Âmbito</label>
-                  <p className="text-gray-900 capitalize">{selectedSale.scope}</p>
+                  <p className="text-navy-900 capitalize">{selectedSale.scope}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Tipo Cliente</label>
-                  <p className="text-gray-900 capitalize">{selectedSale.client_type}</p>
+                  <p className="text-navy-900 capitalize">{selectedSale.client_type}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Nome Cliente</label>
-                  <p className="text-gray-900">{selectedSale.client_name}</p>
+                  <p className="text-navy-900">{selectedSale.client_name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">NIF</label>
-                  <p className="text-gray-900">{selectedSale.client_nif}</p>
+                  <p className="text-navy-900">{selectedSale.client_nif}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700">Status</label>
-                  <p className="text-gray-900">
+                  <p className="text-navy-900">
                     <span className={`status-badge status-${selectedSale.status.toLowerCase().replace(' ', '-')}`}>
                       {selectedSale.status}
                     </span>

@@ -49,12 +49,12 @@ const ChangePassword = ({ onPasswordChanged, onLogout }) => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="w-full max-w-md">
-        <div className="professional-card p-8">
+        <div className="glass-card p-8">
           <div className="flex flex-col items-center mb-6">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
               <Lock className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Alterar Password</h1>
+            <h1 className="text-2xl font-bold text-navy-900">Alterar Password</h1>
             <p className="text-gray-600 mt-2 text-center text-sm">Por segurança, é necessário alterar a sua password</p>
           </div>
 

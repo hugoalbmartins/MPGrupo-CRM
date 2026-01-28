@@ -84,8 +84,8 @@ const Forms = ({ user }) => {
   if (operators.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">Formulários</h1>
-        <div className="professional-card p-8 text-center">
+        <h1 className="text-3xl font-bold text-navy-900">Formulários</h1>
+        <div className="glass-card p-8 text-center">
           <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-lg text-gray-600">Nenhum formulário disponível no momento.</p>
           <p className="text-sm text-gray-500 mt-2">
@@ -100,8 +100,8 @@ const Forms = ({ user }) => {
   if (!operatorId) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">Formulários</h1>
-        <div className="professional-card p-6">
+        <h1 className="text-3xl font-bold text-navy-900">Formulários</h1>
+        <div className="glass-card p-6">
           <p className="text-gray-600 mb-6">
             Selecione uma operadora para visualizar os formulários disponíveis:
           </p>
@@ -113,7 +113,7 @@ const Forms = ({ user }) => {
                 className="h-auto flex flex-col items-start p-4 bg-white hover:bg-blue-50 border-2 border-gray-200 hover:border-blue-400 text-left"
                 variant="outline"
               >
-                <span className="font-semibold text-lg text-gray-900">{operator.name}</span>
+                <span className="font-semibold text-lg text-navy-900">{operator.name}</span>
                 <span className="text-sm text-gray-600 capitalize">{operator.scope}</span>
                 <span className="text-xs text-blue-600 mt-2">
                   📄 {operator.documents.length} formulário(s)
@@ -142,13 +142,13 @@ const Forms = ({ user }) => {
           ← Voltar
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{selectedOperator.name}</h1>
+          <h1 className="text-3xl font-bold text-navy-900">{selectedOperator.name}</h1>
           <p className="text-sm text-gray-600 capitalize">{selectedOperator.scope}</p>
         </div>
       </div>
 
-      <div className="professional-card p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Formulários Disponíveis</h2>
+      <div className="glass-card p-6">
+        <h2 className="text-xl font-semibold text-navy-900 mb-4">Formulários Disponíveis</h2>
         {selectedOperator.documents && selectedOperator.documents.length > 0 ? (
           <div className="space-y-3">
             {selectedOperator.documents.map((doc) => (

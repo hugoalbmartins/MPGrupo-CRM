@@ -182,20 +182,20 @@ const Dashboard = ({ user }) => {
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        <div className="h-8 bg-navy-200 rounded w-1/4"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 h-32">
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
-              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+            <div key={i} className="glass-card p-6 h-32">
+              <div className="h-4 bg-navy-200 rounded w-1/2 mb-3"></div>
+              <div className="h-8 bg-navy-200 rounded w-3/4"></div>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[1, 2].map(i => (
-            <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 h-80">
-              <div className="h-5 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-64 bg-gray-100 rounded"></div>
+            <div key={i} className="glass-card p-6 h-80">
+              <div className="h-5 bg-navy-200 rounded w-1/3 mb-4"></div>
+              <div className="h-64 bg-navy-100 rounded"></div>
             </div>
           ))}
         </div>
@@ -214,10 +214,10 @@ const Dashboard = ({ user }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Vendas</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+              <p className="text-3xl font-bold text-navy-900">{stats?.total_sales || 0}</p>
               <p className="text-xs text-gray-500 mt-1">{stats?.total_partners || 0} parceiros</p>
             </div>
-            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center shadow-lg">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -230,7 +230,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-purple">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
               <p className="text-xs text-gray-500 mt-1">Antes de retenções</p>
             </div>
-            <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -243,7 +243,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-green">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
               <p className="text-xs text-gray-500 mt-1">Após retenções</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -256,7 +256,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-orange">€{stats?.commission_to_pay?.toFixed(2) || '0.00'}</p>
               <p className="text-xs text-gray-500 mt-1">{stats?.unpaid_by_operator || 0} vendas</p>
             </div>
-            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -268,7 +268,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Pagas Operador</p>
               <p className="text-2xl font-bold color-green">{stats?.paid_by_operator || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -294,7 +294,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-green">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
               <p className="text-xs text-gray-500 mt-1">Próximo auto (6 meses)</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -337,7 +337,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Solar</p>
               <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Sun className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -353,9 +353,9 @@ const Dashboard = ({ user }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+              <p className="text-3xl font-bold text-navy-900">{stats?.total_sales || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center shadow-lg">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -368,7 +368,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-purple">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
               <p className="text-xs text-gray-500 mt-1">Antes de retenções</p>
             </div>
-            <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -381,7 +381,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-green">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
               <p className="text-xs text-gray-500 mt-1">Após retenções</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -393,7 +393,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Pendentes</p>
               <p className="text-2xl font-bold color-orange">€{stats?.commission_pending?.toFixed(2) || '0.00'}</p>
             </div>
-            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -405,7 +405,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Pagas</p>
               <p className="text-2xl font-bold color-green">€{stats?.commission_paid?.toFixed(2) || '0.00'}</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -431,7 +431,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-green">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
               <p className="text-xs text-gray-500 mt-1">Próximo auto (6 meses)</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -469,7 +469,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Solar</p>
               <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Sun className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -497,9 +497,9 @@ const Dashboard = ({ user }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Vendas</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+              <p className="text-3xl font-bold text-navy-900">{stats?.total_sales || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center shadow-lg">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -535,7 +535,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Solar</p>
               <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Sun className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -551,9 +551,9 @@ const Dashboard = ({ user }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+              <p className="text-3xl font-bold text-navy-900">{stats?.total_sales || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center shadow-lg">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -589,7 +589,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Solar</p>
               <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Sun className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -605,10 +605,10 @@ const Dashboard = ({ user }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Vendas</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.total_sales || 0}</p>
+              <p className="text-3xl font-bold text-navy-900">{stats?.total_sales || 0}</p>
               <p className="text-xs text-gray-500 mt-1">Próprias e de parceiros</p>
             </div>
-            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center shadow-lg">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -621,7 +621,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-purple">€{(stats?.own_commission_gross || 0).toFixed(2)}</p>
               <p className="text-xs text-gray-500 mt-1">Vendas próprias</p>
             </div>
-            <div className="w-12 h-12 bg-purple rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -647,7 +647,7 @@ const Dashboard = ({ user }) => {
               <p className="text-2xl font-bold color-green">€{((stats?.own_commission_gross || 0) - (stats?.own_retention || 0)).toFixed(2)}</p>
               <p className="text-xs text-gray-500 mt-1">Após retenções</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -709,7 +709,7 @@ const Dashboard = ({ user }) => {
 
               return objectives.map((objective, objIdx) => (
                 <div key={`${idx}-${objIdx}`} className="border rounded-lg p-4 flex flex-col items-center">
-                  <h4 className="font-semibold text-gray-900 mb-2">{progress.operator_name}</h4>
+                  <h4 className="font-semibold text-navy-900 mb-2">{progress.operator_name}</h4>
                   <p className="text-sm text-gray-600 mb-4">{objective.name}</p>
 
                   <ResponsiveContainer width="100%" height={200}>
@@ -784,7 +784,7 @@ const Dashboard = ({ user }) => {
               <p className="text-sm text-gray-600 mb-1">Solar</p>
               <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
               <Sun className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -805,7 +805,7 @@ const Dashboard = ({ user }) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Propostas</p>
-                <p className="text-3xl font-bold text-gray-900">{proposalStats.total_proposals || 0}</p>
+                <p className="text-3xl font-bold text-navy-900">{proposalStats.total_proposals || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">Em análise · Clique para ver</p>
               </div>
               <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
@@ -870,15 +870,15 @@ const Dashboard = ({ user }) => {
         )}
 
         {proposalStats.own_commission !== undefined && proposalStats.own_commission > 0 && (
-          <div className="stat-card bg-blue-50 border-blue-200">
+          <div className="stat-card-gold">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-900 mb-1">Minhas Comissões em Propostas</p>
-                <p className="text-3xl font-bold text-blue-600">€{proposalStats.own_commission?.toFixed(2) || '0.00'}</p>
-                <p className="text-xs text-blue-700 mt-1">Vendas próprias pendentes</p>
+                <p className="text-sm text-navy-900 mb-1">Minhas Comissões em Propostas</p>
+                <p className="text-3xl font-bold text-gradient-navy">€{proposalStats.own_commission?.toFixed(2) || '0.00'}</p>
+                <p className="text-xs text-navy-700 mt-1">Vendas próprias pendentes</p>
               </div>
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <Award className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-r from-gold-400 to-gold-500 rounded-full flex items-center justify-center shadow-gold-glow">
+                <Award className="w-6 h-6 text-navy-900" />
               </div>
             </div>
           </div>
@@ -935,8 +935,8 @@ const Dashboard = ({ user }) => {
         </div>
 
         {partnersList.length > 0 && (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Parceiros com Propostas em Curso</h3>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-navy-900 mb-4">Parceiros com Propostas em Curso</h3>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -953,7 +953,7 @@ const Dashboard = ({ user }) => {
                     .sort((a, b) => (b.commission || b.count) - (a.commission || a.count))
                     .map((partner, index) => (
                       <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium text-gray-900">{partner.name}</td>
+                        <td className="py-3 px-4 font-medium text-navy-900">{partner.name}</td>
                         <td className="text-center py-3 px-4 text-gray-600">{partner.count}</td>
                         {proposalStats.total_commission !== undefined && (
                           <td className="text-right py-3 px-4 font-bold color-purple">
@@ -988,8 +988,8 @@ const Dashboard = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Bem-vindo, {user?.name}</p>
+          <h1 className="text-3xl font-bold text-gradient-navy">Dashboard</h1>
+          <p className="text-navy-600 mt-1">Bem-vindo, {user?.name}</p>
         </div>
 
         {/* Month/Year Selector */}
@@ -998,7 +998,7 @@ const Dashboard = ({ user }) => {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="select-modern px-3 py-2"
             >
               {months.map((month, index) => (
                 <option key={index} value={index + 1}>{month}</option>
@@ -1009,7 +1009,7 @@ const Dashboard = ({ user }) => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="select-modern px-3 py-2"
             >
               {getAvailableYears().map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -1034,8 +1034,8 @@ const Dashboard = ({ user }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {statusData.length > 0 && (
-                <div className="professional-card p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Estado</h2>
+                <div className="glass-card p-6">
+                  <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Estado</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie data={statusData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={100} dataKey="value">
@@ -1047,8 +1047,8 @@ const Dashboard = ({ user }) => {
                 </div>
               )}
 
-              <div className="professional-card p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Âmbito</h2>
+              <div className="glass-card p-6">
+                <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Âmbito</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={[
                     { name: 'Telecom', value: stats?.telecomunicacoes?.count || 0 },
@@ -1069,8 +1069,8 @@ const Dashboard = ({ user }) => {
             </div>
 
             {partnerStats.length > 0 && operators.length > 0 && (
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Parceiro - {months[new Date().getMonth()]} {new Date().getFullYear()}</h3>
+              <div className="glass-card p-6">
+                <h3 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Parceiro - {months[new Date().getMonth()]} {new Date().getFullYear()}</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -1085,7 +1085,7 @@ const Dashboard = ({ user }) => {
                     <tbody>
                       {partnerStats.map((partner, index) => (
                         <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium text-gray-900">{partner.name}</td>
+                          <td className="py-3 px-4 font-medium text-navy-900">{partner.name}</td>
                           {operators.map((op) => (
                             <td key={op.id} className="text-center py-3 px-2 text-gray-600">
                               {partner.operators[op.name] || '-'}
@@ -1101,8 +1101,8 @@ const Dashboard = ({ user }) => {
             )}
 
             {stats?.last_12_months && stats.last_12_months.length > 0 && (
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Evolução dos Últimos 12 Meses</h3>
+              <div className="glass-card p-6">
+                <h3 className="text-lg font-semibold text-navy-900 mb-4">Evolução dos Últimos 12 Meses</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={prepare12MonthsData()}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -1124,32 +1124,32 @@ const Dashboard = ({ user }) => {
             <TabsContent value="own" className="space-y-6">
               {user?.role === 'admin' && stats && (
                 <>
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-3">Minhas Comissões</h3>
+                  <div className="stat-card-gold">
+                    <h3 className="text-lg font-semibold text-navy-900 mb-3">Minhas Comissões</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="glass-card p-4">
                         <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
-                        <p className="text-2xl font-bold color-purple">€{((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-purple-600">€{((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Total antes retenções</p>
                       </div>
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="glass-card p-4">
                         <p className="text-sm text-gray-600 mb-1">Retenções</p>
-                        <p className="text-2xl font-bold color-blue">€{(stats?.admin_retention || 0).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-navy-600">€{(stats?.admin_retention || 0).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Valor retido</p>
                       </div>
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="glass-card p-4">
                         <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
-                        <p className="text-2xl font-bold color-green">€{(((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)) - (stats?.admin_retention || 0)).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-green-600">€{(((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)) - (stats?.admin_retention || 0)).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Após retenções</p>
                       </div>
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="glass-card p-4">
                         <p className="text-sm text-gray-600 mb-1">A Receber</p>
-                        <p className="text-2xl font-bold text-gray-900">€{((stats?.admin_commission_paid || 0) - (stats?.admin_retention || 0) * ((stats?.admin_commission_paid || 0) / ((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0) || 1))).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-navy-900">€{((stats?.admin_commission_paid || 0) - (stats?.admin_retention || 0) * ((stats?.admin_commission_paid || 0) / ((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0) || 1))).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Vendas pagas pela operadora</p>
                       </div>
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                      <div className="glass-card p-4">
                         <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats?.admin_sales_count || 0}</p>
+                        <p className="text-2xl font-bold text-navy-900">{stats?.admin_sales_count || 0}</p>
                         <p className="text-xs text-gray-500 mt-1">Registadas como admin</p>
                       </div>
                     </div>
@@ -1170,8 +1170,8 @@ const Dashboard = ({ user }) => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {statusData.length > 0 && (
-              <div className="professional-card p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Estado</h2>
+              <div className="glass-card p-6">
+                <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Estado</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie data={statusData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={100} dataKey="value">
@@ -1183,8 +1183,8 @@ const Dashboard = ({ user }) => {
               </div>
             )}
 
-            <div className="professional-card p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Âmbito</h2>
+            <div className="glass-card p-6">
+              <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Âmbito</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={[
                   { name: 'Telecom', value: stats?.telecomunicacoes?.count || 0 },
@@ -1205,8 +1205,8 @@ const Dashboard = ({ user }) => {
           </div>
 
           {stats?.last_12_months && stats.last_12_months.length > 0 && (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Evolução dos Últimos 12 Meses</h3>
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-navy-900 mb-4">Evolução dos Últimos 12 Meses</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={prepare12MonthsData()}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1247,7 +1247,7 @@ const Dashboard = ({ user }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="font-bold text-gray-900">{proposal.sale_code}</span>
+                          <span className="font-bold text-navy-900">{proposal.sale_code}</span>
                           <Badge variant={daysElapsed <= 7 ? 'default' : daysElapsed <= 14 ? 'warning' : 'destructive'}>
                             {daysElapsed} dias
                           </Badge>
@@ -1278,7 +1278,7 @@ const Dashboard = ({ user }) => {
                             setSelectedSaleId(proposal.id);
                             setDetailDialogOpen(true);
                           }}
-                          className="bg-[#1F4E78] hover:bg-[#16395A] text-white"
+                          className="btn-primary"
                         >
                           Ver Detalhes
                         </Button>

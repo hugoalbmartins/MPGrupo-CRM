@@ -316,7 +316,7 @@ const OperatorValidations = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Validação de Ativações</h1>
+          <h1 className="text-3xl font-bold text-navy-900">Validação de Ativações</h1>
           <p className="text-gray-600 mt-1">Upload de autos de operadoras para validação automática</p>
         </div>
       </div>
@@ -413,7 +413,7 @@ const OperatorValidations = ({ user }) => {
             {currentReport.notFound.length > 0 && (
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold text-gray-900">Registos Não Encontrados</h3>
+                  <h3 className="font-semibold text-navy-900">Registos Não Encontrados</h3>
                   <Button onClick={downloadReport} variant="outline" size="sm">
                     <Download className="w-4 h-4 mr-2" />
                     Exportar Excel
@@ -462,7 +462,7 @@ const OperatorValidations = ({ user }) => {
               {validationHistory.map((validation) => (
                 <div key={validation.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{validation.filename}</p>
+                    <p className="font-medium text-navy-900">{validation.filename}</p>
                     <p className="text-sm text-gray-600">
                       {new Date(validation.created_at).toLocaleString('pt-PT')}
                     </p>
