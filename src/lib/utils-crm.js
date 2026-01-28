@@ -217,9 +217,9 @@ export async function calculateCommission(operator, saleData, supabase) {
   const clientType = saleData.customer_type || saleData.client_type || 'particular';
   const scope = saleData.scope;
 
-  let partnerType = 'D2D';
+  let partnerType = 'D2D_1';
   if (saleData.isAdminSale && saleData.isCommissioned) {
-    partnerType = 'Rev1';
+    partnerType = 'REV';
   } else if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from('partners')
@@ -227,7 +227,7 @@ export async function calculateCommission(operator, saleData, supabase) {
       .eq('id', saleData.partner_id)
       .maybeSingle();
 
-    partnerType = partner?.partner_type || 'D2D';
+    partnerType = partner?.partner_type || 'D2D_1';
   }
 
   if (scope === 'energia' && saleData.energy_sale_type === 'dual') {
@@ -263,6 +263,7 @@ export async function calculateCommission(operator, saleData, supabase) {
 
     if (serviceType === 'REFID' || serviceType === 'Refid') {
       refidOperationType = saleData.refid_type;
+      console.log(`REFID sale detected: refid_type=${refidOperationType}, service_type=${serviceType}`);
     }
   } else if (scope === 'energia') {
     serviceType = saleData.energy_sale_type || operator.energy_type || 'eletricidade';
@@ -275,12 +276,13 @@ export async function calculateCommission(operator, saleData, supabase) {
     .eq('client_type', clientType)
     .eq('partner_type', partnerType);
 
-  if (activationType) {
+  if (activationType && !refidOperationType) {
     query = query.eq('activation_type', activationType);
   }
 
   if (refidOperationType) {
     query = query.eq('refid_operation_type', refidOperationType);
+    console.log(`Applying refid_operation_type filter: ${refidOperationType}`);
   }
 
   query = query.order('min_sales', { ascending: false });

@@ -39,7 +39,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   function getEmptyConfig() {
     return {
-      partner_type: 'D2D',
+      partner_type: 'D2D_1',
       client_type: 'particular',
       service_type: '',
       service_types: [],
@@ -77,7 +77,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   };
 
   const getPartnerTypes = () => {
-    return ['D2D', 'Rev1', 'Rev2', 'Rev3', 'Rev+'];
+    return ['D2D_1', 'D2D_2', 'D2D_3', 'REV', 'Rev+'];
   };
 
   const handleSaveAll = async () => {

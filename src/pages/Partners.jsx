@@ -25,7 +25,7 @@ const Partners = ({ user }) => {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [managers, setManagers] = useState([]);
   const [formData, setFormData] = useState({
-    partner_type: "D2D",
+    partner_type: "D2D_1",
     name: "",
     email: "",
     communication_emails: [""],
@@ -184,7 +184,7 @@ const Partners = ({ user }) => {
     setEditingPartner(null);
     setGeneratedPassword("");
     setFormData({
-      partner_type: "D2D",
+      partner_type: "D2D_1",
       name: "",
       email: "",
       communication_emails: [""],
@@ -357,10 +357,10 @@ const Partners = ({ user }) => {
                     <Select value={formData.partner_type} onValueChange={(v) => setFormData({...formData, partner_type: v})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="D2D">D2D</SelectItem>
-                        <SelectItem value="Rev1">Rev1</SelectItem>
-                        <SelectItem value="Rev2">Rev2</SelectItem>
-                        <SelectItem value="Rev3">Rev3</SelectItem>
+                        <SelectItem value="D2D_1">D2D Nível 1</SelectItem>
+                        <SelectItem value="D2D_2">D2D Nível 2</SelectItem>
+                        <SelectItem value="D2D_3">D2D Nível 3</SelectItem>
+                        <SelectItem value="REV">REV</SelectItem>
                         <SelectItem value="Rev+">Rev+</SelectItem>
                       </SelectContent>
                     </Select>
@@ -506,10 +506,10 @@ const Partners = ({ user }) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="D2D">D2D</SelectItem>
-              <SelectItem value="Rev1">Rev1</SelectItem>
-              <SelectItem value="Rev2">Rev2</SelectItem>
-              <SelectItem value="Rev3">Rev3</SelectItem>
+              <SelectItem value="D2D_1">D2D Nível 1</SelectItem>
+              <SelectItem value="D2D_2">D2D Nível 2</SelectItem>
+              <SelectItem value="D2D_3">D2D Nível 3</SelectItem>
+              <SelectItem value="REV">REV</SelectItem>
               <SelectItem value="Rev+">Rev+</SelectItem>
             </SelectContent>
           </Select>
