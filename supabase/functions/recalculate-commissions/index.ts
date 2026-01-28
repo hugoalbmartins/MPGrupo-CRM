@@ -34,9 +34,9 @@ async function calculateCommission(
   const clientType = saleData.customer_type || saleData.client_type || "particular";
   const scope = saleData.scope;
 
-  let partnerType = "D2D";
+  let partnerType = "D2D_1";
   if (saleData.isAdminSale && saleData.isCommissioned) {
-    partnerType = "Rev";
+    partnerType = "REV";
   } else if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from("partners")
@@ -44,30 +44,44 @@ async function calculateCommission(
       .eq("id", saleData.partner_id)
       .maybeSingle();
 
-    partnerType = partner?.partner_type || "D2D";
+    partnerType = partner?.partner_type || "D2D_1";
   }
 
   if (scope === "energia" && saleData.energy_sale_type === "dual") {
-    const electricityCommission = await calculateSingleEnergyCommission(
+    const electricityResult = await calculateSingleEnergyCommission(
       operator,
       { ...saleData, energy_sale_type: "eletricidade" },
       supabase,
       "eletricidade",
       clientType,
-      partnerType
+      partnerType,
+      false
     );
 
-    const gasCommission = await calculateSingleEnergyCommission(
+    const gasResult = await calculateSingleEnergyCommission(
       operator,
       { ...saleData, energy_sale_type: "gas" },
       supabase,
       "gas",
       clientType,
-      partnerType
+      partnerType,
+      false
     );
 
-    console.log(`Dual sale ${saleData.sale_code}: Electricity=${electricityCommission}, Gas=${gasCommission}, Total=${electricityCommission + gasCommission}`);
-    return electricityCommission + gasCommission;
+    let bonuses = 0;
+    const config = electricityResult.config || gasResult.config;
+    if (config) {
+      if (saleData.has_direct_debit) {
+        bonuses += parseFloat(config.direct_debit_bonus || 0);
+      }
+      if (saleData.has_electronic_invoice) {
+        bonuses += parseFloat(config.electronic_invoice_bonus || 0);
+      }
+    }
+
+    const totalCommission = electricityResult.base + gasResult.base + bonuses;
+    console.log(`Dual sale ${saleData.sale_code}: Electricity base=${electricityResult.base}, Gas base=${gasResult.base}, Bonuses=${bonuses} (DD+FE once), Total=${totalCommission}`);
+    return totalCommission;
   }
 
   let serviceType = null;
@@ -92,12 +106,13 @@ async function calculateCommission(
     .eq("client_type", clientType)
     .eq("partner_type", partnerType);
 
-  if (activationType) {
+  if (activationType && !refidOperationType) {
     query = query.eq("activation_type", activationType);
   }
 
   if (refidOperationType) {
     query = query.eq("refid_operation_type", refidOperationType);
+    console.log(`Applying refid_operation_type filter: ${refidOperationType}`);
   }
 
   query = query.order("min_sales", { ascending: false });
@@ -190,8 +205,9 @@ async function calculateSingleEnergyCommission(
   supabase: any,
   energyType: string,
   clientType: string,
-  partnerType: string
-): Promise<number> {
+  partnerType: string,
+  includeBonuses = true
+): Promise<{ base: number; bonuses: number; config: CommissionConfig | null }> {
   let query = supabase
     .from("commission_configurations")
     .select("*")
@@ -204,7 +220,7 @@ async function calculateSingleEnergyCommission(
 
   if (error || !allCommissionConfigs || allCommissionConfigs.length === 0) {
     console.warn(`No commission configs found for energy type: ${energyType}`);
-    return 0.0;
+    return { base: 0.0, bonuses: 0.0, config: null };
   }
 
   let commissionConfigs = allCommissionConfigs.filter((config: CommissionConfig) => {
@@ -219,7 +235,7 @@ async function calculateSingleEnergyCommission(
 
   if (commissionConfigs.length === 0) {
     console.warn(`No commission config found for energy type: ${energyType}`);
-    return 0.0;
+    return { base: 0.0, bonuses: 0.0, config: null };
   }
 
   const searchPartnerId = saleData.partner_id;
@@ -242,7 +258,7 @@ async function calculateSingleEnergyCommission(
   ) || commissionConfigs[commissionConfigs.length - 1];
 
   if (!applicableTier) {
-    return 0.0;
+    return { base: 0.0, bonuses: 0.0, config: null };
   }
 
   let baseCommission = 0;
@@ -258,14 +274,16 @@ async function calculateSingleEnergyCommission(
   }
 
   let bonuses = 0;
-  if (saleData.has_direct_debit) {
-    bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
-  }
-  if (saleData.has_electronic_invoice) {
-    bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
+  if (includeBonuses) {
+    if (saleData.has_direct_debit) {
+      bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
+    }
+    if (saleData.has_electronic_invoice) {
+      bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
+    }
   }
 
-  return baseCommission + bonuses;
+  return { base: baseCommission, bonuses: bonuses, config: applicableTier };
 }
 
 Deno.serve(async (req: Request) => {

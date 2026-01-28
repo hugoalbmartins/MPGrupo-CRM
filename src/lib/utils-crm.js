@@ -132,7 +132,7 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   return `${namePrefix}${sequence}${month}${year}`;
 }
 
-async function calculateSingleEnergyCommission(operator, saleData, supabase, energyType, clientType, partnerType) {
+async function calculateSingleEnergyCommission(operator, saleData, supabase, energyType, clientType, partnerType, includeBonuses = true) {
   let query = supabase
     .from('commission_configurations')
     .select('*')
@@ -145,7 +145,7 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
 
   if (error || !allCommissionConfigs || allCommissionConfigs.length === 0) {
     console.warn(`No commission configs found for energy type: ${energyType}`);
-    return 0.0;
+    return { base: 0.0, bonuses: 0.0, config: null };
   }
 
   let commissionConfigs = allCommissionConfigs.filter(config => {
@@ -160,7 +160,7 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
 
   if (commissionConfigs.length === 0) {
     console.warn(`No commission config found for energy type: ${energyType}`);
-    return 0.0;
+    return { base: 0.0, bonuses: 0.0, config: null };
   }
 
   const searchPartnerId = saleData.partner_id;
@@ -183,7 +183,7 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
   ) || commissionConfigs[commissionConfigs.length - 1];
 
   if (!applicableTier) {
-    return 0.0;
+    return { base: 0.0, bonuses: 0.0, config: null };
   }
 
   let baseCommission = 0;
@@ -199,14 +199,16 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
   }
 
   let bonuses = 0;
-  if (saleData.has_direct_debit) {
-    bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
-  }
-  if (saleData.has_electronic_invoice) {
-    bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
+  if (includeBonuses) {
+    if (saleData.has_direct_debit) {
+      bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
+    }
+    if (saleData.has_electronic_invoice) {
+      bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
+    }
   }
 
-  return baseCommission + bonuses;
+  return { base: baseCommission, bonuses: bonuses, config: applicableTier };
 }
 
 export async function calculateCommission(operator, saleData, supabase) {
@@ -231,26 +233,40 @@ export async function calculateCommission(operator, saleData, supabase) {
   }
 
   if (scope === 'energia' && saleData.energy_sale_type === 'dual') {
-    const electricityCommission = await calculateSingleEnergyCommission(
+    const electricityResult = await calculateSingleEnergyCommission(
       operator,
       { ...saleData, energy_sale_type: 'eletricidade' },
       supabase,
       'eletricidade',
       clientType,
-      partnerType
+      partnerType,
+      false
     );
 
-    const gasCommission = await calculateSingleEnergyCommission(
+    const gasResult = await calculateSingleEnergyCommission(
       operator,
       { ...saleData, energy_sale_type: 'gas' },
       supabase,
       'gas',
       clientType,
-      partnerType
+      partnerType,
+      false
     );
 
-    console.log(`Dual sale ${saleData.sale_code}: Electricity=${electricityCommission}, Gas=${gasCommission}, Total=${electricityCommission + gasCommission}`);
-    return electricityCommission + gasCommission;
+    let bonuses = 0;
+    const config = electricityResult.config || gasResult.config;
+    if (config) {
+      if (saleData.has_direct_debit) {
+        bonuses += parseFloat(config.direct_debit_bonus || 0);
+      }
+      if (saleData.has_electronic_invoice) {
+        bonuses += parseFloat(config.electronic_invoice_bonus || 0);
+      }
+    }
+
+    const totalCommission = electricityResult.base + gasResult.base + bonuses;
+    console.log(`Dual sale ${saleData.sale_code}: Electricity base=${electricityResult.base}, Gas base=${gasResult.base}, Bonuses=${bonuses} (DD+FE once), Total=${totalCommission}`);
+    return totalCommission;
   }
 
   let serviceType = null;
