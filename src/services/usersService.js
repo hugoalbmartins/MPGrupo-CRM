@@ -10,7 +10,7 @@ export const usersService = {
         .from('users')
         .select(`
           *,
-          partner:partners(partner_type, name)
+          partner:partners!user_id(partner_type, name)
         `)
         .order('created_at', { ascending: false });
 
