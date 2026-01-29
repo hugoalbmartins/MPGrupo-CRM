@@ -1,47 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useOperators } from "@/hooks/useOperatorsData";
 import { supabase } from "../lib/supabase";
 
 const Forms = ({ user }) => {
   const { operatorId } = useParams();
   const navigate = useNavigate();
-  const [operators, setOperators] = useState([]);
-  const [selectedOperator, setSelectedOperator] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchOperators();
-  }, []);
+  const { data: allOperators, isLoading } = useOperators(false);
 
-  useEffect(() => {
-    if (operators.length > 0 && operatorId) {
-      const operator = operators.find(op => op.id === operatorId);
-      setSelectedOperator(operator);
-    }
-  }, [operators, operatorId]);
+  const operators = useMemo(() => {
+    if (!allOperators) return [];
+    return allOperators.filter(op => op.documents && op.documents.length > 0);
+  }, [allOperators]);
 
-  const fetchOperators = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('operators')
-        .select('*')
-        .eq('hidden', false)
-        .order('name');
-
-      if (error) throw error;
-
-      // Filtrar apenas operadoras com documentos
-      const operatorsWithDocs = (data || []).filter(op => op.documents && op.documents.length > 0);
-      setOperators(operatorsWithDocs);
-    } catch (error) {
-      toast.error("Erro ao carregar operadoras");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const selectedOperator = useMemo(() => {
+    if (!operatorId || !operators.length) return null;
+    return operators.find(op => op.id === operatorId);
+  }, [operatorId, operators]);
 
   const handleDownloadDocument = async (doc) => {
     try {
@@ -72,10 +51,17 @@ const Forms = ({ user }) => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="spinner"></div>
+      <div className="space-y-6 p-6 animate-fade-in">
+        <div className="h-10 bg-gray-200 rounded-lg w-1/4 animate-pulse"></div>
+        <div className="glass-ultra p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -83,13 +69,17 @@ const Forms = ({ user }) => {
   // Se não há operadoras com documentos
   if (operators.length === 0) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-navy-900">Formulários</h1>
-        <div className="glass-card p-8 text-center">
-          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-lg text-gray-600">Nenhum formulário disponível no momento.</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Os formulários serão disponibilizados assim que forem adicionados às operadoras.
+      <div className="space-y-6 p-6 animate-fade-in">
+        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Formulários</h1>
+        <div className="glass-ultra p-8 text-center spring-transition">
+          <div className="w-20 h-20 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center mx-auto mb-4 animate-scale-in">
+            <FileText className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-lg font-semibold mb-2" style={{ color: '#000000' }}>
+            Nenhum formulário disponível no momento
+          </p>
+          <p className="text-sm" style={{ color: '#7a7a7a' }}>
+            Os formulários serão disponibilizados assim que forem adicionados às operadoras
           </p>
         </div>
       </div>
@@ -99,26 +89,36 @@ const Forms = ({ user }) => {
   // Se não há operadora selecionada, mostrar lista de operadoras
   if (!operatorId) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-navy-900">Formulários</h1>
-        <div className="glass-card p-6">
-          <p className="text-gray-600 mb-6">
+      <div className="space-y-6 p-6 animate-fade-in">
+        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Formulários</h1>
+        <div className="glass-ultra p-6 spring-transition">
+          <p className="mb-6 font-medium" style={{ color: '#000000' }}>
             Selecione uma operadora para visualizar os formulários disponíveis:
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {operators.map((operator) => (
-              <Button
+            {operators.map((operator, index) => (
+              <button
                 key={operator.id}
                 onClick={() => navigate(`/forms/${operator.id}`)}
-                className="h-auto flex flex-col items-start p-4 bg-white hover:bg-blue-50 border-2 border-gray-200 hover:border-blue-400 text-left"
-                variant="outline"
+                className="glass-card h-auto flex flex-col items-start p-5 text-left spring-transition hover:shadow-lg hover:border-gold-ultra group"
+                style={{
+                  animationDelay: `${index * 0.05}s`,
+                  border: '1px solid rgba(0,0,0,0.1)'
+                }}
               >
-                <span className="font-semibold text-lg text-navy-900">{operator.name}</span>
-                <span className="text-sm text-gray-600 capitalize">{operator.scope}</span>
-                <span className="text-xs text-blue-600 mt-2">
-                  📄 {operator.documents.length} formulário(s)
+                <span className="font-bold text-lg mb-1 group-hover:text-gold-ultra spring-transition" style={{ color: '#000000' }}>
+                  {operator.name}
                 </span>
-              </Button>
+                <span className="text-sm capitalize mb-3" style={{ color: '#7a7a7a' }}>
+                  {operator.scope}
+                </span>
+                <div className="flex items-center gap-2 mt-auto">
+                  <FileText className="w-4 h-4 text-gold-ultra" />
+                  <span className="text-xs font-semibold" style={{ color: '#d4af37' }}>
+                    {operator.documents.length} formulário(s)
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
         </div>
@@ -129,45 +129,65 @@ const Forms = ({ user }) => {
   // Mostrar documentos da operadora selecionada
   if (!selectedOperator) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-600">Operadora não encontrada.</p>
+      <div className="flex items-center justify-center h-64 p-6">
+        <p className="font-medium" style={{ color: '#7a7a7a' }}>
+          Operadora não encontrada
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex items-center gap-4">
-        <Button onClick={() => navigate('/forms')} variant="outline">
-          ← Voltar
+        <Button
+          onClick={() => navigate('/forms')}
+          className="btn-secondary spring-transition"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-navy-900">{selectedOperator.name}</h1>
-          <p className="text-sm text-gray-600 capitalize">{selectedOperator.scope}</p>
+        <div className="animate-slide-up">
+          <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>
+            {selectedOperator.name}
+          </h1>
+          <p className="text-sm capitalize font-medium" style={{ color: '#7a7a7a' }}>
+            {selectedOperator.scope}
+          </p>
         </div>
       </div>
 
-      <div className="glass-card p-6">
-        <h2 className="text-xl font-semibold text-navy-900 mb-4">Formulários Disponíveis</h2>
+      <div className="glass-ultra p-6 spring-transition">
+        <h2 className="text-xl font-bold mb-6" style={{ color: '#000000' }}>
+          Formulários Disponíveis
+        </h2>
         {selectedOperator.documents && selectedOperator.documents.length > 0 ? (
           <div className="space-y-3">
-            {selectedOperator.documents.map((doc) => (
+            {selectedOperator.documents.map((doc, index) => (
               <div
                 key={doc.id}
-                className="flex items-center justify-between p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
+                className="glass-card flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 spring-transition hover:shadow-lg group"
+                style={{
+                  animationDelay: `${index * 0.05}s`,
+                  border: '1px solid rgba(0,0,0,0.05)'
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <FileText className="w-6 h-6 text-blue-600" />
-                  <div>
-                    <span className="font-medium block">{doc.filename}</span>
-                    <span className="text-xs text-gray-500">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 bg-gradient-to-r from-navy-900 to-navy-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold block truncate" style={{ color: '#000000' }}>
+                      {doc.filename}
+                    </span>
+                    <span className="text-xs block" style={{ color: '#7a7a7a' }}>
                       Adicionado em: {new Date(doc.uploaded_at).toLocaleDateString('pt-PT')}
                     </span>
                   </div>
                 </div>
                 <Button
                   onClick={() => handleDownloadDocument(doc)}
-                  className="btn-primary"
+                  className="btn-gold shadow-gold-glow spring-transition w-full sm:w-auto"
                   size="sm"
                 >
                   <Download className="w-4 h-4 mr-2" />
@@ -177,7 +197,12 @@ const Forms = ({ user }) => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500">Nenhum formulário disponível para esta operadora.</p>
+          <div className="text-center py-8">
+            <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: '#7a7a7a' }} />
+            <p style={{ color: '#7a7a7a' }}>
+              Nenhum formulário disponível para esta operadora
+            </p>
+          </div>
         )}
       </div>
     </div>

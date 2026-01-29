@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
+import { useAlerts, useMarkAlertAsRead } from "@/hooks/useAlertsData";
 import { alertsService } from "../services/alertsService";
 import { salesService } from "../services/salesService";
 import { usersService } from "../services/usersService";
@@ -189,51 +190,72 @@ const Alerts = ({ user }) => {
   const isUnread = (alert) => !alert.read_by.includes(user?.id);
 
   if (loading) {
-    return <div className="text-center py-8">A carregar alertas...</div>;
+    return (
+      <div className="space-y-6 p-6 animate-fade-in">
+        <div className="h-10 bg-gray-200 rounded-lg w-1/4 animate-pulse"></div>
+        <div className="glass-ultra p-6">
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-navy-900">Alertas</h1>
+        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Alertas</h1>
         <div className="flex items-center gap-4">
           <Button
-            variant="outline"
             onClick={() => navigate('/alerts/archived')}
-            className="gap-2"
+            className="btn-secondary spring-transition gap-2"
           >
             <Archive className="w-4 h-4" />
             Ver Arquivados
           </Button>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Bell className="w-4 h-4" />
-            <span>{alerts.filter(a => isUnread(a)).length} não lidos de {totalAlerts}</span>
+          <div className="glass-card px-4 py-2 flex items-center gap-2">
+            <Bell className="w-4 h-4 text-gold-ultra" />
+            <span className="text-sm font-bold" style={{ color: '#000000' }}>
+              {alerts.filter(a => isUnread(a)).length}
+            </span>
+            <span className="text-sm" style={{ color: '#7a7a7a' }}>
+              não lidos de {totalAlerts}
+            </span>
           </div>
         </div>
       </div>
 
       {user?.role === 'admin' && (
         <>
-          <div className={`rounded-lg p-4 border ${
+          <div className={`glass-card p-5 spring-transition ${
             alertsSuspended
-              ? 'bg-red-50 border-red-200'
-              : 'bg-green-50 border-green-200'
-          }`}>
-            <div className="flex items-center justify-between">
+              ? 'border-red-300'
+              : 'border-green-300'
+          }`} style={{ borderWidth: '2px' }}>
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                {alertsSuspended ? (
-                  <BellOff className="w-5 h-5 text-red-600" />
-                ) : (
-                  <Bell className="w-5 h-5 text-green-600" />
-                )}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  alertsSuspended
+                    ? 'bg-red-100'
+                    : 'bg-green-100'
+                }`}>
+                  {alertsSuspended ? (
+                    <BellOff className="w-5 h-5 text-red-600" />
+                  ) : (
+                    <Bell className="w-5 h-5 text-green-600" />
+                  )}
+                </div>
                 <div>
-                  <Label htmlFor="global-alerts-suspension" className="text-sm font-semibold text-navy-900 cursor-pointer">
+                  <Label htmlFor="global-alerts-suspension" className="text-sm font-bold cursor-pointer" style={{ color: '#000000' }}>
                     Suspensão Global de Alertas
                   </Label>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>
                     {alertsSuspended
-                      ? 'Nenhum alerta novo será criado no sistema enquanto estiver suspenso'
-                      : 'Os alertas estão a ser criados normalmente no sistema'
+                      ? 'Nenhum alerta novo será criado no sistema'
+                      : 'Os alertas estão a ser criados normalmente'
                     }
                   </p>
                 </div>
@@ -247,15 +269,17 @@ const Alerts = ({ user }) => {
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
+          <div className="glass-card p-5 spring-transition" style={{ borderWidth: '2px', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-blue-600" />
+                </div>
                 <div>
-                  <Label htmlFor="email-alerts" className="text-sm font-semibold text-navy-900 cursor-pointer">
+                  <Label htmlFor="email-alerts" className="text-sm font-bold cursor-pointer" style={{ color: '#000000' }}>
                     Receber Alertas por Email
                   </Label>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>
                     Desative para receber alertas apenas na aplicação
                   </p>
                 </div>
@@ -313,24 +337,31 @@ const Alerts = ({ user }) => {
       </div>
 
       {alerts.length === 0 ? (
-        <div className="glass-card p-12 text-center">
-          <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">
+        <div className="glass-ultra p-12 text-center spring-transition">
+          <div className="w-20 h-20 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center mx-auto mb-4 animate-scale-in">
+            <Bell className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-lg font-semibold" style={{ color: '#000000' }}>
             {filter === 'all' ? 'Nenhum alerta' : filter === 'unread' ? 'Nenhum alerta não lido' : 'Nenhum alerta lido'}
           </p>
         </div>
       ) : (
         <>
           <div className="space-y-3">
-            {alerts.map((alert) => {
+            {alerts.map((alert, index) => {
               const unread = isUnread(alert);
               const isSelected = selectedAlerts.includes(alert.id);
               return (
                 <div
                   key={alert.id}
-                  className={`glass-card p-4 transition-all ${
-                    unread ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-                  } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                  className={`glass-card p-4 spring-transition ${
+                    unread ? 'border-gold-ultra' : 'border-gray-200'
+                  } ${isSelected ? 'ring-2 ring-gold-ultra shadow-gold-glow' : ''}`}
+                  style={{
+                    animationDelay: `${index * 0.03}s`,
+                    borderWidth: unread ? '2px' : '1px',
+                    backgroundColor: unread ? 'rgba(212, 175, 55, 0.05)' : 'white'
+                  }}
                 >
                   <div className="flex items-start gap-4">
                     <Checkbox
@@ -343,26 +374,25 @@ const Alerts = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className={`text-sm ${unread ? 'font-semibold text-navy-900' : 'text-gray-700'}`}>
+                          <p className={`text-sm ${unread ? 'font-bold' : 'font-medium'}`} style={{ color: '#000000' }}>
                             {alert.message}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>
                             {new Date(alert.created_at).toLocaleString('pt-PT')}
                           </p>
                         </div>
 
                         {unread && (
-                          <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                          <span className="bg-gradient-to-r from-gold-ultra to-gold-500 text-navy-900 text-xs px-3 py-1 rounded-full font-bold shadow-gold">
                             Novo
                           </span>
                         )}
                       </div>
 
-                      <div className="mt-2 flex items-center gap-2">
+                      <div className="mt-3 flex items-center gap-2">
                         <Button
                           size="sm"
-                          variant="ghost"
-                          className="text-blue-600 h-8 px-3"
+                          className="btn-gold shadow-gold spring-transition h-8"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleViewSale(alert);

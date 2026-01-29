@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatCard } from "@/components/ui/stat-card";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/useUsersData";
+import { usePartners } from "@/hooks/usePartnersData";
 import { usersService } from "../services/usersService";
-import { partnersService } from "../services/partnersService";
 import { generateStrongPassword } from "../lib/utils-crm";
 
 const Users = ({ user }) => {
@@ -232,15 +234,33 @@ const Users = ({ user }) => {
         (aValue < bValue ? 1 : -1);
     });
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 p-6 animate-fade-in">
+        <div className="h-10 bg-gray-200 rounded-lg w-1/4 animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
+        <div className="glass-ultra p-6">
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-navy-900">Utilizadores</h1>
+        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Utilizadores</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); generatePassword(); }} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Utilizador</Button>
+            <Button onClick={() => { resetForm(); generatePassword(); }} className="btn-gold shadow-gold-glow spring-transition"><Plus className="w-4 h-4 mr-2" />Novo Utilizador</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -348,20 +368,20 @@ const Users = ({ user }) => {
         </Dialog>
       </div>
 
-      <div className="glass-card p-6">
-        <div className="mb-4 flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <div className="glass-ultra p-6 spring-transition">
+        <div className="mb-6 flex gap-4 flex-wrap">
+          <div className="flex-1 min-w-[250px] relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: '#7a7a7a' }} />
             <Input
               type="text"
               placeholder="Pesquisar por nome, email ou posição..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="input-modern pl-10"
             />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="select-modern w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useOperators, useCreateOperator, useUpdateOperator, useDeleteOperator } from "@/hooks/useOperatorsData";
 import { operatorsService } from "../services/operatorsService";
 import CommissionWizard from "../components/CommissionWizard";
 import { supabase } from "../lib/supabase";
