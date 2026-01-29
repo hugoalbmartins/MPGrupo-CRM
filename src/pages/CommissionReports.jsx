@@ -7,25 +7,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { partnersService } from "../services/partnersService";
-import { salesService } from "../services/salesService";
+import { usePartners } from "@/hooks/usePartnersData";
+import {
+  useCommissionReports,
+  useValidateCommissionReport,
+  useMarkReportAsPaid,
+  useDeleteCommissionReport
+} from "@/hooks/useCommissionReportsData";
 import { commissionReportsService } from "../services/commissionReportsService";
 import { supabase } from "../lib/supabase";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 const CommissionReports = ({ user }) => {
-  const [partners, setPartners] = useState([]);
   const [selectedPartner, setSelectedPartner] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
-  const [emittedReports, setEmittedReports] = useState([]);
   const [showReportsDialog, setShowReportsDialog] = useState(false);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState(null);
   const [availableMonths, setAvailableMonths] = useState([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+
+  const { data: partners = [] } = usePartners();
+  const { data: emittedReports = [], isLoading: reportsLoading } = useCommissionReports({
+    year: filterYear,
+    month: filterMonth
+  });
+  const validateReportMutation = useValidateCommissionReport();
+  const markAsPaidMutation = useMarkReportAsPaid();
+  const deleteReportMutation = useDeleteCommissionReport();
 
   const months = [
     { value: 1, label: 'Janeiro' },
@@ -45,13 +57,8 @@ const CommissionReports = ({ user }) => {
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 
   useEffect(() => {
-    fetchPartners();
     initializeFilters();
   }, []);
-
-  useEffect(() => {
-    fetchEmittedReports();
-  }, [filterYear, filterMonth]);
 
   useEffect(() => {
     checkAvailableMonths();
@@ -91,36 +98,18 @@ const CommissionReports = ({ user }) => {
     setCheckingAvailability(false);
   };
 
-  const fetchPartners = async () => {
-    try {
-      const data = await partnersService.getAll();
-      setPartners(data);
-    } catch (error) {
-      toast.error("Erro ao carregar parceiros");
-    }
-  };
-
-  const fetchEmittedReports = async () => {
-    try {
-      const data = await commissionReportsService.getAll(filterYear, filterMonth);
-      setEmittedReports(data);
-    } catch (error) {
-      console.error("Erro ao carregar autos emitidos:", error);
-    }
-  };
-
   const handleValidatePayment = async (reportId) => {
     if (!window.confirm("Confirma que este auto foi pago? Esta ação não pode ser revertida e o auto ficará bloqueado.")) {
       return;
     }
 
-    try {
-      await commissionReportsService.validatePayment(reportId, user.id);
-      toast.success("Auto validado como pago com sucesso");
-      fetchEmittedReports();
-    } catch (error) {
-      toast.error("Erro ao validar pagamento: " + error.message);
-    }
+    markAsPaidMutation.mutate({
+      reportId,
+      paymentData: {
+        paymentDate: new Date().toISOString(),
+        userId: user.id
+      }
+    });
   };
 
   const registerCommissionReport = async (partnerId) => {
@@ -168,7 +157,6 @@ const CommissionReports = ({ user }) => {
       await commissionReportsService.markAsEmailed(newReport.id);
 
       toast.success(`Auto registrado e email enviado para ${partner.name}`);
-      fetchEmittedReports();
     } catch (error) {
       console.error("Erro ao registrar auto:", error);
       toast.error("Erro ao registrar auto de comissão");
@@ -183,13 +171,7 @@ const CommissionReports = ({ user }) => {
 
     if (!window.confirm("Tem certeza que deseja eliminar este auto?")) return;
 
-    try {
-      await commissionReportsService.delete(reportId);
-      toast.success("Auto eliminado com sucesso");
-      fetchEmittedReports();
-    } catch (error) {
-      toast.error("Erro ao eliminar auto: " + error.message);
-    }
+    deleteReportMutation.mutate(reportId);
   };
 
   const handleDownloadReport = async (report) => {
@@ -1016,12 +998,32 @@ const CommissionReports = ({ user }) => {
     );
   }
 
+  if (reportsLoading && emittedReports.length === 0) {
+    return (
+      <div className="space-y-6 p-6 animate-fade-in">
+        <div className="h-10 bg-gray-200 rounded-lg w-1/3 animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2].map(i => (
+            <div key={i} className="glass-ultra p-6 h-96 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-6 animate-fade-in">
+      <div className="flex justify-between items-center animate-slide-up">
         <div>
-          <h1 className="text-3xl font-bold text-navy-900">Autos de Comissões</h1>
-          <p className="text-gray-600 mt-1">Gere autos de comissões para parceiros (apenas vendas pagas)</p>
+          <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Autos de Comissões</h1>
+          <p className="font-medium mt-1" style={{ color: '#7a7a7a' }}>Gere autos de comissões para parceiros (apenas vendas pagas)</p>
         </div>
       </div>
 
@@ -1231,9 +1233,16 @@ const CommissionReports = ({ user }) => {
               <p>Nenhum auto emitido para o ano selecionado</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {emittedReports.map(report => (
-                <div key={report.id} className={`flex items-center justify-between p-4 border rounded-lg ${report.paid_validated_at ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50'}`}>
+                <div
+                  key={report.id}
+                  className={`flex items-center justify-between p-4 rounded-lg transition-all duration-200 ${
+                    report.paid_validated_at
+                      ? 'glass-ultra border-2 border-green-500'
+                      : 'glass-ultra hover:scale-[1.01] hover:shadow-md'
+                  }`}
+                >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-navy-900">
