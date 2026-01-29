@@ -307,6 +307,58 @@
     background: linear-gradient(to right, #f59e0b, #d4af37);
   }
 
+  .table-container {
+    @apply overflow-x-auto w-full;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #d4af37 transparent;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .table-container::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .table-container::-webkit-scrollbar-track {
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: 10px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(to right, #d4af37, #f59e0b);
+    border-radius: 10px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to right, #f59e0b, #d4af37);
+  }
+
+  .table-container table {
+    @apply w-full;
+    min-width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table-container thead {
+    @apply table-header;
+  }
+
+  .table-container tbody tr {
+    @apply table-row;
+  }
+
+  .table-container th,
+  .table-container td {
+    @apply px-6 py-4 text-left;
+    white-space: nowrap;
+  }
+
+  .table-container th {
+    @apply text-xs font-bold uppercase tracking-wider;
+    color: #000000;
+  }
+
   .shadow-gold {
     box-shadow: 0 4px 14px 0 rgba(212, 175, 55, 0.39);
   }

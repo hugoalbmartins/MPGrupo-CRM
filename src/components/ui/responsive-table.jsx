@@ -20,15 +20,15 @@ export const ResponsiveTable = ({
 
   return (
     <>
-      <div className="table-to-cards horizontal-scroll scrollbar-modern">
-        <div className={`glass-ultra overflow-hidden ${className}`}>
-          <table className="w-full">
+      <div className="table-to-cards max-w-full overflow-x-auto horizontal-scroll scrollbar-modern">
+        <div className={`glass-ultra ${className}`}>
+          <table className="w-full min-w-full">
             <thead className="table-header">
               <tr>
                 {headers.map((header, index) => (
                   <th
                     key={index}
-                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider"
+                    className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap"
                     style={{ color: '#000000' }}
                   >
                     {header}
