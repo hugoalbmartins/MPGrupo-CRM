@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload, ShoppingCart, Euro, TrendingUp, CheckCircle } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { StatCard, StatCardGold, StatCardSkeleton } from "@/components/ui/stat-card";
-import { ResponsiveTable, TruncatedCell, TableSkeleton } from "@/components/ui/responsive-table";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
@@ -19,6 +15,7 @@ import { energyPointsService } from "../services/energyPointsService";
 import { recalculateAllCommissions, recalculateSaleCommission } from "../services/commissionRecalculator";
 import { supabase } from "../lib/supabase";
 import SaleDetailDialog from "../components/SaleDetailDialog";
+import EnergyPointsManager from "../components/EnergyPointsManager";
 import SalesImport from "../components/SalesImport";
 import SaleFormDialog from "../components/SaleFormDialog";
 
@@ -49,7 +46,45 @@ const Sales = ({ user }) => {
   const [itemsPerPage] = useState(10);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
-  const [editFormData, setEditFormData] = useState({});
+  const [editFormData, setEditFormData] = useState({
+    date: "",
+    status: "",
+    request_number: "",
+    paid_to_operator: false,
+    payment_date: "",
+    manual_commission: "",
+    partner_id: "",
+    operator_id: "",
+    scope: "",
+    client_type: "",
+    monthly_value: "",
+    current_monthly_fee: "",
+    contracted_monthly_fee: "",
+    client_name: "",
+    client_nif: "",
+    client_contact: "",
+    client_email: "",
+    client_iban: "",
+    street: "",
+    postal_code: "",
+    locality: "",
+    installation_address: "",
+    service_type: "",
+    activation_type: "",
+    energy_sale_type: "",
+    cpe: "",
+    power: "",
+    cui: "",
+    tier: "",
+    entry_type: "",
+    has_direct_debit: false,
+    has_electronic_invoice: false,
+    has_tv: false,
+    has_net: false,
+    has_lr: false,
+    mobile_count: 0,
+    observations: ""
+  });
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedSaleForNotes, setSelectedSaleForNotes] = useState(null);
   const [newNote, setNewNote] = useState("");
@@ -456,11 +491,12 @@ const Sales = ({ user }) => {
     }
     return true;
   });
-
+  
   const sortedSales = [...filteredSales].sort((a, b) => {
     let aValue = a[sortField];
     let bValue = b[sortField];
 
+    // Handle nested values
     if (sortField === 'partner_name') {
       aValue = partners.find(p => p.id === a.partner_id)?.name || '';
       bValue = partners.find(p => p.id === b.partner_id)?.name || '';
@@ -470,9 +506,11 @@ const Sales = ({ user }) => {
       bValue = operators.find(o => o.id === b.operator_id)?.name || '';
     }
 
+    // Handle null/undefined
     if (aValue == null) aValue = '';
     if (bValue == null) bValue = '';
 
+    // Sort
     if (typeof aValue === 'string') {
       return sortDirection === 'asc'
         ? aValue.localeCompare(bValue)
@@ -480,14 +518,6 @@ const Sales = ({ user }) => {
     }
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
-
-  // Calculate stats from sales
-  const stats = {
-    totalSales: filteredSales.length,
-    totalCommission: filteredSales.reduce((sum, sale) => sum + (sale.manual_commission || sale.calculated_commission || 0), 0),
-    activeSales: filteredSales.filter(s => s.status === 'Ativo').length,
-    pendingSales: filteredSales.filter(s => s.status === 'Pendente' || s.status === 'Para registo').length,
-  };
 
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -503,6 +533,7 @@ const Sales = ({ user }) => {
     try {
       let dataToExport = [...sales];
 
+      // Filtrar por data se especificado
       if (exportStartDate) {
         dataToExport = dataToExport.filter(sale => new Date(sale.date) >= new Date(exportStartDate));
       }
@@ -515,6 +546,7 @@ const Sales = ({ user }) => {
         return;
       }
 
+      // Preparar dados para Excel
       const excelData = [];
 
       for (const sale of dataToExport) {
@@ -619,11 +651,13 @@ const Sales = ({ user }) => {
         }
       }
 
+      // Criar workbook e worksheet
       const XLSX = await import('xlsx');
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Vendas');
 
+      // Gerar e fazer download
       const fileName = `vendas_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
@@ -816,244 +850,44 @@ const Sales = ({ user }) => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusColors = {
-      'Para registo': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      'Pendente': 'bg-orange-100 text-orange-800 border-orange-300',
-      'Concluido': 'bg-green-100 text-green-800 border-green-300',
-      'Ativo': 'bg-blue-100 text-blue-800 border-blue-300',
-      'Cancelado': 'bg-red-100 text-red-800 border-red-300',
-      'Em proposta': 'bg-purple-100 text-purple-800 border-purple-300',
-    };
-    return statusColors[status] || 'bg-gray-100 text-gray-800 border-gray-300';
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6 p-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="h-10 w-48 bg-navy-200 rounded animate-pulse" />
-          <div className="flex gap-3">
-            <div className="h-10 w-32 bg-navy-200 rounded animate-pulse" />
-            <div className="h-10 w-32 bg-navy-200 rounded animate-pulse" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-        </div>
-        <TableSkeleton rows={10} columns={8} />
-      </div>
-    );
-  }
-
-  // Render - NOTE: This is a very long file so I'm including dialogs at the end
-  const headers = [
-    'Código',
-    'Data',
-    'Parceiro',
-    'Âmbito',
-    'Cliente',
-    'Operadora',
-    'Status',
-    ...(user?.role !== 'bo' && user?.role !== 'partner_commercial' ? ['Comissão'] : []),
-    'Ações'
-  ];
-
-  const renderRow = (sale) => (
-    <>
-      <td className="px-6 py-4">
-        <span className="font-semibold" style={{ color: '#000000' }}>
-          {sale.sale_code}
-        </span>
-      </td>
-      <td className="px-6 py-4">
-        <span style={{ color: '#000000' }}>
-          {new Date(sale.date).toLocaleDateString('pt-PT')}
-        </span>
-      </td>
-      <td className="px-6 py-4">
-        <TruncatedCell text={partners.find(p => p.id === sale.partner_id)?.name} />
-      </td>
-      <td className="px-6 py-4">
-        <span className="capitalize" style={{ color: '#000000' }}>{sale.scope}</span>
-      </td>
-      <td className="px-6 py-4">
-        <TruncatedCell text={sale.client_name} />
-      </td>
-      <td className="px-6 py-4">
-        <TruncatedCell text={operators.find(o => o.id === sale.operator_id)?.name} />
-      </td>
-      <td className="px-6 py-4">
-        <Badge className={getStatusBadge(sale.status)}>
-          {sale.status}
-        </Badge>
-      </td>
-      {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
-        <td className="px-6 py-4">
-          <span className="font-bold text-green-600">
-            {(() => {
-              const commission = sale.manual_commission || sale.calculated_commission;
-              return commission ? `€${parseFloat(commission).toFixed(2)}` : '-';
-            })()}
-          </span>
-        </td>
-      )}
-      <td className="px-6 py-4">
-        <div className="flex gap-2">
-          {(user?.role === 'admin' || user?.role === 'bo') ? (
-            <Button
-              onClick={() => openEditDialog(sale)}
-              size="sm"
-              variant="ghost"
-              className="text-blue-600 hover:bg-blue-50"
-            >
-              Editar
-            </Button>
-          ) : (
-            <Button
-              onClick={() => {
-                setSelectedSaleId(sale.id);
-                setDetailDialogOpen(true);
-              }}
-              size="sm"
-              variant="ghost"
-              className="text-blue-600 hover:bg-blue-50"
-            >
-              Ver
-            </Button>
-          )}
-          {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
-            <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600 hover:bg-purple-50">
-              Notas ({sale.notes?.length || 0})
-            </Button>
-          )}
-          {user?.role === 'admin' && (
-            <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </td>
-    </>
-  );
-
-  const renderMobileCard = (sale) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="font-bold text-lg" style={{ color: '#000000' }}>
-          {sale.sale_code}
-        </span>
-        <Badge className={getStatusBadge(sale.status)}>
-          {sale.status}
-        </Badge>
-      </div>
-      <div className="space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span style={{ color: '#595959' }}>Cliente:</span>
-          <span style={{ color: '#000000' }} className="font-semibold">{sale.client_name}</span>
-        </div>
-        <div className="flex justify-between">
-          <span style={{ color: '#595959' }}>Parceiro:</span>
-          <span style={{ color: '#000000' }}>{partners.find(p => p.id === sale.partner_id)?.name}</span>
-        </div>
-        <div className="flex justify-between">
-          <span style={{ color: '#595959' }}>Operadora:</span>
-          <span style={{ color: '#000000' }}>{operators.find(o => o.id === sale.operator_id)?.name}</span>
-        </div>
-        {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
-          <div className="flex justify-between">
-            <span style={{ color: '#595959' }}>Comissão:</span>
-            <span className="font-bold text-green-600">
-              {(() => {
-                const commission = sale.manual_commission || sale.calculated_commission;
-                return commission ? `€${parseFloat(commission).toFixed(2)}` : '-';
-              })()}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="flex gap-2 pt-2 border-t border-white/20">
-        {(user?.role === 'admin' || user?.role === 'bo') ? (
-          <Button
-            onClick={() => openEditDialog(sale)}
-            size="sm"
-            className="flex-1 btn-primary"
-          >
-            Editar
-          </Button>
-        ) : (
-          <Button
-            onClick={() => {
-              setSelectedSaleId(sale.id);
-              setDetailDialogOpen(true);
-            }}
-            size="sm"
-            className="flex-1 btn-primary"
-          >
-            Ver Detalhes
-          </Button>
-        )}
-        {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
-          <Button onClick={() => openNotesDialog(sale)} size="sm" variant="outline" className="flex-1">
-            Notas
-          </Button>
-        )}
-      </div>
-    </div>
-  );
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
 
   return (
-    <div className="space-y-6 p-6 animate-fade-in">
-      {/* Header with Title and Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-      >
-        <div>
-          <h1 className="text-4xl font-bold text-gradient-navy mb-2">Vendas</h1>
-          <p className="text-sm" style={{ color: '#7a7a7a' }}>
-            Gerencie as vendas e acompanhe o desempenho
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900">Vendas</h1>
+        <div className="flex gap-3">
           <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-green-500 text-green-600 hover:bg-green-50 spring-transition">
+              <Button variant="outline" className="border-green-500 text-green-600 hover:bg-green-50">
                 <Download className="w-4 h-4 mr-2" />
                 Exportar Excel
               </Button>
             </DialogTrigger>
-            <DialogContent className="glass-ultra">
+            <DialogContent>
               <DialogHeader>
-                <DialogTitle style={{ color: '#000000' }}>Exportar Vendas para Excel</DialogTitle>
+                <DialogTitle>Exportar Vendas para Excel</DialogTitle>
                 <DialogDescription>Selecione o formato de exportação</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
                   <Label>Data Início (opcional)</Label>
-                  <Input
-                    type="date"
+                  <Input 
+                    type="date" 
                     value={exportStartDate}
                     onChange={(e) => setExportStartDate(e.target.value)}
-                    className="glass-input"
                   />
                 </div>
                 <div>
                   <Label>Data Fim (opcional)</Label>
-                  <Input
-                    type="date"
+                  <Input 
+                    type="date" 
                     value={exportEndDate}
                     onChange={(e) => setExportEndDate(e.target.value)}
-                    className="glass-input"
                   />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button variant="outline" onClick={() => setExportDialogOpen(false)} className="btn-secondary">
+                  <Button variant="outline" onClick={() => setExportDialogOpen(false)}>
                     Cancelar
                   </Button>
                   <Button onClick={handleExportExcel} className="btn-primary">
@@ -1068,7 +902,7 @@ const Sales = ({ user }) => {
             <>
               <Button
                 variant="outline"
-                className="border-blue-500 text-blue-600 hover:bg-blue-50 spring-transition"
+                className="border-blue-500 text-blue-600 hover:bg-blue-50"
                 onClick={() => setImportDialogOpen(true)}
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -1076,7 +910,7 @@ const Sales = ({ user }) => {
               </Button>
               <Button
                 variant="outline"
-                className="border-purple-500 text-purple-600 hover:bg-purple-50 spring-transition"
+                className="border-purple-500 text-purple-600 hover:bg-purple-50"
                 onClick={() => setRecalcDialogOpen(true)}
                 disabled={loading}
               >
@@ -1090,7 +924,7 @@ const Sales = ({ user }) => {
               resetForm();
               setDialogOpen(true);
             }}
-            className="btn-gold shadow-gold-glow spring-transition"
+            className="btn-gold shadow-gold-glow"
           >
             <Plus className="w-4 h-4 mr-2" />
             Nova Venda
@@ -1116,50 +950,11 @@ const Sales = ({ user }) => {
             user={user}
           />
         </div>
-      </motion.div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total de Vendas"
-          value={stats.totalSales}
-          subtitle={`${filteredSales.length} vendas`}
-          icon={ShoppingCart}
-          gradient="from-blue-600 to-blue-700"
-          delay={0}
-        />
-        <StatCardGold
-          title="Comissões Totais"
-          value={`€${stats.totalCommission.toFixed(2)}`}
-          subtitle="Total acumulado"
-          icon={Euro}
-          delay={0.1}
-        />
-        <StatCard
-          title="Vendas Ativas"
-          value={stats.activeSales}
-          subtitle="Contratos ativos"
-          icon={CheckCircle}
-          gradient="from-green-600 to-green-700"
-          delay={0.2}
-        />
-        <StatCard
-          title="Pendentes"
-          value={stats.pendingSales}
-          subtitle="Aguardando aprovação"
-          icon={TrendingUp}
-          gradient="from-orange-600 to-orange-700"
-          delay={0.3}
-        />
       </div>
 
-      {/* View Mode Selector */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2, duration: 0.3 }}
-        className="flex gap-2 p-1 glass-ultra rounded-lg w-fit"
-      >
+
+      {/* Seletor Vendas/Propostas */}
+      <div className="flex gap-2 mb-4 p-1 bg-gray-100 rounded-lg w-fit">
         <Button
           onClick={() => {
             setViewMode("sales");
@@ -1167,7 +962,7 @@ const Sales = ({ user }) => {
           }}
           variant={viewMode === "sales" ? "default" : "ghost"}
           size="sm"
-          className={viewMode === "sales" ? "bg-gradient-to-r from-navy-900 to-navy-800 text-white hover:from-navy-800 hover:to-navy-700" : ""}
+          className={viewMode === "sales" ? "bg-[#1F4E78] text-white hover:bg-[#16395A]" : ""}
         >
           Vendas
         </Button>
@@ -1178,69 +973,53 @@ const Sales = ({ user }) => {
           }}
           variant={viewMode === "proposals" ? "default" : "ghost"}
           size="sm"
-          className={viewMode === "proposals" ? "bg-gradient-to-r from-navy-900 to-navy-800 text-white hover:from-navy-800 hover:to-navy-700" : ""}
+          className={viewMode === "proposals" ? "bg-[#1F4E78] text-white hover:bg-[#16395A]" : ""}
         >
           Propostas
         </Button>
-      </motion.div>
+      </div>
 
-      {/* Status Filters */}
+      {/* Filtros de Status (sempre visíveis) */}
       {viewMode === "sales" && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-          className="flex flex-wrap gap-2"
-        >
-          <Button onClick={() => setSelectedStatus("")} variant={selectedStatus === "" ? "default" : "outline"} size="sm" className="spring-transition">Todas</Button>
-          <Button onClick={() => setSelectedStatus("Para registo")} variant={selectedStatus === "Para registo" ? "default" : "outline"} size="sm" className="spring-transition">Para registo</Button>
-          <Button onClick={() => setSelectedStatus("Pendente")} variant={selectedStatus === "Pendente" ? "default" : "outline"} size="sm" className="spring-transition">Pendente</Button>
-          <Button onClick={() => setSelectedStatus("Concluido")} variant={selectedStatus === "Concluido" ? "default" : "outline"} size="sm" className="spring-transition">Concluído</Button>
-          <Button onClick={() => setSelectedStatus("Ativo")} variant={selectedStatus === "Ativo" ? "default" : "outline"} size="sm" className="spring-transition">Ativo</Button>
-          <Button onClick={() => setSelectedStatus("Cancelado")} variant={selectedStatus === "Cancelado" ? "default" : "outline"} size="sm" className="spring-transition">Cancelado</Button>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Button onClick={() => setSelectedStatus("")} variant={selectedStatus === "" ? "default" : "outline"} size="sm">Todas</Button>
+          <Button onClick={() => setSelectedStatus("Para registo")} variant={selectedStatus === "Para registo" ? "default" : "outline"} size="sm">Para registo</Button>
+          <Button onClick={() => setSelectedStatus("Pendente")} variant={selectedStatus === "Pendente" ? "default" : "outline"} size="sm">Pendente</Button>
+          <Button onClick={() => setSelectedStatus("Concluido")} variant={selectedStatus === "Concluido" ? "default" : "outline"} size="sm">Concluído</Button>
+          <Button onClick={() => setSelectedStatus("Ativo")} variant={selectedStatus === "Ativo" ? "default" : "outline"} size="sm">Ativo</Button>
+          <Button onClick={() => setSelectedStatus("Cancelado")} variant={selectedStatus === "Cancelado" ? "default" : "outline"} size="sm">Cancelado</Button>
 
           <Button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             variant={showAdvancedFilters ? "default" : "outline"}
             size="sm"
-            className="ml-auto gap-2 spring-transition"
+            className="ml-auto gap-2"
           >
             <Filter className="w-4 h-4" />
             Filtros Avançados
           </Button>
-        </motion.div>
+        </div>
       )}
 
       {viewMode === "proposals" && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-          className="flex flex-wrap gap-2"
-        >
+        <div className="flex flex-wrap gap-2 mb-4">
           <Button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             variant={showAdvancedFilters ? "default" : "outline"}
             size="sm"
-            className="gap-2 spring-transition"
+            className="gap-2"
           >
             <Filter className="w-4 h-4" />
             Filtros Avançados
           </Button>
-        </motion.div>
+        </div>
       )}
 
-      {/* Advanced Filters */}
+      {/* Filtros Avançados */}
       {showAdvancedFilters && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
-          className="glass-ultra p-6 space-y-4"
-        >
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold text-lg" style={{ color: '#000000' }}>Filtros Avançados</h3>
+        <div className="professional-card p-4 mb-4 space-y-4">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold text-gray-900">Filtros Avançados</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -1252,7 +1031,6 @@ const Sales = ({ user }) => {
                 setFilterStartDate("");
                 setFilterEndDate("");
               }}
-              className="text-red-600 hover:bg-red-50"
             >
               <XIcon className="w-4 h-4 mr-1" />
               Limpar Filtros
@@ -1260,6 +1038,7 @@ const Sales = ({ user }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Pesquisa por texto */}
             <div>
               <Label>Pesquisar</Label>
               <div className="relative">
@@ -1268,16 +1047,17 @@ const Sales = ({ user }) => {
                   placeholder="Código, Cliente, NIF, Contacto..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 glass-input"
+                  className="pl-10"
                 />
               </div>
             </div>
 
+            {/* Filtro por Parceiro */}
             {user?.role === 'admin' || user?.role === 'bo' ? (
               <div>
                 <Label>Parceiro</Label>
                 <Select value={selectedPartner} onValueChange={setSelectedPartner}>
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger>
                     <SelectValue placeholder="Todos os parceiros" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1290,10 +1070,11 @@ const Sales = ({ user }) => {
               </div>
             ) : null}
 
+            {/* Filtro por Operadora */}
             <div>
               <Label>Operadora</Label>
               <Select value={selectedOperator} onValueChange={setSelectedOperator}>
-                <SelectTrigger className="glass-input">
+                <SelectTrigger>
                   <SelectValue placeholder="Todas as operadoras" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1305,10 +1086,11 @@ const Sales = ({ user }) => {
               </Select>
             </div>
 
+            {/* Filtro por Âmbito */}
             <div>
               <Label>Âmbito</Label>
               <Select value={selectedScope} onValueChange={setSelectedScope}>
-                <SelectTrigger className="glass-input">
+                <SelectTrigger>
                   <SelectValue placeholder="Todos os âmbitos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1320,51 +1102,156 @@ const Sales = ({ user }) => {
               </Select>
             </div>
 
+            {/* Filtro por Data Início */}
             <div>
               <Label>Data de Início</Label>
               <Input
                 type="date"
                 value={filterStartDate}
                 onChange={(e) => setFilterStartDate(e.target.value)}
-                className="glass-input"
               />
             </div>
 
+            {/* Filtro por Data Fim */}
             <div>
               <Label>Data de Fim</Label>
               <Input
                 type="date"
                 value={filterEndDate}
                 onChange={(e) => setFilterEndDate(e.target.value)}
-                className="glass-input"
               />
             </div>
           </div>
 
-          <div className="text-sm pt-2 border-t border-white/10" style={{ color: '#7a7a7a' }}>
+          {/* Contador de resultados */}
+          <div className="text-sm text-gray-600 pt-2 border-t">
             {filteredSales.length} venda(s) encontrada(s) {filteredSales.length !== sales.length && `de ${sales.length} total`}
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.4 }}
-      >
-        <ResponsiveTable
-          headers={headers}
-          data={paginatedSales}
-          renderRow={renderRow}
-          renderMobileCard={renderMobileCard}
-          emptyMessage="Nenhuma venda encontrada"
-        />
+      <div className="professional-card p-6">
+        <div className="table-container overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th onClick={() => handleSort('sale_code')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Código <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('date')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Data <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('partner_name')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Parceiro <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('scope')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Âmbito <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('client_name')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Cliente <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('operator_name')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Operadora <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('status')} className="cursor-pointer hover:bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    Status <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
+                  <th onClick={() => handleSort('commission')} className="cursor-pointer hover:bg-gray-50">
+                    <div className="flex items-center gap-1">
+                      Comissão <ArrowUpDown className="w-3 h-3" />
+                    </div>
+                  </th>
+                )}
+                <th className="text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSales.length === 0 ? (
+                <tr><td colSpan={user?.role === 'partner_commercial' ? 7 : 9} className="text-center py-8 text-gray-400">Nenhuma venda encontrada</td></tr>
+              ) : (
+                paginatedSales.map((sale) => (
+                  <tr key={sale.id}>
+                    <td>
+                      <span className="font-semibold text-gray-900">
+                        {sale.sale_code}
+                      </span>
+                    </td>
+                    <td>{new Date(sale.date).toLocaleDateString('pt-PT')}</td>
+                    <td>{partners.find(p => p.id === sale.partner_id)?.name}</td>
+                    <td className="capitalize">{sale.scope}</td>
+                    <td>{sale.client_name}</td>
+                    <td>{operators.find(o => o.id === sale.operator_id)?.name}</td>
+                    <td><span className={`status-badge status-${sale.status.toLowerCase().replace(' ', '-')}`}>{sale.status}</span></td>
+                    {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
+                      <td className="font-semibold text-green-600">
+                        {(() => {
+                          const commission = sale.manual_commission || sale.calculated_commission;
+                          return commission ? `€${parseFloat(commission).toFixed(2)}` : '-';
+                        })()}
+                      </td>
+                    )}
+                    <td className="text-center">
+                      <div className="flex gap-2 justify-center">
+                        {(user?.role === 'admin' || user?.role === 'bo') ? (
+                          <Button
+                            onClick={() => openEditDialog(sale)}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-600"
+                          >
+                            Editar
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => {
+                              setSelectedSaleId(sale.id);
+                              setDetailDialogOpen(true);
+                            }}
+                            size="sm"
+                            variant="ghost"
+                            className="text-blue-600"
+                          >
+                            Visualizar
+                          </Button>
+                        )}
+                        {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
+                          <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600">
+                            Notas ({sale.notes?.length || 0})
+                          </Button>
+                        )}
+                        {user?.role === 'admin' && (
+                          <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        {/* Pagination */}
+        {/* Pagination Controls */}
         {filteredSales.length > 0 && (
-          <div className="mt-6 glass-ultra p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-sm" style={{ color: '#7a7a7a' }}>
+          <div className="mt-4 flex items-center justify-between border-t pt-4">
+            <div className="text-sm text-gray-600">
               A mostrar {startIndex + 1} a {Math.min(endIndex, sortedSales.length)} de {sortedSales.length} vendas
             </div>
             <div className="flex items-center gap-2">
@@ -1373,7 +1260,6 @@ const Sales = ({ user }) => {
                 size="sm"
                 onClick={goToFirstPage}
                 disabled={currentPage === 1}
-                className="spring-transition"
               >
                 Primeira
               </Button>
@@ -1382,7 +1268,6 @@ const Sales = ({ user }) => {
                 size="sm"
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className="spring-transition"
               >
                 Anterior
               </Button>
@@ -1400,7 +1285,7 @@ const Sales = ({ user }) => {
                         variant={currentPage === pageNum ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={currentPage === pageNum ? "bg-gradient-to-r from-navy-900 to-navy-800 text-white hover:from-navy-800 hover:to-navy-700" : "spring-transition"}
+                        className={currentPage === pageNum ? "bg-[#1F4E78] text-white hover:bg-[#16395A]" : ""}
                       >
                         {pageNum}
                       </Button>
@@ -1416,7 +1301,6 @@ const Sales = ({ user }) => {
                 size="sm"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="spring-transition"
               >
                 Próxima
               </Button>
@@ -1425,20 +1309,19 @@ const Sales = ({ user }) => {
                 size="sm"
                 onClick={goToLastPage}
                 disabled={currentPage === totalPages}
-                className="spring-transition"
               >
                 Última
               </Button>
             </div>
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Edit Sale Dialog (Admin/BO) */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle style={{ color: '#000000' }}>Editar Venda - {editingSale?.sale_code}</DialogTitle>
+            <DialogTitle>Editar Venda - {editingSale?.sale_code}</DialogTitle>
             <DialogDescription>Altere os campos necessários</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
@@ -1451,7 +1334,6 @@ const Sales = ({ user }) => {
                   max={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
                   required
-                  className="glass-input"
                 />
                 <p className="text-xs text-gray-500 mt-1">Data não pode ser futura</p>
               </div>
@@ -1469,7 +1351,7 @@ const Sales = ({ user }) => {
                     setEditFormData(newFormData);
                   }}
                 >
-                  <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Para registo">Para registo</SelectItem>
                     <SelectItem value="Pendente">Pendente</SelectItem>
@@ -1487,7 +1369,7 @@ const Sales = ({ user }) => {
                   value={editFormData.partner_id || ""}
                   onValueChange={(v) => setEditFormData({...editFormData, partner_id: v === "admin_commissioned" ? null : v})}
                 >
-                  <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
                     {user?.is_commissioned && (
                       <SelectItem value="admin_commissioned">Venda Própria (Admin Comissionado)</SelectItem>
@@ -1500,7 +1382,7 @@ const Sales = ({ user }) => {
               <div>
                 <Label>Tipo de Cliente *</Label>
                 <Select value={editFormData.client_type} onValueChange={(v) => setEditFormData({...editFormData, client_type: v})}>
-                  <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="particular">Particular</SelectItem>
                     <SelectItem value="empresarial">Empresarial</SelectItem>
@@ -1514,7 +1396,7 @@ const Sales = ({ user }) => {
                   value={editFormData.operator_id}
                   onValueChange={(v) => setEditFormData({...editFormData, operator_id: v})}
                 >
-                  <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                   <SelectContent>
                     {operators.map(op => (
                       <SelectItem key={op.id} value={op.id}>
@@ -1555,7 +1437,6 @@ const Sales = ({ user }) => {
                   value={editFormData.client_contact}
                   onChange={(e) => setEditFormData({...editFormData, client_contact: e.target.value})}
                   required
-                  className="glass-input"
                 />
               </div>
 
@@ -1565,7 +1446,6 @@ const Sales = ({ user }) => {
                   type="email"
                   value={editFormData.client_email}
                   onChange={(e) => setEditFormData({...editFormData, client_email: e.target.value})}
-                  className="glass-input"
                 />
               </div>
 
@@ -1574,7 +1454,6 @@ const Sales = ({ user }) => {
                 <Input
                   value={editFormData.client_iban}
                   onChange={(e) => setEditFormData({...editFormData, client_iban: e.target.value})}
-                  className="glass-input"
                 />
               </div>
 
@@ -1629,7 +1508,7 @@ const Sales = ({ user }) => {
                   <div>
                     <Label>Tipo de Serviço</Label>
                     <Select value={editFormData.service_type} onValueChange={(v) => setEditFormData({...editFormData, service_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="NI">NI (Nova Instalação)</SelectItem>
                         <SelectItem value="MC">MC (Mudança de Casa)</SelectItem>
@@ -1641,7 +1520,7 @@ const Sales = ({ user }) => {
                   <div>
                     <Label>Tipo de Ativação</Label>
                     <Select value={editFormData.activation_type} onValueChange={(v) => setEditFormData({...editFormData, activation_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Fast">Fast</SelectItem>
                         <SelectItem value="Normal">Normal</SelectItem>
@@ -1655,7 +1534,6 @@ const Sales = ({ user }) => {
                       value={editFormData.request_number}
                       onChange={(e) => setEditFormData({...editFormData, request_number: e.target.value})}
                       placeholder="Número de requisição"
-                      className="glass-input"
                     />
                   </div>
 
@@ -1669,7 +1547,6 @@ const Sales = ({ user }) => {
                           value={editFormData.current_monthly_fee}
                           onChange={(e) => setEditFormData({...editFormData, current_monthly_fee: e.target.value})}
                           placeholder="Ex: 45.00"
-                          className="glass-input"
                         />
                       </div>
                       <div>
@@ -1680,7 +1557,6 @@ const Sales = ({ user }) => {
                           value={editFormData.contracted_monthly_fee}
                           onChange={(e) => setEditFormData({...editFormData, contracted_monthly_fee: e.target.value})}
                           placeholder="Ex: 35.00"
-                          className="glass-input"
                         />
                       </div>
                     </>
@@ -1692,7 +1568,6 @@ const Sales = ({ user }) => {
                         step="0.01"
                         value={editFormData.monthly_value}
                         onChange={(e) => setEditFormData({...editFormData, monthly_value: e.target.value})}
-                        className="glass-input"
                       />
                     </div>
                   )}
@@ -1738,7 +1613,7 @@ const Sales = ({ user }) => {
                           min="0"
                           value={editFormData.mobile_count}
                           onChange={(e) => setEditFormData({...editFormData, mobile_count: parseInt(e.target.value) || 0})}
-                          className="mt-1 glass-input"
+                          className="mt-1"
                         />
                       </div>
                     </div>
@@ -1754,13 +1629,12 @@ const Sales = ({ user }) => {
                       value={editFormData.cpe}
                       onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
                       placeholder="PT0002XXXXXXXXXXXX"
-                      className="glass-input"
                     />
                   </div>
                   <div>
                     <Label>Potência</Label>
                     <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                       </SelectContent>
@@ -1774,7 +1648,7 @@ const Sales = ({ user }) => {
                   <div>
                     <Label>Tipo de Venda Energia</Label>
                     <Select value={editFormData.energy_sale_type} onValueChange={(v) => setEditFormData({...editFormData, energy_sale_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="eletricidade">Eletricidade</SelectItem>
                         <SelectItem value="gas">Gás</SelectItem>
@@ -1786,7 +1660,7 @@ const Sales = ({ user }) => {
                   <div>
                     <Label>Tipo de Entrada</Label>
                     <Select value={editFormData.entry_type} onValueChange={(v) => setEditFormData({...editFormData, entry_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
                         <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
@@ -1803,13 +1677,12 @@ const Sales = ({ user }) => {
                           value={editFormData.cpe}
                           onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
                           placeholder="PT0002XXXXXXXXXXXX"
-                          className="glass-input"
                         />
                       </div>
                       <div>
                         <Label>Potência</Label>
                         <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
-                          <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
                             {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                           </SelectContent>
@@ -1826,13 +1699,12 @@ const Sales = ({ user }) => {
                           value={editFormData.cui}
                           onChange={(e) => setEditFormData({...editFormData, cui: e.target.value.toUpperCase()})}
                           placeholder="PT16XXXXXXXXXXXXXX"
-                          className="glass-input"
                         />
                       </div>
                       <div>
                         <Label>Escalão</Label>
                         <Select value={editFormData.tier} onValueChange={(v) => setEditFormData({...editFormData, tier: v})}>
-                          <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Escalão 1">Escalão 1</SelectItem>
                             <SelectItem value="Escalão 2">Escalão 2</SelectItem>
@@ -1874,7 +1746,6 @@ const Sales = ({ user }) => {
                   value={editFormData.observations}
                   onChange={(e) => setEditFormData({...editFormData, observations: e.target.value})}
                   rows={3}
-                  className="glass-input"
                 />
               </div>
 
@@ -1904,7 +1775,6 @@ const Sales = ({ user }) => {
                     type="date"
                     value={editFormData.payment_date}
                     onChange={(e) => setEditFormData({...editFormData, payment_date: e.target.value})}
-                    className="glass-input"
                   />
                 </div>
               )}
@@ -1925,7 +1795,7 @@ const Sales = ({ user }) => {
                       onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
                       placeholder={hasAutomaticCommission ? "Deixar vazio para cálculo automático" : "Definir comissão"}
                       disabled={!canEditCommission}
-                      className={!canEditCommission ? "bg-gray-100 cursor-not-allowed" : "glass-input"}
+                      className={!canEditCommission ? "bg-gray-100 cursor-not-allowed" : ""}
                     />
                     {hasAutomaticCommission && commissionChanged && editFormData.manual_commission && (
                       <Alert className="mt-2 bg-amber-50 border-amber-300">
@@ -1950,7 +1820,7 @@ const Sales = ({ user }) => {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)} className="btn-secondary">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Cancelar
               </Button>
               <Button type="submit" className="btn-primary">
@@ -1973,9 +1843,9 @@ const Sales = ({ user }) => {
       {/* Validation Warnings Dialog */}
       {validationWarnings.length > 0 && (
         <Dialog open={true} onOpenChange={() => handleCancelWarnings()}>
-          <DialogContent className="glass-ultra">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2" style={{ color: '#000000' }}>
+              <DialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
                 Aviso de Validação
               </DialogTitle>
@@ -1997,7 +1867,7 @@ const Sales = ({ user }) => {
                 </AlertDescription>
               </Alert>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={handleCancelWarnings} className="btn-secondary">
+                <Button variant="outline" onClick={handleCancelWarnings}>
                   Voltar e Corrigir
                 </Button>
                 <Button onClick={handleContinueWithWarnings} className="bg-amber-500 hover:bg-amber-600">
@@ -2011,12 +1881,13 @@ const Sales = ({ user }) => {
 
       {/* Notes Dialog */}
       <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
-        <DialogContent className="glass-ultra max-w-2xl">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle style={{ color: '#000000' }}>Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
+            <DialogTitle>Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
             <DialogDescription>Visualize e adicione notas a esta venda</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
+            {/* Add Note */}
             <div className="space-y-2">
               <Label>Adicionar Nota</Label>
               <Textarea
@@ -2024,7 +1895,6 @@ const Sales = ({ user }) => {
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Escreva uma nota..."
                 rows={3}
-                className="glass-input"
               />
 
               <div className="flex items-center gap-2">
@@ -2053,8 +1923,9 @@ const Sales = ({ user }) => {
               </Button>
             </div>
 
+            {/* Notes List */}
             <div className="space-y-2">
-              <h3 className="font-semibold" style={{ color: '#000000' }}>Histórico de Notas (últimas 3):</h3>
+              <h3 className="font-semibold text-gray-900">Histórico de Notas (últimas 3):</h3>
               {(!selectedSaleForNotes?.notes || selectedSaleForNotes.notes.length === 0) ? (
                 <p className="text-gray-500 text-sm py-4 text-center">Nenhuma nota ainda</p>
               ) : (
@@ -2115,17 +1986,18 @@ const Sales = ({ user }) => {
           </div>
         </DialogContent>
       </Dialog>
+
       <SalesImport
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImportComplete={fetchData}
       />
 
-      {/* Recalculate Commissions Dialog (lines 1997-2044) */}
+      {/* Recalculate Commissions Dialog */}
       <Dialog open={recalcDialogOpen} onOpenChange={setRecalcDialogOpen}>
-        <DialogContent className="glass-ultra">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle style={{ color: '#000000' }}>Recalcular Comissões</DialogTitle>
+            <DialogTitle>Recalcular Comissões</DialogTitle>
             <DialogDescription>
               Escolha a data a partir da qual as comissões devem ser recalculadas. Vendas anteriores a esta data não serão afetadas.
             </DialogDescription>
@@ -2138,7 +2010,6 @@ const Sales = ({ user }) => {
                 value={recalcStartDate}
                 onChange={(e) => setRecalcStartDate(e.target.value)}
                 placeholder="Deixe vazio para recalcular todas"
-                className="glass-input"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Se deixar vazio, todas as comissões serão recalculadas desde sempre.
@@ -2156,7 +2027,7 @@ const Sales = ({ user }) => {
               <Button variant="outline" onClick={() => {
                 setRecalcDialogOpen(false);
                 setRecalcStartDate("");
-              }} className="btn-secondary">
+              }}>
                 Cancelar
               </Button>
               <Button
