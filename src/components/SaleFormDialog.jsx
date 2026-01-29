@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock } from 'lucide-react';
+import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
