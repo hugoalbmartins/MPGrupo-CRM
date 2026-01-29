@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/useUsersData";
 import { usePartners } from "@/hooks/usePartnersData";
 import { usersService } from "../services/usersService";
+import { partnersService } from "../services/partnersService";
 import { generateStrongPassword } from "../lib/utils-crm";
 
 const Users = ({ user }) => {
