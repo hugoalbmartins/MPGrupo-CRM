@@ -211,6 +211,82 @@ const Dashboard = ({ user }) => {
     </>
   );
 
+  const renderD2DPartnerDashboard = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
+              <p className="text-3xl font-bold text-navy-900">{stats?.total_sales || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center shadow-lg">
+              <ShoppingCart className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Telecomunicações</p>
+              <p className="text-2xl font-bold color-cyan">{stats?.telecomunicacoes?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-cyan rounded-full flex items-center justify-center">
+              <Phone className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Energia</p>
+              <p className="text-2xl font-bold color-orange">{stats?.energia?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange rounded-full flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Solar</p>
+              <p className="text-2xl font-bold color-green">{stats?.solar?.count || 0}</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+              <Sun className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {stats?.operator_stats && stats.operator_stats.length > 0 && (
+        <div className="glass-ultra p-6">
+          <h3 className="text-xl font-bold mb-6" style={{ color: '#000000' }}>Vendas por Operadora</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stats.operator_stats.map((operator) => (
+              <div key={operator.id} className="stat-card">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">{operator.name}</p>
+                    <p className="text-2xl font-bold text-navy-900">{operator.count}</p>
+                    <p className="text-xs text-gray-500 mt-1">vendas</p>
+                  </div>
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                    <ShoppingCart className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   const renderPartnerDashboard = () => (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -895,7 +971,7 @@ const Dashboard = ({ user }) => {
           <TabsContent value="total" className="space-y-6">
             {user?.role === 'admin' && renderAdminDashboard()}
             {user?.role === 'gestor_nv1' && renderManagerLevel1Dashboard()}
-            {user?.role === 'partner' && renderPartnerDashboard()}
+            {user?.role === 'partner' && (['D2D_1', 'D2D_2', 'D2D_3'].includes(stats?.partner_type) ? renderD2DPartnerDashboard() : renderPartnerDashboard())}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {statusData.length > 0 && (

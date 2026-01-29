@@ -23,10 +23,11 @@ export const dashboardService = {
       case 'partner':
         const { data: partner } = await supabase
           .from('partners')
-          .select('id')
+          .select('id, partner_type')
           .eq('user_id', user.id)
           .single();
-        return await getPartnerDashboard(partner?.id, selectedYear, selectedMonth);
+        const dashboardData = await getPartnerDashboard(partner?.id, selectedYear, selectedMonth);
+        return { ...dashboardData, partner_type: partner?.partner_type };
       case 'partner_commercial':
         return await getCommercialDashboard(user.id, selectedYear, selectedMonth);
       case 'gestor_nv1':
@@ -213,14 +214,20 @@ async function calculateNetCommission(sales) {
   };
 }
 
-async function getLast12MonthsData() {
+async function getLast12MonthsData(partnerId = null) {
   const now = new Date();
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
-  const { data: sales } = await supabase
+  let query = supabase
     .from('sales')
     .select('date, scope')
     .gte('date', twelveMonthsAgo.toISOString().split('T')[0]);
+
+  if (partnerId) {
+    query = query.eq('partner_id', partnerId);
+  }
+
+  const { data: sales } = await query;
 
   const monthlyData = {};
 
@@ -470,7 +477,7 @@ async function getBODashboard(year, month) {
 async function getPartnerDashboard(partnerId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const [salesResult, last12Months] = await Promise.all([
+  const [salesResult, last12Months, operatorsResult] = await Promise.all([
     supabase
       .from('sales')
       .select('*')
@@ -478,10 +485,15 @@ async function getPartnerDashboard(partnerId, year, month) {
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta'),
-    getLast12MonthsData()
+    getLast12MonthsData(partnerId),
+    supabase
+      .from('operators')
+      .select('id, name')
+      .eq('hidden', false)
   ]);
 
   const sales = salesResult.data;
+  const operators = operatorsResult.data || [];
   const retentions = await calculateRetentions(year, month);
   const netCommissions = await calculateNetCommission(sales);
 
@@ -492,6 +504,7 @@ async function getPartnerDashboard(partnerId, year, month) {
     solar: { count: 0 },
     dual: { count: 0 },
     by_status: {},
+    by_operator: {},
     total_commission_gross: netCommissions.gross,
     total_commission: netCommissions.net,
     total_retention: netCommissions.retention,
@@ -535,6 +548,7 @@ async function getPartnerDashboard(partnerId, year, month) {
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
+      stats.by_operator[sale.operator_id] = (stats.by_operator[sale.operator_id] || 0) + 1;
 
       if (sale.paid_to_operator) {
         stats.commission_paid += commission;
@@ -547,7 +561,13 @@ async function getPartnerDashboard(partnerId, year, month) {
     });
   }
 
-  return stats;
+  const operatorStats = operators.map(op => ({
+    id: op.id,
+    name: op.name,
+    count: stats.by_operator[op.id] || 0
+  }));
+
+  return { ...stats, operator_stats: operatorStats };
 }
 
 async function getCommercialDashboard(userId, year, month) {

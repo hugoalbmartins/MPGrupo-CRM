@@ -18,6 +18,7 @@ const Layout = ({ children, user, onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [partnerType, setPartnerType] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -28,12 +29,32 @@ const Layout = ({ children, user, onLogout }) => {
         fetchUnreadCount();
       });
 
+      if (user.role === 'partner') {
+        fetchPartnerType();
+      }
+
       return () => {
         clearInterval(interval);
         if (unsubscribe) unsubscribe();
       };
     }
   }, [user]);
+
+  const fetchPartnerType = async () => {
+    try {
+      const { data } = await supabase
+        .from('partners')
+        .select('partner_type')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (data) {
+        setPartnerType(data.partner_type);
+      }
+    } catch (error) {
+      console.error('Failed to fetch partner type:', error);
+    }
+  };
 
   const fetchUnreadCount = async () => {
     try {
@@ -44,12 +65,14 @@ const Layout = ({ children, user, onLogout }) => {
     }
   };
 
+  const isD2DPartner = user?.role === 'partner' && ['D2D_1', 'D2D_2', 'D2D_3'].includes(partnerType);
+
   const menuItems = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"] },
+    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], excludeD2D: true },
     { path: "/partners", label: "Parceiros", icon: Users, roles: ["admin", "bo", "gestor_nv1"] },
     { path: "/sales", label: "Vendas", icon: ShoppingCart, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"] },
     { path: "/forms", label: "Formulários", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"] },
-    { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], badge: unreadCount },
+    { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], badge: unreadCount, excludeD2D: true },
   ];
 
   if (user?.role === "admin") {
@@ -66,12 +89,18 @@ const Layout = ({ children, user, onLogout }) => {
       { path: "/operator-validations", label: "Validações", icon: CheckSquare, roles: ["bo"] }
     );
   } else if (user?.role === "partner") {
-    menuItems.push(
-      { path: "/my-reports", label: "Meus Autos", icon: FileSpreadsheet, roles: ["partner"] }
-    );
+    if (!isD2DPartner) {
+      menuItems.push(
+        { path: "/my-reports", label: "Meus Autos", icon: FileSpreadsheet, roles: ["partner"] }
+      );
+    }
   }
 
-  const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!item.roles.includes(user?.role)) return false;
+    if (isD2DPartner && item.excludeD2D) return false;
+    return true;
+  });
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
