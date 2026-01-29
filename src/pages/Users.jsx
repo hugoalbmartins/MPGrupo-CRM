@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search, ArrowUpDown, ArrowUp, ArrowDown, Loader2, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -37,19 +37,24 @@ const Users = ({ user }) => {
     is_commissioned: false
   });
 
-  const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useQuery({
+  const { data: users = [], isLoading: usersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['users'],
     queryFn: () => usersService.getAll(),
     staleTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const { data: partners = [], isLoading: partnersLoading } = useQuery({
+  const { data: partners = [], isLoading: partnersLoading, error: partnersError } = useQuery({
     queryKey: ['partners'],
     queryFn: () => partnersService.getAll(),
     staleTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const loading = usersLoading || partnersLoading;
+  const hasError = usersError || partnersError;
 
   const generatePassword = () => {
     const password = generateStrongPassword();
@@ -254,6 +259,26 @@ const Users = ({ user }) => {
           <div className="h-8 bg-slate-200 rounded-lg w-48 animate-pulse"></div>
         </div>
         <SkeletonTable rows={8} columns={6} />
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="space-y-6 p-6 animate-fade-in">
+        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Utilizadores</h1>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-red-900 mb-2">Erro ao carregar utilizadores</h3>
+          <p className="text-sm text-red-700 mb-4">
+            {usersError?.message || partnersError?.message || 'Não foi possível conectar ao servidor. Verifique sua conexão.'}
+          </p>
+          <Button onClick={() => { refetchUsers(); }} className="btn-gold">
+            Tentar Novamente
+          </Button>
+        </div>
       </div>
     );
   }

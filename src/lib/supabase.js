@@ -16,12 +16,33 @@ export const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUr
     detectSessionInUrl: true,
     storage: window.localStorage,
     storageKey: 'supabase.auth.token',
+    flowType: 'pkce',
   },
   global: {
     headers: {
       'X-Client-Info': 'supabase-js-web'
+    },
+    fetch: (url, options = {}) => {
+      return fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(30000),
+      }).catch(error => {
+        console.error('Fetch error:', error.message);
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout - please check your connection');
+        }
+        throw error;
+      });
     }
-  }
+  },
+  db: {
+    schema: 'public',
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
 }) : null;
 
 if (supabase) {

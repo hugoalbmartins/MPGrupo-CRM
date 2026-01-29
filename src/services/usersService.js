@@ -5,16 +5,24 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export const usersService = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('users')
-      .select(`
-        *,
-        partner:partners(partner_type, name)
-      `)
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          partner:partners(partner_type, name)
+        `)
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data || [];
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Unexpected error in getAll:', error);
+      throw error;
+    }
   },
 
   async create(userData) {

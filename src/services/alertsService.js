@@ -50,18 +50,29 @@ export const alertsService = {
   },
 
   async getUnreadCount() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.warn('Auth error in getUnreadCount:', authError);
+        return 0;
+      }
 
-    const { count, error } = await supabase
-      .from('alerts')
-      .select('*', { count: 'exact', head: true })
-      .overlaps('user_ids', [user.id])
-      .is('archived_at', null)
-      .not('read_by', 'cs', `{${user.id}}`);
+      const { count, error } = await supabase
+        .from('alerts')
+        .select('*', { count: 'exact', head: true })
+        .overlaps('user_ids', [user.id])
+        .is('archived_at', null)
+        .not('read_by', 'cs', `{${user.id}}`);
 
-    if (error) throw error;
-    return count || 0;
+      if (error) {
+        console.warn('Error fetching unread count:', error);
+        return 0;
+      }
+      return count || 0;
+    } catch (error) {
+      console.warn('Unexpected error in getUnreadCount:', error);
+      return 0;
+    }
   },
 
   async markAsRead(alertIds) {
