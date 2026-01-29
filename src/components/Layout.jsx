@@ -81,7 +81,7 @@ const Layout = ({ children, user, onLogout }) => {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      <div className="h-screen flex overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         {/* Desktop Sidebar */}
         <motion.aside
           initial={false}
@@ -333,25 +333,27 @@ const Layout = ({ children, user, onLogout }) => {
             marginLeft: window.innerWidth >= 1024 ? (sidebarCollapsed ? 80 : 280) : 0,
           }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="flex-1 flex flex-col min-h-screen"
+          className="flex-1 flex flex-col h-screen overflow-hidden"
         >
           {/* Breadcrumbs Bar */}
-          <div className="sticky top-0 z-20 glass-card border-b border-navy-100/40 backdrop-blur-xl mt-0 lg:mt-0 pt-20 lg:pt-0">
+          <div className="flex-shrink-0 z-20 glass-card border-b border-navy-100/40 backdrop-blur-xl mt-0 lg:mt-0 pt-20 lg:pt-0">
             <div className="px-6 py-4">
               <Breadcrumbs />
             </div>
           </div>
 
           {/* Page Content */}
-          <div className="flex-1 p-6 lg:p-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="max-w-full"
-            >
-              {children}
-            </motion.div>
+          <div className="flex-1 overflow-y-auto overflow-x-auto scrollbar-modern">
+            <div className="p-6 lg:p-8 min-w-fit min-h-full">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="max-w-full"
+              >
+                {children}
+              </motion.div>
+            </div>
           </div>
         </motion.main>
       </div>
