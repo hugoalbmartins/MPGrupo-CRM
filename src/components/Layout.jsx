@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe
+  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
@@ -13,6 +13,7 @@ const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [partnerType, setPartnerType] = useState(null);
 
@@ -105,182 +106,196 @@ const Layout = ({ children, user, onLogout }) => {
     navigate('/login');
   };
 
-  return (
-    <div className="h-screen flex overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col fixed h-screen w-[280px] glass-sidebar shadow-2xl shadow-gray-900/20 z-30">
-          {/* Logo Section */}
-          <div className="relative p-6 border-b border-gold-400/30">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
-                <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold tracking-tight text-navy-900">MP GRUPO</h1>
-                <p className="text-xs font-medium text-gold-600">Sales CRM</p>
-              </div>
-            </div>
-          </div>
+  const sidebarWidth = sidebarCollapsed ? 'w-[80px]' : 'w-[280px]';
+  const mainMargin = sidebarCollapsed ? 'lg:ml-[80px]' : 'lg:ml-[280px]';
 
-          {/* Navigation Menu */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-modern">
-            {filteredMenuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`group flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
-                    isActive
-                      ? "nav-item-active transform scale-105"
-                      : "nav-item hover:scale-105"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 mr-3 transition-transform group-hover:scale-110 flex-shrink-0" />
+  return (
+    <div className="h-screen flex overflow-hidden">
+      <aside className={`hidden lg:flex lg:flex-col fixed h-screen ${sidebarWidth} glass-sidebar shadow-premium z-30 transition-all duration-300`}>
+        <div className="relative p-4 border-b border-gold-400/30">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow flex-shrink-0">
+              <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
+            </div>
+            {!sidebarCollapsed && (
+              <div className="overflow-hidden">
+                <h1 className="text-base font-bold tracking-tight text-cream-50">MP GRUPO</h1>
+                <p className="text-xs font-medium text-gold-400">Sales CRM</p>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gold-400 text-chocolate-900 flex items-center justify-center shadow-lg hover:bg-gold-300 transition-colors"
+          >
+            <ChevronLeft className={`w-4 h-4 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-premium">
+          {filteredMenuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                title={sidebarCollapsed ? item.label : undefined}
+                className={`group flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'px-4'} py-3.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
+                  isActive
+                    ? "nav-item-active"
+                    : "nav-item hover:scale-[1.02]"
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${sidebarCollapsed ? '' : 'mr-3'} transition-transform group-hover:scale-110 flex-shrink-0`} />
+                {!sidebarCollapsed && (
                   <span className="text-sm font-medium whitespace-nowrap">
                     {item.label}
                   </span>
-                  {item.badge > 0 && (
-                    <span className="ml-auto text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg ring-2 ring-white">
-                      {item.badge > 99 ? '99+' : item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+                )}
+                {item.badge > 0 && (
+                  <span className={`${sidebarCollapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg ring-2 ring-chocolate-800`}>
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* User Profile Section */}
-          <div className="border-t border-gold-400/30 p-4 space-y-2">
-            <Link
-              to="/profile"
-              className="block px-4 py-3 rounded-xl hover:bg-gold-100/30 transition-all duration-300"
-            >
-              <p className="text-xs font-medium mb-2 text-navy-600">Conectado como</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow">
-                  {user?.name?.charAt(0) || 'U'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate text-navy-900">{user?.name}</p>
-                  <p className="text-xs truncate text-gold-600">{user?.position || user?.role}</p>
-                </div>
+        <div className="border-t border-gold-400/30 p-3 space-y-2">
+          <Link
+            to="/profile"
+            className={`block ${sidebarCollapsed ? 'p-2' : 'px-4 py-3'} rounded-xl hover:bg-white/10 transition-all duration-300`}
+          >
+            {sidebarCollapsed ? (
+              <div className="w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-chocolate-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow">
+                {user?.name?.charAt(0) || 'U'}
               </div>
-            </Link>
-
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-100/30 hover:text-red-700 transition-all duration-300"
-            >
-              <LogOut className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm font-medium">Sair</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* Mobile Header & Navigation */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-40 glass-top-bar backdrop-blur-xl">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50">
-                <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold text-navy-900">MP GRUPO</h1>
-                <p className="text-xs text-gold-600">Sales CRM</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-xl hover:bg-navy-50 transition-colors"
-            >
-              {sidebarOpen ? <X className="w-6 h-6 text-navy-900" /> : <Menu className="w-6 h-6 text-navy-900" />}
-            </button>
-          </div>
-
-          {/* Mobile Accordion Menu */}
-          <AnimatePresence>
-            {sidebarOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="border-t border-navy-100/40 overflow-hidden"
-              >
-                <div className="p-4 space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-modern">
-                  {filteredMenuItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                          isActive
-                            ? "bg-gradient-to-r from-gold-400 to-gold-500 text-navy-900 shadow-lg"
-                            : "hover:bg-navy-50 text-navy-700"
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="text-sm font-medium flex-1">{item.label}</span>
-                        {item.badge > 0 && (
-                          <span className="text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg">
-                            {item.badge > 99 ? '99+' : item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-
-                  <div className="pt-4 mt-4 border-t border-navy-100/40 space-y-2">
-                    <Link
-                      to="/profile"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-navy-50 text-navy-700 transition-all"
-                    >
-                      <User className="w-5 h-5" />
-                      <span className="text-sm font-medium">Perfil</span>
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 transition-all"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      <span className="text-sm font-medium">Sair</span>
-                    </button>
+            ) : (
+              <>
+                <p className="text-xs font-medium mb-2 text-cream-200/70">Conectado como</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-chocolate-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow flex-shrink-0">
+                    {user?.name?.charAt(0) || 'U'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate text-cream-50">{user?.name}</p>
+                    <p className="text-xs truncate text-gold-400">{user?.position || user?.role}</p>
                   </div>
                 </div>
-              </motion.div>
+              </>
             )}
-          </AnimatePresence>
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-all duration-300`}
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {!sidebarCollapsed && <span className="text-sm font-medium">Sair</span>}
+          </button>
+        </div>
+      </aside>
+
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 glass-top-bar">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
+              <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h1 className="text-sm font-bold text-cream-50">MP GRUPO</h1>
+              <p className="text-xs text-gold-400">Sales CRM</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-xl text-cream-50 hover:bg-white/10 transition-colors"
+          >
+            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
 
-        {/* Main Content Area */}
-        <main className="flex-1 flex flex-col h-screen overflow-hidden lg:ml-[280px]">
-          {/* Breadcrumbs Bar */}
-          <div className="flex-shrink-0 z-20 glass-top-bar backdrop-blur-xl mt-0 lg:mt-0 pt-20 lg:pt-0">
-            <div className="px-6 py-4">
-              <Breadcrumbs />
-            </div>
-          </div>
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="border-t border-gold-400/20 overflow-hidden bg-chocolate-800/95 backdrop-blur-xl"
+            >
+              <div className="p-4 space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-premium">
+                {filteredMenuItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                        isActive
+                          ? "bg-gradient-to-r from-gold-400 to-gold-500 text-chocolate-900 shadow-lg"
+                          : "text-cream-100 hover:bg-white/10"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="text-sm font-medium flex-1">{item.label}</span>
+                      {item.badge > 0 && (
+                        <span className="text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg">
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
 
-          {/* Page Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-auto scrollbar-modern">
-            <div className="p-6 lg:p-8 min-w-fit min-h-full">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-full"
-              >
-                {children}
-              </motion.div>
-            </div>
-          </div>
-        </main>
+                <div className="pt-4 mt-4 border-t border-gold-400/20 space-y-2">
+                  <Link
+                    to="/profile"
+                    onClick={() => setSidebarOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-cream-100 hover:bg-white/10 transition-all"
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="text-sm font-medium">Perfil</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/20 transition-all"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="text-sm font-medium">Sair</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      <main className={`flex-1 flex flex-col h-screen overflow-hidden ${mainMargin} transition-all duration-300`}>
+        <div className="hidden lg:block flex-shrink-0 z-20 glass-card border-b border-gold-200/30">
+          <div className="px-6 py-4">
+            <Breadcrumbs />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-premium pt-20 lg:pt-0">
+          <div className="page-container min-h-full">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="content-wrapper"
+            >
+              {children}
+            </motion.div>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 };
 

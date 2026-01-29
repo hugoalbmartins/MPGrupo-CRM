@@ -53,13 +53,12 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{
-      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #404040 100%)'
+      background: 'linear-gradient(135deg, #5c3210 0%, #7B3F00 50%, #8B4513 100%)'
     }}>
-      {/* Ultra-Tech Animated Background */}
-      <div className="absolute inset-0 overflow-hidden opacity-10">
+      <div className="absolute inset-0 overflow-hidden opacity-20">
         <motion.div
           className="absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl"
-          style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #c9a12e 100%)' }}
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3]
@@ -72,7 +71,7 @@ const Login = ({ onLogin }) => {
         />
         <motion.div
           className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl"
-          style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #b08925 100%)' }}
           animate={{
             scale: [1, 1.3, 1],
             opacity: [0.2, 0.4, 0.2]
@@ -86,7 +85,7 @@ const Login = ({ onLogin }) => {
         />
         <motion.div
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl"
-          style={{ background: 'linear-gradient(135deg, #FFA500 0%, #FFD700 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #c9a12e 0%, #D4AF37 100%)' }}
           animate={{
             scale: [1, 1.4, 1],
             opacity: [0.2, 0.6, 0.2]
@@ -106,76 +105,79 @@ const Login = ({ onLogin }) => {
         initial="hidden"
         animate="visible"
       >
-        {/* Logo Card with Stagger Animation */}
         <motion.div variants={itemVariants} className="text-center mb-8">
           <motion.div
-            className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 shadow-2xl overflow-hidden glass-ultra"
+            className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 shadow-2xl overflow-hidden ring-4 ring-gold-400/30"
+            style={{ background: 'linear-gradient(135deg, #FFFDF8 0%, #FFF9ED 100%)' }}
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
           </motion.div>
           <motion.h1
-            className="text-4xl font-bold mb-2 tracking-tight"
-            style={{ color: '#FFFFFF', textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)' }}
+            className="text-4xl font-bold mb-2 tracking-tight font-display"
+            style={{ color: '#FFFDF8', textShadow: '0 2px 10px rgba(212, 175, 55, 0.4)' }}
           >
             MP GRUPO
           </motion.h1>
-          <motion.p className="font-medium" style={{ color: '#c0c0c0' }}>
+          <motion.p className="font-medium text-gold-300">
             Sales CRM Platform
           </motion.p>
         </motion.div>
 
-        {/* Login Card with Ultra-Tech Design */}
         <motion.div
           variants={itemVariants}
-          className="glass-ultra rounded-2xl shadow-2xl p-8 border border-white/20"
+          className="rounded-2xl shadow-premium p-8"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 253, 248, 0.98) 0%, rgba(255, 249, 237, 0.95) 100%)',
+            border: '1px solid rgba(212, 175, 55, 0.2)'
+          }}
         >
           <motion.div variants={itemVariants} className="mb-8">
-            <h2 className="text-2xl font-bold mb-2" style={{ color: '#000000' }}>
+            <h2 className="text-2xl font-bold mb-2 text-chocolate-800 font-display">
               Bem-vindo de volta
             </h2>
-            <p className="font-medium" style={{ color: '#7a7a7a' }}>
+            <p className="font-medium text-chocolate-600">
               Entre com as suas credenciais
             </p>
           </motion.div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <motion.div variants={itemVariants}>
-              <label htmlFor="emailOrCode" className="block text-sm font-semibold mb-2" style={{ color: '#000000' }}>
-                Email ou Código de Parceiro
+              <label htmlFor="emailOrCode" className="block text-sm font-semibold mb-2 text-chocolate-800">
+                Email ou Codigo de Parceiro
               </label>
               <input
                 id="emailOrCode"
                 type="text"
                 value={emailOrCode}
                 onChange={(e) => setEmailOrCode(e.target.value)}
-                placeholder="seu@email.com ou CÓDIGO"
+                placeholder="seu@email.com ou CODIGO"
                 required
                 data-testid="email-input"
-                className="w-full px-4 py-3 rounded-xl border-2 transition-all"
+                className="w-full px-4 py-3 rounded-xl border-2 transition-all focus:outline-none"
                 style={{
                   fontSize: '15px',
-                  borderColor: '#e0e0e0',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  color: '#000000'
+                  borderColor: 'rgba(123, 63, 0, 0.2)',
+                  backgroundColor: 'rgba(255, 253, 248, 0.9)',
+                  color: '#5c3210'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#FFD700';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(255, 215, 0, 0.1)';
+                  e.target.style.borderColor = '#D4AF37';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(212, 175, 55, 0.15)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#e0e0e0';
+                  e.target.style.borderColor = 'rgba(123, 63, 0, 0.2)';
                   e.target.style.boxShadow = 'none';
                 }}
               />
-              <p className="text-xs mt-1 font-medium" style={{ color: '#7a7a7a' }}>
-                Pode usar o seu email ou código de parceiro para entrar
+              <p className="text-xs mt-1.5 font-medium text-chocolate-500">
+                Pode usar o seu email ou codigo de parceiro para entrar
               </p>
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <label htmlFor="password" className="block text-sm font-semibold mb-2" style={{ color: '#000000' }}>
+              <label htmlFor="password" className="block text-sm font-semibold mb-2 text-chocolate-800">
                 Password
               </label>
               <div className="relative">
@@ -184,32 +186,29 @@ const Login = ({ onLogin }) => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="********"
                   required
                   data-testid="password-input"
-                  className="w-full px-4 py-3 pr-12 rounded-xl border-2 transition-all"
+                  className="w-full px-4 py-3 pr-12 rounded-xl border-2 transition-all focus:outline-none"
                   style={{
                     fontSize: '15px',
-                    borderColor: '#e0e0e0',
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    color: '#000000'
+                    borderColor: 'rgba(123, 63, 0, 0.2)',
+                    backgroundColor: 'rgba(255, 253, 248, 0.9)',
+                    color: '#5c3210'
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#FFD700';
-                    e.target.style.boxShadow = '0 0 0 4px rgba(255, 215, 0, 0.1)';
+                    e.target.style.borderColor = '#D4AF37';
+                    e.target.style.boxShadow = '0 0 0 4px rgba(212, 175, 55, 0.15)';
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#e0e0e0';
+                    e.target.style.borderColor = 'rgba(123, 63, 0, 0.2)';
                     e.target.style.boxShadow = 'none';
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1"
-                  style={{ color: '#7a7a7a' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#000000'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#7a7a7a'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1 text-chocolate-500 hover:text-chocolate-800"
                   data-testid="toggle-password"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -224,13 +223,13 @@ const Login = ({ onLogin }) => {
               data-testid="login-button"
               className="w-full py-3.5 rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                background: loading ? '#a0a0a0' : 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                color: '#000000',
-                boxShadow: loading ? 'none' : '0 4px 20px rgba(255, 215, 0, 0.4)'
+                background: loading ? '#a0a0a0' : 'linear-gradient(135deg, #D4AF37 0%, #c9a12e 100%)',
+                color: '#5c3210',
+                boxShadow: loading ? 'none' : '0 4px 20px rgba(212, 175, 55, 0.4)'
               }}
               whileHover={!loading ? {
                 scale: 1.02,
-                boxShadow: '0 6px 30px rgba(255, 215, 0, 0.6)',
+                boxShadow: '0 6px 30px rgba(212, 175, 55, 0.5)',
                 transition: { duration: 0.2 }
               } : {}}
               whileTap={!loading ? { scale: 0.98 } : {}}
@@ -247,8 +246,8 @@ const Login = ({ onLogin }) => {
             </motion.button>
           </form>
 
-          <motion.div variants={itemVariants} className="mt-6 pt-6 border-t" style={{ borderColor: 'rgba(0, 0, 0, 0.1)' }}>
-            <p className="text-center text-sm font-medium" style={{ color: '#7a7a7a' }}>
+          <motion.div variants={itemVariants} className="mt-6 pt-6 border-t border-chocolate-200/50">
+            <p className="text-center text-sm font-medium text-chocolate-500">
               Problemas ao entrar? Contacte o administrador
             </p>
           </motion.div>
@@ -256,10 +255,9 @@ const Login = ({ onLogin }) => {
 
         <motion.p
           variants={itemVariants}
-          className="text-center text-sm mt-8 font-medium"
-          style={{ color: '#c0c0c0' }}
+          className="text-center text-sm mt-8 font-medium text-cream-200/80"
         >
-          © 2025 MP Grupo. Todos os direitos reservados.
+          2025 MP Grupo. Todos os direitos reservados.
         </motion.p>
       </motion.div>
     </div>
