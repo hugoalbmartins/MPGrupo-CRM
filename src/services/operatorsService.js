@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 export const operatorsService = {
-  async getAll(includeHidden = false, scope = null) {
+  async getOperators(includeHidden = false, scope = null) {
     let query = supabase
       .from('operators')
       .select('*')
@@ -21,6 +21,10 @@ export const operatorsService = {
     return data || [];
   },
 
+  async getAll(includeHidden = false, scope = null) {
+    return this.getOperators(includeHidden, scope);
+  },
+
   async getHidden() {
     const { data, error } = await supabase
       .from('operators')
@@ -33,7 +37,7 @@ export const operatorsService = {
     return data || [];
   },
 
-  async getById(id) {
+  async getOperator(id) {
     const { data, error } = await supabase
       .from('operators')
       .select('*')
@@ -42,6 +46,10 @@ export const operatorsService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async getById(id) {
+    return this.getOperator(id);
   },
 
   async create(operatorData) {
