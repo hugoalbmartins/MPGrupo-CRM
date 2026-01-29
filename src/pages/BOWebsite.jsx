@@ -8,7 +8,7 @@ const BOWebsite = () => {
   const [error, setError] = useState(null);
   const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
 
-  const WEBSITE_URL = "https://www.mpgrupo.pt/admin-dashboard";
+  const WEBSITE_URL = "https://www.mpgrupo.pt/login";
   const LOGIN_CREDENTIALS = {
     username: "hugo.martins@mpgrupo.pt",
     password: "admin123"
