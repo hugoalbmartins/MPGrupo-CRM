@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { StatCard } from "@/components/ui/stat-card";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import { useDashboardStats, useProposalStats, usePartnerStats, useProposals } from "@/hooks/useDashboardData";
 
@@ -76,66 +75,95 @@ const Dashboard = ({ user }) => {
   const renderAdminDashboard = () => (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Vendas"
-          value={stats?.total_sales || 0}
-          subtitle={`${stats?.total_partners || 0} parceiros`}
-          icon={ShoppingCart}
-          iconBgClass="bg-gradient-to-r from-navy-900 to-navy-800"
-        />
+        <div className="stat-card spring-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Total Vendas</p>
+              <p className="text-3xl font-bold mb-1" style={{ color: '#000000' }}>{stats?.total_sales || 0}</p>
+              <p className="text-xs font-medium" style={{ color: '#7a7a7a' }}>{stats?.total_partners || 0} parceiros</p>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-r from-navy-900 to-navy-800 rounded-xl flex items-center justify-center shadow-lg spring-transition hover:scale-110">
+              <ShoppingCart className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <StatCard
-          title="Comissões Brutas"
-          value={`€${stats?.total_commission_gross?.toFixed(2) || '0.00'}`}
-          subtitle="Antes de retenções"
-          icon={Award}
-          iconBgClass="bg-gradient-to-r from-purple-500 to-purple-600"
-          valueClassName="color-purple"
-        />
+        <div className="stat-card spring-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Comissões Brutas</p>
+              <p className="text-3xl font-bold mb-1 text-purple-600">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs font-medium" style={{ color: '#7a7a7a' }}>Antes de retenções</p>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg spring-transition hover:scale-110">
+              <Award className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <StatCard
-          title="Comissões Líquidas"
-          value={`€${stats?.total_commission?.toFixed(2) || '0.00'}`}
-          subtitle="Após retenções"
-          icon={Award}
-          iconBgClass="bg-gradient-to-r from-green-500 to-green-600"
-          valueClassName="color-green"
-        />
+        <div className="stat-card spring-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Comissões Líquidas</p>
+              <p className="text-3xl font-bold mb-1 text-green-600">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs font-medium" style={{ color: '#7a7a7a' }}>Após retenções</p>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg spring-transition hover:scale-110">
+              <Award className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <StatCard
-          title="A Pagar"
-          value={`€${stats?.commission_to_pay?.toFixed(2) || '0.00'}`}
-          subtitle={`${stats?.unpaid_by_operator || 0} vendas`}
-          icon={Award}
-          iconBgClass="bg-gradient-to-r from-orange-500 to-orange-600"
-          valueClassName="color-orange"
-        />
+        <div className="stat-card spring-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>A Pagar</p>
+              <p className="text-3xl font-bold mb-1 text-orange-600">€{stats?.commission_to_pay?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs font-medium" style={{ color: '#7a7a7a' }}>{stats?.unpaid_by_operator || 0} vendas</p>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg spring-transition hover:scale-110">
+              <Award className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <StatCard
-          title="Pagas Operador"
-          value={stats?.paid_by_operator || 0}
-          icon={CheckCircle}
-          iconBgClass="bg-gradient-to-r from-green-500 to-green-600"
-          valueClassName="color-green"
-        />
+        <div className="stat-card spring-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Pagas Operador</p>
+              <p className="text-3xl font-bold mb-1 text-green-600">{stats?.paid_by_operator || 0}</p>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg spring-transition hover:scale-110">
+              <CheckCircle className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <StatCard
-          title="Retenções Mês Corrente"
-          value={`€${stats?.current_month_retentions?.toFixed(2) || '0.00'}`}
-          subtitle="A reter das comissões"
-          icon={Award}
-          iconBgClass="bg-gradient-to-r from-blue-500 to-blue-600"
-          valueClassName="color-blue"
-        />
+        <div className="stat-card spring-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Retenções Mês Corrente</p>
+              <p className="text-3xl font-bold mb-1 text-blue-600">€{stats?.current_month_retentions?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs font-medium" style={{ color: '#7a7a7a' }}>A reter das comissões</p>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg spring-transition hover:scale-110">
+              <Award className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <StatCard
-          title="Retenções a Devolver"
-          value={`€${stats?.retentions_to_return?.toFixed(2) || '0.00'}`}
-          subtitle="Próximo auto (6 meses)"
-          icon={CheckCircle}
-          iconBgClass="bg-gradient-to-r from-green-500 to-green-600"
-          valueClassName="color-green"
-        />
+        <div className="stat-card spring-transition">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Retenções a Devolver</p>
+              <p className="text-3xl font-bold mb-1 text-green-600">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
+              <p className="text-xs font-medium" style={{ color: '#7a7a7a' }}>Próximo auto (6 meses)</p>
+            </div>
+            <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg spring-transition hover:scale-110">
+              <CheckCircle className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -492,7 +520,7 @@ const Dashboard = ({ user }) => {
       </div>
 
       {stats?.objectives_progress && stats.objectives_progress.length > 0 && (
-        <div className="professional-card p-6 mt-6">
+        <div className="glass-ultra p-6 mt-6">
           <h3 className="text-xl font-semibold mb-4">Cumprimento de Objetivos Mensais</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stats.objectives_progress.map((progress, idx) => {
@@ -772,7 +800,7 @@ const Dashboard = ({ user }) => {
         </div>
 
         {partnersList.length > 0 && (
-          <div className="glass-card p-6">
+          <div className="glass-ultra p-6">
             <h3 className="text-lg font-semibold text-navy-900 mb-4">Parceiros com Propostas em Curso</h3>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -871,7 +899,7 @@ const Dashboard = ({ user }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {statusData.length > 0 && (
-                <div className="glass-card p-6">
+                <div className="glass-ultra p-6">
                   <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Estado</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -884,7 +912,7 @@ const Dashboard = ({ user }) => {
                 </div>
               )}
 
-              <div className="glass-card p-6">
+              <div className="glass-ultra p-6">
                 <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Âmbito</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={[
@@ -906,7 +934,7 @@ const Dashboard = ({ user }) => {
             </div>
 
             {partnerStats.length > 0 && operators.length > 0 && (
-              <div className="glass-card p-6">
+              <div className="glass-ultra p-6">
                 <h3 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Parceiro - {months[new Date().getMonth()]} {new Date().getFullYear()}</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -938,7 +966,7 @@ const Dashboard = ({ user }) => {
             )}
 
             {stats?.last_12_months && stats.last_12_months.length > 0 && (
-              <div className="glass-card p-6">
+              <div className="glass-ultra p-6">
                 <h3 className="text-lg font-semibold text-navy-900 mb-4">Evolução dos Últimos 12 Meses</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={prepare12MonthsData()}>
@@ -964,27 +992,27 @@ const Dashboard = ({ user }) => {
                   <div className="stat-card-gold">
                     <h3 className="text-lg font-semibold text-navy-900 mb-3">Minhas Comissões</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                      <div className="glass-card p-4">
+                      <div className="glass-ultra p-4">
                         <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
                         <p className="text-2xl font-bold text-purple-600">€{((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Total antes retenções</p>
                       </div>
-                      <div className="glass-card p-4">
+                      <div className="glass-ultra p-4">
                         <p className="text-sm text-gray-600 mb-1">Retenções</p>
                         <p className="text-2xl font-bold text-navy-600">€{(stats?.admin_retention || 0).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Valor retido</p>
                       </div>
-                      <div className="glass-card p-4">
+                      <div className="glass-ultra p-4">
                         <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
                         <p className="text-2xl font-bold text-green-600">€{(((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0)) - (stats?.admin_retention || 0)).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Após retenções</p>
                       </div>
-                      <div className="glass-card p-4">
+                      <div className="glass-ultra p-4">
                         <p className="text-sm text-gray-600 mb-1">A Receber</p>
                         <p className="text-2xl font-bold text-navy-900">€{((stats?.admin_commission_paid || 0) - (stats?.admin_retention || 0) * ((stats?.admin_commission_paid || 0) / ((stats?.admin_commission_pending || 0) + (stats?.admin_commission_paid || 0) || 1))).toFixed(2)}</p>
                         <p className="text-xs text-gray-500 mt-1">Vendas pagas pela operadora</p>
                       </div>
-                      <div className="glass-card p-4">
+                      <div className="glass-ultra p-4">
                         <p className="text-sm text-gray-600 mb-1">Minhas Vendas</p>
                         <p className="text-2xl font-bold text-navy-900">{stats?.admin_sales_count || 0}</p>
                         <p className="text-xs text-gray-500 mt-1">Registadas como admin</p>
@@ -1007,7 +1035,7 @@ const Dashboard = ({ user }) => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {statusData.length > 0 && (
-              <div className="glass-card p-6">
+              <div className="glass-ultra p-6">
                 <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Estado</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
@@ -1020,7 +1048,7 @@ const Dashboard = ({ user }) => {
               </div>
             )}
 
-            <div className="glass-card p-6">
+            <div className="glass-ultra p-6">
               <h2 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Âmbito</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={[
@@ -1042,7 +1070,7 @@ const Dashboard = ({ user }) => {
           </div>
 
           {stats?.last_12_months && stats.last_12_months.length > 0 && (
-            <div className="glass-card p-6">
+            <div className="glass-ultra p-6">
               <h3 className="text-lg font-semibold text-navy-900 mb-4">Evolução dos Últimos 12 Meses</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={prepare12MonthsData()}>

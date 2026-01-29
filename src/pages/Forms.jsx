@@ -100,7 +100,7 @@ const Forms = ({ user }) => {
               <button
                 key={operator.id}
                 onClick={() => navigate(`/forms/${operator.id}`)}
-                className="glass-card h-auto flex flex-col items-start p-5 text-left spring-transition hover:shadow-lg hover:border-gold-ultra group"
+                className="glass-ultra h-auto flex flex-col items-start p-5 text-left spring-transition hover:shadow-lg hover:border-gold-ultra group"
                 style={{
                   animationDelay: `${index * 0.05}s`,
                   border: '1px solid rgba(0,0,0,0.1)'
@@ -166,7 +166,7 @@ const Forms = ({ user }) => {
             {selectedOperator.documents.map((doc, index) => (
               <div
                 key={doc.id}
-                className="glass-card flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 spring-transition hover:shadow-lg group"
+                className="glass-ultra flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 spring-transition hover:shadow-lg group"
                 style={{
                   animationDelay: `${index * 0.05}s`,
                   border: '1px solid rgba(0,0,0,0.05)'

@@ -216,7 +216,7 @@ const Alerts = ({ user }) => {
             <Archive className="w-4 h-4" />
             Ver Arquivados
           </Button>
-          <div className="glass-card px-4 py-2 flex items-center gap-2">
+          <div className="glass-ultra px-4 py-2 flex items-center gap-2">
             <Bell className="w-4 h-4 text-gold-ultra" />
             <span className="text-sm font-bold" style={{ color: '#000000' }}>
               {alerts.filter(a => isUnread(a)).length}
@@ -230,7 +230,7 @@ const Alerts = ({ user }) => {
 
       {user?.role === 'admin' && (
         <>
-          <div className={`glass-card p-5 spring-transition ${
+          <div className={`glass-ultra p-5 spring-transition ${
             alertsSuspended
               ? 'border-red-300'
               : 'border-green-300'
@@ -269,7 +269,7 @@ const Alerts = ({ user }) => {
             </div>
           </div>
 
-          <div className="glass-card p-5 spring-transition" style={{ borderWidth: '2px', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+          <div className="glass-ultra p-5 spring-transition" style={{ borderWidth: '2px', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -354,7 +354,7 @@ const Alerts = ({ user }) => {
               return (
                 <div
                   key={alert.id}
-                  className={`glass-card p-4 spring-transition ${
+                  className={`glass-ultra p-4 spring-transition ${
                     unread ? 'border-gold-ultra' : 'border-gray-200'
                   } ${isSelected ? 'ring-2 ring-gold-ultra shadow-gold-glow' : ''}`}
                   style={{

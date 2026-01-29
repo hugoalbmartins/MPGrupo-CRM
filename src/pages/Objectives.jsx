@@ -236,7 +236,7 @@ const Objectives = ({ user }) => {
         </Button>
       </div>
 
-      <div className="glass-card p-6">
+      <div className="glass-ultra p-6">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-blue-600" />
           Objetivos por Gestor
@@ -257,7 +257,7 @@ const Objectives = ({ user }) => {
             </Button>
           </div>
         ) : (
-          <div className="table-container">
+          <div className="overflow-x-auto">
             <table>
               <thead>
                 <tr>

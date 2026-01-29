@@ -61,7 +61,7 @@ const Profile = ({ user }) => {
       <h1 className="text-3xl font-bold text-navy-900">Meu Perfil</h1>
 
       {/* User Info Card */}
-      <div className="glass-card p-8">
+      <div className="glass-ultra p-8">
         <div className="flex items-start gap-6">
           <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
             <UserIcon className="w-12 h-12 text-white" />
@@ -84,7 +84,7 @@ const Profile = ({ user }) => {
       </div>
 
       {/* Change Password Card */}
-      <div className="glass-card p-6">
+      <div className="glass-ultra p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">

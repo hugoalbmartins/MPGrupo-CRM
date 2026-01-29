@@ -111,7 +111,7 @@ const AlertsArchived = ({ user }) => {
       </div>
 
       {alerts.length === 0 ? (
-        <div className="glass-card p-12 text-center">
+        <div className="glass-ultra p-12 text-center">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">
             {filter === 'all' ? 'Nenhum alerta arquivado' : filter === 'unread' ? 'Nenhum alerta arquivado não lido' : 'Nenhum alerta arquivado lido'}
@@ -125,7 +125,7 @@ const AlertsArchived = ({ user }) => {
               return (
                 <div
                   key={alert.id}
-                  className="glass-card p-4 transition-all glass-card-hover"
+                  className="glass-ultra p-4 transition-all glass-ultra-hover"
                 >
                   <div className="flex items-start gap-4">
                     <div className="mt-1">{getAlertIcon(alert.type)}</div>
