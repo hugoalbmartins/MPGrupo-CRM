@@ -226,14 +226,14 @@ const Layout = ({ children, user, onLogout }) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
-                        <p className="text-xs text-slate-400 font-medium mb-2">Conectado como</p>
+                        <p className="text-xs font-medium mb-2" style={{ color: '#7a7a7a' }}>Conectado como</p>
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow">
                             {user?.name?.charAt(0) || 'U'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white text-sm truncate">{user?.name}</p>
-                            <p className="text-xs text-gold-400 truncate">{user?.position || user?.role}</p>
+                            <p className="font-semibold text-sm truncate" style={{ color: '#000000' }}>{user?.name}</p>
+                            <p className="text-xs truncate" style={{ color: '#d4af37' }}>{user?.position || user?.role}</p>
                           </div>
                         </div>
                       </motion.div>

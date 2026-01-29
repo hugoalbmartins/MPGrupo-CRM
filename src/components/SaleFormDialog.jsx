@@ -57,7 +57,7 @@ const SaleFormDialog = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-          className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden glass-ultra rounded-2xl shadow-2xl"
+          className="relative w-full max-w-5xl max-h-[95vh] overflow-hidden glass-ultra rounded-2xl shadow-2xl flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="sticky top-0 z-10 glass-ultra border-b border-white/10 px-8 py-6">
@@ -75,7 +75,7 @@ const SaleFormDialog = ({
             </div>
           </div>
 
-          <div className="overflow-y-auto max-h-[calc(90vh-140px)] px-8 py-6">
+          <div className="overflow-y-auto flex-1 px-8 py-6 scrollbar-modern">
             <form onSubmit={onSubmit} className="space-y-8">
               <FormSection icon={Clock} title="Informações Gerais" gradient="from-blue-600 to-blue-700">
                 <div className="grid grid-cols-2 gap-6">
@@ -695,12 +695,24 @@ const SaleFormDialog = ({
                   </div>
 
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Documentos (opcional)</Label>
+                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>
+                      Documentos {(() => {
+                        const selectedPartner = partners.find(p => p.id === formData.partner_id);
+                        const isD2D = selectedPartner && ['D2D_1', 'D2D_2', 'D2D_3'].includes(selectedPartner.partner_type);
+                        return isD2D ? '*' : '(opcional)';
+                      })()}
+                    </Label>
                     <div className="relative">
                       <input
                         type="file"
                         multiple
+                        accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        capture="environment"
                         onChange={(e) => setUploadFiles(Array.from(e.target.files))}
+                        required={(() => {
+                          const selectedPartner = partners.find(p => p.id === formData.partner_id);
+                          return selectedPartner && ['D2D_1', 'D2D_2', 'D2D_3'].includes(selectedPartner.partner_type);
+                        })()}
                         className="block w-full text-sm file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-700 hover:file:bg-blue-500/20 transition-colors cursor-pointer"
                         style={{ color: '#595959' }}
                       />
@@ -710,6 +722,15 @@ const SaleFormDialog = ({
                           {uploadFiles.length} ficheiro(s) selecionado(s)
                         </p>
                       )}
+                      {(() => {
+                        const selectedPartner = partners.find(p => p.id === formData.partner_id);
+                        const isD2D = selectedPartner && ['D2D_1', 'D2D_2', 'D2D_3'].includes(selectedPartner.partner_type);
+                        return isD2D && (
+                          <p className="text-xs mt-2 text-orange-600 font-medium">
+                            ⚠️ Obrigatório para parceiros D2D - Aceita fotos da câmara
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
