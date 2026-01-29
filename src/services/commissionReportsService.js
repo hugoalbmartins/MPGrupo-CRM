@@ -6,7 +6,7 @@ export const commissionReportsService = {
       .from('commission_reports')
       .select(`
         *,
-        partner:partners(id, name, email),
+        partner:partners!commission_reports_partner_id_fkey(id, name, email),
         creator:users!commission_reports_created_by_fkey(id, name, email),
         validator:users!commission_reports_paid_validated_by_fkey(id, name, email)
       `)
@@ -33,7 +33,7 @@ export const commissionReportsService = {
       .from('commission_reports')
       .select(`
         *,
-        partner:partners(id, name, email),
+        partner:partners!commission_reports_partner_id_fkey(id, name, email),
         creator:users!commission_reports_created_by_fkey(id, name, email)
       `)
       .eq('partner_id', partnerId)
@@ -75,7 +75,7 @@ export const commissionReportsService = {
       })
       .select(`
         *,
-        partner:partners(id, name, email),
+        partner:partners!commission_reports_partner_id_fkey(id, name, email),
         creator:users!commission_reports_created_by_fkey(id, name, email)
       `)
       .single();

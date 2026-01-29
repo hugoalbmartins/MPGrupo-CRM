@@ -8,17 +8,35 @@ export const usersService = {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select(`
-          *,
-          partner:partners!user_id(partner_type, name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching users:', error);
         throw error;
       }
-      return data || [];
+
+      const usersWithPartners = await Promise.all((data || []).map(async (user) => {
+        if (user.partner_id) {
+          const { data: partner } = await supabase
+            .from('partners')
+            .select('partner_type, name')
+            .eq('id', user.partner_id)
+            .maybeSingle();
+
+          return { ...user, partner };
+        }
+
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('partner_type, name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        return { ...user, partner };
+      }));
+
+      return usersWithPartners;
     } catch (error) {
       console.error('Unexpected error in getAll:', error);
       throw error;
