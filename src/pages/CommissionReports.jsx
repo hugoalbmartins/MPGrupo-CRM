@@ -1,43 +1,63 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { FileDown, Download, FileText, Trash2, Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import { FileDown, Download, FileText, Trash2, Calendar, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { usePartners } from "@/hooks/usePartnersData";
-import {
-  useCommissionReports,
-  useValidateCommissionReport,
-  useMarkReportAsPaid,
-  useDeleteCommissionReport
-} from "@/hooks/useCommissionReportsData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { partnersService } from "../services/partnersService";
 import { commissionReportsService } from "../services/commissionReportsService";
+import { salesService } from "../services/salesService";
 import { supabase } from "../lib/supabase";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 const CommissionReports = ({ user }) => {
+  const queryClient = useQueryClient();
   const [selectedPartner, setSelectedPartner] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
-  const [showReportsDialog, setShowReportsDialog] = useState(false);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState(null);
   const [availableMonths, setAvailableMonths] = useState([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  const { data: partners = [] } = usePartners();
-  const { data: emittedReports = [], isLoading: reportsLoading } = useCommissionReports({
-    year: filterYear,
-    month: filterMonth
+  const { data: partners = [], isLoading: partnersLoading } = useQuery({
+    queryKey: ['partners'],
+    queryFn: () => partnersService.getAll(),
+    staleTime: 10 * 60 * 1000,
   });
-  const validateReportMutation = useValidateCommissionReport();
-  const markAsPaidMutation = useMarkReportAsPaid();
-  const deleteReportMutation = useDeleteCommissionReport();
+
+  const { data: emittedReports = [], isLoading: reportsLoading, refetch: refetchReports } = useQuery({
+    queryKey: ['commissionReports', filterYear, filterMonth],
+    queryFn: () => commissionReportsService.getAll(filterYear, filterMonth),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const markAsPaidMutation = useMutation({
+    mutationFn: async ({ reportId, userId }) => {
+      await commissionReportsService.validatePayment(reportId, userId);
+    },
+    onSuccess: () => {
+      toast.success('Auto validado como pago com sucesso');
+      queryClient.invalidateQueries({ queryKey: ['commissionReports'] });
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Erro ao validar pagamento');
+    },
+  });
+
+  const deleteReportMutation = useMutation({
+    mutationFn: (reportId) => commissionReportsService.delete(reportId),
+    onSuccess: () => {
+      toast.success('Auto eliminado com sucesso');
+      queryClient.invalidateQueries({ queryKey: ['commissionReports'] });
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Erro ao eliminar auto');
+    },
+  });
 
   const months = [
     { value: 1, label: 'Janeiro' },
@@ -105,62 +125,8 @@ const CommissionReports = ({ user }) => {
 
     markAsPaidMutation.mutate({
       reportId,
-      paymentData: {
-        paymentDate: new Date().toISOString(),
-        userId: user.id
-      }
+      userId: user.id
     });
-  };
-
-  const registerCommissionReport = async (partnerId) => {
-    try {
-      const partner = partners.find(p => p.id === partnerId);
-      if (!partner) {
-        toast.error("Parceiro não encontrado");
-        return;
-      }
-
-      const monthName = months.find(m => m.value === selectedMonth)?.label;
-      const version = await commissionReportsService.getNextVersion(partnerId, selectedMonth, selectedYear);
-
-      const fileName = `${partner.name}_Auto_${monthName}_${selectedYear}_V${version}.pdf`;
-      const filePath = `${partnerId}/${selectedYear}/${fileName}`;
-
-      const reportData = {
-        partner_id: partnerId,
-        month: selectedMonth,
-        year: selectedYear,
-        version: version,
-        file_name: fileName,
-        file_path: filePath,
-        created_by: user.id
-      };
-
-      const newReport = await commissionReportsService.create(reportData);
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-commission-report-email`;
-      await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          partnerEmail: partner.email,
-          partnerName: partner.name,
-          month: monthName,
-          year: selectedYear,
-          reportId: newReport.id
-        })
-      });
-
-      await commissionReportsService.markAsEmailed(newReport.id);
-
-      toast.success(`Auto registrado e email enviado para ${partner.name}`);
-    } catch (error) {
-      console.error("Erro ao registrar auto:", error);
-      toast.error("Erro ao registrar auto de comissão");
-    }
   };
 
   const handleDeleteReport = async (reportId, isPaidValidated) => {
@@ -193,13 +159,10 @@ const CommissionReports = ({ user }) => {
   };
 
   const filterSalesByMonth = (sales) => {
-    console.log(`Filtrando vendas para ${selectedMonth}/${selectedYear}`);
-
     return sales.filter(sale => {
       const dateField = sale.activation_date || sale.paid_date || sale.date;
 
       if (!dateField) {
-        console.log(`Venda ${sale.sale_code} sem nenhuma data`);
         return false;
       }
 
@@ -214,11 +177,7 @@ const CommissionReports = ({ user }) => {
       const saleMonth = saleDate.getMonth() + 1;
       const saleYear = saleDate.getFullYear();
 
-      const matches = saleMonth === selectedMonth && saleYear === selectedYear;
-
-      console.log(`Venda ${sale.sale_code}: ${dateField} -> ${saleMonth}/${saleYear} - Match: ${matches}`);
-
-      return matches;
+      return saleMonth === selectedMonth && saleYear === selectedYear;
     });
   };
 
@@ -475,10 +434,10 @@ const CommissionReports = ({ user }) => {
 
           <div class="no-print" style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
             <button id="approveBtn" onclick="approveAndRegister()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #10b981; color: white; border: none; border-radius: 5px;">
-              ✅ Aprovar e Registrar Auto
+              Aprovar e Registrar Auto
             </button>
             <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #1F4E78; color: white; border: none; border-radius: 5px;">
-              🖨️ Imprimir
+              Imprimir
             </button>
             <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 5px;">
               Fechar
@@ -500,7 +459,7 @@ const CommissionReports = ({ user }) => {
                 librariesReady = true;
                 if (btn) {
                   btn.disabled = false;
-                  btn.textContent = '✅ Aprovar e Registrar Auto';
+                  btn.textContent = 'Aprovar e Registrar Auto';
                   btn.style.opacity = '1';
                 }
                 console.log('Libraries loaded successfully');
@@ -513,7 +472,7 @@ const CommissionReports = ({ user }) => {
                 console.error('Libraries failed to load after ' + maxAttempts + ' attempts');
                 if (btn) {
                   btn.disabled = false;
-                  btn.textContent = '⚠️ Tentar Registar (bibliotecas não carregadas)';
+                  btn.textContent = 'Tentar Registar (bibliotecas não carregadas)';
                   btn.style.opacity = '1';
                   btn.style.backgroundColor = '#f59e0b';
                 }
@@ -525,14 +484,13 @@ const CommissionReports = ({ user }) => {
               const approveBtn = document.getElementById('approveBtn');
               if (approveBtn) {
                 approveBtn.disabled = true;
-                approveBtn.textContent = '⏳ Carregando bibliotecas...';
+                approveBtn.textContent = 'Carregando bibliotecas...';
                 approveBtn.style.opacity = '0.6';
               }
               checkLibraries();
             });
 
             async function approveAndRegister() {
-              console.log('=== APPROVE AND REGISTER FUNCTION CALLED ===');
               const btn = document.getElementById('approveBtn');
 
               if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
@@ -543,12 +501,10 @@ const CommissionReports = ({ user }) => {
               }
 
               btn.disabled = true;
-              btn.textContent = '⏳ Processando...';
+              btn.textContent = 'Processando...';
               btn.style.opacity = '0.6';
 
               try {
-                console.log('Starting PDF generation...');
-
                 if (typeof window.jspdf === 'undefined') {
                   throw new Error('jsPDF library not loaded');
                 }
@@ -559,8 +515,7 @@ const CommissionReports = ({ user }) => {
                 const { jsPDF } = window.jspdf;
                 const element = document.body;
 
-                console.log('Capturing screenshot with html2canvas...');
-                btn.textContent = '⏳ Capturando imagem...';
+                btn.textContent = 'Capturando imagem...';
                 const canvas = await html2canvas(element, {
                   scale: 1,
                   useCORS: true,
@@ -568,29 +523,21 @@ const CommissionReports = ({ user }) => {
                   allowTaint: true
                 });
 
-                console.log('Canvas created, generating PDF...');
-                console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
-                btn.textContent = '⏳ Gerando PDF...';
+                btn.textContent = 'Gerando PDF...';
 
                 const imgData = canvas.toDataURL('image/jpeg', 0.85);
-                console.log('Image data URL created, length:', imgData.length);
 
                 const pdf = new jsPDF('l', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                console.log('PDF dimensions:', pdfWidth, 'x', pdfHeight);
 
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                console.log('Image added to PDF, converting to blob...');
 
                 const pdfBlob = pdf.output('blob');
-                console.log('PDF blob created, size:', pdfBlob.size, 'bytes');
 
                 const data = window.reportData;
-                console.log('Report data:', data);
 
-                console.log('Getting version from database...');
-                btn.textContent = '⏳ Verificando versão...';
+                btn.textContent = 'Verificando versão...';
 
                 const versionResponse = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&select=version&order=version.desc&limit=1\`, {
                   headers: {
@@ -598,21 +545,16 @@ const CommissionReports = ({ user }) => {
                     'Authorization': \`Bearer \${data.accessToken}\`
                   }
                 });
-                console.log('Version response status:', versionResponse.status);
 
                 const versionData = await versionResponse.json();
                 const version = versionData.length > 0 ? versionData[0].version + 1 : 1;
-                console.log('Version:', version);
 
                 const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 const monthName = monthNames[data.month - 1];
                 const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_\${monthName}_\${data.year}_V\${version}.pdf\`;
                 const filePath = \`\${data.partnerId}/\${data.year}/\${fileName}\`;
 
-                console.log('File name:', fileName);
-                console.log('File path:', filePath);
-                console.log('Uploading PDF to storage...');
-                btn.textContent = '⏳ Enviando PDF...';
+                btn.textContent = 'Enviando PDF...';
                 const uploadResponse = await fetch(\`\${data.supabaseUrl}/storage/v1/object/commission-reports/\${filePath}\`, {
                   method: 'POST',
                   headers: {
@@ -624,18 +566,12 @@ const CommissionReports = ({ user }) => {
                   body: pdfBlob
                 });
 
-                console.log('Upload response status:', uploadResponse.status);
-
                 if (!uploadResponse.ok) {
                   const uploadError = await uploadResponse.text();
-                  console.error('Upload error:', uploadError);
-                  console.error('Upload response status:', uploadResponse.status);
                   throw new Error('Erro ao fazer upload do PDF: ' + uploadError);
                 }
 
-                console.log('PDF uploaded successfully!');
-                console.log('Now sending email via edge function...');
-                btn.textContent = '⏳ Enviando email...';
+                btn.textContent = 'Enviando email...';
 
                 const emailData = {
                   partnerId: data.partnerId,
@@ -649,7 +585,6 @@ const CommissionReports = ({ user }) => {
                   version: version,
                   salesIds: data.salesIds || []
                 };
-                console.log('Sending data to edge function:', emailData);
 
                 const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
                   method: 'POST',
@@ -659,39 +594,28 @@ const CommissionReports = ({ user }) => {
                   },
                   body: JSON.stringify(emailData)
                 });
-                console.log('Email request sent, waiting for response...');
 
                 const responseStatus = response.status;
-                console.log('Response status:', responseStatus);
 
                 if (!response.ok) {
-                  console.error('Response NOT OK, status:', responseStatus);
                   const errorText = await response.text();
-                  console.error('Response error text:', errorText);
                   let errorData;
                   try {
                     errorData = JSON.parse(errorText);
-                    console.error('Parsed error data:', errorData);
                   } catch (e) {
-                    console.error('Failed to parse error:', e);
                     throw new Error(\`Erro do servidor (\${responseStatus}): \${errorText.substring(0, 200)}\`);
                   }
                   throw new Error(errorData.error || \`Erro ao registrar auto (\${responseStatus})\`);
                 }
 
-                console.log('Response OK, parsing JSON...');
                 let result;
                 try {
                   result = await response.json();
-                  console.log('Success response:', result);
                 } catch (jsonError) {
-                  console.error('Failed to parse success response JSON:', jsonError);
-                  console.log('Response was OK but JSON parsing failed - treating as success');
                   result = { success: true };
                 }
-                console.log('=== PROCESS COMPLETED SUCCESSFULLY ===');
 
-                btn.textContent = '✅ Concluído!';
+                btn.textContent = 'Concluído!';
                 btn.style.backgroundColor = '#10b981';
                 btn.style.opacity = '1';
 
@@ -707,33 +631,20 @@ const CommissionReports = ({ user }) => {
                   }
 
                   setTimeout(() => {
-                    console.log('Closing window...');
                     window.close();
                   }, 300);
                 }, 100);
 
               } catch (error) {
-                console.error('=== ERROR OCCURRED ===');
-                console.error('Full error:', error);
-                console.error('Error message:', error.message);
-                console.error('Error stack:', error.stack);
+                console.error('Error:', error);
 
                 btn.style.opacity = '1';
                 btn.disabled = false;
-                btn.textContent = '✅ Aprovar e Registrar Auto';
+                btn.textContent = 'Aprovar e Registrar Auto';
                 btn.style.backgroundColor = '#10b981';
 
                 alert('Erro ao processar auto: ' + error.message);
               }
-            }
-
-            function blobToBase64(blob) {
-              return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              });
             }
           </script>
         </body>
@@ -756,29 +667,11 @@ const CommissionReports = ({ user }) => {
     setLoading(true);
     try {
       const allSales = await salesService.getAll();
-      console.log(`Total de vendas: ${allSales.length}`);
-
       const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
-      console.log(`Vendas pagas pelo operador: ${paidSales.length}`);
-
-      if (paidSales.length > 0) {
-        console.log('Exemplo de venda paga:', {
-          sale_code: paidSales[0].sale_code,
-          activation_date: paidSales[0].activation_date,
-          paid_date: paidSales[0].paid_date,
-          date: paidSales[0].date,
-          paid_to_operator: paidSales[0].paid_to_operator
-        });
-      }
-
       const filteredByMonth = filterSalesByMonth(paidSales);
-      console.log(`Vendas após filtro de mês: ${filteredByMonth.length}`);
-
       const finalSales = partnerId
         ? filteredByMonth.filter(s => s.partner_id === partnerId)
         : filteredByMonth;
-
-      console.log(`Vendas finais: ${finalSales.length}`);
 
       if (finalSales.length === 0) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
@@ -984,7 +877,7 @@ const CommissionReports = ({ user }) => {
     if (!ws['!merges']) ws['!merges'] = [];
     ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
 
-    ws['A1'].v = '📊 MARCIO & SANDRA LDA';
+    ws['A1'].v = 'MARCIO & SANDRA LDA';
     ws['A1'].t = 's';
 
     return ws;
@@ -992,13 +885,13 @@ const CommissionReports = ({ user }) => {
 
   if (user?.role !== 'admin') {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64 animate-fade-in">
         <p className="text-gray-500">Acesso negado. Apenas administradores podem aceder a esta página.</p>
       </div>
     );
   }
 
-  if (reportsLoading && emittedReports.length === 0) {
+  if ((reportsLoading || partnersLoading) && emittedReports.length === 0) {
     return (
       <div className="space-y-6 p-6 animate-fade-in">
         <div className="h-10 bg-gray-200 rounded-lg w-1/3 animate-pulse"></div>
@@ -1022,27 +915,27 @@ const CommissionReports = ({ user }) => {
     <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex justify-between items-center animate-slide-up">
         <div>
-          <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Autos de Comissões</h1>
-          <p className="font-medium mt-1" style={{ color: '#7a7a7a' }}>Gere autos de comissões para parceiros (apenas vendas pagas)</p>
+          <h1 className="text-3xl font-bold text-gray-900">Autos de Comissões</h1>
+          <p className="font-medium mt-1 text-gray-600">Gere autos de comissões para parceiros (apenas vendas pagas)</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card className="glass-ultra border-0 hover:scale-[1.01] transition-transform duration-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
               <FileDown className="w-5 h-5 text-blue-600" />
               Auto Individual
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-gray-600">
               Gere auto de comissões para um parceiro específico
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Selecionar Parceiro</Label>
+              <Label className="text-gray-700">Selecionar Parceiro</Label>
               <Select value={selectedPartner} onValueChange={setSelectedPartner}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white border-gray-300">
                   <SelectValue placeholder="Escolha um parceiro..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -1056,13 +949,15 @@ const CommissionReports = ({ user }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Mês {checkingAvailability && <span className="text-xs text-gray-500">(verificando...)</span>}</Label>
+                <Label className="text-gray-700">
+                  Mês {checkingAvailability && <span className="text-xs text-gray-500">(verificando...)</span>}
+                </Label>
                 <Select
                   value={selectedMonth?.toString() || ""}
                   onValueChange={(v) => setSelectedMonth(parseInt(v))}
                   disabled={checkingAvailability || availableMonths.length === 0}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white border-gray-300">
                     <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mês disponível" : "Selecione..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1080,9 +975,9 @@ const CommissionReports = ({ user }) => {
                 )}
               </div>
               <div>
-                <Label>Ano</Label>
+                <Label className="text-gray-700">Ano</Label>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white border-gray-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1102,12 +997,13 @@ const CommissionReports = ({ user }) => {
                   disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  👁️ Pré-visualizar
+                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Pré-visualizar
                 </Button>
                 <Button
                   onClick={() => generateCommissionReport(selectedPartner)}
                   disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
-                  className="flex-1 btn-primary"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Excel
@@ -1117,26 +1013,28 @@ const CommissionReports = ({ user }) => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-ultra border-0 hover:scale-[1.01] transition-transform duration-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
               <FileDown className="w-5 h-5 text-green-600" />
               Autos de Todos os Parceiros
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-gray-600">
               Gere autos de comissões para todos os parceiros (um ficheiro com múltiplas abas)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Mês {checkingAvailability && <span className="text-xs text-gray-500">(verificando...)</span>}</Label>
+                <Label className="text-gray-700">
+                  Mês {checkingAvailability && <span className="text-xs text-gray-500">(verificando...)</span>}
+                </Label>
                 <Select
                   value={selectedMonth?.toString() || ""}
                   onValueChange={(v) => setSelectedMonth(parseInt(v))}
                   disabled={checkingAvailability || availableMonths.length === 0}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white border-gray-300">
                     <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mês disponível" : "Selecione..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1154,9 +1052,9 @@ const CommissionReports = ({ user }) => {
                 )}
               </div>
               <div>
-                <Label>Ano</Label>
+                <Label className="text-gray-700">Ano</Label>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white border-gray-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1179,24 +1077,24 @@ const CommissionReports = ({ user }) => {
               disabled={!selectedMonth || loading || checkingAvailability}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
-              <Download className="w-4 h-4 mr-2" />
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
               Gerar Todos os Autos
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="glass-ultra border-0">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900">
               <FileText className="w-5 h-5 text-blue-600" />
               Autos Emitidos
             </CardTitle>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gray-600" />
               <Select value={filterMonth?.toString() || "all"} onValueChange={(v) => setFilterMonth(v === "all" ? null : parseInt(v))}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-32 bg-white border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1209,7 +1107,7 @@ const CommissionReports = ({ user }) => {
                 </SelectContent>
               </Select>
               <Select value={filterYear.toString()} onValueChange={(v) => setFilterYear(parseInt(v))}>
-                <SelectTrigger className="w-28">
+                <SelectTrigger className="w-28 bg-white border-gray-300">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1222,7 +1120,7 @@ const CommissionReports = ({ user }) => {
               </Select>
             </div>
           </div>
-          <CardDescription>
+          <CardDescription className="text-gray-600">
             Lista de todos os autos registrados no sistema
           </CardDescription>
         </CardHeader>
@@ -1230,7 +1128,7 @@ const CommissionReports = ({ user }) => {
           {emittedReports.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p>Nenhum auto emitido para o ano selecionado</p>
+              <p>Nenhum auto emitido para o período selecionado</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1239,13 +1137,13 @@ const CommissionReports = ({ user }) => {
                   key={report.id}
                   className={`flex items-center justify-between p-4 rounded-lg transition-all duration-200 ${
                     report.paid_validated_at
-                      ? 'glass-ultra border-2 border-green-500'
-                      : 'glass-ultra hover:scale-[1.01] hover:shadow-md'
+                      ? 'bg-green-50 border-2 border-green-500'
+                      : 'bg-white border border-gray-200 hover:shadow-md'
                   }`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-navy-900">
+                      <span className="font-semibold text-gray-900">
                         {report.partner?.name || 'Parceiro Desconhecido'}
                       </span>
                       {report.paid_validated_at && (
@@ -1276,13 +1174,13 @@ const CommissionReports = ({ user }) => {
                       variant="outline"
                       onClick={() => handleDownloadReport(report)}
                       title="Download PDF"
+                      className="border-gray-300"
                     >
                       <Download className="w-4 h-4" />
                     </Button>
                     {!report.paid_validated_at && (
                       <Button
                         size="sm"
-                        variant="default"
                         onClick={() => handleValidatePayment(report.id)}
                         title="Validar como Pago"
                         className="bg-green-600 hover:bg-green-700 text-white"
@@ -1307,23 +1205,23 @@ const CommissionReports = ({ user }) => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="glass-ultra border-0">
         <CardHeader>
-          <CardTitle>Informações Importantes</CardTitle>
+          <CardTitle className="text-gray-900">Informações Importantes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-gray-600">
-          <p><strong>Regras de Emissão:</strong></p>
+          <p><strong className="text-gray-900">Regras de Emissão:</strong></p>
           <p>• Autos só podem ser emitidos após o dia 22 do mês seguinte (ex: auto de Novembro só após 22 de Dezembro)</p>
           <p>• Apenas vendas com data de ativação no período selecionado e pagas pelo operador são incluídas</p>
           <p>• Vendas já incluídas em autos validados como pagos não serão duplicadas em novos autos do mesmo mês</p>
 
-          <p className="pt-2"><strong>Processo:</strong></p>
+          <p className="pt-2"><strong className="text-gray-900">Processo:</strong></p>
           <p>• Selecione o mês e ano disponíveis para gerar o auto</p>
           <p>• Clique em "Pré-visualizar" para rever o auto antes de aprovar</p>
           <p>• No popup, clique em "Aprovar e Registrar Auto" para registar e enviar email ao parceiro</p>
 
-          <p className="pt-2"><strong>Validação de Pagamento:</strong></p>
-          <p>• Após receber o pagamento do parceiro, valide o auto clicando no botão verde "✓"</p>
+          <p className="pt-2"><strong className="text-gray-900">Validação de Pagamento:</strong></p>
+          <p>• Após receber o pagamento do parceiro, valide o auto clicando no botão verde</p>
           <p>• Autos validados ficam bloqueados e não podem ser eliminados ou editados</p>
           <p>• A listagem filtra automaticamente pelo último mês emitido</p>
         </CardContent>
