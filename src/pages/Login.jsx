@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { authService } from "../lib/auth";
 
 const Login = ({ onLogin }) => {
-  const [email, setEmail] = useState("");
+  const [emailOrCode, setEmailOrCode] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +40,7 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const { user } = await authService.signIn(email, password);
+      const { user } = await authService.signIn(emailOrCode, password);
       toast.success("Login bem-sucedido!");
       onLogin(user);
     } catch (error) {
@@ -142,15 +142,15 @@ const Login = ({ onLogin }) => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <motion.div variants={itemVariants}>
-              <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: '#000000' }}>
-                Email
+              <label htmlFor="emailOrCode" className="block text-sm font-semibold mb-2" style={{ color: '#000000' }}>
+                Email ou Código de Parceiro
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                id="emailOrCode"
+                type="text"
+                value={emailOrCode}
+                onChange={(e) => setEmailOrCode(e.target.value)}
+                placeholder="seu@email.com ou CÓDIGO"
                 required
                 data-testid="email-input"
                 className="w-full px-4 py-3 rounded-xl border-2 transition-all"
@@ -169,6 +169,9 @@ const Login = ({ onLogin }) => {
                   e.target.style.boxShadow = 'none';
                 }}
               />
+              <p className="text-xs mt-1 font-medium" style={{ color: '#7a7a7a' }}>
+                Pode usar o seu email ou código de parceiro para entrar
+              </p>
             </motion.div>
 
             <motion.div variants={itemVariants}>

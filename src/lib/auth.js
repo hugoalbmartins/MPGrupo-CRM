@@ -13,11 +13,31 @@ export const authService = {
     }
   },
 
-  async signIn(email, password) {
+  async signIn(emailOrCode, password) {
     if (!supabase) throw new Error('Supabase not initialized');
 
+    let emailToUse = emailOrCode;
+
+    if (!emailOrCode.includes('@')) {
+      const { data: partner, error: partnerError } = await supabase
+        .from('partners')
+        .select('user_id, users!partners_user_id_fkey(email)')
+        .eq('partner_code', emailOrCode.toUpperCase())
+        .maybeSingle();
+
+      if (partnerError || !partner) {
+        throw new Error('Código de parceiro inválido');
+      }
+
+      if (!partner.users?.email) {
+        throw new Error('Email do parceiro não encontrado');
+      }
+
+      emailToUse = partner.users.email;
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: emailToUse,
       password,
     });
 
