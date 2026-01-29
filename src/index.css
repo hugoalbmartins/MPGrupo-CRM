@@ -66,20 +66,9 @@
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-white/95 backdrop-blur-md rounded-2xl border border-navy-100/40 shadow-glass;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
-  }
+  /* ULTRA-TECH - Sistema de Design Unificado */
 
-  .glass-card-hover {
-    @apply hover:shadow-glass-lg hover:border-gold-200/50 hover:-translate-y-0.5 transition-all duration-300 ease-out;
-  }
-
-  .glass-sidebar {
-    @apply bg-gradient-to-b from-navy-900 via-navy-800 to-navy-900 backdrop-blur-xl border-r border-navy-700/50;
-    background-image: linear-gradient(to bottom, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  }
-
+  /* Botões Ultra-Tech */
   .btn-primary {
     @apply bg-gradient-to-r from-navy-900 to-navy-800 hover:from-navy-800 hover:to-navy-700 text-white shadow-lg shadow-navy-900/30 hover:shadow-xl hover:shadow-navy-900/40 transition-all duration-300 rounded-xl font-semibold transform hover:scale-[1.02] active:scale-[0.98];
   }
@@ -92,14 +81,7 @@
     @apply bg-white hover:bg-slate-50 text-navy-900 border-2 border-navy-200 hover:border-navy-300 shadow-md hover:shadow-lg transition-all duration-300 rounded-xl font-semibold transform hover:scale-[1.02] active:scale-[0.98];
   }
 
-  .stat-card {
-    @apply glass-card p-6 glass-card-hover;
-  }
-
-  .stat-card-gold {
-    @apply glass-card p-6 glass-card-hover border-gold-200/60 bg-gradient-to-br from-white via-gold-50/30 to-white;
-  }
-
+  /* Navegação Ultra-Tech */
   .nav-item-active {
     @apply bg-gradient-to-r from-gold-400 to-gold-500 text-navy-900 shadow-lg shadow-gold-400/40 font-semibold;
   }
@@ -108,14 +90,16 @@
     @apply text-slate-300 hover:text-white hover:bg-white/10 transition-all duration-200 rounded-lg;
   }
 
+  /* Inputs Ultra-Tech */
   .input-modern {
     @apply bg-white/80 backdrop-blur-sm border-navy-200/60 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 transition-all duration-200 rounded-xl shadow-sm hover:shadow-md;
   }
 
-  .table-modern {
-    @apply glass-card overflow-hidden;
+  .select-modern {
+    @apply bg-white/80 backdrop-blur-sm border-navy-200/60 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl shadow-sm hover:shadow-md transition-all duration-200;
   }
 
+  /* Tabelas Ultra-Tech */
   .table-header {
     @apply bg-gradient-to-r from-navy-50 to-navy-100/50 border-b-2 border-navy-200/70 font-semibold text-navy-900 sticky top-0 z-10 backdrop-blur-sm;
   }
@@ -128,6 +112,7 @@
     @apply bg-navy-50/30;
   }
 
+  /* Badges Ultra-Tech */
   .badge-gold {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-gold-100 to-gold-200 text-gold-900 border border-gold-300/50;
   }
@@ -136,18 +121,38 @@
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-navy-100 to-navy-200 text-navy-900 border border-navy-300/50;
   }
 
-  .select-modern {
-    @apply bg-white/80 backdrop-blur-sm border-navy-200/60 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl shadow-sm hover:shadow-md transition-all duration-200;
+  /* Cartões Ultra-Tech - Unificados */
+  .stat-card {
+    @apply p-6 rounded-2xl spring-transition;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(212, 175, 55, 0.125);
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.05);
   }
 
-  .card-gold-accent {
-    @apply glass-card border-l-4 border-l-gold-400 hover:border-l-gold-500;
+  .stat-card:hover {
+    box-shadow: 0 8px 24px 0 rgba(212, 175, 55, 0.15);
+    border-color: rgba(212, 175, 55, 0.25);
+    transform: translateY(-2px);
   }
 
-  .divider-gold {
-    @apply border-t-2 border-gold-200/50;
+  .stat-card-gold {
+    @apply p-6 rounded-2xl spring-transition border-gold-200/60;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 250, 240, 0.95) 50%, rgba(255, 255, 255, 0.98) 100%);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 14px 0 rgba(212, 175, 55, 0.2);
   }
 
+  .stat-card-gold:hover {
+    box-shadow: 0 8px 24px 0 rgba(212, 175, 55, 0.35);
+    border-color: rgba(212, 175, 55, 0.5);
+    transform: translateY(-2px);
+  }
+
+  /* Utilitários de Texto Ultra-Tech */
   .text-gradient-gold {
     @apply bg-gradient-to-r from-gold-600 via-gold-400 to-gold-600 bg-clip-text text-transparent font-bold;
   }
@@ -156,6 +161,54 @@
     @apply bg-gradient-to-r from-navy-900 via-navy-700 to-navy-900 bg-clip-text text-transparent font-bold;
   }
 
+  /* Cores de Texto Ultra-Tech */
+  .color-cyan {
+    @apply text-cyan-600;
+  }
+
+  .color-orange {
+    @apply text-orange-600;
+  }
+
+  .color-green {
+    @apply text-green-600;
+  }
+
+  .color-blue {
+    @apply text-blue-600;
+  }
+
+  .color-purple {
+    @apply text-purple-600;
+  }
+
+  /* Cores de Fundo Ultra-Tech para Ícones */
+  .bg-cyan {
+    @apply bg-gradient-to-r from-cyan-500 to-cyan-600;
+  }
+
+  .bg-orange {
+    @apply bg-gradient-to-r from-orange-500 to-orange-600;
+  }
+
+  .bg-green {
+    @apply bg-gradient-to-r from-green-500 to-green-600;
+  }
+
+  .bg-blue {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600;
+  }
+
+  .bg-purple {
+    @apply bg-gradient-to-r from-purple-500 to-purple-600;
+  }
+
+  /* Divisor Ultra-Tech */
+  .divider-gold {
+    @apply border-t-2 border-gold-200/50;
+  }
+
+  /* Shimmer Effect Ultra-Tech */
   .shimmer-button {
     @apply relative overflow-hidden;
     background: linear-gradient(90deg, rgba(251, 191, 36, 0) 0%, rgba(251, 191, 36, 0.2) 50%, rgba(251, 191, 36, 0) 100%);
@@ -262,11 +315,21 @@
     box-shadow: 0 0 20px rgba(212, 175, 55, 0.5), 0 4px 14px rgba(212, 175, 55, 0.3);
   }
 
+  /* ULTRA-TECH Glass Effects - Sistema Principal */
   .glass-ultra {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid rgba(212, 175, 55, 0.125);
+    border-radius: 1rem;
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  .glass-ultra-hover:hover {
+    box-shadow: 0 8px 24px 0 rgba(212, 175, 55, 0.15);
+    border-color: rgba(212, 175, 55, 0.25);
+    transform: translateY(-2px);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .glass-sidebar-ultra {

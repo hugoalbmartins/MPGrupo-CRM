@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { StatCard } from "@/components/ui/stat-card";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/useUsersData";
 import { usePartners } from "@/hooks/usePartnersData";
 import { usersService } from "../services/usersService";
