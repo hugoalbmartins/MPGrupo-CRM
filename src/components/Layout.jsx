@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
   FileText, FileSpreadsheet, CheckSquare, ChevronLeft, ChevronRight, User, Target,
-  ChevronDown
+  ChevronDown, Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
@@ -81,7 +81,8 @@ const Layout = ({ children, user, onLogout }) => {
       { path: "/operator-validations", label: "Validações", icon: CheckSquare, roles: ["admin"] },
       { path: "/objectives", label: "Objetivos", icon: Target, roles: ["admin"] },
       { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"] },
-      { path: "/commission-reports", label: "Comissões", icon: FileSpreadsheet, roles: ["admin"] }
+      { path: "/commission-reports", label: "Comissões", icon: FileSpreadsheet, roles: ["admin"] },
+      { path: "/bo-website", label: "BO Website", icon: Globe, roles: ["admin"] }
     );
   } else if (user?.role === "bo") {
     menuItems.push(

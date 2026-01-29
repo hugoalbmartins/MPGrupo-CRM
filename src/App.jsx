@@ -24,6 +24,7 @@ const CommissionReports = lazy(() => import("./pages/CommissionReports.jsx"));
 const CommissionReportsPartner = lazy(() => import("./pages/CommissionReportsPartner.jsx"));
 const OperatorValidations = lazy(() => import("./pages/OperatorValidations.jsx"));
 const Objectives = lazy(() => import("./pages/Objectives.jsx"));
+const BOWebsite = lazy(() => import("./pages/BOWebsite.jsx"));
 
 export { supabase };
 
@@ -302,6 +303,7 @@ function App() {
                     <Route path="/users" element={<Users user={user} />} />
                     <Route path="/commission-reports" element={<CommissionReports user={user} />} />
                     <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
+                    <Route path="/bo-website" element={<BOWebsite user={user} />} />
                   </>
                 )}
                 {user?.role === "bo" && (
