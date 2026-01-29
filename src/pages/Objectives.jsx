@@ -257,7 +257,7 @@ const Objectives = ({ user }) => {
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="table-container">
             <table>
               <thead>
                 <tr>

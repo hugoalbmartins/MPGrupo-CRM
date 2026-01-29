@@ -110,14 +110,14 @@ const Layout = ({ children, user, onLogout }) => {
         {/* Desktop Sidebar */}
         <aside className="hidden lg:flex lg:flex-col fixed h-screen w-[280px] glass-sidebar shadow-2xl shadow-gray-900/20 z-30">
           {/* Logo Section */}
-          <div className="relative p-6 border-b border-gray-600/50">
+          <div className="relative p-6 border-b border-gold-400/30">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
                 <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
               </div>
               <div>
-                <h1 className="text-base font-bold tracking-tight text-white">MP GRUPO</h1>
-                <p className="text-xs font-medium text-gold-400">Sales CRM</p>
+                <h1 className="text-base font-bold tracking-tight text-navy-900">MP GRUPO</h1>
+                <p className="text-xs font-medium text-gold-600">Sales CRM</p>
               </div>
             </div>
           </div>
@@ -152,26 +152,26 @@ const Layout = ({ children, user, onLogout }) => {
           </nav>
 
           {/* User Profile Section */}
-          <div className="border-t border-gray-600/50 p-4 space-y-2">
+          <div className="border-t border-gold-400/30 p-4 space-y-2">
             <Link
               to="/profile"
-              className="block px-4 py-3 rounded-xl hover:bg-white/10 transition-all duration-300"
+              className="block px-4 py-3 rounded-xl hover:bg-gold-100/30 transition-all duration-300"
             >
-              <p className="text-xs font-medium mb-2 text-gray-400">Conectado como</p>
+              <p className="text-xs font-medium mb-2 text-navy-600">Conectado como</p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow">
                   {user?.name?.charAt(0) || 'U'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate text-white">{user?.name}</p>
-                  <p className="text-xs truncate text-gold-400">{user?.position || user?.role}</p>
+                  <p className="font-semibold text-sm truncate text-navy-900">{user?.name}</p>
+                  <p className="text-xs truncate text-gold-600">{user?.position || user?.role}</p>
                 </div>
               </div>
             </Link>
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-300"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-100/30 hover:text-red-700 transition-all duration-300"
             >
               <LogOut className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm font-medium">Sair</span>
@@ -180,7 +180,7 @@ const Layout = ({ children, user, onLogout }) => {
         </aside>
 
         {/* Mobile Header & Navigation */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-40 glass-card border-b border-navy-100/40 backdrop-blur-xl">
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-40 glass-top-bar backdrop-blur-xl">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50">
@@ -260,7 +260,7 @@ const Layout = ({ children, user, onLogout }) => {
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col h-screen overflow-hidden lg:ml-[280px]">
           {/* Breadcrumbs Bar */}
-          <div className="flex-shrink-0 z-20 glass-card border-b border-navy-100/40 backdrop-blur-xl mt-0 lg:mt-0 pt-20 lg:pt-0">
+          <div className="flex-shrink-0 z-20 glass-top-bar backdrop-blur-xl mt-0 lg:mt-0 pt-20 lg:pt-0">
             <div className="px-6 py-4">
               <Breadcrumbs />
             </div>

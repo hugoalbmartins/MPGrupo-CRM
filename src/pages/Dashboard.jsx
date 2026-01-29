@@ -878,7 +878,7 @@ const Dashboard = ({ user }) => {
         {partnersList.length > 0 && (
           <div className="glass-ultra p-6">
             <h3 className="text-lg font-semibold text-navy-900 mb-4">Parceiros com Propostas em Curso</h3>
-            <div className="overflow-x-auto">
+            <div className="table-container">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -1012,7 +1012,7 @@ const Dashboard = ({ user }) => {
             {partnerStats.length > 0 && operators.length > 0 && (
               <div className="glass-ultra p-6">
                 <h3 className="text-lg font-semibold text-navy-900 mb-4">Vendas por Parceiro - {months[new Date().getMonth()]} {new Date().getFullYear()}</h3>
-                <div className="overflow-x-auto">
+                <div className="table-container">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
