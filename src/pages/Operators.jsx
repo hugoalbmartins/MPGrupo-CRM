@@ -275,13 +275,14 @@ const Operators = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-navy-900">Operadoras</h1>
+          <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Operadoras</h1>
           {hiddenOperators.length > 0 && (
             <Button
               onClick={() => setHiddenDialogOpen(true)}
               variant="outline"
               size="sm"
-              className="text-gray-600 hover:text-navy-900"
+              style={{ color: '#595959' }}
+              className="hover:border-gold-400"
             >
               Ver Desativadas ({hiddenOperators.length})
             </Button>
@@ -435,17 +436,17 @@ const Operators = ({ user }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {['telecomunicacoes', 'energia', 'solar'].map(scope => (
-          <div key={scope} className="glass-ultra p-6">
-            <h2 className="text-xl font-semibold text-navy-900 mb-4 capitalize">{scope}</h2>
+          <div key={scope} className="glass-ultra p-6 spring-transition">
+            <h2 className="text-xl font-semibold mb-4 capitalize" style={{ color: '#000000' }}>{scope}</h2>
             <div className="space-y-2">
               {operators.filter(op => op.scope === scope).map(op => (
-                <div key={op.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                <div key={op.id} className="flex items-center justify-between p-3 rounded-lg spring-transition" style={{ background: 'rgba(248, 250, 252, 0.6)' }}>
                   <div>
-                    <span className="font-medium block">{op.name}</span>
+                    <span className="font-medium block" style={{ color: '#000000' }}>{op.name}</span>
                     {op.scope === 'energia' && op.energy_type && (
-                      <span className="text-xs text-gray-500 block">
-                        {op.energy_type === 'eletricidade' ? '⚡ Eletricidade' : 
-                         op.energy_type === 'gas' ? '🔥 Gás' : 
+                      <span className="text-xs block" style={{ color: '#7a7a7a' }}>
+                        {op.energy_type === 'eletricidade' ? '⚡ Eletricidade' :
+                         op.energy_type === 'gas' ? '🔥 Gás' :
                          '⚡🔥 Dual'}
                       </span>
                     )}
@@ -524,10 +525,10 @@ const Operators = ({ user }) => {
               {selectedOperator?.documents && selectedOperator.documents.length > 0 ? (
                 <div className="space-y-2 mt-2">
                   {selectedOperator.documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg spring-transition" style={{ background: 'rgba(248, 250, 252, 0.6)' }}>
                       <div className="flex items-center gap-2">
                         <span className="text-blue-600">📄</span>
-                        <span className="font-medium">{doc.filename}</span>
+                        <span className="font-medium" style={{ color: '#000000' }}>{doc.filename}</span>
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -551,7 +552,7 @@ const Operators = ({ user }) => {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 mt-2">Nenhum formulário disponível</p>
+                <p className="text-sm mt-2" style={{ color: '#7a7a7a' }}>Nenhum formulário disponível</p>
               )}
             </div>
           </div>
@@ -565,14 +566,14 @@ const Operators = ({ user }) => {
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {hiddenOperators.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhuma operadora desativada</p>
+              <p className="text-center py-8" style={{ color: '#7a7a7a' }}>Nenhuma operadora desativada</p>
             ) : (
               <div className="space-y-3">
                 {hiddenOperators.map(op => (
-                  <div key={op.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div key={op.id} className="flex items-center justify-between p-4 border rounded-lg spring-transition" style={{ background: 'rgba(248, 250, 252, 0.6)', borderColor: 'rgba(212, 175, 55, 0.2)' }}>
                     <div>
-                      <span className="font-medium block">{op.name}</span>
-                      <span className="text-sm text-gray-500 capitalize">{op.scope}</span>
+                      <span className="font-medium block" style={{ color: '#000000' }}>{op.name}</span>
+                      <span className="text-sm capitalize" style={{ color: '#7a7a7a' }}>{op.scope}</span>
                     </div>
                     {user?.role === 'admin' && (
                       <div className="flex gap-2">
