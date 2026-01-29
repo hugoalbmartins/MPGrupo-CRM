@@ -1,58 +1,44 @@
-import React, { useEffect, useRef, useState } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import React, { useEffect } from "react";
+import { ExternalLink, Globe } from "lucide-react";
 
 const BOWebsite = () => {
-  const iframeRef = useRef(null);
-  const [loading, setLoading] = useState(true);
-
   const WEBSITE_URL = "https://www.mpgrupo.pt/login";
 
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const handleLoad = () => {
-      setLoading(false);
-    };
-
-    iframe.addEventListener('load', handleLoad);
-
-    return () => {
-      iframe.removeEventListener('load', handleLoad);
-    };
+    window.open(WEBSITE_URL, '_blank', 'noopener,noreferrer');
   }, []);
 
-  const openInNewTab = () => {
+  const openWebsite = () => {
     window.open(WEBSITE_URL, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="h-full w-full relative">
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-            <p className="text-gray-600">Carregando website...</p>
-          </div>
+    <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="text-center max-w-2xl px-8">
+        <div className="mb-8 inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100">
+          <Globe className="w-10 h-10 text-blue-600" />
         </div>
-      )}
 
-      <button
-        onClick={openInNewTab}
-        className="absolute top-4 right-4 z-20 flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg"
-      >
-        <ExternalLink className="w-4 h-4" />
-        Abrir em Nova Aba
-      </button>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          Backoffice do Website MP Grupo
+        </h1>
 
-      <iframe
-        ref={iframeRef}
-        src={WEBSITE_URL}
-        className="w-full h-full border-0"
-        title="BO Website MP Grupo"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
-        allow="fullscreen"
-      />
+        <p className="text-lg text-gray-600 mb-8">
+          Por questões de segurança, o website abre numa nova aba do navegador.
+        </p>
+
+        <button
+          onClick={openWebsite}
+          className="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-medium rounded-lg transition-colors shadow-lg hover:shadow-xl"
+        >
+          <ExternalLink className="w-5 h-5" />
+          Abrir Backoffice do Website
+        </button>
+
+        <p className="text-sm text-gray-500 mt-6">
+          URL: {WEBSITE_URL}
+        </p>
+      </div>
     </div>
   );
 };
