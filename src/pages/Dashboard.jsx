@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { ShoppingCart, Phone, Zap, Sun, Award, CheckCircle, Clock, TrendingUp } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -6,163 +6,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatCard } from "@/components/ui/stat-card";
 import SaleDetailDialog from "../components/SaleDetailDialog";
-import { supabase } from "../lib/supabase";
-import { dashboardService } from "../services/dashboardService";
-import { salesService } from "../services/salesService";
-import { partnersService } from "../services/partnersService";
-import { operatorsService } from "../services/operatorsService";
+import { useDashboardStats, useProposalStats, usePartnerStats, useProposals } from "@/hooks/useDashboardData";
 
 const Dashboard = ({ user }) => {
-  const [stats, setStats] = useState(null);
-  const [proposalStats, setProposalStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [partnerStats, setPartnerStats] = useState([]);
-  const [operators, setOperators] = useState([]);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
   const [proposalFilter, setProposalFilter] = useState(null);
-  const [filteredProposals, setFilteredProposals] = useState([]);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState(null);
 
-  useEffect(() => {
-    fetchStats();
-    fetchPartnerStats();
-    fetchProposalStats();
-  }, [selectedYear, selectedMonth]);
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedYear, selectedMonth);
+  const { data: proposalStats } = useProposalStats();
+  const { data: partnerData } = usePartnerStats(user);
+  const { data: filteredProposals = [] } = useProposals(proposalFilter);
 
-  const fetchStats = async () => {
-    try {
-      const data = await dashboardService.getStats(selectedYear, selectedMonth);
-      setStats(data);
-    } catch (error) {
-      toast.error("Erro ao carregar estatísticas");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const partnerStats = partnerData?.stats || [];
+  const operators = partnerData?.operators || [];
 
-  const fetchProposalStats = async () => {
-    try {
-      const data = await dashboardService.getProposalStats();
-      setProposalStats(data);
-    } catch (error) {
-      console.error("Erro ao carregar estatísticas de propostas:", error);
-    }
-  };
-
-  const handleProposalCardClick = async (filterType) => {
-    try {
-      const { data: proposals } = await supabase
-        .from('sales')
-        .select('*, partners(name), operators(name)')
-        .eq('status', 'Em proposta')
-        .order('created_at', { ascending: false });
-
-      if (!proposals) {
-        setFilteredProposals([]);
-        return;
-      }
-
-      const now = new Date();
-      let filtered = [];
-
-      if (filterType === 'all') {
-        filtered = proposals;
-      } else if (filterType === 'up_to_7') {
-        filtered = proposals.filter(p => {
-          const daysElapsed = Math.floor((now - new Date(p.created_at)) / (1000 * 60 * 60 * 24));
-          return daysElapsed <= 7;
-        });
-      } else if (filterType === 'from_7_to_14') {
-        filtered = proposals.filter(p => {
-          const daysElapsed = Math.floor((now - new Date(p.created_at)) / (1000 * 60 * 60 * 24));
-          return daysElapsed > 7 && daysElapsed <= 14;
-        });
-      } else if (filterType === 'over_14') {
-        filtered = proposals.filter(p => {
-          const daysElapsed = Math.floor((now - new Date(p.created_at)) / (1000 * 60 * 60 * 24));
-          return daysElapsed > 14;
-        });
-      }
-
-      setFilteredProposals(filtered);
-      setProposalFilter(filterType);
-      setProposalDialogOpen(true);
-    } catch (error) {
-      console.error('Erro ao buscar propostas:', error);
-      toast.error('Erro ao buscar propostas');
-    }
-  };
-
-  const fetchPartnerStats = async () => {
-    try {
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
-
-      const startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
-      const endDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-
-      const [salesResult, partnersResult, operatorsResult] = await Promise.all([
-        supabase
-          .from('sales')
-          .select('*, partners(name), operators(name)')
-          .gte('date', startDate)
-          .lt('date', endDate)
-          .neq('status', 'Em proposta'),
-        supabase.from('partners').select('id, name'),
-        supabase.from('operators').select('id, name').eq('hidden', false)
-      ]);
-
-      const currentMonthSales = salesResult.data || [];
-      const partners = partnersResult.data || [];
-      const allOperators = operatorsResult.data || [];
-
-      setOperators(allOperators);
-
-      const partnerMap = {};
-
-      currentMonthSales.forEach(sale => {
-        const partnerId = sale.partner_id || 'admin_commissioned';
-
-        if (!partnerMap[partnerId]) {
-          let partnerName = 'Desconhecido';
-
-          if (partnerId === 'admin_commissioned') {
-            partnerName = user?.name ? `${user.name} (Admin)` : 'Admin Comissionado';
-          } else {
-            const partner = sale.partners || partners.find(p => p.id === partnerId);
-            partnerName = partner?.name || 'Desconhecido';
-          }
-
-          partnerMap[partnerId] = {
-            name: partnerName,
-            operators: {},
-            total: 0
-          };
-        }
-
-        const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
-        const operatorName = sale.operators?.name || 'Desconhecido';
-
-        if (!partnerMap[partnerId].operators[operatorName]) {
-          partnerMap[partnerId].operators[operatorName] = 0;
-        }
-
-        partnerMap[partnerId].operators[operatorName]++;
-        partnerMap[partnerId].total += commission;
-      });
-
-      const sortedStats = Object.values(partnerMap)
-        .filter(p => p.total > 0)
-        .sort((a, b) => b.total - a.total);
-
-      setPartnerStats(sortedStats);
-    } catch (error) {
-      console.error("Erro ao carregar estatísticas de parceiros:", error);
-    }
+  const handleProposalCardClick = (filterType) => {
+    setProposalFilter(filterType);
+    setProposalDialogOpen(true);
   };
 
   const months = [
@@ -179,23 +45,23 @@ const Dashboard = ({ user }) => {
     return years;
   };
 
-  if (loading) {
+  if (statsLoading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 bg-navy-200 rounded w-1/4"></div>
+      <div className="space-y-6 p-6 animate-fade-in">
+        <div className="h-10 bg-gray-200 rounded-lg w-1/4 animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="glass-card p-6 h-32">
-              <div className="h-4 bg-navy-200 rounded w-1/2 mb-3"></div>
-              <div className="h-8 bg-navy-200 rounded w-3/4"></div>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div key={i} className="glass-ultra p-6 h-32 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[1, 2].map(i => (
-            <div key={i} className="glass-card p-6 h-80">
-              <div className="h-5 bg-navy-200 rounded w-1/3 mb-4"></div>
-              <div className="h-64 bg-navy-100 rounded"></div>
+            <div key={i} className="glass-ultra p-6 h-96 animate-pulse">
+              <div className="h-5 bg-gray-200 rounded w-1/3 mb-4"></div>
+              <div className="h-80 bg-gray-100 rounded"></div>
             </div>
           ))}
         </div>
@@ -210,95 +76,66 @@ const Dashboard = ({ user }) => {
   const renderAdminDashboard = () => (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Total Vendas</p>
-              <p className="text-3xl font-bold text-navy-900">{stats?.total_sales || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats?.total_partners || 0} parceiros</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center shadow-lg">
-              <ShoppingCart className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Total Vendas"
+          value={stats?.total_sales || 0}
+          subtitle={`${stats?.total_partners || 0} parceiros`}
+          icon={ShoppingCart}
+          iconBgClass="bg-gradient-to-r from-navy-900 to-navy-800"
+        />
 
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Comissões Brutas</p>
-              <p className="text-2xl font-bold color-purple">€{stats?.total_commission_gross?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">Antes de retenções</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-              <Award className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Comissões Brutas"
+          value={`€${stats?.total_commission_gross?.toFixed(2) || '0.00'}`}
+          subtitle="Antes de retenções"
+          icon={Award}
+          iconBgClass="bg-gradient-to-r from-purple-500 to-purple-600"
+          valueClassName="color-purple"
+        />
 
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Comissões Líquidas</p>
-              <p className="text-2xl font-bold color-green">€{stats?.total_commission?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">Após retenções</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-              <Award className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Comissões Líquidas"
+          value={`€${stats?.total_commission?.toFixed(2) || '0.00'}`}
+          subtitle="Após retenções"
+          icon={Award}
+          iconBgClass="bg-gradient-to-r from-green-500 to-green-600"
+          valueClassName="color-green"
+        />
 
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">A Pagar</p>
-              <p className="text-2xl font-bold color-orange">€{stats?.commission_to_pay?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats?.unpaid_by_operator || 0} vendas</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
-              <Award className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="A Pagar"
+          value={`€${stats?.commission_to_pay?.toFixed(2) || '0.00'}`}
+          subtitle={`${stats?.unpaid_by_operator || 0} vendas`}
+          icon={Award}
+          iconBgClass="bg-gradient-to-r from-orange-500 to-orange-600"
+          valueClassName="color-orange"
+        />
 
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Pagas Operador</p>
-              <p className="text-2xl font-bold color-green">{stats?.paid_by_operator || 0}</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-              <CheckCircle className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Pagas Operador"
+          value={stats?.paid_by_operator || 0}
+          icon={CheckCircle}
+          iconBgClass="bg-gradient-to-r from-green-500 to-green-600"
+          valueClassName="color-green"
+        />
 
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Retenções Mês Corrente</p>
-              <p className="text-2xl font-bold color-blue">€{stats?.current_month_retentions?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">A reter das comissões</p>
-            </div>
-            <div className="w-12 h-12 bg-blue rounded-full flex items-center justify-center">
-              <Award className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Retenções Mês Corrente"
+          value={`€${stats?.current_month_retentions?.toFixed(2) || '0.00'}`}
+          subtitle="A reter das comissões"
+          icon={Award}
+          iconBgClass="bg-gradient-to-r from-blue-500 to-blue-600"
+          valueClassName="color-blue"
+        />
 
-        <div className="stat-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Retenções a Devolver</p>
-              <p className="text-2xl font-bold color-green">€{stats?.retentions_to_return?.toFixed(2) || '0.00'}</p>
-              <p className="text-xs text-gray-500 mt-1">Próximo auto (6 meses)</p>
-            </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg">
-              <CheckCircle className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Retenções a Devolver"
+          value={`€${stats?.retentions_to_return?.toFixed(2) || '0.00'}`}
+          subtitle="Próximo auto (6 meses)"
+          icon={CheckCircle}
+          iconBgClass="bg-gradient-to-r from-green-500 to-green-600"
+          valueClassName="color-green"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -985,11 +822,11 @@ const Dashboard = ({ user }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gradient-navy">Dashboard</h1>
-          <p className="text-navy-600 mt-1">Bem-vindo, {user?.name}</p>
+    <div className="space-y-6 p-6 animate-fade-in">
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div className="animate-slide-up">
+          <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Dashboard</h1>
+          <p className="font-medium mt-1" style={{ color: '#7a7a7a' }}>Bem-vindo, {user?.name}</p>
         </div>
 
         {/* Month/Year Selector */}
