@@ -6,11 +6,12 @@ import { authService } from "./lib/auth";
 import { supabase } from "./lib/supabase";
 import { AlertCircle, Loader2 } from "lucide-react";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import Layout from "./components/Layout.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Login from "./pages/Login.jsx";
 import "@/App.css";
 
-const Login = lazy(() => import("./pages/Login.jsx"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword.jsx"));
-const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
 const Partners = lazy(() => import("./pages/Partners.jsx"));
 const Sales = lazy(() => import("./pages/Sales.jsx"));
 const Operators = lazy(() => import("./pages/Operators.jsx"));
@@ -23,7 +24,6 @@ const CommissionReports = lazy(() => import("./pages/CommissionReports.jsx"));
 const CommissionReportsPartner = lazy(() => import("./pages/CommissionReportsPartner.jsx"));
 const OperatorValidations = lazy(() => import("./pages/OperatorValidations.jsx"));
 const Objectives = lazy(() => import("./pages/Objectives.jsx"));
-const Layout = lazy(() => import("./components/Layout.jsx"));
 
 export { supabase };
 
@@ -32,16 +32,19 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      staleTime: 5 * 60 * 1000,
+      staleTime: 10 * 60 * 1000,
+      gcTime: 15 * 60 * 1000,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
     },
   },
 });
 
 const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center glass-ultra">
+  <div className="min-h-[60vh] flex items-center justify-center">
     <div className="text-center">
-      <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-gold-ultra" />
-      <p className="text-sm font-semibold" style={{ color: '#000000' }}>Carregando...</p>
+      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-blue-600" />
+      <p className="text-xs font-medium text-slate-600">Carregando...</p>
     </div>
   </div>
 );
@@ -172,15 +175,50 @@ function App() {
       if (userData) {
         setUser(userData);
         setMustChangePassword(userData.must_change_password);
+
+        if (!userData.must_change_password) {
+          const currentYear = new Date().getFullYear();
+          const currentMonth = new Date().getMonth() + 1;
+
+          queryClient.prefetchQuery({
+            queryKey: ['dashboardStats', currentYear, currentMonth],
+            queryFn: () => import('./services/dashboardService').then(mod =>
+              mod.dashboardService.getStats(currentYear, currentMonth)
+            ),
+          });
+
+          if (userData.role === 'admin') {
+            queryClient.prefetchQuery({
+              queryKey: ['users'],
+              queryFn: () => import('./services/usersService').then(mod => mod.usersService.getAll()),
+            });
+            queryClient.prefetchQuery({
+              queryKey: ['partners'],
+              queryFn: () => import('./services/partnersService').then(mod => mod.partnersService.getAll()),
+            });
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to load user", error);
     }
   };
 
-  const handleLogin = (userData) => {
+  const handleLogin = async (userData) => {
     setUser(userData);
     setMustChangePassword(userData.must_change_password);
+
+    if (!userData.must_change_password) {
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+
+      queryClient.prefetchQuery({
+        queryKey: ['dashboardStats', currentYear, currentMonth],
+        queryFn: () => import('./services/dashboardService').then(mod =>
+          mod.dashboardService.getStats(currentYear, currentMonth)
+        ),
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -214,12 +252,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <div className="App">
           <BrowserRouter>
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
-                <Route path="/" element={<Login onLogin={handleLogin} />} />
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-            </Suspense>
+            <Routes>
+              <Route path="/" element={<Login onLogin={handleLogin} />} />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
           </BrowserRouter>
           <Toaster position="top-right" richColors />
         </div>
@@ -244,42 +280,40 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <div className="App">
         <BrowserRouter>
-          <Suspense fallback={<LoadingFallback />}>
-            <Layout user={user} onLogout={handleLogout}>
-              <Suspense fallback={<LoadingFallback />}>
-                <Routes>
-                  <Route path="/" element={<Dashboard user={user} />} />
-                  <Route path="/dashboard" element={<Dashboard user={user} />} />
-                  <Route path="/partners" element={<Partners user={user} />} />
-                  <Route path="/sales" element={<ErrorBoundary><Sales user={user} /></ErrorBoundary>} />
-                  <Route path="/alerts" element={<Alerts user={user} />} />
-                  <Route path="/alerts/archived" element={<AlertsArchived user={user} />} />
-                  <Route path="/profile" element={<Profile user={user} />} />
-                  <Route path="/forms" element={<Forms user={user} />} />
-                  <Route path="/forms/:operatorId" element={<Forms user={user} />} />
-                  {user?.role === "partner" && (
-                    <Route path="/my-reports" element={<CommissionReportsPartner user={user} />} />
-                  )}
-                  {user?.role === "admin" && (
-                    <>
-                      <Route path="/operators" element={<Operators user={user} />} />
-                      <Route path="/objectives" element={<Objectives user={user} />} />
-                      <Route path="/users" element={<Users user={user} />} />
-                      <Route path="/commission-reports" element={<CommissionReports user={user} />} />
-                      <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
-                    </>
-                  )}
-                  {user?.role === "bo" && (
-                    <>
-                      <Route path="/operators" element={<Operators user={user} />} />
-                      <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
-                    </>
-                  )}
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-              </Suspense>
-            </Layout>
-          </Suspense>
+          <Layout user={user} onLogout={handleLogout}>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<Dashboard user={user} />} />
+                <Route path="/dashboard" element={<Dashboard user={user} />} />
+                <Route path="/partners" element={<Partners user={user} />} />
+                <Route path="/sales" element={<ErrorBoundary><Sales user={user} /></ErrorBoundary>} />
+                <Route path="/alerts" element={<Alerts user={user} />} />
+                <Route path="/alerts/archived" element={<AlertsArchived user={user} />} />
+                <Route path="/profile" element={<Profile user={user} />} />
+                <Route path="/forms" element={<Forms user={user} />} />
+                <Route path="/forms/:operatorId" element={<Forms user={user} />} />
+                {user?.role === "partner" && (
+                  <Route path="/my-reports" element={<CommissionReportsPartner user={user} />} />
+                )}
+                {user?.role === "admin" && (
+                  <>
+                    <Route path="/operators" element={<Operators user={user} />} />
+                    <Route path="/objectives" element={<Objectives user={user} />} />
+                    <Route path="/users" element={<Users user={user} />} />
+                    <Route path="/commission-reports" element={<CommissionReports user={user} />} />
+                    <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
+                  </>
+                )}
+                {user?.role === "bo" && (
+                  <>
+                    <Route path="/operators" element={<Operators user={user} />} />
+                    <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
+                  </>
+                )}
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </Suspense>
+          </Layout>
         </BrowserRouter>
         <Toaster position="top-right" richColors />
       </div>

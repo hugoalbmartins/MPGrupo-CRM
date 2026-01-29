@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/useUsersData";
-import { usePartners } from "@/hooks/usePartnersData";
+import { SkeletonTable } from "@/components/ui/skeleton-loader";
+import { useQuery } from "@tanstack/react-query";
 import { usersService } from "../services/usersService";
 import { partnersService } from "../services/partnersService";
 import { generateStrongPassword } from "../lib/utils-crm";
 
 const Users = ({ user }) => {
-  const [users, setUsers] = useState([]);
-  const [partners, setPartners] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [sortColumn, setSortColumn] = useState("name");
@@ -40,24 +37,19 @@ const Users = ({ user }) => {
     is_commissioned: false
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => usersService.getAll(),
+    staleTime: 10 * 60 * 1000,
+  });
 
-  const fetchData = async () => {
-    try {
-      const [usersData, partnersData] = await Promise.all([
-        usersService.getAll(),
-        partnersService.getAll()
-      ]);
-      setUsers(usersData);
-      setPartners(partnersData);
-    } catch (error) {
-      toast.error("Erro ao carregar dados");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: partners = [], isLoading: partnersLoading } = useQuery({
+    queryKey: ['partners'],
+    queryFn: () => partnersService.getAll(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const loading = usersLoading || partnersLoading;
 
   const generatePassword = () => {
     const password = generateStrongPassword();
@@ -81,7 +73,7 @@ const Users = ({ user }) => {
       }
       setDialogOpen(false);
       resetForm();
-      fetchData();
+      refetchUsers();
     } catch (error) {
       toast.error(error.message || `Erro ao ${editMode ? 'atualizar' : 'criar'} utilizador`);
     }
@@ -122,7 +114,7 @@ const Users = ({ user }) => {
       toast.success("Utilizador eliminado com sucesso!");
       setDeleteDialogOpen(false);
       setUserToDelete(null);
-      fetchData();
+      refetchUsers();
     } catch (error) {
       toast.error(error.message || "Erro ao eliminar utilizador");
     }
@@ -236,20 +228,12 @@ const Users = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6 animate-fade-in">
-        <div className="h-10 bg-gray-200 rounded-lg w-1/4 animate-pulse"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>
-          ))}
+      <div className="space-y-6 p-6">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+          <div className="h-8 bg-slate-200 rounded-lg w-48 animate-pulse"></div>
         </div>
-        <div className="glass-ultra p-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse"></div>
-            ))}
-          </div>
-        </div>
+        <SkeletonTable rows={8} columns={6} />
       </div>
     );
   }

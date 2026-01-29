@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { usePartners, useCreatePartner, useUpdatePartner, useDeletePartner } from "@/hooks/usePartnersData";
+import { SkeletonTable } from "@/components/ui/skeleton-loader";
+import { useQuery } from "@tanstack/react-query";
 import { partnersService } from "../services/partnersService";
 import { usersService } from "../services/usersService";
 import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
 
 const Partners = ({ user }) => {
-  const [partners, setPartners] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortColumn, setSortColumn] = useState("name");
@@ -24,7 +23,6 @@ const Partners = ({ user }) => {
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
   const [selectedPartnerForDocs, setSelectedPartnerForDocs] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
-  const [managers, setManagers] = useState([]);
   const [formData, setFormData] = useState({
     partner_type: "D2D_1",
     name: "",
@@ -42,31 +40,20 @@ const Partners = ({ user }) => {
     manager_id: "",
   });
 
-  useEffect(() => {
-    fetchPartners();
-    fetchManagers();
-  }, []);
+  const { data: partners = [], isLoading: partnersLoading, refetch: refetchPartners } = useQuery({
+    queryKey: ['partners'],
+    queryFn: () => partnersService.getAll(),
+    staleTime: 10 * 60 * 1000,
+  });
 
-  const fetchPartners = async () => {
-    try {
-      const data = await partnersService.getAll();
-      setPartners(data);
-    } catch (error) {
-      toast.error("Erro ao carregar parceiros");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => usersService.getAll(),
+    staleTime: 10 * 60 * 1000,
+  });
 
-  const fetchManagers = async () => {
-    try {
-      const users = await usersService.getAll();
-      const managerUsers = users.filter(u => u.role === 'gestor_nv1' || u.role === 'gestor_nv2');
-      setManagers(managerUsers);
-    } catch (error) {
-      console.error("Erro ao carregar gestores:", error);
-    }
-  };
+  const managers = allUsers.filter(u => u.role === 'gestor_nv1' || u.role === 'gestor_nv2');
+  const loading = partnersLoading;
 
   const generatePassword = () => {
     const password = generateStrongPassword();
@@ -120,7 +107,7 @@ const Partners = ({ user }) => {
 
       setDialogOpen(false);
       resetForm();
-      fetchPartners();
+      refetchPartners();
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       const errorMessage = error.message || error.toString() || "Erro desconhecido ao salvar parceiro";
@@ -157,7 +144,7 @@ const Partners = ({ user }) => {
     try {
       await partnersService.delete(partnerId);
       toast.success("Parceiro eliminado com sucesso");
-      fetchPartners();
+      refetchPartners();
     } catch (error) {
       toast.error("Erro ao eliminar parceiro. Pode existir vendas associadas.");
     }
@@ -167,7 +154,7 @@ const Partners = ({ user }) => {
     try {
       setUploadingDoc(true);
       toast.success("Documento carregado com sucesso!");
-      fetchPartners();
+      refetchPartners();
     } catch (error) {
       toast.error("Erro ao carregar documento");
     } finally {
@@ -281,7 +268,17 @@ const Partners = ({ user }) => {
         (aValue < bValue ? 1 : -1);
     });
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner"></div></div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+          <div className="h-8 bg-slate-200 rounded-lg w-48 animate-pulse"></div>
+        </div>
+        <SkeletonTable rows={8} columns={7} />
+      </div>
+    );
+  }
 
   const handleExportExcel = async () => {
     try {

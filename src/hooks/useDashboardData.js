@@ -6,8 +6,8 @@ export const useDashboardStats = (year, month) => {
   return useQuery({
     queryKey: ['dashboardStats', year, month],
     queryFn: () => dashboardService.getStats(year, month),
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -15,8 +15,8 @@ export const useProposalStats = () => {
   return useQuery({
     queryKey: ['proposalStats'],
     queryFn: () => dashboardService.getProposalStats(),
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -84,8 +84,8 @@ export const usePartnerStats = (user) => {
 
       return { stats: sortedStats, operators: allOperators };
     },
-    staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -128,6 +128,7 @@ export const useProposals = (filterType) => {
       return filtered;
     },
     enabled: !!filterType,
-    staleTime: 1 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 };
