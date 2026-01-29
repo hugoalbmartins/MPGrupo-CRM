@@ -47,22 +47,22 @@ const ChangePassword = ({ onPasswordChanged, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md">
-        <div className="glass-card p-8">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-navy-50 to-navy-100">
+      <div className="w-full max-w-md animate-fade-in">
+        <div className="glass-ultra p-8 spring-transition">
           <div className="flex flex-col items-center mb-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Lock className="w-8 h-8 text-blue-600" />
+            <div className="w-16 h-16 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center mb-4 shadow-lg animate-scale-in">
+              <Lock className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-navy-900">Alterar Password</h1>
-            <p className="text-gray-600 mt-2 text-center text-sm">Por segurança, é necessário alterar a sua password</p>
+            <h1 className="text-2xl font-bold" style={{ color: '#000000' }}>Alterar Password</h1>
+            <p className="mt-2 text-center text-sm font-medium" style={{ color: '#7a7a7a' }}>Por segurança, é necessário alterar a sua password</p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6 animate-slide-up">
             <div className="flex">
-              <AlertCircle className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <p className="font-semibold mb-1">Requisitos:</p>
+              <AlertCircle className="w-5 h-5 text-yellow-700 mr-2 flex-shrink-0 mt-0.5" />
+              <div className="text-sm" style={{ color: '#7a5d00' }}>
+                <p className="font-bold mb-1">Requisitos:</p>
                 <ul className="list-disc ml-4 space-y-1">
                   <li>Mínimo 8 caracteres</li>
                   <li>1 letra maiúscula</li>
@@ -75,38 +75,38 @@ const ChangePassword = ({ onPasswordChanged, onLogout }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="current" className="block text-sm font-medium mb-2 text-gray-700">Password Atual</label>
+              <label htmlFor="current" className="block text-sm font-bold mb-2" style={{ color: '#000000' }}>Password Atual</label>
               <div className="relative">
-                <input id="current" type={showCurrent ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required className="w-full pr-12" />
-                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <input id="current" type={showCurrent ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required className="input-modern w-full pr-12" />
+                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 spring-transition" style={{ color: '#7a7a7a' }}>
                   {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="new" className="block text-sm font-medium mb-2 text-gray-700">Nova Password</label>
+              <label htmlFor="new" className="block text-sm font-bold mb-2" style={{ color: '#000000' }}>Nova Password</label>
               <div className="relative">
-                <input id="new" type={showNew ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="w-full pr-12" />
-                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <input id="new" type={showNew ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="input-modern w-full pr-12" />
+                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 spring-transition" style={{ color: '#7a7a7a' }}>
                   {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirm" className="block text-sm font-medium mb-2 text-gray-700">Confirmar Nova Password</label>
+              <label htmlFor="confirm" className="block text-sm font-bold mb-2" style={{ color: '#000000' }}>Confirmar Nova Password</label>
               <div className="relative">
-                <input id="confirm" type={showConfirm ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full pr-12" />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <input id="confirm" type={showConfirm ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="input-modern w-full pr-12" />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 spring-transition" style={{ color: '#7a7a7a' }}>
                   {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
             <div className="flex gap-3 pt-4">
-              <button type="button" onClick={onLogout} className="flex-1 btn-secondary">Cancelar</button>
-              <button type="submit" disabled={loading} className="flex-1 btn-primary disabled:opacity-50">
+              <button type="button" onClick={onLogout} className="flex-1 btn-secondary spring-transition">Cancelar</button>
+              <button type="submit" disabled={loading} className="flex-1 btn-gold shadow-gold-glow spring-transition disabled:opacity-50">
                 {loading ? "A alterar..." : "Alterar Password"}
               </button>
             </div>
