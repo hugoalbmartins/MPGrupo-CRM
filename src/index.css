@@ -339,6 +339,20 @@
     border-right: 1px solid rgba(255, 255, 255, 0.1);
   }
 
+  .glass-sidebar {
+    background: linear-gradient(180deg, #404040 0%, #4d4d4d 50%, #404040 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(212, 175, 55, 0.125);
+  }
+
   .tooltip {
     position: absolute;
     z-index: 9999;

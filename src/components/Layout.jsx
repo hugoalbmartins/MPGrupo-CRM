@@ -2,21 +2,17 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, ChevronLeft, ChevronRight, User, Target,
-  ChevronDown, Globe
+  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
 import Breadcrumbs from "./ui/breadcrumbs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
 const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [partnerType, setPartnerType] = useState(null);
 
@@ -110,56 +106,21 @@ const Layout = ({ children, user, onLogout }) => {
   };
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className="h-screen flex overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="h-screen flex overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         {/* Desktop Sidebar */}
-        <motion.aside
-          initial={false}
-          animate={{ width: sidebarCollapsed ? 80 : 280 }}
-          className="hidden lg:flex lg:flex-col fixed h-screen glass-sidebar shadow-2xl shadow-navy-900/20 z-30"
-        >
+        <aside className="hidden lg:flex lg:flex-col fixed h-screen w-[280px] glass-sidebar shadow-2xl shadow-gray-900/20 z-30">
           {/* Logo Section */}
-          <div className="relative p-6 border-b border-navy-700/50">
-            <AnimatePresence mode="wait">
-              {!sidebarCollapsed ? (
-                <motion.div
-                  key="expanded"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center gap-3"
-                >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
-                    <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <h1 className="text-base font-bold tracking-tight text-white">MP GRUPO</h1>
-                    <p className="text-xs font-medium text-gold-400">Sales CRM</p>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="collapsed"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex justify-center"
-                >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
-                    <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="relative p-6 border-b border-gray-600/50">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden ring-2 ring-gold-400/50 shadow-gold-glow">
+                <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold tracking-tight text-white">MP GRUPO</h1>
+                <p className="text-xs font-medium text-gold-400">Sales CRM</p>
+              </div>
+            </div>
           </div>
-
-          {/* Collapse Toggle */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-gradient-to-r from-gold-400 to-gold-500 text-navy-900 flex items-center justify-center shadow-lg hover:shadow-gold-glow transition-all duration-300 z-40 hover:scale-110"
-          >
-            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
 
           {/* Navigation Menu */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-modern">
@@ -167,116 +128,56 @@ const Layout = ({ children, user, onLogout }) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
-                <Tooltip key={item.path}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to={item.path}
-                      className={`group flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
-                        isActive
-                          ? "nav-item-active transform scale-105"
-                          : "nav-item hover:scale-105"
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${sidebarCollapsed ? '' : 'mr-3'} transition-transform group-hover:scale-110 flex-shrink-0`} />
-                      <AnimatePresence>
-                        {!sidebarCollapsed && (
-                          <motion.span
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{ opacity: 1, width: "auto" }}
-                            exit={{ opacity: 0, width: 0 }}
-                            className="text-sm font-medium whitespace-nowrap"
-                          >
-                            {item.label}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                      {item.badge > 0 && (
-                        <motion.span
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className={`${sidebarCollapsed ? 'absolute -top-1 -right-1' : 'ml-auto'} text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg ring-2 ring-white`}
-                        >
-                          {item.badge > 99 ? '99+' : item.badge}
-                        </motion.span>
-                      )}
-                    </Link>
-                  </TooltipTrigger>
-                  {sidebarCollapsed && (
-                    <TooltipContent side="right" className="bg-navy-900 text-white border-gold-400/50">
-                      <p>{item.label}</p>
-                    </TooltipContent>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`group flex items-center px-4 py-3.5 rounded-xl transition-all duration-300 relative overflow-hidden ${
+                    isActive
+                      ? "nav-item-active transform scale-105"
+                      : "nav-item hover:scale-105"
+                  }`}
+                >
+                  <Icon className="w-5 h-5 mr-3 transition-transform group-hover:scale-110 flex-shrink-0" />
+                  <span className="text-sm font-medium whitespace-nowrap">
+                    {item.label}
+                  </span>
+                  {item.badge > 0 && (
+                    <span className="ml-auto text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg ring-2 ring-white">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
                   )}
-                </Tooltip>
+                </Link>
               );
             })}
           </nav>
 
           {/* User Profile Section */}
-          <div className="border-t border-navy-700/50 p-4 space-y-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to="/profile"
-                  className={`block px-4 py-3 rounded-xl hover:bg-white/10 transition-all duration-300 ${sidebarCollapsed ? 'flex justify-center' : ''}`}
-                >
-                  <AnimatePresence mode="wait">
-                    {!sidebarCollapsed ? (
-                      <motion.div
-                        key="expanded-user"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        <p className="text-xs font-medium mb-2" style={{ color: '#7a7a7a' }}>Conectado como</p>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow">
-                            {user?.name?.charAt(0) || 'U'}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate" style={{ color: '#000000' }}>{user?.name}</p>
-                            <p className="text-xs truncate" style={{ color: '#d4af37' }}>{user?.position || user?.role}</p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="collapsed-user"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow"
-                      >
-                        {user?.name?.charAt(0) || 'U'}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </TooltipTrigger>
-              {sidebarCollapsed && (
-                <TooltipContent side="right" className="bg-navy-900 text-white border-gold-400/50">
-                  <p>{user?.name}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
+          <div className="border-t border-gray-600/50 p-4 space-y-2">
+            <Link
+              to="/profile"
+              className="block px-4 py-3 rounded-xl hover:bg-white/10 transition-all duration-300"
+            >
+              <p className="text-xs font-medium mb-2 text-gray-400">Conectado como</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-navy-900 text-sm font-bold bg-gradient-to-r from-gold-400 to-gold-500 ring-2 ring-gold-400/50 shadow-gold-glow">
+                  {user?.name?.charAt(0) || 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate text-white">{user?.name}</p>
+                  <p className="text-xs truncate text-gold-400">{user?.position || user?.role}</p>
+                </div>
+              </div>
+            </Link>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleLogout}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-300 ${sidebarCollapsed ? 'justify-center' : ''}`}
-                >
-                  <LogOut className="w-5 h-5 flex-shrink-0" />
-                  {!sidebarCollapsed && <span className="text-sm font-medium">Sair</span>}
-                </button>
-              </TooltipTrigger>
-              {sidebarCollapsed && (
-                <TooltipContent side="right" className="bg-navy-900 text-white border-gold-400/50">
-                  <p>Sair</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-300"
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm font-medium">Sair</span>
+            </button>
           </div>
-        </motion.aside>
+        </aside>
 
         {/* Mobile Header & Navigation */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-40 glass-card border-b border-navy-100/40 backdrop-blur-xl">
@@ -357,14 +258,7 @@ const Layout = ({ children, user, onLogout }) => {
         </div>
 
         {/* Main Content Area */}
-        <motion.main
-          initial={false}
-          animate={{
-            marginLeft: window.innerWidth >= 1024 ? (sidebarCollapsed ? 80 : 280) : 0,
-          }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="flex-1 flex flex-col h-screen overflow-hidden"
-        >
+        <main className="flex-1 flex flex-col h-screen overflow-hidden lg:ml-[280px]">
           {/* Breadcrumbs Bar */}
           <div className="flex-shrink-0 z-20 glass-card border-b border-navy-100/40 backdrop-blur-xl mt-0 lg:mt-0 pt-20 lg:pt-0">
             <div className="px-6 py-4">
@@ -385,9 +279,8 @@ const Layout = ({ children, user, onLogout }) => {
               </motion.div>
             </div>
           </div>
-        </motion.main>
+        </main>
       </div>
-    </TooltipProvider>
   );
 };
 
