@@ -7,7 +7,10 @@ export const usersService = {
   async getAll() {
     const { data, error } = await supabase
       .from('users')
-      .select('*')
+      .select(`
+        *,
+        partner:partners(partner_type, name)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

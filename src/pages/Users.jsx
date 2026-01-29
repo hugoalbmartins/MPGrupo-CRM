@@ -165,6 +165,25 @@ const Users = ({ user }) => {
     }
   };
 
+  const getPartnerTypeLabel = (partnerType) => {
+    switch (partnerType) {
+      case 'D2D': return 'D2D';
+      case 'Rev': return 'REV';
+      case 'Rev+': return 'REV+';
+      case 'Rev1': return 'REV1';
+      case 'Rev2': return 'REV2';
+      case 'Rev3': return 'REV3';
+      default: return partnerType;
+    }
+  };
+
+  const getDisplayPosition = (userObj) => {
+    if ((userObj.role === 'partner' || userObj.role === 'partner_commercial') && userObj.partner?.partner_type) {
+      return `Parceiro ${getPartnerTypeLabel(userObj.partner.partner_type)}`;
+    }
+    return userObj.position;
+  };
+
   const handleSort = (column) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -185,10 +204,11 @@ const Users = ({ user }) => {
 
   const filteredAndSortedUsers = users
     .filter(u => {
+      const displayPosition = getDisplayPosition(u);
       const matchesSearch =
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.position.toLowerCase().includes(searchTerm.toLowerCase());
+        displayPosition.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === "all" || u.role === roleFilter;
       return matchesSearch && matchesRole;
     })
@@ -205,8 +225,8 @@ const Users = ({ user }) => {
           bValue = b.email;
           break;
         case "position":
-          aValue = a.position;
-          bValue = b.position;
+          aValue = getDisplayPosition(a);
+          bValue = getDisplayPosition(b);
           break;
         case "role":
           aValue = a.role;
@@ -418,7 +438,7 @@ const Users = ({ user }) => {
                       </div>
                     </td>
                     <td className="text-gray-600">{u.email}</td>
-                    <td className="text-gray-600">{u.position}</td>
+                    <td className="text-gray-600">{getDisplayPosition(u)}</td>
                     <td>
                       <span className="status-badge" style={{
                         background: u.role === 'admin' ? '#EFF6FF' : u.role === 'bo' ? '#F0FDF4' : u.role === 'partner' ? '#FDF4FF' : '#F3F4F6',
