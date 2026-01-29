@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { motion } from "framer-motion";
 import { authService } from "../lib/auth";
 
 const Login = ({ onLogin }) => {
@@ -8,6 +9,31 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,35 +53,98 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{
-      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%)'
+      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #404040 100%)'
     }}>
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden opacity-20">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-500 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      {/* Ultra-Tech Animated Background */}
+      <div className="absolute inset-0 overflow-hidden opacity-10">
+        <motion.div
+          className="absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl"
+          style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' }}
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl"
+          style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF8C00 100%)' }}
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.4, 0.2]
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl"
+          style={{ background: 'linear-gradient(135deg, #FFA500 0%, #FFD700 100%)' }}
+          animate={{
+            scale: [1, 1.4, 1],
+            opacity: [0.2, 0.6, 0.2]
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+        />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo Card */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 shadow-2xl overflow-hidden">
+      <motion.div
+        className="w-full max-w-md relative z-10"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Logo Card with Stagger Animation */}
+        <motion.div variants={itemVariants} className="text-center mb-8">
+          <motion.div
+            className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 shadow-2xl overflow-hidden glass-ultra"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
-          </div>
-          <h1 className="text-4xl font-bold mb-2 tracking-tight" style={{ color: '#FFFFFF' }}>MP GRUPO</h1>
-          <p className="text-gray-400 font-medium">Sales CRM Platform</p>
-        </div>
+          </motion.div>
+          <motion.h1
+            className="text-4xl font-bold mb-2 tracking-tight"
+            style={{ color: '#FFFFFF', textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)' }}
+          >
+            MP GRUPO
+          </motion.h1>
+          <motion.p className="font-medium" style={{ color: '#c0c0c0' }}>
+            Sales CRM Platform
+          </motion.p>
+        </motion.div>
 
-        {/* Login Card */}
-        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-gray-200">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Bem-vindo de volta</h2>
-            <p className="text-gray-600">Entre com as suas credenciais</p>
-          </div>
+        {/* Login Card with Ultra-Tech Design */}
+        <motion.div
+          variants={itemVariants}
+          className="glass-ultra rounded-2xl shadow-2xl p-8 border border-white/20"
+        >
+          <motion.div variants={itemVariants} className="mb-8">
+            <h2 className="text-2xl font-bold mb-2" style={{ color: '#000000' }}>
+              Bem-vindo de volta
+            </h2>
+            <p className="font-medium" style={{ color: '#7a7a7a' }}>
+              Entre com as suas credenciais
+            </p>
+          </motion.div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold mb-2 text-gray-700">Email</label>
+            <motion.div variants={itemVariants}>
+              <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: '#000000' }}>
+                Email
+              </label>
               <input
                 id="email"
                 type="email"
@@ -64,13 +153,28 @@ const Login = ({ onLogin }) => {
                 placeholder="seu@email.com"
                 required
                 data-testid="email-input"
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
-                style={{ fontSize: '15px' }}
+                className="w-full px-4 py-3 rounded-xl border-2 transition-all"
+                style={{
+                  fontSize: '15px',
+                  borderColor: '#e0e0e0',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  color: '#000000'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#FFD700';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(255, 215, 0, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e0e0e0';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
-            </div>
+            </motion.div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold mb-2 text-gray-700">Password</label>
+            <motion.div variants={itemVariants}>
+              <label htmlFor="password" className="block text-sm font-semibold mb-2" style={{ color: '#000000' }}>
+                Password
+              </label>
               <div className="relative">
                 <input
                   id="password"
@@ -80,28 +184,53 @@ const Login = ({ onLogin }) => {
                   placeholder="••••••••"
                   required
                   data-testid="password-input"
-                  className="w-full px-4 py-3 pr-12 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
-                  style={{ fontSize: '15px' }}
+                  className="w-full px-4 py-3 pr-12 rounded-xl border-2 transition-all"
+                  style={{
+                    fontSize: '15px',
+                    borderColor: '#e0e0e0',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    color: '#000000'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#FFD700';
+                    e.target.style.boxShadow = '0 0 0 4px rgba(255, 215, 0, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e0e0e0';
+                    e.target.style.boxShadow = 'none';
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors p-1"
+                  style={{ color: '#7a7a7a' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#000000'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = '#7a7a7a'}
                   data-testid="toggle-password"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            <button
+            <motion.button
+              variants={itemVariants}
               type="submit"
               disabled={loading}
               data-testid="login-button"
-              className="w-full py-3.5 rounded-xl font-semibold text-white transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3.5 rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                background: loading ? '#94A3B8' : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                background: loading ? '#a0a0a0' : 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                color: '#000000',
+                boxShadow: loading ? 'none' : '0 4px 20px rgba(255, 215, 0, 0.4)'
               }}
+              whileHover={!loading ? {
+                scale: 1.02,
+                boxShadow: '0 6px 30px rgba(255, 215, 0, 0.6)',
+                transition: { duration: 0.2 }
+              } : {}}
+              whileTap={!loading ? { scale: 0.98 } : {}}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -112,18 +241,24 @@ const Login = ({ onLogin }) => {
                   A entrar...
                 </span>
               ) : "Entrar"}
-            </button>
+            </motion.button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-500">
+          <motion.div variants={itemVariants} className="mt-6 pt-6 border-t" style={{ borderColor: 'rgba(0, 0, 0, 0.1)' }}>
+            <p className="text-center text-sm font-medium" style={{ color: '#7a7a7a' }}>
               Problemas ao entrar? Contacte o administrador
             </p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        <p className="text-center text-gray-400 text-sm mt-8">© 2025 MP Grupo. Todos os direitos reservados.</p>
-      </div>
+        <motion.p
+          variants={itemVariants}
+          className="text-center text-sm mt-8 font-medium"
+          style={{ color: '#c0c0c0' }}
+        >
+          © 2025 MP Grupo. Todos os direitos reservados.
+        </motion.p>
+      </motion.div>
     </div>
   );
 };
