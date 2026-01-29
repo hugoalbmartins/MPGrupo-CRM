@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload, ShoppingCart, Euro, TrendingUp, CheckCircle } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { StatCard, StatCardGold, StatCardSkeleton } from "@/components/ui/stat-card";
 import { ResponsiveTable, TruncatedCell, TableSkeleton } from "@/components/ui/responsive-table";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
@@ -481,14 +480,6 @@ const Sales = ({ user }) => {
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
 
-  // Calculate stats from sales
-  const stats = {
-    totalSales: filteredSales.length,
-    totalCommission: filteredSales.reduce((sum, sale) => sum + (sale.manual_commission || sale.calculated_commission || 0), 0),
-    activeSales: filteredSales.filter(s => s.status === 'Ativo').length,
-    pendingSales: filteredSales.filter(s => s.status === 'Pendente' || s.status === 'Para registo').length,
-  };
-
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -838,12 +829,6 @@ const Sales = ({ user }) => {
             <div className="h-10 w-32 bg-navy-200 rounded animate-pulse" />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-        </div>
         <TableSkeleton rows={10} columns={8} />
       </div>
     );
@@ -1117,41 +1102,6 @@ const Sales = ({ user }) => {
           />
         </div>
       </motion.div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total de Vendas"
-          value={stats.totalSales}
-          subtitle={`${filteredSales.length} vendas`}
-          icon={ShoppingCart}
-          gradient="from-blue-600 to-blue-700"
-          delay={0}
-        />
-        <StatCardGold
-          title="Comissões Totais"
-          value={`€${stats.totalCommission.toFixed(2)}`}
-          subtitle="Total acumulado"
-          icon={Euro}
-          delay={0.1}
-        />
-        <StatCard
-          title="Vendas Ativas"
-          value={stats.activeSales}
-          subtitle="Contratos ativos"
-          icon={CheckCircle}
-          gradient="from-green-600 to-green-700"
-          delay={0.2}
-        />
-        <StatCard
-          title="Pendentes"
-          value={stats.pendingSales}
-          subtitle="Aguardando aprovação"
-          icon={TrendingUp}
-          gradient="from-orange-600 to-orange-700"
-          delay={0.3}
-        />
-      </div>
 
       {/* View Mode Selector */}
       <motion.div
