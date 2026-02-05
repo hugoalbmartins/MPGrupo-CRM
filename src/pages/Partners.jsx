@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Building2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,10 @@ const Partners = ({ user }) => {
   const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
   const [selectedPartnerForDocs, setSelectedPartnerForDocs] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [d2dLevels, setD2dLevels] = useState([]);
+  const [loadingLevels, setLoadingLevels] = useState(false);
   const [formData, setFormData] = useState({
-    partner_type: "D2D_1",
+    partner_type: "D2D",
     name: "",
     email: "",
     communication_emails: [""],
@@ -52,6 +54,12 @@ const Partners = ({ user }) => {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: operatorsWithD2D = [] } = useQuery({
+    queryKey: ['operators-d2d-configs'],
+    queryFn: () => partnersService.getOperatorsWithD2DConfigs(),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const managers = allUsers.filter(u => u.role === 'gestor_nv1' || u.role === 'gestor_nv2');
   const loading = partnersLoading;
 
@@ -68,10 +76,6 @@ const Partners = ({ user }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    console.log('=== PARTNER FORM SUBMIT START ===');
-    console.log('User:', user);
-    console.log('Form data:', formData);
 
     const nifValidation = validateNIF(formData.nif);
     if (!nifValidation.valid) {
@@ -90,11 +94,12 @@ const Partners = ({ user }) => {
 
       if (editingPartner) {
         await partnersService.update(editingPartner.id, submitData);
+        if (editingPartner.partner_type === 'D2D') {
+          await partnersService.saveD2DLevels(editingPartner.id, d2dLevels);
+        }
         toast.success("Parceiro atualizado com sucesso!");
       } else {
-        console.log('Calling partnersService.create...');
         const result = await partnersService.create(submitData);
-        console.log('Partner created successfully:', result);
         if (result.initial_password) {
           toast.success(
             `Parceiro criado! Password: ${result.initial_password}`,
@@ -115,7 +120,7 @@ const Partners = ({ user }) => {
     }
   };
 
-  const handleEdit = (partner) => {
+  const handleEdit = async (partner) => {
     setEditingPartner(partner);
     setFormData({
       partner_type: partner.partner_type,
@@ -134,6 +139,24 @@ const Partners = ({ user }) => {
       iban: partner.iban || "",
     });
     setDialogOpen(true);
+
+    if (partner.partner_type === 'D2D') {
+      setLoadingLevels(true);
+      try {
+        const levels = await partnersService.getD2DLevels(partner.id);
+        setD2dLevels(levels.map(l => ({
+          operator_id: l.operator_id,
+          d2d_level: l.d2d_level,
+        })));
+      } catch (err) {
+        console.error('Failed to load D2D levels:', err);
+        setD2dLevels([]);
+      } finally {
+        setLoadingLevels(false);
+      }
+    } else {
+      setD2dLevels([]);
+    }
   };
 
   const handleDelete = async (partnerId, partnerName) => {
@@ -167,12 +190,12 @@ const Partners = ({ user }) => {
     setDocumentsDialogOpen(true);
   };
 
-
   const resetForm = () => {
     setEditingPartner(null);
     setGeneratedPassword("");
+    setD2dLevels([]);
     setFormData({
-      partner_type: "D2D_1",
+      partner_type: "D2D",
       name: "",
       email: "",
       communication_emails: [""],
@@ -287,7 +310,6 @@ const Partners = ({ user }) => {
         return;
       }
 
-      // Preparar dados para Excel
       const excelData = partners.map(partner => ({
         'Código': partner.partner_code,
         'Tipo': partner.partner_type,
@@ -306,13 +328,11 @@ const Partners = ({ user }) => {
         'Data Criação': new Date(partner.created_at).toLocaleDateString('pt-PT')
       }));
 
-      // Criar workbook e worksheet
       const XLSX = await import('xlsx');
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Parceiros');
 
-      // Gerar e fazer download
       const fileName = `parceiros_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
@@ -355,9 +375,7 @@ const Partners = ({ user }) => {
                     <Select value={formData.partner_type} onValueChange={(v) => setFormData({...formData, partner_type: v})}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="D2D_1">D2D Nível 1</SelectItem>
-                        <SelectItem value="D2D_2">D2D Nível 2</SelectItem>
-                        <SelectItem value="D2D_3">D2D Nível 3</SelectItem>
+                        <SelectItem value="D2D">D2D</SelectItem>
                         <SelectItem value="REV">REV</SelectItem>
                         <SelectItem value="Rev+">Rev+</SelectItem>
                       </SelectContent>
@@ -458,6 +476,54 @@ const Partners = ({ user }) => {
                     <p className="text-xs text-gray-500 mt-1">Gestor que terá acesso às vendas deste parceiro</p>
                   </div>
                 </div>
+                {editingPartner && editingPartner.partner_type === 'D2D' && operatorsWithD2D.length > 0 && (
+                  <div className="border border-gold-300/50 rounded-xl p-4 bg-cream-50/50">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Building2 className="w-4 h-4 text-chocolate-600" />
+                      <Label className="text-sm font-semibold text-chocolate-800">Niveis de Comissao D2D por Operadora</Label>
+                    </div>
+                    {loadingLevels ? (
+                      <div className="flex items-center gap-2 py-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-gray-500">A carregar niveis...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {operatorsWithD2D.map(op => {
+                          const currentLevel = d2dLevels.find(l => l.operator_id === op.id);
+                          return (
+                            <div key={op.id} className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-chocolate-700 w-40 truncate">{op.name}</span>
+                              <Select
+                                value={currentLevel?.d2d_level || "none"}
+                                onValueChange={(v) => {
+                                  const newLevels = d2dLevels.filter(l => l.operator_id !== op.id);
+                                  if (v !== "none") {
+                                    newLevels.push({ operator_id: op.id, d2d_level: v });
+                                  }
+                                  setD2dLevels(newLevels);
+                                }}
+                              >
+                                <SelectTrigger className="flex-1 h-9">
+                                  <SelectValue placeholder="Sem nivel" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Sem nivel atribuido</SelectItem>
+                                  {op.levels.map(level => (
+                                    <SelectItem key={level} value={level}>{level}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          );
+                        })}
+                        <p className="text-xs text-gray-500 mt-2">
+                          Operadoras sem nivel atribuido nao permitem registar vendas para este parceiro
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <Label>Emails de Comunicação</Label>
@@ -469,7 +535,7 @@ const Partners = ({ user }) => {
                 </div>
                 {!editingPartner && formData.email && generatedPassword && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm font-semibold text-blue-900 mb-2">👤 Utilizador a criar:</p>
+                    <p className="text-sm font-semibold text-blue-900 mb-2">Utilizador a criar:</p>
                     <p className="text-sm text-blue-800"><strong>Email:</strong> {formData.email}</p>
                     <p className="text-sm text-blue-800"><strong>Password:</strong> <span className="font-mono">{generatedPassword}</span></p>
                     <p className="text-xs text-blue-600 mt-2">O utilizador será criado automaticamente com estes dados</p>
@@ -504,9 +570,7 @@ const Partners = ({ user }) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="D2D_1">D2D Nível 1</SelectItem>
-              <SelectItem value="D2D_2">D2D Nível 2</SelectItem>
-              <SelectItem value="D2D_3">D2D Nível 3</SelectItem>
+              <SelectItem value="D2D">D2D</SelectItem>
               <SelectItem value="REV">REV</SelectItem>
               <SelectItem value="Rev+">Rev+</SelectItem>
             </SelectContent>
@@ -553,11 +617,11 @@ const Partners = ({ user }) => {
                     <td>{partner.contact_person}</td>
                     {user?.role === 'admin' && (
                       <td className="text-center">
-                        <Button 
-                          onClick={() => openDocumentsDialog(partner)} 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-purple-600"
+                        <Button
+                          onClick={() => openDocumentsDialog(partner)}
+                          size="sm"
+                          variant="ghost"
+                          className="text-chocolate-600"
                         >
                           <File className="w-4 h-4 mr-1" />
                           {partner.documents?.length || 0}
@@ -584,7 +648,6 @@ const Partners = ({ user }) => {
         </div>
       </div>
 
-      {/* Documents Dialog */}
       <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -592,7 +655,6 @@ const Partners = ({ user }) => {
             <DialogDescription>Gerir documentos associados ao parceiro</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            {/* Upload Section */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <input
                 type="file"
@@ -613,7 +675,6 @@ const Partners = ({ user }) => {
               </label>
             </div>
 
-            {/* Documents List */}
             <div className="space-y-2">
               <h3 className="font-semibold text-navy-900">Documentos anexados:</h3>
               {(!selectedPartnerForDocs?.documents || selectedPartnerForDocs.documents.length === 0) ? (

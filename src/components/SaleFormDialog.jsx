@@ -698,7 +698,7 @@ const SaleFormDialog = ({
                     <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>
                       Documentos {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
-                        const isD2D = selectedPartner && ['D2D_1', 'D2D_2', 'D2D_3'].includes(selectedPartner.partner_type);
+                        const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
                         return isD2D ? '*' : '(opcional)';
                       })()}
                     </Label>
@@ -711,7 +711,7 @@ const SaleFormDialog = ({
                         onChange={(e) => setUploadFiles(Array.from(e.target.files))}
                         required={(() => {
                           const selectedPartner = partners.find(p => p.id === formData.partner_id);
-                          return selectedPartner && ['D2D_1', 'D2D_2', 'D2D_3'].includes(selectedPartner.partner_type);
+                          return selectedPartner && selectedPartner.partner_type === 'D2D';
                         })()}
                         className="block w-full text-sm file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-700 hover:file:bg-blue-500/20 transition-colors cursor-pointer"
                         style={{ color: '#595959' }}
@@ -724,7 +724,7 @@ const SaleFormDialog = ({
                       )}
                       {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
-                        const isD2D = selectedPartner && ['D2D_1', 'D2D_2', 'D2D_3'].includes(selectedPartner.partner_type);
+                        const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
                         return isD2D && (
                           <p className="text-xs mt-2 text-orange-600 font-medium">
                             ⚠️ Obrigatório para parceiros D2D - Aceita fotos da câmara

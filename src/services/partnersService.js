@@ -233,5 +233,70 @@ export const partnersService = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  async getD2DLevels(partnerId) {
+    const { data, error } = await supabase
+      .from('partner_d2d_operator_levels')
+      .select('*, operators(name)')
+      .eq('partner_id', partnerId);
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async saveD2DLevels(partnerId, levels) {
+    await supabase
+      .from('partner_d2d_operator_levels')
+      .delete()
+      .eq('partner_id', partnerId);
+
+    if (!levels || levels.length === 0) return [];
+
+    const rows = levels
+      .filter(l => l.d2d_level)
+      .map(l => ({
+        partner_id: partnerId,
+        operator_id: l.operator_id,
+        d2d_level: l.d2d_level,
+      }));
+
+    if (rows.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('partner_d2d_operator_levels')
+      .insert(rows)
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getOperatorsWithD2DConfigs() {
+    const { data, error } = await supabase
+      .from('commission_configurations')
+      .select('operator_id, d2d_level, operators(id, name)')
+      .eq('partner_type', 'D2D')
+      .not('d2d_level', 'is', null);
+
+    if (error) throw error;
+
+    const operatorMap = {};
+    (data || []).forEach(row => {
+      const opId = row.operator_id;
+      if (!operatorMap[opId]) {
+        operatorMap[opId] = {
+          id: opId,
+          name: row.operators?.name || opId,
+          levels: new Set(),
+        };
+      }
+      operatorMap[opId].levels.add(row.d2d_level);
+    });
+
+    return Object.values(operatorMap).map(op => ({
+      ...op,
+      levels: Array.from(op.levels).sort(),
+    }));
   }
 };

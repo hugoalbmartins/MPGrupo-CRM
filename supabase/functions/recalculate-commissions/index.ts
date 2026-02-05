@@ -34,7 +34,8 @@ async function calculateCommission(
   const clientType = saleData.customer_type || saleData.client_type || "particular";
   const scope = saleData.scope;
 
-  let partnerType = "D2D_1";
+  let partnerType = "D2D";
+  let d2dLevel: string | null = null;
   if (saleData.isAdminSale && saleData.isCommissioned) {
     partnerType = "REV";
   } else if (saleData.partner_id) {
@@ -44,7 +45,22 @@ async function calculateCommission(
       .eq("id", saleData.partner_id)
       .maybeSingle();
 
-    partnerType = partner?.partner_type || "D2D_1";
+    partnerType = partner?.partner_type || "D2D";
+
+    if (partnerType === "D2D") {
+      const { data: levelData } = await supabase
+        .from("partner_d2d_operator_levels")
+        .select("d2d_level")
+        .eq("partner_id", saleData.partner_id)
+        .eq("operator_id", operator.id)
+        .maybeSingle();
+
+      d2dLevel = levelData?.d2d_level || null;
+      if (!d2dLevel) {
+        console.warn(`D2D partner ${saleData.partner_id} has no level for operator ${operator.id}`);
+        return 0.0;
+      }
+    }
   }
 
   if (scope === "energia" && saleData.energy_sale_type === "dual") {
@@ -55,7 +71,8 @@ async function calculateCommission(
       "eletricidade",
       clientType,
       partnerType,
-      false
+      false,
+      d2dLevel
     );
 
     const gasResult = await calculateSingleEnergyCommission(
@@ -65,7 +82,8 @@ async function calculateCommission(
       "gas",
       clientType,
       partnerType,
-      false
+      false,
+      d2dLevel
     );
 
     let bonuses = 0;
@@ -105,6 +123,10 @@ async function calculateCommission(
     .eq("operator_id", operator.id)
     .eq("client_type", clientType)
     .eq("partner_type", partnerType);
+
+  if (partnerType === "D2D" && d2dLevel) {
+    query = query.eq("d2d_level", d2dLevel);
+  }
 
   if (activationType && !refidOperationType) {
     query = query.eq("activation_type", activationType);
@@ -206,15 +228,21 @@ async function calculateSingleEnergyCommission(
   energyType: string,
   clientType: string,
   partnerType: string,
-  includeBonuses = true
+  includeBonuses = true,
+  d2dLevel: string | null = null
 ): Promise<{ base: number; bonuses: number; config: CommissionConfig | null }> {
   let query = supabase
     .from("commission_configurations")
     .select("*")
     .eq("operator_id", operator.id)
     .eq("client_type", clientType)
-    .eq("partner_type", partnerType)
-    .order("min_sales", { ascending: false });
+    .eq("partner_type", partnerType);
+
+  if (partnerType === "D2D" && d2dLevel) {
+    query = query.eq("d2d_level", d2dLevel);
+  }
+
+  query = query.order("min_sales", { ascending: false });
 
   const { data: allCommissionConfigs, error } = await query;
 

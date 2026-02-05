@@ -971,7 +971,7 @@ const Dashboard = ({ user }) => {
           <TabsContent value="total" className="space-y-6">
             {user?.role === 'admin' && renderAdminDashboard()}
             {user?.role === 'gestor_nv1' && renderManagerLevel1Dashboard()}
-            {user?.role === 'partner' && (['D2D_1', 'D2D_2', 'D2D_3'].includes(stats?.partner_type) ? renderD2DPartnerDashboard() : renderPartnerDashboard())}
+            {user?.role === 'partner' && (stats?.partner_type === 'D2D' ? renderD2DPartnerDashboard() : renderPartnerDashboard())}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {statusData.length > 0 && (

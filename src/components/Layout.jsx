@@ -62,7 +62,7 @@ const Layout = ({ children, user, onLogout }) => {
     }
   };
 
-  const isD2DPartner = user?.role === 'partner' && ['D2D_1', 'D2D_2', 'D2D_3'].includes(partnerType);
+  const isD2DPartner = user?.role === 'partner' && partnerType === 'D2D';
 
   const menuItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"] },

@@ -132,14 +132,19 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   return `${namePrefix}${sequence}${month}${year}`;
 }
 
-async function calculateSingleEnergyCommission(operator, saleData, supabase, energyType, clientType, partnerType, includeBonuses = true) {
+async function calculateSingleEnergyCommission(operator, saleData, supabase, energyType, clientType, partnerType, includeBonuses = true, d2dLevel = null) {
   let query = supabase
     .from('commission_configurations')
     .select('*')
     .eq('operator_id', operator.id)
     .eq('client_type', clientType)
-    .eq('partner_type', partnerType)
-    .order('min_sales', { ascending: false });
+    .eq('partner_type', partnerType);
+
+  if (partnerType === 'D2D' && d2dLevel) {
+    query = query.eq('d2d_level', d2dLevel);
+  }
+
+  query = query.order('min_sales', { ascending: false });
 
   const { data: allCommissionConfigs, error } = await query;
 
@@ -219,7 +224,8 @@ export async function calculateCommission(operator, saleData, supabase) {
   const clientType = saleData.customer_type || saleData.client_type || 'particular';
   const scope = saleData.scope;
 
-  let partnerType = 'D2D_1';
+  let partnerType = 'D2D';
+  let d2dLevel = null;
   if (saleData.isAdminSale && saleData.isCommissioned) {
     partnerType = 'REV';
   } else if (saleData.partner_id) {
@@ -229,7 +235,22 @@ export async function calculateCommission(operator, saleData, supabase) {
       .eq('id', saleData.partner_id)
       .maybeSingle();
 
-    partnerType = partner?.partner_type || 'D2D_1';
+    partnerType = partner?.partner_type || 'D2D';
+
+    if (partnerType === 'D2D') {
+      const { data: levelData } = await supabase
+        .from('partner_d2d_operator_levels')
+        .select('d2d_level')
+        .eq('partner_id', saleData.partner_id)
+        .eq('operator_id', operator.id)
+        .maybeSingle();
+
+      d2dLevel = levelData?.d2d_level || null;
+      if (!d2dLevel) {
+        console.warn(`D2D partner ${saleData.partner_id} has no level for operator ${operator.id}`);
+        return 0.0;
+      }
+    }
   }
 
   if (scope === 'energia' && saleData.energy_sale_type === 'dual') {
@@ -240,7 +261,8 @@ export async function calculateCommission(operator, saleData, supabase) {
       'eletricidade',
       clientType,
       partnerType,
-      false
+      false,
+      d2dLevel
     );
 
     const gasResult = await calculateSingleEnergyCommission(
@@ -250,7 +272,8 @@ export async function calculateCommission(operator, saleData, supabase) {
       'gas',
       clientType,
       partnerType,
-      false
+      false,
+      d2dLevel
     );
 
     let bonuses = 0;
@@ -291,6 +314,10 @@ export async function calculateCommission(operator, saleData, supabase) {
     .eq('operator_id', operator.id)
     .eq('client_type', clientType)
     .eq('partner_type', partnerType);
+
+  if (partnerType === 'D2D' && d2dLevel) {
+    query = query.eq('d2d_level', d2dLevel);
+  }
 
   if (activationType && !refidOperationType) {
     query = query.eq('activation_type', activationType);
