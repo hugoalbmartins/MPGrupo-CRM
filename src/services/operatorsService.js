@@ -176,6 +176,7 @@ export const operatorsService = {
         monthly_value_max: config.monthly_value_max || 0,
         refid_operation_type: hasRefid ? (config.refid_operation_type || 'both') : null,
         activation_type: hasNIorMC ? (config.activation_type || null) : null,
+        d2d_level: config.partner_type === 'D2D' ? (config.d2d_level || 'Nv1') : null,
         created_by: user?.id,
         updated_by: user?.id
       };

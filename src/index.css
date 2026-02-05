@@ -109,7 +109,7 @@
   }
 
   .nav-item {
-    @apply text-cream-100 hover:text-cream-50 hover:bg-white/10
+    @apply text-white/90 hover:text-white hover:bg-white/10
            transition-all duration-200 rounded-xl;
   }
 
@@ -420,17 +420,17 @@
   }
 
   .glass-sidebar {
-    background: linear-gradient(180deg, #7B3F00 0%, #5c3210 50%, #7B3F00 100%);
+    background: linear-gradient(180deg, #8B5E3C 0%, #6B4423 50%, #7A5233 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-right: 1px solid rgba(212, 175, 55, 0.2);
+    border-right: 1px solid rgba(212, 175, 55, 0.15);
   }
 
   .glass-top-bar {
-    background: linear-gradient(90deg, rgba(123, 63, 0, 0.95) 0%, rgba(92, 50, 16, 0.95) 100%);
+    background: linear-gradient(90deg, rgba(139, 94, 60, 0.97) 0%, rgba(107, 68, 35, 0.97) 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
   }
 
   .glass-card {
