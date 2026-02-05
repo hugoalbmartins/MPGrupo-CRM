@@ -223,7 +223,8 @@ const Layout = ({ children, user, onLogout }) => {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t border-gold-400/20 overflow-hidden glass-mobile-menu text-white"
+              className="border-t border-gold-400/20 overflow-hidden glass-mobile-menu"
+              style={{ color: '#ffffff' }}
             >
               <div className="p-4 space-y-2 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-premium">
                 {filteredMenuItems.map((item) => {
@@ -236,14 +237,15 @@ const Layout = ({ children, user, onLogout }) => {
                       onClick={() => setSidebarOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                         isActive
-                          ? "bg-gradient-to-r from-gold-400 to-gold-500 !text-chocolate-900 shadow-lg"
-                          : "!text-white hover:bg-white/10"
+                          ? "bg-gradient-to-r from-gold-400 to-gold-500 shadow-lg"
+                          : "hover:bg-white/10"
                       }`}
+                      style={{ color: isActive ? '#3D2914' : '#ffffff' }}
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span className="text-sm font-medium flex-1">{item.label}</span>
+                      <span className="text-sm font-semibold flex-1" style={{ color: 'inherit' }}>{item.label}</span>
                       {item.badge > 0 && (
-                        <span className="!text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg">
+                        <span className="text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center font-bold bg-gradient-to-r from-red-500 to-red-600 shadow-lg" style={{ color: '#ffffff' }}>
                           {item.badge > 99 ? '99+' : item.badge}
                         </span>
                       )}
@@ -255,17 +257,19 @@ const Layout = ({ children, user, onLogout }) => {
                   <Link
                     to="/profile"
                     onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl !text-white hover:bg-white/10 transition-all"
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all"
+                    style={{ color: '#ffffff' }}
                   >
                     <User className="w-5 h-5" />
-                    <span className="text-sm font-medium">Perfil</span>
+                    <span className="text-sm font-semibold" style={{ color: 'inherit' }}>Perfil</span>
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/20 transition-all"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/20 transition-all"
+                    style={{ color: '#fca5a5' }}
                   >
                     <LogOut className="w-5 h-5" />
-                    <span className="text-sm font-medium">Sair</span>
+                    <span className="text-sm font-semibold" style={{ color: 'inherit' }}>Sair</span>
                   </button>
                 </div>
               </div>
