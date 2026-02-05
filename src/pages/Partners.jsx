@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Building2 } from "lucide-react";
+import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Building2, ShoppingCart } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { usersService } from "../services/usersService";
 import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
 
 const Partners = ({ user }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortColumn, setSortColumn] = useState("name");
@@ -631,6 +633,15 @@ const Partners = ({ user }) => {
                     {user?.role === 'admin' && (
                       <td className="text-center">
                         <div className="flex gap-2 justify-center">
+                          <Button
+                            onClick={() => navigate('/sales', { state: { openNewSale: true, partnerId: partner.id, partnerName: partner.name } })}
+                            size="sm"
+                            variant="ghost"
+                            className="text-green-600 hover:bg-green-50"
+                            title="Registar nova venda"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </Button>
                           <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-blue-600">
                             Editar
                           </Button>

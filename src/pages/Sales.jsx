@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload } from "lucide-react";
@@ -24,6 +25,7 @@ import SaleFormDialog from "../components/SaleFormDialog";
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
 const Sales = ({ user }) => {
+  const location = useLocation();
   const [sales, setSales] = useState([]);
   const [partners, setPartners] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -104,6 +106,17 @@ const Sales = ({ user }) => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!loading && location.state?.openNewSale && partners.length > 0) {
+      const { partnerId } = location.state;
+      if (partnerId) {
+        setFormData(prev => ({ ...prev, partner_id: partnerId }));
+      }
+      setDialogOpen(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [loading, location.state, partners]);
 
   const fetchData = async () => {
     try {

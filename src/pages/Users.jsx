@@ -213,6 +213,7 @@ const Users = ({ user }) => {
       const matchesSearch =
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.user_code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         displayPosition.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = roleFilter === "all" || u.role === roleFilter;
       return matchesSearch && matchesRole;
@@ -221,6 +222,10 @@ const Users = ({ user }) => {
       let aValue, bValue;
 
       switch (sortColumn) {
+        case "user_code":
+          aValue = a.user_code || '';
+          bValue = b.user_code || '';
+          break;
         case "name":
           aValue = a.name;
           bValue = b.name;
@@ -429,6 +434,9 @@ const Users = ({ user }) => {
           <table>
             <thead>
               <tr>
+                <th onClick={() => handleSort("user_code")} className="cursor-pointer hover:bg-gray-50">
+                  Codigo{getSortIcon("user_code")}
+                </th>
                 <th onClick={() => handleSort("name")} className="cursor-pointer hover:bg-gray-50">
                   Nome{getSortIcon("name")}
                 </th>
@@ -447,13 +455,22 @@ const Users = ({ user }) => {
             <tbody>
               {filteredAndSortedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={user?.role === 'admin' ? 5 : 4} className="text-center py-8 text-gray-400">
+                  <td colSpan={user?.role === 'admin' ? 6 : 5} className="text-center py-8 text-gray-400">
                     Nenhum utilizador encontrado
                   </td>
                 </tr>
               ) : (
                 filteredAndSortedUsers.map((u) => (
                   <tr key={u.id}>
+                    <td>
+                      {u.user_code ? (
+                        <span className="font-mono text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                          {u.user_code}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </td>
                     <td>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">

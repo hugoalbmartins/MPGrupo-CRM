@@ -145,14 +145,14 @@ const Login = ({ onLogin }) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <motion.div variants={itemVariants}>
               <label htmlFor="emailOrCode" className="block text-sm font-semibold mb-2 text-chocolate-800">
-                Email ou Codigo de Parceiro
+                Email ou Codigo de Utilizador
               </label>
               <input
                 id="emailOrCode"
                 type="text"
                 value={emailOrCode}
                 onChange={(e) => setEmailOrCode(e.target.value)}
-                placeholder="seu@email.com ou CODIGO"
+                placeholder="seu@email.com ou D2D1015_1"
                 required
                 data-testid="email-input"
                 className="w-full px-4 py-3 rounded-xl border-2 transition-all focus:outline-none"
@@ -172,7 +172,7 @@ const Login = ({ onLogin }) => {
                 }}
               />
               <p className="text-xs mt-1.5 font-medium text-chocolate-500">
-                Pode usar o seu email ou codigo de parceiro para entrar
+                Pode usar o seu email ou codigo de utilizador para entrar
               </p>
             </motion.div>
 

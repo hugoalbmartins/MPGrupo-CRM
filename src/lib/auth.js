@@ -19,21 +19,33 @@ export const authService = {
     let emailToUse = emailOrCode;
 
     if (!emailOrCode.includes('@')) {
-      const { data: partner, error: partnerError } = await supabase
-        .from('partners')
-        .select('user_id, users!partners_user_id_fkey(email)')
-        .eq('partner_code', emailOrCode.toUpperCase())
+      const code = emailOrCode.toUpperCase();
+
+      const { data: userByCode } = await supabase
+        .from('users')
+        .select('email')
+        .eq('user_code', code)
         .maybeSingle();
 
-      if (partnerError || !partner) {
-        throw new Error('Código de parceiro inválido');
-      }
+      if (userByCode?.email) {
+        emailToUse = userByCode.email;
+      } else {
+        const { data: partner, error: partnerError } = await supabase
+          .from('partners')
+          .select('user_id, users!partners_user_id_fkey(email)')
+          .eq('partner_code', code)
+          .maybeSingle();
 
-      if (!partner.users?.email) {
-        throw new Error('Email do parceiro não encontrado');
-      }
+        if (partnerError || !partner) {
+          throw new Error('Codigo de utilizador ou parceiro invalido');
+        }
 
-      emailToUse = partner.users.email;
+        if (!partner.users?.email) {
+          throw new Error('Email do parceiro nao encontrado');
+        }
+
+        emailToUse = partner.users.email;
+      }
     }
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
