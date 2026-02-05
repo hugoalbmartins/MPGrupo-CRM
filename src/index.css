@@ -433,6 +433,13 @@
     border-bottom: 1px solid rgba(212, 175, 55, 0.2);
   }
 
+  .glass-mobile-menu {
+    background: linear-gradient(180deg, rgba(122, 82, 51, 0.98) 0%, rgba(107, 68, 35, 0.98) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    color: #ffffff;
+  }
+
   .glass-card {
     background: linear-gradient(135deg, rgba(255, 253, 248, 0.98) 0%, rgba(255, 249, 237, 0.95) 100%);
     backdrop-filter: blur(16px) saturate(180%);
