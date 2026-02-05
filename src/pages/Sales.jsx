@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload } from "lucide-react";
@@ -26,6 +26,7 @@ const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9
 
 const Sales = ({ user }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sales, setSales] = useState([]);
   const [partners, setPartners] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -291,7 +292,7 @@ const Sales = ({ user }) => {
         toast.success("Venda criada com sucesso!");
         setDialogOpen(false);
         resetForm();
-        fetchData();
+        navigate('/dashboard');
       } else {
         const createdSale = await salesService.create(submitData, uploadFiles);
 
@@ -304,7 +305,7 @@ const Sales = ({ user }) => {
         resetForm();
         setValidationWarnings([]);
         setPendingSubmit(false);
-        fetchData();
+        navigate('/dashboard');
       }
     } catch (error) {
       const errorMessage = error.message || "Erro ao criar venda";
