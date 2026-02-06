@@ -137,6 +137,8 @@ const OperatorValidations = ({ user }) => {
         updated: []
       };
 
+      const batchUpdates = [];
+
       for (const excelRow of excelData) {
         let matchedSale = null;
 
@@ -160,13 +162,15 @@ const OperatorValidations = ({ user }) => {
 
         if (matchedSale) {
           const updates = {
+            sale_id: matchedSale.id,
             status: 'Ativo',
             operator_validated: true,
             operator_validation_date: new Date().toISOString()
           };
 
-          const isDualEnergy = matchedSale.scope === 'energia' &&
-                              matchedSale.energy_sale_type === 'dual';
+          const isEnergy = matchedSale.scope === 'energia';
+          const isDualEnergy = isEnergy && matchedSale.energy_sale_type === 'dual';
+          const paymentDate = excelRow.date || new Date().toISOString().split('T')[0];
 
           if (isDualEnergy) {
             const hasCPE = excelRow.cpe &&
@@ -177,59 +181,61 @@ const OperatorValidations = ({ user }) => {
             if (hasCPE && !hasCUI) {
               updates.electricity_paid = excelRow.paidByOperator;
               if (excelRow.paidByOperator) {
-                updates.electricity_payment_date = excelRow.date || new Date().toISOString().split('T')[0];
+                updates.electricity_payment_date = paymentDate;
               }
               updates.is_partial_payment = true;
               results.partiallyMatched++;
             } else if (hasCUI && !hasCPE) {
               updates.gas_paid = excelRow.paidByOperator;
               if (excelRow.paidByOperator) {
-                updates.gas_payment_date = excelRow.date || new Date().toISOString().split('T')[0];
+                updates.gas_payment_date = paymentDate;
               }
               updates.is_partial_payment = true;
               results.partiallyMatched++;
-            } else if (hasCPE && hasCUI) {
+            } else {
               updates.electricity_paid = excelRow.paidByOperator;
               updates.gas_paid = excelRow.paidByOperator;
               if (excelRow.paidByOperator) {
-                const paymentDate = excelRow.date || new Date().toISOString().split('T')[0];
                 updates.electricity_payment_date = paymentDate;
                 updates.gas_payment_date = paymentDate;
-                updates.payment_date = paymentDate;
               }
               updates.paid_to_operator = excelRow.paidByOperator;
               updates.is_partial_payment = false;
               results.matched++;
             }
+          } else if (isEnergy && matchedSale.energy_sale_type === 'eletricidade') {
+            updates.electricity_paid = excelRow.paidByOperator;
+            updates.paid_to_operator = excelRow.paidByOperator;
+            if (excelRow.paidByOperator) {
+              updates.electricity_payment_date = paymentDate;
+              updates.payment_date = paymentDate;
+            }
+            results.matched++;
+          } else if (isEnergy && matchedSale.energy_sale_type === 'gas') {
+            updates.gas_paid = excelRow.paidByOperator;
+            updates.paid_to_operator = excelRow.paidByOperator;
+            if (excelRow.paidByOperator) {
+              updates.gas_payment_date = paymentDate;
+              updates.payment_date = paymentDate;
+            }
+            results.matched++;
           } else {
             updates.paid_to_operator = excelRow.paidByOperator;
             if (excelRow.paidByOperator) {
-              updates.payment_date = excelRow.date || new Date().toISOString().split('T')[0];
+              updates.payment_date = paymentDate;
             }
             results.matched++;
           }
 
-          const { data: updatedSale, error: updateError } = await supabase
-            .from('sales')
-            .update(updates)
-            .eq('id', matchedSale.id)
-            .select()
-            .maybeSingle();
-
-          if (updateError) {
-            console.error('Error updating sale:', updateError);
-          } else if (!updatedSale) {
-            console.error('Sale update returned no data - possible RLS issue for sale:', matchedSale.id);
-          } else {
-            results.updated.push({
-              saleCode: matchedSale.sale_code,
-              clientName: matchedSale.client_name,
-              cpe: excelRow.cpe,
-              cui: excelRow.cui,
-              req: excelRow.req,
-              paid: excelRow.paidByOperator
-            });
-          }
+          batchUpdates.push({
+            updates,
+            saleCode: matchedSale.sale_code,
+            clientName: matchedSale.client_name,
+            cpe: excelRow.cpe,
+            cui: excelRow.cui,
+            req: excelRow.req,
+            paid: excelRow.paidByOperator
+          });
         } else {
           results.notFound.push({
             lineNumber: excelRow.lineNumber,
@@ -240,13 +246,45 @@ const OperatorValidations = ({ user }) => {
         }
       }
 
+      if (batchUpdates.length > 0) {
+        const rpcPayload = batchUpdates.map(item => item.updates);
+
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('batch_validate_sales', { p_updates: rpcPayload });
+
+        if (rpcError) {
+          console.error('Batch validation RPC error:', rpcError);
+          toast.error('Erro ao atualizar vendas: ' + rpcError.message);
+        } else {
+          const updatedIds = rpcResult?.updated_ids || [];
+          const rpcErrors = rpcResult?.errors || [];
+
+          if (rpcErrors.length > 0) {
+            console.warn('Validation update warnings:', rpcErrors);
+          }
+
+          for (const item of batchUpdates) {
+            if (updatedIds.includes(item.updates.sale_id)) {
+              results.updated.push({
+                saleCode: item.saleCode,
+                clientName: item.clientName,
+                cpe: item.cpe,
+                cui: item.cui,
+                req: item.req,
+                paid: item.paid
+              });
+            }
+          }
+        }
+      }
+
       const { data: validationRecord, error: recordError } = await supabase
         .from('operator_validations')
         .insert({
           user_id: user.id,
           filename: file.name,
           records_processed: results.processed,
-          sales_updated: results.matched + results.partiallyMatched,
+          sales_updated: results.updated.length,
           partially_paid: results.partiallyMatched,
           not_found: results.notFound
         })
@@ -264,7 +302,7 @@ const OperatorValidations = ({ user }) => {
         await sendNotificationsToAdminsAndBO(results, file.name);
       }
 
-      toast.success(`Validacao concluida! ${results.matched + results.partiallyMatched} vendas atualizadas.`);
+      toast.success(`Validacao concluida! ${results.updated.length} vendas atualizadas.`);
 
       setFile(null);
       const fileInput = document.getElementById('excel-file-input');
@@ -408,7 +446,7 @@ const OperatorValidations = ({ user }) => {
             </div>
             <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
               <p className="text-sm text-dark-300">Vendas Atualizadas</p>
-              <p className="text-2xl font-bold text-green-400">{currentReport.matched}</p>
+              <p className="text-2xl font-bold text-green-400">{currentReport.updated.length}</p>
             </div>
             <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl">
               <p className="text-sm text-dark-300">Parcialmente Pagas</p>
