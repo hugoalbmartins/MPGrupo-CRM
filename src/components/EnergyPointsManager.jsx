@@ -118,7 +118,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
         <div className="flex items-center gap-3 mb-3">
           <Checkbox
             id="is-multipoint"
@@ -129,7 +129,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
             Venda Multi-Ponto
           </Label>
         </div>
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-dark-400">
           Ative esta opção se a venda incluir múltiplos CPE e/ou CUI (ex: condomínios, empresas com várias instalações).
         </p>
 
@@ -141,7 +141,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
               min="2"
               value={pointCount}
               onChange={(e) => handlePointCountChange(e.target.value)}
-              className="w-32 mt-1"
+              className="glass-input w-32 mt-1"
             />
           </div>
         )}
@@ -149,9 +149,9 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
 
       <div className="space-y-4">
         {localPoints.map((point, index) => (
-          <Card key={point.id || index} className="p-4 space-y-4">
+          <Card key={point.id || index} className="p-4 space-y-4 bg-dark-800 border-dark-600">
             <div className="flex justify-between items-center">
-              <h4 className="font-semibold text-gray-900">
+              <h4 className="font-semibold text-white">
                 Ponto {index + 1} {isMultipoint && localPoints.length > 1 && `de ${localPoints.length}`}
               </h4>
               {isMultipoint && localPoints.length > 1 && (
@@ -173,6 +173,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                   <div>
                     <Label>CPE {!needsCUI && '*'}</Label>
                     <Input
+                      className="glass-input"
                       value={point.point_code}
                       onChange={(e) => handlePointChange(index, 'point_code', e.target.value)}
                       placeholder="Código do Ponto de Entrega"
@@ -185,7 +186,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                       value={point.power_kva}
                       onValueChange={(v) => handlePointChange(index, 'power_kva', v)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="glass-input">
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -203,6 +204,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                   <div>
                     <Label>CUI {!needsCPE && '*'}</Label>
                     <Input
+                      className="glass-input"
                       value={needsCPE ? point.cui_code : point.point_code}
                       onChange={(e) => {
                         if (needsCPE) {
@@ -218,6 +220,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                   <div>
                     <Label>Escalão {!needsCPE && '*'}</Label>
                     <Input
+                      className="glass-input"
                       value={point.tier}
                       onChange={(e) => handlePointChange(index, 'tier', e.target.value)}
                       placeholder="Ex: 1, 2, 3..."
@@ -235,7 +238,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                       value={point.activation_status}
                       onValueChange={(v) => handlePointChange(index, 'activation_status', v)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="glass-input">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -249,6 +252,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                   <div>
                     <Label>Data de Ativação</Label>
                     <Input
+                      className="glass-input"
                       type="date"
                       value={point.activation_date || ''}
                       onChange={(e) => handlePointChange(index, 'activation_date', e.target.value)}

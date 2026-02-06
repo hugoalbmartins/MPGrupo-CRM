@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Download, FileText, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { commissionReportsService } from "../services/commissionReportsService";
 
 const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
@@ -36,7 +35,7 @@ const CommissionReportsPartner = ({ user }) => {
       setAvailableYears(years.sort((a, b) => b - a));
     } catch (error) {
       console.error("Erro ao carregar autos:", error);
-      toast.error("Erro ao carregar autos de comissão");
+      toast.error("Erro ao carregar autos de comissao");
     } finally {
       setLoading(false);
     }
@@ -82,22 +81,20 @@ const CommissionReportsPartner = ({ user }) => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-navy-900">Autos de Comissão</h1>
-          <p className="text-gray-600 mt-2">Consulte e faça download dos seus autos de comissão emitidos</p>
+          <h1 className="text-3xl font-bold text-white">Autos de Comissao</h1>
+          <p className="text-dark-300 mt-2">Consulte e faca download dos seus autos de comissao emitidos</p>
         </div>
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <FileText className="w-16 h-16 text-orange-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-navy-900 mb-2">
-                Configuração Pendente
-              </h3>
-              <p className="text-gray-600 max-w-md mx-auto">
-                O seu utilizador ainda não está associado a um parceiro no sistema. Por favor, contacte o administrador para concluir a configuração da sua conta.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-ultra p-12">
+          <div className="text-center">
+            <FileText className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Configuracao Pendente
+            </h3>
+            <p className="text-dark-300 max-w-md mx-auto">
+              O seu utilizador ainda nao esta associado a um parceiro no sistema. Por favor, contacte o administrador para concluir a configuracao da sua conta.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -106,14 +103,14 @@ const CommissionReportsPartner = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-navy-900">Autos de Comissão</h1>
-          <p className="text-gray-600 mt-2">Consulte e faça download dos seus autos de comissão emitidos</p>
+          <h1 className="text-3xl font-bold text-white">Autos de Comissao</h1>
+          <p className="text-dark-300 mt-2">Consulte e faca download dos seus autos de comissao emitidos</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-gray-600" />
+          <Calendar className="w-5 h-5 text-dark-400" />
           <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(parseInt(val))}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-32 glass-input">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -134,59 +131,53 @@ const CommissionReportsPartner = ({ user }) => {
       </div>
 
       {reports.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-navy-900 mb-2">
-                Nenhum auto disponível
-              </h3>
-              <p className="text-gray-600">
-                Não existem autos de comissão emitidos para o ano selecionado
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-ultra p-12">
+          <div className="text-center">
+            <FileText className="w-16 h-16 text-dark-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Nenhum auto disponivel
+            </h3>
+            <p className="text-dark-300">
+              Nao existem autos de comissao emitidos para o ano selecionado
+            </p>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {reports.map(report => (
-            <Card key={report.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-lg">
-                  <span>{MONTHS[report.month - 1]} {report.year}</span>
-                  <span className="text-sm font-normal text-gray-600">V{report.version}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Emitido em:</span>
-                    <span className="font-medium">{formatDate(report.created_at)}</span>
-                  </div>
-                  {report.emailed_at && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email enviado:</span>
-                      <span className="font-medium text-green-600">Sim</span>
-                    </div>
-                  )}
-                  {report.creator && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Emitido por:</span>
-                      <span className="font-medium">{report.creator.name}</span>
-                    </div>
-                  )}
-                </div>
+            <div key={report.id} className="glass-ultra p-6 hover:border-gold-400/30 transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">{MONTHS[report.month - 1]} {report.year}</h3>
+                <span className="text-sm text-dark-400">V{report.version}</span>
+              </div>
 
-                <Button
-                  onClick={() => handleDownload(report)}
-                  className="w-full"
-                  variant="default"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
-                </Button>
-              </CardContent>
-            </Card>
+              <div className="space-y-2 text-sm mb-4">
+                <div className="flex justify-between">
+                  <span className="text-dark-400">Emitido em:</span>
+                  <span className="font-medium text-dark-200">{formatDate(report.created_at)}</span>
+                </div>
+                {report.emailed_at && (
+                  <div className="flex justify-between">
+                    <span className="text-dark-400">Email enviado:</span>
+                    <span className="font-medium text-green-400">Sim</span>
+                  </div>
+                )}
+                {report.creator && (
+                  <div className="flex justify-between">
+                    <span className="text-dark-400">Emitido por:</span>
+                    <span className="font-medium text-dark-200">{report.creator.name}</span>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={() => handleDownload(report)}
+                className="btn-gold w-full"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
           ))}
         </div>
       )}

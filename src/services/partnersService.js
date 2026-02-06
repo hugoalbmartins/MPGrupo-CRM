@@ -170,6 +170,31 @@ export const partnersService = {
       }
 
       console.log('11. Partner created successfully:', partner.id);
+
+      const linkApiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-user`;
+      const linkResponse = await fetch(linkApiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          name: partnerData.name,
+          email: partnerData.email,
+          role: 'partner',
+          position: 'Parceiro',
+          partner_id: partner.id,
+        })
+      });
+
+      const linkResult = await linkResponse.json();
+      if (linkResult.success) {
+        console.log('12. User linked to partner, user_code:', linkResult.data?.user_code);
+      } else {
+        console.error('Error linking user to partner:', linkResult.error);
+      }
+
       return { ...partner, initial_password: userPassword };
     } catch (error) {
       console.error('Partner creation failed:', error);

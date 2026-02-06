@@ -192,11 +192,11 @@ const Alerts = ({ user }) => {
   if (loading) {
     return (
       <div className="space-y-6 p-6 animate-fade-in">
-        <div className="h-10 bg-gray-200 rounded-lg w-1/4 animate-pulse"></div>
+        <div className="h-10 bg-dark-700 rounded-lg w-1/4 animate-pulse"></div>
         <div className="glass-ultra p-6">
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse"></div>
+              <div key={i} className="h-24 bg-dark-800 rounded-lg animate-pulse"></div>
             ))}
           </div>
         </div>
@@ -207,7 +207,7 @@ const Alerts = ({ user }) => {
   return (
     <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Alertas</h1>
+        <h1 className="text-2xl font-bold text-white">Alertas</h1>
         <div className="flex items-center gap-4">
           <Button
             onClick={() => navigate('/alerts/archived')}
@@ -218,10 +218,10 @@ const Alerts = ({ user }) => {
           </Button>
           <div className="glass-ultra px-4 py-2 flex items-center gap-2">
             <Bell className="w-4 h-4 text-gold-ultra" />
-            <span className="text-sm font-bold" style={{ color: '#000000' }}>
+            <span className="text-sm font-bold text-white">
               {alerts.filter(a => isUnread(a)).length}
             </span>
-            <span className="text-sm" style={{ color: '#7a7a7a' }}>
+            <span className="text-sm text-dark-400">
               não lidos de {totalAlerts}
             </span>
           </div>
@@ -239,8 +239,8 @@ const Alerts = ({ user }) => {
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   alertsSuspended
-                    ? 'bg-red-100'
-                    : 'bg-green-100'
+                    ? 'bg-red-500/10'
+                    : 'bg-gold-400/10'
                 }`}>
                   {alertsSuspended ? (
                     <BellOff className="w-5 h-5 text-red-600" />
@@ -249,10 +249,10 @@ const Alerts = ({ user }) => {
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="global-alerts-suspension" className="text-sm font-bold cursor-pointer" style={{ color: '#000000' }}>
+                  <Label htmlFor="global-alerts-suspension" className="text-sm font-bold cursor-pointer text-white">
                     Suspensão Global de Alertas
                   </Label>
-                  <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>
+                  <p className="text-xs mt-1 text-dark-400">
                     {alertsSuspended
                       ? 'Nenhum alerta novo será criado no sistema'
                       : 'Os alertas estão a ser criados normalmente'
@@ -272,14 +272,14 @@ const Alerts = ({ user }) => {
           <div className="glass-ultra p-5 spring-transition" style={{ borderWidth: '2px', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
                   <Mail className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <Label htmlFor="email-alerts" className="text-sm font-bold cursor-pointer" style={{ color: '#000000' }}>
+                  <Label htmlFor="email-alerts" className="text-sm font-bold cursor-pointer text-white">
                     Receber Alertas por Email
                   </Label>
-                  <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>
+                  <p className="text-xs mt-1 text-dark-400">
                     Desative para receber alertas apenas na aplicação
                   </p>
                 </div>
@@ -314,7 +314,7 @@ const Alerts = ({ user }) => {
                 onCheckedChange={handleSelectAll}
                 id="select-all"
               />
-              <Label htmlFor="select-all" className="text-sm cursor-pointer">
+              <Label htmlFor="select-all" className="text-sm cursor-pointer text-dark-300">
                 Selecionar todos
               </Label>
             </div>
@@ -323,7 +323,7 @@ const Alerts = ({ user }) => {
 
         {selectedAlerts.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">{selectedAlerts.length} selecionado(s)</span>
+            <span className="text-sm text-dark-400">{selectedAlerts.length} selecionado(s)</span>
             <Button size="sm" onClick={handleMarkAsRead} className="gap-1">
               <Check className="w-4 h-4" />
               Marcar como Lido
@@ -341,7 +341,7 @@ const Alerts = ({ user }) => {
           <div className="w-20 h-20 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center mx-auto mb-4 animate-scale-in">
             <Bell className="w-10 h-10 text-white" />
           </div>
-          <p className="text-lg font-semibold" style={{ color: '#000000' }}>
+          <p className="text-lg font-semibold text-dark-400">
             {filter === 'all' ? 'Nenhum alerta' : filter === 'unread' ? 'Nenhum alerta não lido' : 'Nenhum alerta lido'}
           </p>
         </div>
@@ -355,12 +355,11 @@ const Alerts = ({ user }) => {
                 <div
                   key={alert.id}
                   className={`glass-ultra p-4 spring-transition ${
-                    unread ? 'border-gold-ultra' : 'border-gray-200'
-                  } ${isSelected ? 'ring-2 ring-gold-ultra shadow-gold-glow' : ''}`}
+                    unread ? 'border-gold-400/20 bg-gold-400/5' : 'border-dark-600 bg-dark-800'
+                  } ${isSelected ? 'ring-2 ring-gold-400/30 shadow-gold-glow' : ''}`}
                   style={{
                     animationDelay: `${index * 0.03}s`,
-                    borderWidth: unread ? '2px' : '1px',
-                    backgroundColor: unread ? 'rgba(212, 175, 55, 0.05)' : 'white'
+                    borderWidth: unread ? '2px' : '1px'
                   }}
                 >
                   <div className="flex items-start gap-4">
@@ -374,10 +373,10 @@ const Alerts = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className={`text-sm ${unread ? 'font-bold' : 'font-medium'}`} style={{ color: '#000000' }}>
+                          <p className={`text-sm ${unread ? 'font-bold' : 'font-medium'} text-dark-200`}>
                             {alert.message}
                           </p>
-                          <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>
+                          <p className="text-xs mt-1 text-dark-400">
                             {new Date(alert.created_at).toLocaleString('pt-PT')}
                           </p>
                         </div>
@@ -420,7 +419,7 @@ const Alerts = ({ user }) => {
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Anterior
               </Button>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-dark-400">
                 Página {currentPage} de {totalPages}
               </span>
               <Button
@@ -437,42 +436,41 @@ const Alerts = ({ user }) => {
         </>
       )}
 
-      {/* Sale View Dialog (Read-only) */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalhes da Venda - {selectedSale?.sale_code}</DialogTitle>
+            <DialogTitle className="text-white">Detalhes da Venda - {selectedSale?.sale_code}</DialogTitle>
           </DialogHeader>
           {selectedSale && (
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Código</label>
-                  <p className="text-navy-900">{selectedSale.sale_code}</p>
+                  <label className="text-sm font-semibold text-dark-400">Código</label>
+                  <p className="text-white">{selectedSale.sale_code}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Data</label>
-                  <p className="text-navy-900">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
+                  <label className="text-sm font-semibold text-dark-400">Data</label>
+                  <p className="text-white">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Âmbito</label>
-                  <p className="text-navy-900 capitalize">{selectedSale.scope}</p>
+                  <label className="text-sm font-semibold text-dark-400">Âmbito</label>
+                  <p className="text-white capitalize">{selectedSale.scope}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Tipo Cliente</label>
-                  <p className="text-navy-900 capitalize">{selectedSale.client_type}</p>
+                  <label className="text-sm font-semibold text-dark-400">Tipo Cliente</label>
+                  <p className="text-white capitalize">{selectedSale.client_type}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Nome Cliente</label>
-                  <p className="text-navy-900">{selectedSale.client_name}</p>
+                  <label className="text-sm font-semibold text-dark-400">Nome Cliente</label>
+                  <p className="text-white">{selectedSale.client_name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">NIF</label>
-                  <p className="text-navy-900">{selectedSale.client_nif}</p>
+                  <label className="text-sm font-semibold text-dark-400">NIF</label>
+                  <p className="text-white">{selectedSale.client_nif}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Status</label>
-                  <p className="text-navy-900">
+                  <label className="text-sm font-semibold text-dark-400">Status</label>
+                  <p className="text-white">
                     <span className={`status-badge status-${selectedSale.status.toLowerCase().replace(' ', '-')}`}>
                       {selectedSale.status}
                     </span>
@@ -480,7 +478,7 @@ const Alerts = ({ user }) => {
                 </div>
                 {selectedSale.commission && user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
                   <div>
-                    <label className="text-sm font-semibold text-gray-700">Comissão</label>
+                    <label className="text-sm font-semibold text-dark-400">Comissão</label>
                     <p className="text-green-600 font-semibold">€{selectedSale.commission.toFixed(2)}</p>
                   </div>
                 )}
@@ -488,24 +486,24 @@ const Alerts = ({ user }) => {
 
               {selectedSale.notes && selectedSale.notes.length > 0 && (
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-2">Notas</label>
+                  <label className="text-sm font-semibold text-dark-400 block mb-2">Notas</label>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {selectedSale.notes.map((note) => (
-                      <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div key={note.id} className="p-3 bg-dark-800 rounded-lg">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium text-sm">{note.author}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="font-medium text-sm text-white">{note.author}</span>
+                          <span className="text-xs text-dark-400">
                             {new Date(note.created_at).toLocaleString('pt-PT')}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700">{note.content}</p>
+                        <p className="text-sm text-dark-300">{note.content}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end pt-4 border-t">
+              <div className="flex justify-end pt-4 border-t border-dark-600">
                 <Button onClick={() => setViewDialogOpen(false)}>
                   Fechar
                 </Button>

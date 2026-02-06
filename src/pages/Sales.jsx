@@ -823,24 +823,24 @@ const Sales = ({ user }) => {
 
   const getStatusBadge = (status) => {
     const statusColors = {
-      'Para registo': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      'Pendente': 'bg-orange-100 text-orange-800 border-orange-300',
-      'Concluido': 'bg-green-100 text-green-800 border-green-300',
-      'Ativo': 'bg-blue-100 text-blue-800 border-blue-300',
-      'Cancelado': 'bg-red-100 text-red-800 border-red-300',
-      'Em proposta': 'bg-purple-100 text-purple-800 border-purple-300',
+      'Para registo': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+      'Pendente': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+      'Concluido': 'bg-green-500/10 text-green-400 border-green-500/20',
+      'Ativo': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      'Cancelado': 'bg-red-500/10 text-red-400 border-red-500/20',
+      'Em proposta': 'bg-dark-700 text-dark-300 border-dark-600',
     };
-    return statusColors[status] || 'bg-gray-100 text-gray-800 border-gray-300';
+    return statusColors[status] || 'bg-dark-700 text-dark-300 border-dark-600';
   };
 
   if (loading) {
     return (
       <div className="space-y-6 p-6 animate-fade-in">
         <div className="flex items-center justify-between">
-          <div className="h-10 w-48 bg-navy-200 rounded animate-pulse" />
+          <div className="h-10 w-48 bg-dark-700 rounded animate-pulse" />
           <div className="flex gap-3">
-            <div className="h-10 w-32 bg-navy-200 rounded animate-pulse" />
-            <div className="h-10 w-32 bg-navy-200 rounded animate-pulse" />
+            <div className="h-10 w-32 bg-dark-700 rounded animate-pulse" />
+            <div className="h-10 w-32 bg-dark-700 rounded animate-pulse" />
           </div>
         </div>
         <TableSkeleton rows={10} columns={8} />
@@ -864,12 +864,12 @@ const Sales = ({ user }) => {
   const renderRow = (sale) => (
     <>
       <td className="px-6 py-4">
-        <span className="font-semibold" style={{ color: '#000000' }}>
+        <span className="font-semibold">
           {sale.sale_code}
         </span>
       </td>
       <td className="px-6 py-4">
-        <span style={{ color: '#000000' }}>
+        <span>
           {new Date(sale.date).toLocaleDateString('pt-PT')}
         </span>
       </td>
@@ -877,7 +877,7 @@ const Sales = ({ user }) => {
         <TruncatedCell text={partners.find(p => p.id === sale.partner_id)?.name} />
       </td>
       <td className="px-6 py-4">
-        <span className="capitalize" style={{ color: '#000000' }}>{sale.scope}</span>
+        <span className="capitalize">{sale.scope}</span>
       </td>
       <td className="px-6 py-4">
         <TruncatedCell text={sale.client_name} />
@@ -892,7 +892,7 @@ const Sales = ({ user }) => {
       </td>
       {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
         <td className="px-6 py-4">
-          <span className="font-bold text-green-600">
+          <span className="font-bold text-green-400">
             {(() => {
               const commission = sale.manual_commission || sale.calculated_commission;
               return commission ? `€${parseFloat(commission).toFixed(2)}` : '-';
@@ -907,7 +907,7 @@ const Sales = ({ user }) => {
               onClick={() => openEditDialog(sale)}
               size="sm"
               variant="ghost"
-              className="text-blue-600 hover:bg-blue-50"
+              className="text-blue-400 hover:bg-blue-500/10"
             >
               Editar
             </Button>
@@ -919,18 +919,18 @@ const Sales = ({ user }) => {
               }}
               size="sm"
               variant="ghost"
-              className="text-blue-600 hover:bg-blue-50"
+              className="text-blue-400 hover:bg-blue-500/10"
             >
               Ver
             </Button>
           )}
           {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
-            <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-purple-600 hover:bg-purple-50">
+            <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-dark-300 hover:bg-dark-700">
               Notas ({sale.notes?.length || 0})
             </Button>
           )}
           {user?.role === 'admin' && (
-            <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
+            <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-400 hover:bg-red-500/10">
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
@@ -942,7 +942,7 @@ const Sales = ({ user }) => {
   const renderMobileCard = (sale) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="font-bold text-lg" style={{ color: '#000000' }}>
+        <span className="font-bold text-lg text-white">
           {sale.sale_code}
         </span>
         <Badge className={getStatusBadge(sale.status)}>
@@ -951,12 +951,12 @@ const Sales = ({ user }) => {
       </div>
       <div className="space-y-1 text-sm">
         <div className="flex justify-between">
-          <span style={{ color: '#595959' }}>Cliente:</span>
-          <span style={{ color: '#000000' }} className="font-semibold">{sale.client_name}</span>
+          <span className="text-dark-400">Cliente:</span>
+          <span className="text-white font-semibold">{sale.client_name}</span>
         </div>
         <div className="flex justify-between">
-          <span style={{ color: '#595959' }}>Parceiro:</span>
-          <span style={{ color: '#000000' }}>{partners.find(p => p.id === sale.partner_id)?.name}</span>
+          <span className="text-dark-400">Parceiro:</span>
+          <span className="text-white">{partners.find(p => p.id === sale.partner_id)?.name}</span>
         </div>
         <div className="flex justify-between">
           <span style={{ color: '#595959' }}>Operadora:</span>
@@ -1014,8 +1014,8 @@ const Sales = ({ user }) => {
         className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
       >
         <div>
-          <h1 className="text-4xl font-bold text-gradient-navy mb-2">Vendas</h1>
-          <p className="text-sm" style={{ color: '#7a7a7a' }}>
+          <h1 className="text-4xl font-bold text-white mb-2">Vendas</h1>
+          <p className="text-sm text-dark-400">
             Gerencie as vendas e acompanhe o desempenho
           </p>
         </div>

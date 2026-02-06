@@ -240,14 +240,14 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="border-b pb-4">
+      <DialogContent className="glass-ultra max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="border-b border-dark-600 pb-4">
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle className="text-2xl font-bold text-[#1F4E78]">
+              <DialogTitle className="text-2xl font-bold text-white">
                 Detalhes da Venda
               </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
+              <DialogDescription className="text-sm text-dark-400 mt-1">
                 Código: {sale?.sale_code}
               </DialogDescription>
             </div>
@@ -255,10 +255,10 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <Button
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="gap-2 bg-[#1F4E78] hover:bg-[#16395A] text-white"
+                className="gap-2 bg-gold-400 hover:bg-gold-500 text-dark-900"
               >
                 <Edit2 className="w-4 h-4" />
-                <span className="text-white">Editar</span>
+                <span className="text-dark-900">Editar</span>
               </Button>
             )}
           </div>
@@ -266,22 +266,22 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1F4E78] mx-auto"></div>
-            <p className="mt-4 text-gray-500">A carregar...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-400 mx-auto"></div>
+            <p className="mt-4 text-dark-400">A carregar...</p>
           </div>
         ) : sale ? (
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-gray-100 p-1 rounded-lg">
-              <TabsTrigger value="details" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
+            <TabsList className="grid w-full grid-cols-4 bg-dark-800 p-1 rounded-lg">
+              <TabsTrigger value="details" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
                 Detalhes
               </TabsTrigger>
-              <TabsTrigger value="notes" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
+              <TabsTrigger value="notes" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
                 Notas {sale.notes?.length > 0 && `(${sale.notes.length})`}
               </TabsTrigger>
-              <TabsTrigger value="attachments" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
+              <TabsTrigger value="attachments" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
                 Anexos {sale.attachments?.length > 0 && `(${sale.attachments.length})`}
               </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-[#1F4E78] data-[state=active]:text-white">
+              <TabsTrigger value="history" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
                 Histórico {auditLogs.length > 0 && `(${auditLogs.length})`}
               </TabsTrigger>
             </TabsList>
@@ -306,8 +306,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         value={editData.date}
                         max={new Date().toISOString().split('T')[0]}
                         onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                        className="glass-input"
                       />
-                      <p className="text-xs text-gray-500 mt-1">Data não pode ser futura</p>
+                      <p className="text-xs text-dark-400 mt-1">Data não pode ser futura</p>
                     </div>
 
                     <div>
@@ -316,7 +317,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         value={editData.status}
                         onValueChange={(value) => setEditData({ ...editData, status: value })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="glass-input">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -335,6 +336,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         value={editData.request_number}
                         onChange={(e) => setEditData({ ...editData, request_number: e.target.value })}
                         placeholder="REQ-XXXXX"
+                        className="glass-input"
                       />
                     </div>
 
@@ -348,6 +350,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             value={editData.manual_commission}
                             onChange={(e) => setEditData({ ...editData, manual_commission: e.target.value })}
                             placeholder="0.00"
+                            className="glass-input"
                           />
                         </div>
 
@@ -357,6 +360,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             type="date"
                             value={editData.payment_date}
                             onChange={(e) => setEditData({ ...editData, payment_date: e.target.value })}
+                            className="glass-input"
                           />
                         </div>
 
@@ -373,19 +377,19 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     )}
 
                     {(user?.role === 'admin' || user?.role === 'bo') && (
-                      <div className="col-span-2 pt-4 border-t">
+                      <div className="col-span-2 pt-4 border-t border-dark-600">
                         <Label className="text-base font-semibold mb-2 block">Validação pela Operadora</Label>
 
                         {sale?.operator_doc_file ? (
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                  <CheckCircle className="w-5 h-5 text-green-600" />
+                                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                  <CheckCircle className="w-5 h-5 text-green-400" />
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-green-900">Documento Carregado</p>
-                                  <p className="text-xs text-green-700">
+                                  <p className="font-semibold text-green-400">Documento Carregado</p>
+                                  <p className="text-xs text-green-400/70">
                                     {sale.operator_doc_uploaded_at && new Date(sale.operator_doc_uploaded_at).toLocaleString('pt-PT')}
                                   </p>
                                 </div>
@@ -413,15 +417,15 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               />
                               <label
                                 htmlFor="operator-doc-upload"
-                                className="flex-1 cursor-pointer bg-gray-50 border-2 border-dashed border-navy-200/60 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                                className="flex-1 cursor-pointer bg-dark-800 border-2 border-dashed border-dark-600 rounded-lg p-4 hover:bg-dark-700 transition-colors"
                               >
                                 <div className="flex items-center gap-3">
-                                  <FileText className="w-5 h-5 text-gray-400" />
+                                  <FileText className="w-5 h-5 text-dark-400" />
                                   <div>
-                                    <p className="text-sm font-medium text-gray-700">
+                                    <p className="text-sm font-medium text-dark-200">
                                       {operatorDoc ? operatorDoc.name : 'Clique para selecionar documento'}
                                     </p>
-                                    <p className="text-xs text-gray-500">PDF, JPG, PNG (máx 10MB)</p>
+                                    <p className="text-xs text-dark-400">PDF, JPG, PNG (máx 10MB)</p>
                                   </div>
                                 </div>
                               </label>
@@ -435,7 +439,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                                 {uploadingDoc ? 'A carregar...' : 'Carregar'}
                               </Button>
                             </div>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-dark-400">
                               📋 Carregue o auto ou documento de validação fornecido pela operadora
                             </p>
                           </div>
@@ -446,8 +450,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                   {user?.role === 'admin' && (
                     <>
-                      <div className="pt-4 border-t space-y-4">
-                        <h3 className="font-semibold text-lg">Dados Comerciais</h3>
+                      <div className="pt-4 border-t border-dark-600 space-y-4">
+                        <h3 className="font-semibold text-lg text-white">Dados Comerciais</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -456,7 +460,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               value={editData.partner_id}
                               onValueChange={(v) => setEditData({...editData, partner_id: v})}
                             >
-                              <SelectTrigger><SelectValue placeholder="Selecione parceiro" /></SelectTrigger>
+                              <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione parceiro" /></SelectTrigger>
                               <SelectContent>
                                 {partners.map((partner) => (
                                   <SelectItem key={partner.id} value={partner.id}>
@@ -473,7 +477,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               value={editData.operator_id}
                               onValueChange={(v) => setEditData({...editData, operator_id: v})}
                             >
-                              <SelectTrigger><SelectValue placeholder="Selecione operadora" /></SelectTrigger>
+                              <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione operadora" /></SelectTrigger>
                               <SelectContent>
                                 {operators.map((operator) => (
                                   <SelectItem key={operator.id} value={operator.id}>
@@ -493,12 +497,13 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             value={editData.monthly_value}
                             onChange={(e) => setEditData({...editData, monthly_value: e.target.value})}
                             placeholder="0.00"
+                            className="glass-input"
                           />
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t space-y-4">
-                        <h3 className="font-semibold text-lg">Dados do Cliente</h3>
+                      <div className="pt-4 border-t border-dark-600 space-y-4">
+                        <h3 className="font-semibold text-lg text-white">Dados do Cliente</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -507,6 +512,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               value={editData.client_name}
                               onChange={(e) => setEditData({...editData, client_name: e.target.value})}
                               placeholder="Nome completo"
+                              className="glass-input"
                             />
                           </div>
 
@@ -516,6 +522,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               value={editData.client_nif}
                               onChange={(e) => setEditData({...editData, client_nif: e.target.value})}
                               placeholder="000000000"
+                              className="glass-input"
                             />
                           </div>
                         </div>
@@ -527,6 +534,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               value={editData.client_contact}
                               onChange={(e) => setEditData({...editData, client_contact: e.target.value})}
                               placeholder="Telefone"
+                              className="glass-input"
                             />
                           </div>
 
@@ -537,6 +545,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               value={editData.client_email}
                               onChange={(e) => setEditData({...editData, client_email: e.target.value})}
                               placeholder="email@exemplo.com"
+                              className="glass-input"
                             />
                           </div>
                         </div>
@@ -547,6 +556,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             value={editData.client_iban}
                             onChange={(e) => setEditData({...editData, client_iban: e.target.value})}
                             placeholder="PT50 0000 0000 0000 0000 0000 0"
+                            className="glass-input"
                           />
                         </div>
 
@@ -575,8 +585,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t space-y-4">
-                        <h3 className="font-semibold text-lg">Moradas</h3>
+                      <div className="pt-4 border-t border-dark-600 space-y-4">
+                        <h3 className="font-semibold text-lg text-white">Moradas</h3>
                         <Alert>
                           <AlertTriangle className="w-4 h-4" />
                           <AlertDescription>
@@ -590,7 +600,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             <Input
                               value={editData.street}
                               disabled
-                              className="bg-gray-100"
+                              className="bg-dark-700 text-dark-400"
                             />
                           </div>
 
@@ -599,7 +609,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             <Input
                               value={editData.postal_code}
                               disabled
-                              className="bg-gray-100"
+                              className="bg-dark-700 text-dark-400"
                             />
                           </div>
                         </div>
@@ -609,7 +619,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           <Input
                             value={editData.locality}
                             disabled
-                            className="bg-gray-100"
+                            className="bg-dark-700 text-dark-400"
                           />
                         </div>
 
@@ -618,14 +628,14 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           <Input
                             value={editData.installation_address}
                             disabled
-                            className="bg-gray-100"
+                            className="bg-dark-700 text-dark-400"
                           />
                         </div>
                       </div>
                     </>
                   )}
 
-                  <div className="flex gap-2 justify-end pt-4 border-t">
+                  <div className="flex gap-2 justify-end pt-4 border-t border-dark-600">
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -668,7 +678,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-[#1F4E78] to-[#2C5F8D] rounded-lg p-5 text-white">
+                  <div className="bg-gradient-to-r from-dark-700 to-dark-600 rounded-lg p-5 text-white">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm opacity-90">Código</p>
@@ -682,7 +692,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                       </div>
                       <div>
                         <p className="text-sm opacity-90">Estado</p>
-                        <Badge className="mt-1 bg-white text-[#1F4E78] hover:bg-white">{sale.status}</Badge>
+                        <Badge className="mt-1 bg-gold-400 text-dark-900 hover:bg-gold-400">{sale.status}</Badge>
                       </div>
                       <div>
                         <p className="text-sm opacity-90">Âmbito</p>
@@ -691,76 +701,76 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     </div>
                   </div>
 
-                  <div className="glass-card p-5">
-                    <h3 className="font-bold text-lg text-[#1F4E78] mb-4 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-[#1F4E78] rounded"></div>
+                  <div className="glass-ultra p-5">
+                    <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
+                      <div className="w-1 h-6 bg-gold-400 rounded"></div>
                       Informação do Cliente
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
 
                       <div>
-                        <Label className="text-gray-500 text-xs uppercase">Nome</Label>
-                        <p className="font-semibold text-navy-900 mt-1">{sale.client_name}</p>
+                        <Label className="text-dark-400 text-xs uppercase">Nome</Label>
+                        <p className="font-semibold text-white mt-1">{sale.client_name}</p>
                       </div>
 
                       <div>
-                        <Label className="text-gray-500 text-xs uppercase">NIF</Label>
-                        <p className="font-semibold text-navy-900 mt-1">{sale.client_nif}</p>
+                        <Label className="text-dark-400 text-xs uppercase">NIF</Label>
+                        <p className="font-semibold text-white mt-1">{sale.client_nif}</p>
                       </div>
 
                       <div>
-                        <Label className="text-gray-500 text-xs uppercase">Tipo</Label>
-                        <p className="font-semibold text-navy-900 mt-1 capitalize">{sale.client_type}</p>
+                        <Label className="text-dark-400 text-xs uppercase">Tipo</Label>
+                        <p className="font-semibold text-white mt-1 capitalize">{sale.client_type}</p>
                       </div>
 
                       <div>
-                        <Label className="text-gray-500 text-xs uppercase">Contacto</Label>
-                        <p className="font-semibold text-navy-900 mt-1">{sale.client_contact}</p>
+                        <Label className="text-dark-400 text-xs uppercase">Contacto</Label>
+                        <p className="font-semibold text-white mt-1">{sale.client_contact}</p>
                       </div>
 
                       {sale.client_email && (
                         <div className="col-span-2">
-                          <Label className="text-gray-500 text-xs uppercase">Email</Label>
-                          <p className="font-semibold text-navy-900 mt-1">{sale.client_email}</p>
+                          <Label className="text-dark-400 text-xs uppercase">Email</Label>
+                          <p className="font-semibold text-white mt-1">{sale.client_email}</p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="glass-card p-5">
-                    <h3 className="font-bold text-lg text-[#1F4E78] mb-4 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-[#1F4E78] rounded"></div>
+                  <div className="glass-ultra p-5">
+                    <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
+                      <div className="w-1 h-6 bg-gold-400 rounded"></div>
                       Detalhes da Venda
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
 
                       <div>
-                        <Label className="text-gray-500 text-xs uppercase">Parceiro</Label>
-                        <p className="font-semibold text-navy-900 mt-1">{sale.partner_name}</p>
+                        <Label className="text-dark-400 text-xs uppercase">Parceiro</Label>
+                        <p className="font-semibold text-white mt-1">{sale.partner_name}</p>
                       </div>
 
                       <div>
-                        <Label className="text-gray-500 text-xs uppercase">Operador</Label>
-                        <p className="font-semibold text-navy-900 mt-1">{sale.operator_name}</p>
+                        <Label className="text-dark-400 text-xs uppercase">Operador</Label>
+                        <p className="font-semibold text-white mt-1">{sale.operator_name}</p>
                       </div>
 
                       {sale.request_number && (
                         <div>
-                          <Label className="text-gray-500 text-xs uppercase">Requisição</Label>
-                          <p className="font-semibold text-navy-900 mt-1">{sale.request_number}</p>
+                          <Label className="text-dark-400 text-xs uppercase">Requisição</Label>
+                          <p className="font-semibold text-white mt-1">{sale.request_number}</p>
                         </div>
                       )}
 
                       {sale.monthly_value && (
                         <div>
-                          <Label className="text-gray-500 text-xs uppercase">Valor Mensal</Label>
-                          <p className="font-semibold text-navy-900 mt-1">€{parseFloat(sale.monthly_value).toFixed(2)}</p>
+                          <Label className="text-dark-400 text-xs uppercase">Valor Mensal</Label>
+                          <p className="font-semibold text-white mt-1">€{parseFloat(sale.monthly_value).toFixed(2)}</p>
                         </div>
                       )}
 
                       {user?.role !== 'bo' && user?.role !== 'partner_commercial' && sale.calculated_commission && (
                         <div>
-                          <Label className="text-gray-500 text-xs uppercase">Comissão</Label>
+                          <Label className="text-dark-400 text-xs uppercase">Comissão</Label>
                           <p className="font-bold text-green-600 mt-1 text-lg">
                             €{parseFloat(sale.calculated_commission).toFixed(2)}
                           </p>
@@ -769,21 +779,21 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                       {sale.cpe && (
                         <div>
-                          <Label className="text-gray-500 text-xs uppercase">CPE</Label>
-                          <p className="font-semibold text-navy-900 mt-1">{sale.cpe}</p>
+                          <Label className="text-dark-400 text-xs uppercase">CPE</Label>
+                          <p className="font-semibold text-white mt-1">{sale.cpe}</p>
                         </div>
                       )}
 
                       {sale.cui && (
                         <div>
-                          <Label className="text-gray-500 text-xs uppercase">CUI</Label>
-                          <p className="font-semibold text-navy-900 mt-1">{sale.cui}</p>
+                          <Label className="text-dark-400 text-xs uppercase">CUI</Label>
+                          <p className="font-semibold text-white mt-1">{sale.cui}</p>
                         </div>
                       )}
 
                       {sale.paid_to_operator && (
-                        <div className="col-span-2 bg-green-50 border border-green-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 text-green-700">
+                        <div className="col-span-2 bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                          <div className="flex items-center gap-2 text-green-400">
                             <CheckCircle className="w-5 h-5" />
                             <span className="font-bold">Pago ao Operador</span>
                             {sale.payment_date && (
@@ -804,22 +814,22 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <div className="space-y-3">
                 {sale.notes && sale.notes.length > 0 ? (
                   sale.notes.map((note) => (
-                    <div key={note.id} className="p-4 bg-gray-50 rounded-lg border">
+                    <div key={note.id} className="p-4 bg-dark-800 rounded-lg border border-dark-600">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <span className="font-semibold text-sm">{note.author}</span>
                           <Badge className="ml-2 text-xs">{note.author_role}</Badge>
                         </div>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-dark-400">
                           {new Date(note.created_at).toLocaleString('pt-PT')}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-sm text-dark-200 whitespace-pre-wrap">{note.content}</p>
                       {note.attachments && note.attachments.length > 0 && (
-                        <div className="mt-3 space-y-1 border-t pt-2">
-                          <p className="text-xs text-gray-500 font-medium mb-1">Anexos:</p>
+                        <div className="mt-3 space-y-1 border-t border-dark-600 pt-2">
+                          <p className="text-xs text-dark-400 font-medium mb-1">Anexos:</p>
                           {note.attachments.map((attachment) => (
-                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-blue-600">
+                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-blue-400">
                               <Paperclip className="w-3 h-3" />
                               <button
                                 onClick={async () => {
@@ -853,20 +863,20 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-dark-400">
                     <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Nenhuma nota adicionada</p>
                   </div>
                 )}
               </div>
 
-              <div className="border-t pt-4">
+              <div className="border-t border-dark-600 pt-4">
                 <Label>Adicionar Nova Nota</Label>
                 <Textarea
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Escreva uma nota..."
-                  className="mt-2"
+                  className="glass-input mt-2"
                   rows={3}
                 />
                 <Button
@@ -883,13 +893,13 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <div className="space-y-3">
                 {sale.attachments && sale.attachments.length > 0 ? (
                   sale.attachments.map((attachment) => (
-                    <div key={attachment.id} className="p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors">
+                    <div key={attachment.id} className="p-4 bg-dark-800 rounded-lg border border-dark-600 hover:bg-dark-700 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Paperclip className="w-5 h-5 text-[#1F4E78]" />
+                          <Paperclip className="w-5 h-5 text-gold-400" />
                           <div>
                             <p className="font-medium text-sm">{attachment.filename}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-dark-400">
                               {new Date(attachment.uploaded_at).toLocaleString('pt-PT')}
                             </p>
                           </div>
@@ -929,7 +939,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-dark-400">
                     <Paperclip className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Nenhum anexo disponível</p>
                   </div>
@@ -940,7 +950,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
             <TabsContent value="history" className="space-y-3 mt-4">
               {auditLogs.length > 0 ? (
                 auditLogs.map((log) => (
-                  <div key={log.id} className="p-4 bg-gray-50 rounded-lg border">
+                  <div key={log.id} className="p-4 bg-dark-800 rounded-lg border border-dark-600">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
                         <Badge className={getActionTypeColor(log.action_type)}>
@@ -948,13 +958,13 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         </Badge>
                         <span className="text-sm font-medium">{log.user_name}</span>
                       </div>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-dark-400">
                         {new Date(log.created_at).toLocaleString('pt-PT')}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700">{log.description}</p>
+                    <p className="text-sm text-dark-200">{log.description}</p>
                     {log.changed_fields && log.changed_fields.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-600">
+                      <div className="mt-2 text-xs text-dark-400">
                         <span className="font-semibold">Campos alterados: </span>
                         {log.changed_fields.join(', ')}
                       </div>
@@ -962,7 +972,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-dark-400">
                   <History className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>Nenhum histórico disponível</p>
                 </div>
@@ -970,7 +980,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
             </TabsContent>
           </Tabs>
         ) : (
-          <div className="text-center py-8 text-gray-500">Venda não encontrada</div>
+          <div className="text-center py-8 text-dark-400">Venda não encontrada</div>
         )}
       </DialogContent>
     </Dialog>

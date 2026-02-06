@@ -54,20 +54,20 @@ const AlertsArchived = ({ user }) => {
   const getAlertIcon = (type) => {
     switch (type) {
       case 'new_sale':
-        return <AlertCircle className="w-5 h-5 text-blue-500" />;
+        return <AlertCircle className="w-5 h-5 text-blue-400" />;
       case 'status_change':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-green-400" />;
       case 'note_added':
-        return <MessageSquare className="w-5 h-5 text-purple-500" />;
+        return <MessageSquare className="w-5 h-5 text-cyan-400" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+        return <Bell className="w-5 h-5 text-dark-400" />;
     }
   };
 
   const isUnread = (alert) => !alert.read_by.includes(user?.id);
 
   if (loading) {
-    return <div className="text-center py-8">A carregar alertas arquivados...</div>;
+    return <div className="text-center py-8 text-dark-300">A carregar alertas arquivados...</div>;
   }
 
   return (
@@ -77,34 +77,34 @@ const AlertsArchived = ({ user }) => {
           <Button
             variant="ghost"
             onClick={() => navigate('/alerts')}
-            className="gap-2"
+            className="gap-2 text-dark-200 hover:text-white hover:bg-dark-700"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Button>
-          <h1 className="text-3xl font-bold text-navy-900">Alertas Arquivados</h1>
+          <h1 className="text-3xl font-bold text-white">Alertas Arquivados</h1>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-dark-300">
           <Bell className="w-4 h-4" />
           <span>{totalAlerts} alertas arquivados</span>
         </div>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <p className="text-sm text-amber-800">
-          <strong>Arquivamento automático:</strong> Os alertas são automaticamente arquivados após 60 dias da sua criação.
-          Os alertas arquivados permanecem acessíveis para consulta histórica.
+      <div className="bg-gold-400/5 border border-gold-400/20 rounded-xl p-4">
+        <p className="text-sm text-gold-400">
+          <strong>Arquivamento automatico:</strong> Os alertas sao automaticamente arquivados apos 60 dias da sua criacao.
+          Os alertas arquivados permanecem acessiveis para consulta historica.
         </p>
       </div>
 
       <div className="flex justify-between items-center gap-4 flex-wrap">
         <Select value={filter} onValueChange={(value) => { setFilter(value); setCurrentPage(1); }}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 glass-input">
             <SelectValue placeholder="Filtrar alertas" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os Alertas</SelectItem>
-            <SelectItem value="unread">Não Lidos</SelectItem>
+            <SelectItem value="unread">Nao Lidos</SelectItem>
             <SelectItem value="read">Lidos</SelectItem>
           </SelectContent>
         </Select>
@@ -112,9 +112,9 @@ const AlertsArchived = ({ user }) => {
 
       {alerts.length === 0 ? (
         <div className="glass-ultra p-12 text-center">
-          <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">
-            {filter === 'all' ? 'Nenhum alerta arquivado' : filter === 'unread' ? 'Nenhum alerta arquivado não lido' : 'Nenhum alerta arquivado lido'}
+          <Bell className="w-16 h-16 text-dark-500 mx-auto mb-4" />
+          <p className="text-dark-400 text-lg">
+            {filter === 'all' ? 'Nenhum alerta arquivado' : filter === 'unread' ? 'Nenhum alerta arquivado nao lido' : 'Nenhum alerta arquivado lido'}
           </p>
         </div>
       ) : (
@@ -125,7 +125,7 @@ const AlertsArchived = ({ user }) => {
               return (
                 <div
                   key={alert.id}
-                  className="glass-ultra p-4 transition-all glass-ultra-hover"
+                  className={`glass-ultra p-4 transition-all ${unread ? 'border-gold-400/20' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     <div className="mt-1">{getAlertIcon(alert.type)}</div>
@@ -133,15 +133,15 @@ const AlertsArchived = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className={`text-sm ${unread ? 'font-semibold text-navy-900' : 'text-gray-700'}`}>
+                          <p className={`text-sm ${unread ? 'font-semibold text-white' : 'text-dark-200'}`}>
                             {alert.message}
                           </p>
                           <div className="flex items-center gap-3 mt-1">
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-dark-400">
                               Criado: {new Date(alert.created_at).toLocaleString('pt-PT')}
                             </p>
                             {alert.archived_at && (
-                              <p className="text-xs text-amber-600">
+                              <p className="text-xs text-gold-400/70">
                                 Arquivado: {new Date(alert.archived_at).toLocaleString('pt-PT')}
                               </p>
                             )}
@@ -150,7 +150,7 @@ const AlertsArchived = ({ user }) => {
 
                         {unread && (
                           <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                            Não lido
+                            Nao lido
                           </span>
                         )}
                       </div>
@@ -159,7 +159,7 @@ const AlertsArchived = ({ user }) => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-blue-600 h-8 px-3"
+                          className="text-gold-400 h-8 px-3 hover:bg-dark-700"
                           onClick={() => handleViewSale(alert)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -176,7 +176,7 @@ const AlertsArchived = ({ user }) => {
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-4 mt-6">
               <Button
-                variant="outline"
+                className="btn-secondary"
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
@@ -184,11 +184,11 @@ const AlertsArchived = ({ user }) => {
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Anterior
               </Button>
-              <span className="text-sm text-gray-600">
-                Página {currentPage} de {totalPages}
+              <span className="text-sm text-dark-300">
+                Pagina {currentPage} de {totalPages}
               </span>
               <Button
-                variant="outline"
+                className="btn-secondary"
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
@@ -202,40 +202,40 @@ const AlertsArchived = ({ user }) => {
       )}
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalhes da Venda - {selectedSale?.sale_code}</DialogTitle>
+            <DialogTitle className="text-white">Detalhes da Venda - {selectedSale?.sale_code}</DialogTitle>
           </DialogHeader>
           {selectedSale && (
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Código</label>
-                  <p className="text-navy-900">{selectedSale.sale_code}</p>
+                  <label className="text-sm font-semibold text-dark-400">Codigo</label>
+                  <p className="text-white">{selectedSale.sale_code}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Data</label>
-                  <p className="text-navy-900">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
+                  <label className="text-sm font-semibold text-dark-400">Data</label>
+                  <p className="text-white">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Âmbito</label>
-                  <p className="text-navy-900 capitalize">{selectedSale.scope}</p>
+                  <label className="text-sm font-semibold text-dark-400">Ambito</label>
+                  <p className="text-white capitalize">{selectedSale.scope}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Tipo Cliente</label>
-                  <p className="text-navy-900 capitalize">{selectedSale.client_type}</p>
+                  <label className="text-sm font-semibold text-dark-400">Tipo Cliente</label>
+                  <p className="text-white capitalize">{selectedSale.client_type}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Nome Cliente</label>
-                  <p className="text-navy-900">{selectedSale.client_name}</p>
+                  <label className="text-sm font-semibold text-dark-400">Nome Cliente</label>
+                  <p className="text-white">{selectedSale.client_name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">NIF</label>
-                  <p className="text-navy-900">{selectedSale.client_nif}</p>
+                  <label className="text-sm font-semibold text-dark-400">NIF</label>
+                  <p className="text-white">{selectedSale.client_nif}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-700">Status</label>
-                  <p className="text-navy-900">
+                  <label className="text-sm font-semibold text-dark-400">Status</label>
+                  <p className="text-white">
                     <span className={`status-badge status-${selectedSale.status.toLowerCase().replace(' ', '-')}`}>
                       {selectedSale.status}
                     </span>
@@ -243,33 +243,33 @@ const AlertsArchived = ({ user }) => {
                 </div>
                 {selectedSale.commission && user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
                   <div>
-                    <label className="text-sm font-semibold text-gray-700">Comissão</label>
-                    <p className="text-green-600 font-semibold">€{selectedSale.commission.toFixed(2)}</p>
+                    <label className="text-sm font-semibold text-dark-400">Comissao</label>
+                    <p className="text-green-400 font-semibold">{selectedSale.commission.toFixed(2)}</p>
                   </div>
                 )}
               </div>
 
               {selectedSale.notes && selectedSale.notes.length > 0 && (
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-2">Notas</label>
+                  <label className="text-sm font-semibold text-dark-400 block mb-2">Notas</label>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {selectedSale.notes.map((note) => (
-                      <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
+                      <div key={note.id} className="p-3 bg-dark-800 border border-dark-600 rounded-lg">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium text-sm">{note.author}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="font-medium text-sm text-white">{note.author}</span>
+                          <span className="text-xs text-dark-400">
                             {new Date(note.created_at).toLocaleString('pt-PT')}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-700">{note.content}</p>
+                        <p className="text-sm text-dark-200">{note.content}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end pt-4 border-t">
-                <Button onClick={() => setViewDialogOpen(false)}>
+              <div className="flex justify-end pt-4 border-t border-dark-600">
+                <Button onClick={() => setViewDialogOpen(false)} className="btn-gold">
                   Fechar
                 </Button>
               </div>

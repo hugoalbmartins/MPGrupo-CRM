@@ -886,7 +886,7 @@ const CommissionReports = ({ user }) => {
   if (user?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center h-64 animate-fade-in">
-        <p className="text-gray-500">Acesso negado. Apenas administradores podem aceder a esta página.</p>
+        <p className="text-dark-400">Acesso negado. Apenas administradores podem aceder a esta página.</p>
       </div>
     );
   }
@@ -894,15 +894,15 @@ const CommissionReports = ({ user }) => {
   if ((reportsLoading || partnersLoading) && emittedReports.length === 0) {
     return (
       <div className="space-y-6 p-6 animate-fade-in">
-        <div className="h-10 bg-gray-200 rounded-lg w-1/3 animate-pulse"></div>
+        <div className="h-10 bg-dark-700 rounded-lg w-1/3 animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2].map(i => (
             <div key={i} className="glass-ultra p-6 h-96 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="h-6 bg-dark-700 rounded w-1/2 mb-4"></div>
               <div className="space-y-3">
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-4 bg-dark-700 rounded w-full"></div>
+                <div className="h-4 bg-dark-700 rounded w-3/4"></div>
+                <div className="h-4 bg-dark-700 rounded w-2/3"></div>
               </div>
             </div>
           ))}
@@ -915,27 +915,27 @@ const CommissionReports = ({ user }) => {
     <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex justify-between items-center animate-slide-up">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Autos de Comissões</h1>
-          <p className="font-medium mt-1 text-gray-600">Gere autos de comissões para parceiros (apenas vendas pagas)</p>
+          <h1 className="text-2xl font-bold text-white">Autos de Comissões</h1>
+          <p className="font-medium mt-1 text-dark-400">Gere autos de comissões para parceiros (apenas vendas pagas)</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="glass-ultra border-0 hover:scale-[1.01] transition-transform duration-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-900">
-              <FileDown className="w-5 h-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <FileDown className="w-5 h-5 text-blue-400" />
               Auto Individual
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-dark-400">
               Gere auto de comissões para um parceiro específico
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-gray-700">Selecionar Parceiro</Label>
+              <Label className="text-dark-200">Selecionar Parceiro</Label>
               <Select value={selectedPartner} onValueChange={setSelectedPartner}>
-                <SelectTrigger className="bg-white border-gray-300">
+                <SelectTrigger className="glass-input">
                   <SelectValue placeholder="Escolha um parceiro..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -949,15 +949,15 @@ const CommissionReports = ({ user }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-gray-700">
-                  Mês {checkingAvailability && <span className="text-xs text-gray-500">(verificando...)</span>}
+                <Label className="text-dark-200">
+                  Mês {checkingAvailability && <span className="text-xs text-dark-400">(verificando...)</span>}
                 </Label>
                 <Select
                   value={selectedMonth?.toString() || ""}
                   onValueChange={(v) => setSelectedMonth(parseInt(v))}
                   disabled={checkingAvailability || availableMonths.length === 0}
                 >
-                  <SelectTrigger className="bg-white border-gray-300">
+                  <SelectTrigger className="glass-input">
                     <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mês disponível" : "Selecione..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -971,13 +971,13 @@ const CommissionReports = ({ user }) => {
                   </SelectContent>
                 </Select>
                 {availableMonths.length === 0 && !checkingAvailability && (
-                  <p className="text-xs text-amber-600 mt-1">Autos só podem ser emitidos após o dia 22 do mês seguinte</p>
+                  <p className="text-xs text-gold-400 mt-1">Autos só podem ser emitidos após o dia 22 do mês seguinte</p>
                 )}
               </div>
               <div>
-                <Label className="text-gray-700">Ano</Label>
+                <Label className="text-dark-200">Ano</Label>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="bg-white border-gray-300">
+                  <SelectTrigger className="glass-input">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -995,7 +995,7 @@ const CommissionReports = ({ user }) => {
                 <Button
                   onClick={() => printCommissionReport(selectedPartner)}
                   disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 btn-gold"
                 >
                   {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   Pré-visualizar
@@ -1003,7 +1003,7 @@ const CommissionReports = ({ user }) => {
                 <Button
                   onClick={() => generateCommissionReport(selectedPartner)}
                   disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  className="flex-1 btn-gold"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Excel
@@ -1015,26 +1015,26 @@ const CommissionReports = ({ user }) => {
 
         <Card className="glass-ultra border-0 hover:scale-[1.01] transition-transform duration-200">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-900">
-              <FileDown className="w-5 h-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <FileDown className="w-5 h-5 text-green-400" />
               Autos de Todos os Parceiros
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-dark-400">
               Gere autos de comissões para todos os parceiros (um ficheiro com múltiplas abas)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-gray-700">
-                  Mês {checkingAvailability && <span className="text-xs text-gray-500">(verificando...)</span>}
+                <Label className="text-dark-200">
+                  Mês {checkingAvailability && <span className="text-xs text-dark-400">(verificando...)</span>}
                 </Label>
                 <Select
                   value={selectedMonth?.toString() || ""}
                   onValueChange={(v) => setSelectedMonth(parseInt(v))}
                   disabled={checkingAvailability || availableMonths.length === 0}
                 >
-                  <SelectTrigger className="bg-white border-gray-300">
+                  <SelectTrigger className="glass-input">
                     <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mês disponível" : "Selecione..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1048,13 +1048,13 @@ const CommissionReports = ({ user }) => {
                   </SelectContent>
                 </Select>
                 {availableMonths.length === 0 && !checkingAvailability && (
-                  <p className="text-xs text-amber-600 mt-1">Autos só podem ser emitidos após o dia 22 do mês seguinte</p>
+                  <p className="text-xs text-gold-400 mt-1">Autos só podem ser emitidos após o dia 22 do mês seguinte</p>
                 )}
               </div>
               <div>
-                <Label className="text-gray-700">Ano</Label>
+                <Label className="text-dark-200">Ano</Label>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="bg-white border-gray-300">
+                  <SelectTrigger className="glass-input">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1067,15 +1067,15 @@ const CommissionReports = ({ user }) => {
                 </Select>
               </div>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
+            <div className="bg-blue-500/10 border border-dark-600 rounded-lg p-4">
+              <p className="text-sm text-blue-400">
                 Será criado um ficheiro Excel com uma aba para cada parceiro que tenha vendas pagas no período selecionado.
               </p>
             </div>
             <Button
               onClick={() => generateCommissionReport(null)}
               disabled={!selectedMonth || loading || checkingAvailability}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              className="w-full btn-gold"
             >
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
               Gerar Todos os Autos
@@ -1087,14 +1087,14 @@ const CommissionReports = ({ user }) => {
       <Card className="glass-ultra border-0">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2 text-gray-900">
-              <FileText className="w-5 h-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <FileText className="w-5 h-5 text-blue-400" />
               Autos Emitidos
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-600" />
+              <Calendar className="w-4 h-4 text-dark-400" />
               <Select value={filterMonth?.toString() || "all"} onValueChange={(v) => setFilterMonth(v === "all" ? null : parseInt(v))}>
-                <SelectTrigger className="w-32 bg-white border-gray-300">
+                <SelectTrigger className="w-32 glass-input">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1107,7 +1107,7 @@ const CommissionReports = ({ user }) => {
                 </SelectContent>
               </Select>
               <Select value={filterYear.toString()} onValueChange={(v) => setFilterYear(parseInt(v))}>
-                <SelectTrigger className="w-28 bg-white border-gray-300">
+                <SelectTrigger className="w-28 glass-input">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1120,14 +1120,14 @@ const CommissionReports = ({ user }) => {
               </Select>
             </div>
           </div>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-dark-400">
             Lista de todos os autos registrados no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
           {emittedReports.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <div className="text-center py-8 text-dark-400">
+              <FileText className="w-12 h-12 text-dark-500 mx-auto mb-3" />
               <p>Nenhum auto emitido para o período selecionado</p>
             </div>
           ) : (
@@ -1137,33 +1137,33 @@ const CommissionReports = ({ user }) => {
                   key={report.id}
                   className={`flex items-center justify-between p-4 rounded-lg transition-all duration-200 ${
                     report.paid_validated_at
-                      ? 'bg-green-50 border-2 border-green-500'
-                      : 'bg-white border border-gray-200 hover:shadow-md'
+                      ? 'bg-green-500/10 border-2 border-green-500/20'
+                      : 'bg-dark-800 border border-dark-600 hover:shadow-md'
                   }`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-white">
                         {report.partner?.name || 'Parceiro Desconhecido'}
                       </span>
                       {report.paid_validated_at && (
-                        <Badge className="bg-green-600 text-white">
+                        <Badge className="bg-green-500/10 text-green-400">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Pago
                         </Badge>
                       )}
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">
+                    <div className="text-sm text-dark-400 mt-1">
                       {months.find(m => m.value === report.month)?.label} {report.year} - Versão {report.version}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-dark-400 mt-1">
                       Emitido em {new Date(report.created_at).toLocaleDateString('pt-PT')} por {report.creator?.name || 'Sistema'}
                       {report.emailed_at && (
-                        <span className="ml-2 text-green-600">• Email enviado</span>
+                        <span className="ml-2 text-green-400">• Email enviado</span>
                       )}
                     </div>
                     {report.paid_validated_at && (
-                      <div className="text-xs text-green-700 mt-1">
+                      <div className="text-xs text-green-400 mt-1">
                         Validado como pago em {new Date(report.paid_validated_at).toLocaleDateString('pt-PT')} por {report.validator?.name || 'Sistema'}
                       </div>
                     )}
@@ -1174,7 +1174,7 @@ const CommissionReports = ({ user }) => {
                       variant="outline"
                       onClick={() => handleDownloadReport(report)}
                       title="Download PDF"
-                      className="border-gray-300"
+                      className="border-dark-600 text-dark-200"
                     >
                       <Download className="w-4 h-4" />
                     </Button>
@@ -1183,7 +1183,7 @@ const CommissionReports = ({ user }) => {
                         size="sm"
                         onClick={() => handleValidatePayment(report.id)}
                         title="Validar como Pago"
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="btn-gold"
                       >
                         <CheckCircle className="w-4 h-4" />
                       </Button>
@@ -1207,20 +1207,20 @@ const CommissionReports = ({ user }) => {
 
       <Card className="glass-ultra border-0">
         <CardHeader>
-          <CardTitle className="text-gray-900">Informações Importantes</CardTitle>
+          <CardTitle className="text-white">Informações Importantes</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-gray-600">
-          <p><strong className="text-gray-900">Regras de Emissão:</strong></p>
+        <CardContent className="space-y-2 text-sm text-dark-400">
+          <p><strong className="text-white">Regras de Emissão:</strong></p>
           <p>• Autos só podem ser emitidos após o dia 22 do mês seguinte (ex: auto de Novembro só após 22 de Dezembro)</p>
           <p>• Apenas vendas com data de ativação no período selecionado e pagas pelo operador são incluídas</p>
           <p>• Vendas já incluídas em autos validados como pagos não serão duplicadas em novos autos do mesmo mês</p>
 
-          <p className="pt-2"><strong className="text-gray-900">Processo:</strong></p>
+          <p className="pt-2"><strong className="text-white">Processo:</strong></p>
           <p>• Selecione o mês e ano disponíveis para gerar o auto</p>
           <p>• Clique em "Pré-visualizar" para rever o auto antes de aprovar</p>
           <p>• No popup, clique em "Aprovar e Registrar Auto" para registar e enviar email ao parceiro</p>
 
-          <p className="pt-2"><strong className="text-gray-900">Validação de Pagamento:</strong></p>
+          <p className="pt-2"><strong className="text-white">Validação de Pagamento:</strong></p>
           <p>• Após receber o pagamento do parceiro, valide o auto clicando no botão verde</p>
           <p>• Autos validados ficam bloqueados e não podem ser eliminados ou editados</p>
           <p>• A listagem filtra automaticamente pelo último mês emitido</p>

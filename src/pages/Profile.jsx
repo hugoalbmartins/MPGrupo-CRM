@@ -58,57 +58,55 @@ const Profile = ({ user }) => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-navy-900">Meu Perfil</h1>
+      <h1 className="text-2xl font-bold text-white">Meu Perfil</h1>
 
-      {/* User Info Card */}
       <div className="glass-ultra p-8">
         <div className="flex items-start gap-6">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+          <div className="w-24 h-24 bg-dark-600 rounded-full flex items-center justify-center">
             <UserIcon className="w-12 h-12 text-white" />
           </div>
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-navy-900">{user?.name}</h2>
-            <p className="text-lg text-gray-600 mt-1">{user?.position}</p>
+            <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
+            <p className="text-lg text-dark-400 mt-1">{user?.position}</p>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="text-navy-900 font-medium">{user?.email}</p>
+                <p className="text-sm text-dark-400">Email</p>
+                <p className="text-white font-medium">{user?.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Função</p>
-                <p className="text-navy-900 font-medium">{getRoleLabel(user?.role)}</p>
+                <p className="text-sm text-dark-400">Função</p>
+                <p className="text-white font-medium">{getRoleLabel(user?.role)}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Change Password Card */}
       <div className="glass-ultra p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Lock className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+              <Lock className="w-5 h-5 text-gold-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-navy-900">Alterar Password</h3>
-              <p className="text-sm text-gray-600">Mantenha a sua conta segura</p>
+              <h3 className="text-lg font-semibold text-white">Alterar Password</h3>
+              <p className="text-sm text-dark-400">Mantenha a sua conta segura</p>
             </div>
           </div>
           <button
             onClick={() => setShowPasswordForm(!showPasswordForm)}
-            className="btn-primary"
+            className="btn-gold"
           >
             {showPasswordForm ? "Cancelar" : "Alterar Password"}
           </button>
         </div>
 
         {showPasswordForm && (
-          <div className="mt-6 border-t border-gray-200 pt-6">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="mt-6 border-t border-dark-600 pt-6">
+            <div className="bg-dark-800 border border-dark-600 rounded-lg p-4 mb-6">
               <div className="flex">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-yellow-800">
+                <AlertCircle className="w-5 h-5 text-gold-400 mr-2 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-gold-400">
                   <p className="font-semibold mb-1">Requisitos da password:</p>
                   <ul className="list-disc ml-4 space-y-1">
                     <li>Mínimo 8 caracteres</li>
@@ -122,19 +120,19 @@ const Profile = ({ user }) => {
 
             <form onSubmit={handleChangePassword} className="space-y-4 max-w-lg">
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Password Atual</label>
+                <label className="block text-sm font-medium mb-2 text-dark-200">Password Atual</label>
                 <div className="relative">
                   <input
                     type={showCurrent ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
-                    className="w-full pr-12"
+                    className="glass-input w-full pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
                   >
                     {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -142,19 +140,19 @@ const Profile = ({ user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Nova Password</label>
+                <label className="block text-sm font-medium mb-2 text-dark-200">Nova Password</label>
                 <div className="relative">
                   <input
                     type={showNew ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    className="w-full pr-12"
+                    className="glass-input w-full pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNew(!showNew)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
                   >
                     {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -162,19 +160,19 @@ const Profile = ({ user }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-700">Confirmar Nova Password</label>
+                <label className="block text-sm font-medium mb-2 text-dark-200">Confirmar Nova Password</label>
                 <div className="relative">
                   <input
                     type={showConfirm ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full pr-12"
+                    className="glass-input w-full pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
                   >
                     {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -184,7 +182,7 @@ const Profile = ({ user }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary disabled:opacity-50"
+                className="btn-gold disabled:opacity-50"
               >
                 {loading ? "A alterar..." : "Confirmar Alteração"}
               </button>

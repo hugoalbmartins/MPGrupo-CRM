@@ -275,14 +275,13 @@ const Operators = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Operadoras</h1>
+          <h1 className="text-2xl font-bold text-white">Operadoras</h1>
           {hiddenOperators.length > 0 && (
             <Button
               onClick={() => setHiddenDialogOpen(true)}
               variant="outline"
               size="sm"
-              style={{ color: '#595959' }}
-              className="hover:border-gold-400"
+              className="text-dark-300 hover:border-gold-400"
             >
               Ver Desativadas ({hiddenOperators.length})
             </Button>
@@ -291,19 +290,19 @@ const Operators = ({ user }) => {
         {user?.role === 'admin' && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Nova Operadora</Button>
+              <Button onClick={resetForm} className="btn-gold"><Plus className="w-4 h-4 mr-2" />Nova Operadora</Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle className="text-2xl">Nova Operadora</DialogTitle></DialogHeader>
+            <DialogContent className="glass-ultra">
+              <DialogHeader><DialogTitle className="text-2xl text-white">Nova Operadora</DialogTitle></DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div>
-                  <Label>Nome *</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
+                  <Label className="text-dark-200">Nome *</Label>
+                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="glass-input" />
                 </div>
                 <div>
-                  <Label>Âmbito *</Label>
+                  <Label className="text-dark-200">Âmbito *</Label>
                   <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: v === 'energia' ? 'eletricidade' : ''})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
                       <SelectItem value="energia">Energia</SelectItem>
@@ -314,7 +313,7 @@ const Operators = ({ user }) => {
                 {formData.scope === 'telecomunicacoes' && (
                   <>
                     <div>
-                      <Label>Tipos de Ativação Permitidos *</Label>
+                      <Label className="text-dark-200">Tipos de Ativação Permitidos *</Label>
                       <div className="mt-2 space-y-2">
                         {['M2', 'M3', 'M4'].map(type => (
                           <div key={type} className="flex items-center gap-2">
@@ -325,16 +324,16 @@ const Operators = ({ user }) => {
                               onChange={() => toggleActivationType(type)}
                               className="w-4 h-4"
                             />
-                            <Label htmlFor={`activation-${type}`} className="cursor-pointer font-normal">{type}</Label>
+                            <Label htmlFor={`activation-${type}`} className="cursor-pointer font-normal text-dark-300">{type}</Label>
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Selecione os tipos de ativação permitidos (M2, M3, M4)</p>
+                      <p className="text-xs text-dark-400 mt-1">Selecione os tipos de ativação permitidos (M2, M3, M4)</p>
                     </div>
                   </>
                 )}
                 <div>
-                  <Label>Tipos de Cliente Permitidos *</Label>
+                  <Label className="text-dark-200">Tipos de Cliente Permitidos *</Label>
                   <div className="mt-2 space-y-2">
                     {['particular', 'empresarial'].map(type => (
                       <div key={type} className="flex items-center gap-2">
@@ -345,16 +344,16 @@ const Operators = ({ user }) => {
                           onChange={() => toggleClientType(type)}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor={`client-${type}`} className="cursor-pointer font-normal capitalize">{type}</Label>
+                        <Label htmlFor={`client-${type}`} className="cursor-pointer font-normal capitalize text-dark-300">{type}</Label>
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Selecione pelo menos um tipo</p>
+                  <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo</p>
                 </div>
                 {formData.scope === 'energia' && (
                   <>
                     <div>
-                      <Label>Tipos de Energia Permitidos *</Label>
+                      <Label className="text-dark-200">Tipos de Energia Permitidos *</Label>
                       <div className="mt-2 space-y-2">
                         {['eletricidade', 'gas'].map(type => (
                           <div key={type} className="flex items-center gap-2">
@@ -365,25 +364,25 @@ const Operators = ({ user }) => {
                               onChange={() => toggleEnergyType(type)}
                               className="w-4 h-4"
                             />
-                            <Label htmlFor={`energy-${type}`} className="cursor-pointer font-normal capitalize">{type}</Label>
+                            <Label htmlFor={`energy-${type}`} className="cursor-pointer font-normal capitalize text-dark-300">{type}</Label>
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Selecione pelo menos um tipo. As comissões serão configuradas separadamente para cada tipo.</p>
+                      <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo. As comissões serão configuradas separadamente para cada tipo.</p>
                     </div>
                   </>
                 )}
                 {formData.scope === 'solar' && (
                   <div>
-                    <Label>Modo de Comissão *</Label>
+                    <Label className="text-dark-200">Modo de Comissão *</Label>
                     <Select value={formData.commission_mode} onValueChange={(v) => setFormData({...formData, commission_mode: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="tier">Por Patamares</SelectItem>
                         <SelectItem value="manual">Definida ao Contrato</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-dark-400 mt-1">
                       {formData.commission_mode === 'tier'
                         ? 'Comissões calculadas automaticamente por patamares'
                         : 'Comissão definida manualmente na edição de cada venda'}
@@ -391,8 +390,8 @@ const Operators = ({ user }) => {
                   </div>
                 )}
 
-                <div className="border-t pt-4 mt-4">
-                  <Label className="text-base font-semibold mb-3 block">Serviços Adicionais</Label>
+                <div className="border-t border-dark-600 pt-4 mt-4">
+                  <Label className="text-base font-semibold mb-3 block text-dark-200">Serviços Adicionais</Label>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <input
@@ -402,7 +401,7 @@ const Operators = ({ user }) => {
                         onChange={(e) => setFormData({...formData, pays_direct_debit: e.target.checked})}
                         className="w-4 h-4"
                       />
-                      <Label htmlFor="pays_direct_debit" className="cursor-pointer font-normal">
+                      <Label htmlFor="pays_direct_debit" className="cursor-pointer font-normal text-dark-300">
                         Paga adesão a Débito Direto
                       </Label>
                     </div>
@@ -414,19 +413,19 @@ const Operators = ({ user }) => {
                         onChange={(e) => setFormData({...formData, pays_electronic_invoice: e.target.checked})}
                         className="w-4 h-4"
                       />
-                      <Label htmlFor="pays_electronic_invoice" className="cursor-pointer font-normal">
+                      <Label htmlFor="pays_electronic_invoice" className="cursor-pointer font-normal text-dark-300">
                         Paga adesão a Fatura Eletrónica
                       </Label>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-dark-400 mt-2">
                     Os valores para estes serviços são definidos na configuração de patamares
                   </p>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
-                  <Button type="submit" className="btn-primary">Criar</Button>
+                  <Button type="submit" className="btn-gold">Criar</Button>
                 </div>
               </form>
             </DialogContent>
@@ -437,24 +436,24 @@ const Operators = ({ user }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {['telecomunicacoes', 'energia', 'solar'].map(scope => (
           <div key={scope} className="glass-ultra p-6 spring-transition">
-            <h2 className="text-xl font-semibold mb-4 capitalize" style={{ color: '#000000' }}>{scope}</h2>
+            <h2 className="text-xl font-semibold mb-4 capitalize text-white">{scope}</h2>
             <div className="space-y-2">
               {operators.filter(op => op.scope === scope).map(op => (
-                <div key={op.id} className="flex items-center justify-between p-3 rounded-lg spring-transition" style={{ background: 'rgba(248, 250, 252, 0.6)' }}>
+                <div key={op.id} className="flex items-center justify-between p-3 rounded-lg spring-transition bg-dark-800/60 border border-dark-600 rounded-xl">
                   <div>
-                    <span className="font-medium block" style={{ color: '#000000' }}>{op.name}</span>
+                    <span className="text-white font-semibold block">{op.name}</span>
                     {op.scope === 'energia' && op.energy_type && (
-                      <span className="text-xs block" style={{ color: '#7a7a7a' }}>
+                      <span className="text-xs block text-dark-400">
                         {op.energy_type === 'eletricidade' ? '⚡ Eletricidade' :
                          op.energy_type === 'gas' ? '🔥 Gás' :
                          '⚡🔥 Dual'}
                       </span>
                     )}
                     {op.commission_config && Object.keys(op.commission_config).length > 0 && (
-                      <span className="text-xs text-green-600 block">✓ Comissões configuradas</span>
+                      <span className="text-xs text-green-400 block">✓ Comissões configuradas</span>
                     )}
                     {op.documents && op.documents.length > 0 && (
-                      <span className="text-xs text-blue-600 block">📄 {op.documents.length} formulário(s)</span>
+                      <span className="text-xs text-blue-400 block">📄 {op.documents.length} formulário(s)</span>
                     )}
                   </div>
                   <div className="flex gap-2">
@@ -463,7 +462,7 @@ const Operators = ({ user }) => {
                         <Button onClick={() => openCommissionConfig(op)} size="sm" variant="ghost" title="Configurar Comissões">
                           <Settings className="w-4 h-4" />
                         </Button>
-                        <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-500 hover:text-red-700">
+                        <Button onClick={() => handleDelete(op.id, op.name)} size="sm" variant="ghost" title="Eliminar" className="text-red-400 hover:bg-red-500/10">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </>
@@ -486,49 +485,46 @@ const Operators = ({ user }) => {
         ))}
       </div>
 
-      {/* Upload Documents Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl glass-ultra">
           <DialogHeader>
-            <DialogTitle className="text-2xl">
+            <DialogTitle className="text-2xl text-white">
               Gerir Formulários - {selectedOperator?.name}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4">
-            {/* Upload Section */}
             <div>
-              <Label>Adicionar Novos Formulários (PDF)</Label>
+              <Label className="text-dark-200">Adicionar Novos Formulários (PDF)</Label>
               <Input
                 type="file"
                 accept=".pdf"
                 multiple
                 onChange={(e) => setUploadFiles(Array.from(e.target.files))}
-                className="mt-2"
+                className="mt-2 glass-input"
               />
               {uploadFiles.length > 0 && (
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-dark-400 mt-2">
                   {uploadFiles.length} ficheiro(s) selecionado(s)
                 </p>
               )}
               <Button
                 onClick={handleUpload}
                 disabled={uploading || uploadFiles.length === 0}
-                className="mt-3 btn-primary"
+                className="mt-3 btn-gold"
               >
                 {uploading ? "A enviar..." : "Enviar Ficheiros"}
               </Button>
             </div>
 
-            {/* Existing Documents */}
             <div>
-              <Label>Formulários Existentes</Label>
+              <Label className="text-dark-200">Formulários Existentes</Label>
               {selectedOperator?.documents && selectedOperator.documents.length > 0 ? (
                 <div className="space-y-2 mt-2">
                   {selectedOperator.documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg spring-transition" style={{ background: 'rgba(248, 250, 252, 0.6)' }}>
+                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg spring-transition bg-dark-800/60 border border-dark-600 rounded-xl">
                       <div className="flex items-center gap-2">
-                        <span className="text-blue-600">📄</span>
-                        <span className="font-medium" style={{ color: '#000000' }}>{doc.filename}</span>
+                        <span className="text-blue-400">📄</span>
+                        <span className="text-white font-semibold">{doc.filename}</span>
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -544,15 +540,16 @@ const Operators = ({ user }) => {
                           variant="ghost"
                           onClick={() => handleDeleteDocument(selectedOperator.id, doc.id)}
                           title="Eliminar"
+                          className="text-red-400 hover:bg-red-500/10"
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm mt-2" style={{ color: '#7a7a7a' }}>Nenhum formulário disponível</p>
+                <p className="text-sm mt-2 text-dark-400">Nenhum formulário disponível</p>
               )}
             </div>
           </div>
@@ -560,20 +557,20 @@ const Operators = ({ user }) => {
       </Dialog>
 
       <Dialog open={hiddenDialogOpen} onOpenChange={setHiddenDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-ultra">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Operadoras Desativadas</DialogTitle>
+            <DialogTitle className="text-2xl text-white">Operadoras Desativadas</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             {hiddenOperators.length === 0 ? (
-              <p className="text-center py-8" style={{ color: '#7a7a7a' }}>Nenhuma operadora desativada</p>
+              <p className="text-center py-8 text-dark-400">Nenhuma operadora desativada</p>
             ) : (
               <div className="space-y-3">
                 {hiddenOperators.map(op => (
-                  <div key={op.id} className="flex items-center justify-between p-4 border rounded-lg spring-transition" style={{ background: 'rgba(248, 250, 252, 0.6)', borderColor: 'rgba(212, 175, 55, 0.2)' }}>
+                  <div key={op.id} className="flex items-center justify-between p-4 rounded-lg spring-transition bg-dark-800/50 border border-dark-600 rounded-xl">
                     <div>
-                      <span className="font-medium block" style={{ color: '#000000' }}>{op.name}</span>
-                      <span className="text-sm capitalize" style={{ color: '#7a7a7a' }}>{op.scope}</span>
+                      <span className="text-white font-semibold block">{op.name}</span>
+                      <span className="text-sm capitalize text-dark-400">{op.scope}</span>
                     </div>
                     {user?.role === 'admin' && (
                       <div className="flex gap-2">
@@ -584,7 +581,7 @@ const Operators = ({ user }) => {
                           }}
                           size="sm"
                           variant="outline"
-                          className="text-green-600 hover:text-green-700"
+                          className="text-green-400 hover:bg-green-500/10"
                           title="Reativar"
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -597,7 +594,7 @@ const Operators = ({ user }) => {
                           }}
                           size="sm"
                           variant="outline"
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-400 hover:bg-red-500/10"
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -612,11 +609,10 @@ const Operators = ({ user }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Commission Configuration Dialog */}
       <Dialog open={commissionDialogOpen} onOpenChange={setCommissionDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto glass-ultra">
           <DialogHeader>
-            <DialogTitle className="text-2xl">
+            <DialogTitle className="text-2xl text-white">
               Configurar Comissões - {selectedOperator?.name}
             </DialogTitle>
           </DialogHeader>

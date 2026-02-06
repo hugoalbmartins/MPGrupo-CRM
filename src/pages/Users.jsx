@@ -148,13 +148,13 @@ const Users = ({ user }) => {
 
   const getRoleIcon = (role) => {
     switch (role) {
-      case 'admin': return <Shield className="w-5 h-5 text-blue-600" />;
-      case 'bo': return <Briefcase className="w-5 h-5 text-green-600" />;
-      case 'gestor_nv1': return <Briefcase className="w-5 h-5 text-cyan-600" />;
-      case 'gestor_nv2': return <Briefcase className="w-5 h-5 text-teal-600" />;
-      case 'partner': return <UserIcon className="w-5 h-5 text-purple-600" />;
-      case 'partner_commercial': return <UserIcon className="w-5 h-5 text-orange-600" />;
-      default: return <UserIcon className="w-5 h-5" />;
+      case 'admin': return <Shield className="w-5 h-5 text-blue-400" />;
+      case 'bo': return <Briefcase className="w-5 h-5 text-green-400" />;
+      case 'gestor_nv1': return <Briefcase className="w-5 h-5 text-cyan-400" />;
+      case 'gestor_nv2': return <Briefcase className="w-5 h-5 text-teal-400" />;
+      case 'partner': return <UserIcon className="w-5 h-5 text-purple-400" />;
+      case 'partner_commercial': return <UserIcon className="w-5 h-5 text-orange-400" />;
+      default: return <UserIcon className="w-5 h-5 text-dark-400" />;
     }
   };
 
@@ -162,8 +162,8 @@ const Users = ({ user }) => {
     switch (role) {
       case 'admin': return 'Administrador';
       case 'bo': return 'Back Office';
-      case 'gestor_nv1': return 'Gestor Nível 1';
-      case 'gestor_nv2': return 'Gestor Nível 2';
+      case 'gestor_nv1': return 'Gestor Nivel 1';
+      case 'gestor_nv2': return 'Gestor Nivel 2';
       case 'partner': return 'Parceiro';
       case 'partner_commercial': return 'Parceiro Comercial';
       default: return role;
@@ -200,11 +200,21 @@ const Users = ({ user }) => {
 
   const getSortIcon = (column) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="w-4 h-4 inline ml-1 text-gray-400" />;
+      return <ArrowUpDown className="w-4 h-4 inline ml-1 text-dark-400" />;
     }
     return sortDirection === "asc" ?
-      <ArrowUp className="w-4 h-4 inline ml-1 text-blue-600" /> :
-      <ArrowDown className="w-4 h-4 inline ml-1 text-blue-600" />;
+      <ArrowUp className="w-4 h-4 inline ml-1 text-blue-400" /> :
+      <ArrowDown className="w-4 h-4 inline ml-1 text-blue-400" />;
+  };
+
+  const getRoleBadgeClasses = (role) => {
+    switch (role) {
+      case 'admin': return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+      case 'bo': return 'bg-green-500/10 text-green-400 border border-green-500/20';
+      case 'partner': return 'bg-gold-400/10 text-gold-400 border border-gold-400/20';
+      case 'partner_commercial': return 'bg-orange-500/10 text-orange-400 border border-orange-500/20';
+      default: return 'bg-dark-700/80 text-dark-200 border border-dark-600';
+    }
   };
 
   const filteredAndSortedUsers = users
@@ -260,8 +270,8 @@ const Users = ({ user }) => {
     return (
       <div className="space-y-6 p-6">
         <div className="flex items-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-          <div className="h-8 bg-slate-200 rounded-lg w-48 animate-pulse"></div>
+          <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+          <div className="h-8 bg-dark-700 rounded-lg w-48 animate-pulse"></div>
         </div>
         <SkeletonTable rows={8} columns={6} />
       </div>
@@ -271,14 +281,14 @@ const Users = ({ user }) => {
   if (hasError) {
     return (
       <div className="space-y-6 p-6 animate-fade-in">
-        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Utilizadores</h1>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+        <h1 className="text-2xl font-bold text-white">Utilizadores</h1>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-400" />
           </div>
-          <h3 className="text-lg font-semibold text-red-900 mb-2">Erro ao carregar utilizadores</h3>
-          <p className="text-sm text-red-700 mb-4">
-            {usersError?.message || partnersError?.message || 'Não foi possível conectar ao servidor. Verifique sua conexão.'}
+          <h3 className="text-lg font-semibold text-red-400 mb-2">Erro ao carregar utilizadores</h3>
+          <p className="text-sm text-red-400 mb-4">
+            {usersError?.message || partnersError?.message || 'Nao foi possivel conectar ao servidor. Verifique sua conexao.'}
           </p>
           <Button onClick={() => { refetchUsers(); }} className="btn-gold">
             Tentar Novamente
@@ -291,47 +301,47 @@ const Users = ({ user }) => {
   return (
     <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold" style={{ color: '#000000' }}>Utilizadores</h1>
+        <h1 className="text-2xl font-bold text-white">Utilizadores</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { resetForm(); generatePassword(); }} className="btn-gold shadow-gold-glow spring-transition"><Plus className="w-4 h-4 mr-2" />Novo Utilizador</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl glass-ultra">
             <DialogHeader>
-              <DialogTitle className="text-2xl">
+              <DialogTitle className="text-2xl text-white">
                 {editMode ? (
-                  <span>Editar Utilizador: <span className="text-blue-600">{formData.name}</span></span>
+                  <span>Editar Utilizador: <span className="text-blue-400">{formData.name}</span></span>
                 ) : (
                   'Novo Utilizador'
                 )}
               </DialogTitle>
               {editMode && (
-                <p className="text-sm text-gray-600 mt-1">Como administrador, pode editar todos os dados incluindo a password</p>
+                <p className="text-sm text-dark-400 mt-1">Como administrador, pode editar todos os dados incluindo a password</p>
               )}
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Nome *</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
+                  <Label className="text-dark-200">Nome *</Label>
+                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="glass-input" />
                 </div>
                 <div>
-                  <Label>Email *</Label>
-                  <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
+                  <Label className="text-dark-200">Email *</Label>
+                  <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required className="glass-input" />
                 </div>
                 <div>
-                  <Label>Posição *</Label>
-                  <Input value={formData.position} onChange={(e) => setFormData({...formData, position: e.target.value})} required />
+                  <Label className="text-dark-200">Posicao *</Label>
+                  <Input value={formData.position} onChange={(e) => setFormData({...formData, position: e.target.value})} required className="glass-input" />
                 </div>
                 <div>
-                  <Label>Função *</Label>
+                  <Label className="text-dark-200">Funcao *</Label>
                   <Select value={formData.role} onValueChange={(v) => setFormData({...formData, role: v, partner_id: ""})}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Administrador</SelectItem>
                       <SelectItem value="bo">Back Office</SelectItem>
-                      <SelectItem value="gestor_nv1">Gestor Nível 1</SelectItem>
-                      <SelectItem value="gestor_nv2">Gestor Nível 2</SelectItem>
+                      <SelectItem value="gestor_nv1">Gestor Nivel 1</SelectItem>
+                      <SelectItem value="gestor_nv2">Gestor Nivel 2</SelectItem>
                       <SelectItem value="partner">Parceiro</SelectItem>
                       <SelectItem value="partner_commercial">Parceiro Comercial</SelectItem>
                     </SelectContent>
@@ -344,21 +354,21 @@ const Users = ({ user }) => {
                       id="is_commissioned"
                       checked={formData.is_commissioned}
                       onChange={(e) => setFormData({...formData, is_commissioned: e.target.checked})}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-400 border-dark-600 rounded focus:ring-blue-500 bg-dark-700"
                     />
-                    <Label htmlFor="is_commissioned" className="cursor-pointer">
+                    <Label htmlFor="is_commissioned" className="cursor-pointer text-dark-200">
                       Administrador Comissionado
-                      <span className="block text-xs text-gray-500 font-normal">
-                        Pode registar vendas e recebe comissões (valores REV)
+                      <span className="block text-xs text-dark-400 font-normal">
+                        Pode registar vendas e recebe comissoes (valores REV)
                       </span>
                     </Label>
                   </div>
                 )}
                 {(formData.role === 'partner' || formData.role === 'partner_commercial') && (
                   <div>
-                    <Label>Parceiro *</Label>
+                    <Label className="text-dark-200">Parceiro *</Label>
                     <Select value={formData.partner_id} onValueChange={(v) => setFormData({...formData, partner_id: v})}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                       </SelectContent>
@@ -366,30 +376,30 @@ const Users = ({ user }) => {
                   </div>
                 )}
                 <div className="col-span-2">
-                  <Label>Password {editMode ? '(deixar vazio para não alterar)' : '*'}</Label>
+                  <Label className="text-dark-200">Password {editMode ? '(deixar vazio para nao alterar)' : '*'}</Label>
                   <div className="flex gap-2">
                     <Input
                       type="text"
                       value={formData.password}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                       required={!editMode}
-                      className="flex-1"
+                      className="flex-1 glass-input"
                       placeholder={editMode ? "Deixe vazio para manter a atual" : ""}
                     />
                     <Button type="button" onClick={generatePassword} variant="outline">Gerar</Button>
                   </div>
                   {suggestedPassword && (
-                    <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md mt-2 border border-green-200">
+                    <p className="text-sm text-green-400 bg-dark-800 px-3 py-2 rounded-md mt-2 border border-dark-600">
                       Password gerada: <span className="font-mono font-semibold">{suggestedPassword}</span>
                     </p>
                   )}
                   {editMode && (
-                    <div className="text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-md mt-2 border border-blue-200">
-                      <strong>Administrador:</strong> Pode alterar a password de qualquer utilizador. O utilizador terá que mudar a password na próxima vez que fizer login.
+                    <div className="text-xs text-blue-400 bg-dark-800 px-3 py-2 rounded-md mt-2 border border-dark-600">
+                      <strong>Administrador:</strong> Pode alterar a password de qualquer utilizador. O utilizador tera que mudar a password na proxima vez que fizer login.
                     </div>
                   )}
                   {!editMode && (
-                    <p className="text-xs text-gray-500 mt-1">A password será fornecida ao utilizador. Deve conter pelo menos 8 caracteres, 1 maiúscula, 1 número e 1 carácter especial.</p>
+                    <p className="text-xs text-dark-400 mt-1">A password sera fornecida ao utilizador. Deve conter pelo menos 8 caracteres, 1 maiuscula, 1 numero e 1 caracter especial.</p>
                   )}
                 </div>
               </div>
@@ -405,25 +415,25 @@ const Users = ({ user }) => {
       <div className="glass-ultra p-6 spring-transition">
         <div className="mb-6 flex gap-4 flex-wrap">
           <div className="flex-1 min-w-[250px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: '#7a7a7a' }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
             <Input
               type="text"
-              placeholder="Pesquisar por nome, email ou posição..."
+              placeholder="Pesquisar por nome, email ou posicao..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-modern pl-10"
+              className="glass-input pl-10"
             />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="select-modern w-64">
+            <SelectTrigger className="glass-input w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as funções</SelectItem>
+              <SelectItem value="all">Todas as funcoes</SelectItem>
               <SelectItem value="admin">Administrador</SelectItem>
               <SelectItem value="bo">Back Office</SelectItem>
-              <SelectItem value="gestor_nv1">Gestor Nível 1</SelectItem>
-              <SelectItem value="gestor_nv2">Gestor Nível 2</SelectItem>
+              <SelectItem value="gestor_nv1">Gestor Nivel 1</SelectItem>
+              <SelectItem value="gestor_nv2">Gestor Nivel 2</SelectItem>
               <SelectItem value="partner">Parceiro</SelectItem>
               <SelectItem value="partner_commercial">Parceiro Comercial</SelectItem>
             </SelectContent>
@@ -434,28 +444,28 @@ const Users = ({ user }) => {
           <table>
             <thead>
               <tr>
-                <th onClick={() => handleSort("user_code")} className="cursor-pointer hover:bg-gray-50">
+                <th onClick={() => handleSort("user_code")} className="cursor-pointer">
                   Codigo{getSortIcon("user_code")}
                 </th>
-                <th onClick={() => handleSort("name")} className="cursor-pointer hover:bg-gray-50">
+                <th onClick={() => handleSort("name")} className="cursor-pointer">
                   Nome{getSortIcon("name")}
                 </th>
-                <th onClick={() => handleSort("email")} className="cursor-pointer hover:bg-gray-50">
+                <th onClick={() => handleSort("email")} className="cursor-pointer">
                   Email{getSortIcon("email")}
                 </th>
-                <th onClick={() => handleSort("position")} className="cursor-pointer hover:bg-gray-50">
-                  Posição{getSortIcon("position")}
+                <th onClick={() => handleSort("position")} className="cursor-pointer">
+                  Posicao{getSortIcon("position")}
                 </th>
-                <th onClick={() => handleSort("role")} className="cursor-pointer hover:bg-gray-50">
-                  Função{getSortIcon("role")}
+                <th onClick={() => handleSort("role")} className="cursor-pointer">
+                  Funcao{getSortIcon("role")}
                 </th>
-                {user?.role === 'admin' && <th className="text-center">Ações</th>}
+                {user?.role === 'admin' && <th className="text-center">Acoes</th>}
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={user?.role === 'admin' ? 6 : 5} className="text-center py-8 text-gray-400">
+                  <td colSpan={user?.role === 'admin' ? 6 : 5} className="text-center py-8 text-dark-400">
                     Nenhum utilizador encontrado
                   </td>
                 </tr>
@@ -464,28 +474,25 @@ const Users = ({ user }) => {
                   <tr key={u.id}>
                     <td>
                       {u.user_code ? (
-                        <span className="font-mono text-sm font-semibold text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                        <span className="font-mono text-sm font-semibold text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">
                           {u.user_code}
                         </span>
                       ) : (
-                        <span className="text-gray-400 text-sm">-</span>
+                        <span className="text-dark-400 text-sm">-</span>
                       )}
                     </td>
                     <td>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 bg-dark-600 rounded-full flex items-center justify-center flex-shrink-0">
                           {getRoleIcon(u.role)}
                         </div>
-                        <span className="font-medium">{u.name}</span>
+                        <span className="font-medium text-white">{u.name}</span>
                       </div>
                     </td>
-                    <td className="text-gray-600">{u.email}</td>
-                    <td className="text-gray-600">{getDisplayPosition(u)}</td>
+                    <td className="text-dark-300">{u.email}</td>
+                    <td className="text-dark-300">{getDisplayPosition(u)}</td>
                     <td>
-                      <span className="status-badge" style={{
-                        background: u.role === 'admin' ? '#EFF6FF' : u.role === 'bo' ? '#F0FDF4' : u.role === 'partner' ? '#FDF4FF' : '#F3F4F6',
-                        color: u.role === 'admin' ? '#1E40AF' : u.role === 'bo' ? '#166534' : u.role === 'partner' ? '#86198F' : '#374151'
-                      }}>
+                      <span className={`status-badge ${getRoleBadgeClasses(u.role)}`}>
                         {getRoleLabel(u.role)}
                       </span>
                     </td>
@@ -497,7 +504,7 @@ const Users = ({ user }) => {
                             variant="ghost"
                             onClick={() => openEditDialog(u)}
                             title="Editar utilizador"
-                            className="text-blue-600 hover:bg-blue-50"
+                            className="text-blue-400 hover:bg-blue-500/10"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -506,7 +513,7 @@ const Users = ({ user }) => {
                             variant="ghost"
                             onClick={() => openResetPasswordDialog(u)}
                             title="Resetar password"
-                            className="text-orange-600 hover:bg-orange-50"
+                            className="text-orange-400 hover:bg-orange-500/10"
                           >
                             <KeyRound className="w-4 h-4" />
                           </Button>
@@ -515,7 +522,7 @@ const Users = ({ user }) => {
                             variant="ghost"
                             onClick={() => openDeleteDialog(u)}
                             title="Eliminar utilizador"
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-red-400 hover:bg-red-500/10"
                             disabled={u.id === user?.id}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -532,21 +539,21 @@ const Users = ({ user }) => {
       </div>
 
       <AlertDialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-ultra">
           <AlertDialogHeader>
-            <AlertDialogTitle>Resetar Password</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Resetar Password</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <div>
-                Vai resetar a password do utilizador <strong>{userToReset?.name}</strong> ({userToReset?.email}).
+              <div className="text-dark-300">
+                Vai resetar a password do utilizador <strong className="text-white">{userToReset?.name}</strong> ({userToReset?.email}).
               </div>
-              <div className="bg-orange-50 border border-orange-200 rounded-md p-3">
-                <Label className="text-sm font-semibold text-orange-900">Nova Password</Label>
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-md p-3">
+                <Label className="text-sm font-semibold text-orange-400">Nova Password</Label>
                 <div className="flex gap-2 mt-2">
                   <Input
                     type="text"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="flex-1 font-mono"
+                    className="flex-1 font-mono glass-input"
                   />
                   <Button
                     type="button"
@@ -557,8 +564,8 @@ const Users = ({ user }) => {
                     Gerar
                   </Button>
                 </div>
-                <p className="text-xs text-orange-700 mt-2">
-                  <strong>Importante:</strong> Copie esta password e forneça-a ao utilizador. O utilizador terá que mudar a password no próximo login.
+                <p className="text-xs text-orange-400 mt-2">
+                  <strong>Importante:</strong> Copie esta password e forneca-a ao utilizador. O utilizador tera que mudar a password no proximo login.
                 </p>
               </div>
             </AlertDialogDescription>
@@ -567,7 +574,7 @@ const Users = ({ user }) => {
             <AlertDialogCancel onClick={() => { setUserToReset(null); setNewPassword(""); }}>
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetPassword} className="bg-orange-600 hover:bg-orange-700">
+            <AlertDialogAction onClick={handleResetPassword} className="bg-gold-400 text-dark-900 hover:bg-gold-500">
               Resetar Password
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -575,18 +582,18 @@ const Users = ({ user }) => {
       </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="glass-ultra">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Eliminação</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem a certeza que deseja eliminar o utilizador <strong>{userToDelete?.name}</strong> ({userToDelete?.email})?
+            <AlertDialogTitle className="text-white">Confirmar Eliminacao</AlertDialogTitle>
+            <AlertDialogDescription className="text-dark-300">
+              Tem a certeza que deseja eliminar o utilizador <strong className="text-white">{userToDelete?.name}</strong> ({userToDelete?.email})?
               <br /><br />
-              Esta ação não pode ser revertida.
+              Esta acao nao pode ser revertida.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -47,21 +47,21 @@ const ChangePassword = ({ onPasswordChanged, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-navy-50 to-navy-100">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-fade-in">
         <div className="glass-ultra p-8 spring-transition">
           <div className="flex flex-col items-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center mb-4 shadow-lg animate-scale-in">
+            <div className="w-16 h-16 bg-gradient-to-r from-gold-400 to-gold-500 rounded-full flex items-center justify-center mb-4 shadow-lg animate-scale-in">
               <Lock className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold" style={{ color: '#000000' }}>Alterar Password</h1>
-            <p className="mt-2 text-center text-sm font-medium" style={{ color: '#7a7a7a' }}>Por segurança, é necessário alterar a sua password</p>
+            <h1 className="text-2xl font-bold text-white">Alterar Password</h1>
+            <p className="mt-2 text-center text-sm font-medium text-dark-400">Por segurança, é necessário alterar a sua password</p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6 animate-slide-up">
+          <div className="bg-dark-800 border border-dark-600 rounded-lg p-4 mb-6 animate-slide-up">
             <div className="flex">
-              <AlertCircle className="w-5 h-5 text-yellow-700 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-sm" style={{ color: '#7a5d00' }}>
+              <AlertCircle className="w-5 h-5 text-gold-400 mr-2 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-gold-400">
                 <p className="font-bold mb-1">Requisitos:</p>
                 <ul className="list-disc ml-4 space-y-1">
                   <li>Mínimo 8 caracteres</li>
@@ -75,30 +75,30 @@ const ChangePassword = ({ onPasswordChanged, onLogout }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="current" className="block text-sm font-bold mb-2" style={{ color: '#000000' }}>Password Atual</label>
+              <label htmlFor="current" className="block text-sm font-bold mb-2 text-dark-200">Password Atual</label>
               <div className="relative">
-                <input id="current" type={showCurrent ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required className="input-modern w-full pr-12" />
-                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 spring-transition" style={{ color: '#7a7a7a' }}>
+                <input id="current" type={showCurrent ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required className="glass-input w-full pr-12" />
+                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white spring-transition">
                   {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="new" className="block text-sm font-bold mb-2" style={{ color: '#000000' }}>Nova Password</label>
+              <label htmlFor="new" className="block text-sm font-bold mb-2 text-dark-200">Nova Password</label>
               <div className="relative">
-                <input id="new" type={showNew ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="input-modern w-full pr-12" />
-                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 spring-transition" style={{ color: '#7a7a7a' }}>
+                <input id="new" type={showNew ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="glass-input w-full pr-12" />
+                <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white spring-transition">
                   {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirm" className="block text-sm font-bold mb-2" style={{ color: '#000000' }}>Confirmar Nova Password</label>
+              <label htmlFor="confirm" className="block text-sm font-bold mb-2 text-dark-200">Confirmar Nova Password</label>
               <div className="relative">
-                <input id="confirm" type={showConfirm ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="input-modern w-full pr-12" />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 spring-transition" style={{ color: '#7a7a7a' }}>
+                <input id="confirm" type={showConfirm ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="glass-input w-full pr-12" />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white spring-transition">
                   {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>

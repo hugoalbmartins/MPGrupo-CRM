@@ -156,17 +156,17 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   return (
     <div className="space-y-6">
-      <div className="glass-card">
-        <div className="border-b border-navy-100/40 bg-gradient-to-r from-navy-50 to-white p-6">
+      <div className="glass-ultra">
+        <div className="border-b border-dark-600 bg-dark-800 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gradient-navy">
+            <h2 className="text-xl font-bold text-white">
               Configuração de Comissões - {operator?.name}
             </h2>
             <Button
               type="button"
               onClick={handleSaveAll}
               size="sm"
-              className="bg-gradient-to-r from-navy-900 to-navy-800 hover:from-navy-800 hover:to-navy-700 text-white shadow-lg shadow-navy-900/30 hover:shadow-xl transition-all duration-300"
+              className="bg-gold-400 text-dark-900 hover:bg-gold-500 shadow-lg shadow-gold-400/30 hover:shadow-xl transition-all duration-300"
             >
               <Save className="w-4 h-4 mr-2" />
               Guardar Tudo
@@ -175,12 +175,12 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         </div>
         <div className="p-6 space-y-4">
           <Tabs value={activePartnerTab} onValueChange={setActivePartnerTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-navy-50 via-navy-100/50 to-navy-50 border border-navy-200/50 p-1">
+            <TabsList className="grid w-full grid-cols-3 bg-dark-800 border border-dark-600 p-1">
               {getPartnerTypes().map((pt) => (
                 <TabsTrigger
                   key={pt}
                   value={pt}
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-navy-900 data-[state=active]:to-navy-800 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 font-semibold"
+                  className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900 data-[state=active]:shadow-lg transition-all duration-300 font-semibold"
                 >
                   {pt}
                 </TabsTrigger>
@@ -192,12 +192,12 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                 <div className="flex items-center gap-3">
                   <Tabs value={activeD2DLevel} onValueChange={setActiveD2DLevel} className="flex-1">
                     <div className="flex items-center gap-2">
-                      <TabsList className="bg-chocolate-100/50 border border-chocolate-200/50 p-1">
+                      <TabsList className="bg-dark-800 border border-dark-600 p-1">
                         {d2dLevels.map((level) => (
                           <TabsTrigger
                             key={level}
                             value={level}
-                            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-chocolate-700 data-[state=active]:to-chocolate-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all duration-300 font-semibold text-sm px-4"
+                            className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900 data-[state=active]:shadow-md transition-all duration-300 font-semibold text-sm px-4"
                           >
                             <Layers className="w-3.5 h-3.5 mr-1.5" />
                             {level}
@@ -209,7 +209,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                         variant="outline"
                         size="sm"
                         onClick={addD2DLevel}
-                        className="border-dashed border-2 border-chocolate-300 hover:border-gold-400 hover:bg-gold-50/30 text-chocolate-700 font-semibold h-9"
+                        className="border-dashed border-2 border-dark-600 hover:border-gold-400 hover:bg-gold-400/10 text-dark-200 font-semibold h-9"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
                         Adicionar Nivel
@@ -222,7 +222,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                         <TabsContent key={level} value={level} className="mt-3">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-chocolate-800">{level}</span>
+                              <span className="text-sm font-semibold text-dark-200">{level}</span>
                               <span className="text-xs text-gray-500">({levelConfigs.length} regra{levelConfigs.length !== 1 ? 's' : ''})</span>
                             </div>
                             {d2dLevels.length > 1 && (
@@ -283,19 +283,19 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-6 border-t-2 border-navy-200/50">
+      <div className="flex justify-between items-center pt-6 border-t-2 border-dark-600">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="border-2 border-navy-200 hover:border-navy-300 hover:bg-navy-50 text-navy-900 font-semibold px-6"
+          className="border-2 border-dark-600 hover:border-dark-500 hover:bg-dark-700 text-white font-semibold px-6"
         >
           Cancelar
         </Button>
         <Button
           type="button"
           onClick={handleSaveAll}
-          className="bg-gradient-to-r from-navy-900 to-navy-800 hover:from-navy-800 hover:to-navy-700 text-white shadow-lg shadow-navy-900/40 font-semibold px-6 transition-all duration-300"
+          className="bg-gold-400 text-dark-900 hover:bg-gold-500 shadow-lg shadow-gold-400/30 font-semibold px-6 transition-all duration-300"
         >
           <Save className="w-4 h-4 mr-2" />
           Guardar Tudo

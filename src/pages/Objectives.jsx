@@ -30,7 +30,7 @@ const Objectives = ({ user }) => {
   });
 
   const months = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
@@ -224,34 +224,34 @@ const Objectives = ({ user }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-navy-900">Objetivos</h1>
-          <p className="text-gray-600 mt-1">Gerir objetivos por gestor</p>
+          <h1 className="text-3xl font-bold text-white">Objetivos</h1>
+          <p className="text-dark-300 mt-1">Gerir objetivos por gestor</p>
         </div>
         <Button onClick={() => {
           setObjectives({});
           setCreateDialogOpen(true);
-        }} className="btn-primary">
+        }} className="btn-gold">
           <Plus className="w-4 h-4 mr-2" />
           Novos Objetivos
         </Button>
       </div>
 
       <div className="glass-ultra p-6">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Target className="w-5 h-5 text-blue-600" />
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
+          <Target className="w-5 h-5 text-gold-400" />
           Objetivos por Gestor
         </h2>
 
         {groupedObjectives.length === 0 ? (
           <div className="text-center py-12">
-            <Target className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-navy-900 mb-2">
+            <Target className="w-16 h-16 text-dark-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">
               Nenhum objetivo definido
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-dark-300 mb-4">
               Comece por criar objetivos para os gestores
             </p>
-            <Button onClick={() => setCreateDialogOpen(true)}>
+            <Button onClick={() => setCreateDialogOpen(true)} className="btn-gold">
               <Plus className="w-4 h-4 mr-2" />
               Criar Objetivos
             </Button>
@@ -262,27 +262,28 @@ const Objectives = ({ user }) => {
               <thead>
                 <tr>
                   <th>Gestor</th>
-                  <th>Função</th>
-                  <th>Período</th>
-                  <th className="text-center">Nº Operadoras</th>
-                  <th className="text-center">Ações</th>
+                  <th>Funcao</th>
+                  <th>Periodo</th>
+                  <th className="text-center">Nr Operadoras</th>
+                  <th className="text-center">Acoes</th>
                 </tr>
               </thead>
               <tbody>
                 {groupedObjectives.map((group, idx) => (
                   <tr key={idx}>
-                    <td className="font-medium">{group.manager_name}</td>
+                    <td className="font-medium text-white">{group.manager_name}</td>
                     <td>
-                      <span className="status-badge" style={{
-                        background: group.manager_role === 'gestor_nv1' ? '#E0F2FE' : '#DBEAFE',
-                        color: group.manager_role === 'gestor_nv1' ? '#0369A1' : '#1E40AF'
-                      }}>
-                        {group.manager_role === 'gestor_nv1' ? 'Gestor Nível 1' : 'Gestor Nível 2'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        group.manager_role === 'gestor_nv1'
+                          ? 'bg-blue-500/10 text-blue-400'
+                          : 'bg-cyan-500/10 text-cyan-400'
+                      }`}>
+                        {group.manager_role === 'gestor_nv1' ? 'Gestor Nivel 1' : 'Gestor Nivel 2'}
                       </span>
                     </td>
-                    <td>{months[group.month - 1]} {group.year}</td>
+                    <td className="text-dark-200">{months[group.month - 1]} {group.year}</td>
                     <td className="text-center">
-                      <span className="font-semibold text-blue-600">
+                      <span className="font-semibold text-gold-400">
                         {group.objectives.length}
                       </span>
                     </td>
@@ -291,7 +292,7 @@ const Objectives = ({ user }) => {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleViewObjectives(group)}
-                        className="text-blue-600 hover:bg-blue-50"
+                        className="text-gold-400 hover:bg-dark-700"
                       >
                         <Eye className="w-4 h-4 mr-1" />
                         Ver/Editar
@@ -305,27 +306,26 @@ const Objectives = ({ user }) => {
         )}
       </div>
 
-      {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-ultra max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Criar Novos Objetivos</DialogTitle>
+            <DialogTitle className="text-2xl text-white">Criar Novos Objetivos</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label>Gestor *</Label>
+                <Label className="text-dark-200">Gestor *</Label>
                 <Select
                   value={createFormData.manager_id}
                   onValueChange={(v) => setCreateFormData({ ...createFormData, manager_id: v })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="glass-input">
                     <SelectValue placeholder="Selecione o gestor" />
                   </SelectTrigger>
                   <SelectContent>
                     {managers.map(manager => (
                       <SelectItem key={manager.id} value={manager.id}>
-                        {manager.name} ({manager.role === 'gestor_nv1' ? 'Nível 1' : 'Nível 2'})
+                        {manager.name} ({manager.role === 'gestor_nv1' ? 'Nivel 1' : 'Nivel 2'})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -333,12 +333,12 @@ const Objectives = ({ user }) => {
               </div>
 
               <div>
-                <Label>Mês *</Label>
+                <Label className="text-dark-200">Mes *</Label>
                 <Select
                   value={createFormData.month.toString()}
                   onValueChange={(val) => setCreateFormData({ ...createFormData, month: parseInt(val) })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="glass-input">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -352,12 +352,12 @@ const Objectives = ({ user }) => {
               </div>
 
               <div>
-                <Label>Ano *</Label>
+                <Label className="text-dark-200">Ano *</Label>
                 <Select
                   value={createFormData.year.toString()}
                   onValueChange={(val) => setCreateFormData({ ...createFormData, year: parseInt(val) })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="glass-input">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -371,33 +371,33 @@ const Objectives = ({ user }) => {
               </div>
             </div>
 
-            <div className="border-t pt-4">
-              <h3 className="text-lg font-semibold mb-4">Objetivos por Operadora</h3>
+            <div className="border-t border-dark-600 pt-4">
+              <h3 className="text-lg font-semibold mb-4 text-white">Objetivos por Operadora</h3>
               <div className="space-y-4">
                 {operators.map(operator => (
-                  <div key={operator.id} className="border rounded-lg p-4">
-                    <h4 className="font-semibold text-navy-900 mb-3">{operator.name}</h4>
+                  <div key={operator.id} className="border border-dark-600 rounded-xl p-4 bg-dark-800/50">
+                    <h4 className="font-semibold text-white mb-3">{operator.name}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {operator.scope === "energia" && (
                         <>
                           <div>
-                            <Label className="text-xs">Eletricidade</Label>
+                            <Label className="text-xs text-dark-300">Eletricidade</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objectives[operator.id]?.electricity_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "electricity_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Gás</Label>
+                            <Label className="text-xs text-dark-300">Gas</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objectives[operator.id]?.gas_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "gas_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                         </>
@@ -405,23 +405,23 @@ const Objectives = ({ user }) => {
                       {operator.scope === "telecomunicacoes" && (
                         <>
                           <div>
-                            <Label className="text-xs">TV</Label>
+                            <Label className="text-xs text-dark-300">TV</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objectives[operator.id]?.tv_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "tv_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Fibra/NET/LR</Label>
+                            <Label className="text-xs text-dark-300">Fibra/NET/LR</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objectives[operator.id]?.fiber_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "fiber_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                         </>
@@ -432,11 +432,11 @@ const Objectives = ({ user }) => {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" onClick={() => setCreateDialogOpen(false)} variant="outline">
+            <div className="flex justify-end gap-2 pt-4 border-t border-dark-600">
+              <Button type="button" onClick={() => setCreateDialogOpen(false)} className="btn-secondary">
                 Cancelar
               </Button>
-              <Button onClick={handleCreateObjectives} disabled={saving}>
+              <Button onClick={handleCreateObjectives} disabled={saving} className="btn-gold">
                 <Save className="w-4 h-4 mr-2" />
                 {saving ? "A guardar..." : "Guardar Objetivos"}
               </Button>
@@ -445,14 +445,13 @@ const Objectives = ({ user }) => {
         </DialogContent>
       </Dialog>
 
-      {/* View/Edit Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-ultra max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">
+            <DialogTitle className="text-2xl text-white">
               Objetivos - {selectedManagerView?.manager_name}
             </DialogTitle>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-dark-300">
               {months[selectedMonth - 1]} {selectedYear}
             </p>
           </DialogHeader>
@@ -468,29 +467,29 @@ const Objectives = ({ user }) => {
                 if (!hasValues) return null;
 
                 return (
-                  <div key={operator.id} className="border rounded-lg p-4">
-                    <h4 className="font-semibold text-navy-900 mb-3">{operator.name}</h4>
+                  <div key={operator.id} className="border border-dark-600 rounded-xl p-4 bg-dark-800/50">
+                    <h4 className="font-semibold text-white mb-3">{operator.name}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {operator.scope === "energia" && (
                         <>
                           <div>
-                            <Label className="text-xs">Eletricidade</Label>
+                            <Label className="text-xs text-dark-300">Eletricidade</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objData.electricity_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "electricity_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Gás</Label>
+                            <Label className="text-xs text-dark-300">Gas</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objData.gas_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "gas_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                         </>
@@ -498,23 +497,23 @@ const Objectives = ({ user }) => {
                       {operator.scope === "telecomunicacoes" && (
                         <>
                           <div>
-                            <Label className="text-xs">TV</Label>
+                            <Label className="text-xs text-dark-300">TV</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objData.tv_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "tv_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Fibra/NET/LR</Label>
+                            <Label className="text-xs text-dark-300">Fibra/NET/LR</Label>
                             <Input
                               type="number"
                               min="0"
                               value={objData.fiber_target || 0}
                               onChange={(e) => handleObjectiveChange(operator.id, "fiber_target", e.target.value)}
-                              className="mt-1"
+                              className="mt-1 glass-input"
                             />
                           </div>
                         </>
@@ -525,13 +524,13 @@ const Objectives = ({ user }) => {
               })}
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" onClick={() => setViewDialogOpen(false)} variant="outline">
+            <div className="flex justify-end gap-2 pt-4 border-t border-dark-600">
+              <Button type="button" onClick={() => setViewDialogOpen(false)} className="btn-secondary">
                 Fechar
               </Button>
-              <Button onClick={handleSaveObjectives} disabled={saving}>
+              <Button onClick={handleSaveObjectives} disabled={saving} className="btn-gold">
                 <Save className="w-4 h-4 mr-2" />
-                {saving ? "A guardar..." : "Guardar Alterações"}
+                {saving ? "A guardar..." : "Guardar Alteracoes"}
               </Button>
             </div>
           </div>

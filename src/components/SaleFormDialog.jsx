@@ -10,7 +10,7 @@ import EnergyPointsManager from './EnergyPointsManager';
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
-const FormSection = ({ icon: Icon, title, children, gradient = "from-navy-900 to-navy-800" }) => (
+const FormSection = ({ icon: Icon, title, children, gradient = "from-dark-600 to-dark-700" }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -20,7 +20,7 @@ const FormSection = ({ icon: Icon, title, children, gradient = "from-navy-900 to
       <div className={`w-10 h-10 bg-gradient-to-r ${gradient} rounded-lg flex items-center justify-center shadow-lg`}>
         <Icon className="w-5 h-5 text-white" />
       </div>
-      <h3 className="text-lg font-bold" style={{ color: '#000000' }}>{title}</h3>
+      <h3 className="text-lg font-bold text-white">{title}</h3>
     </div>
     <div className="space-y-4 pl-13">
       {children}
@@ -64,7 +64,7 @@ const SaleFormDialog = ({
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-bold text-gradient-gold mb-1">Nova Venda</h2>
-                <p className="text-sm" style={{ color: '#595959' }}>Preencha os dados da nova venda no sistema</p>
+                <p className="text-sm text-dark-200">Preencha os dados da nova venda no sistema</p>
               </div>
               <button
                 onClick={onClose}
@@ -80,7 +80,7 @@ const SaleFormDialog = ({
               <FormSection icon={Clock} title="Informações Gerais" gradient="from-blue-600 to-blue-700">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Data da Venda *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Data da Venda *</Label>
                     <Input
                       type="date"
                       value={formData.date}
@@ -91,7 +91,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Parceiro *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Parceiro *</Label>
                     <Select
                       value={formData.partner_id}
                       onValueChange={(v) => {
@@ -121,7 +121,7 @@ const SaleFormDialog = ({
                     )}
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Âmbito *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Âmbito *</Label>
                     <Select
                       value={formData.scope}
                       onValueChange={(v) => setFormData({...formData, scope: v, operator_id: "", service_type: "", cpe: "", cui: ""})}
@@ -137,7 +137,7 @@ const SaleFormDialog = ({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Tipo de Cliente *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Cliente *</Label>
                     <Select
                       value={formData.client_type}
                       onValueChange={(v) => {
@@ -164,7 +164,7 @@ const SaleFormDialog = ({
               <FormSection icon={Building2} title="Operadora" gradient="from-purple-600 to-purple-700">
                 <div className={formData.scope === 'energia' ? 'grid grid-cols-2 gap-6' : ''}>
                   <div className={formData.scope === 'energia' ? '' : 'col-span-full'}>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Operadora *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Operadora *</Label>
                     <Select
                       value={formData.operator_id}
                       onValueChange={(v) => {
@@ -224,7 +224,7 @@ const SaleFormDialog = ({
                       </div>
                     ) : (
                       <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5">
-                        <Label className="text-base font-bold mb-3 block" style={{ color: '#000000' }}>
+                        <Label className="text-base font-bold mb-3 block text-white">
                           O que o cliente pretende contratar? *
                         </Label>
                         <Select
@@ -258,7 +258,7 @@ const SaleFormDialog = ({
                             })()}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs mt-2" style={{ color: '#7a7a7a' }}>
+                        <p className="text-xs mt-2 text-dark-400">
                           Selecione se o cliente está a aderir apenas a eletricidade, apenas a gás, ou a ambos os serviços.
                         </p>
                       </div>
@@ -272,7 +272,7 @@ const SaleFormDialog = ({
               <FormSection icon={User} title="Dados do Cliente" gradient="from-green-600 to-green-700">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Nome Completo *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Nome Completo *</Label>
                     <Input
                       value={formData.client_name}
                       onChange={(e) => setFormData({...formData, client_name: e.target.value})}
@@ -282,7 +282,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>NIF *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">NIF *</Label>
                     <Input
                       value={formData.client_nif}
                       onChange={(e) => setFormData({...formData, client_nif: e.target.value})}
@@ -292,7 +292,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Contacto *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Contacto *</Label>
                     <Input
                       value={formData.client_contact}
                       onChange={(e) => setFormData({...formData, client_contact: e.target.value})}
@@ -302,7 +302,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Email</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Email</Label>
                     <Input
                       type="email"
                       value={formData.client_email}
@@ -312,7 +312,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>IBAN</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">IBAN</Label>
                     <Input
                       value={formData.client_iban}
                       onChange={(e) => setFormData({...formData, client_iban: e.target.value})}
@@ -328,7 +328,7 @@ const SaleFormDialog = ({
               <FormSection icon={MapPin} title="Morada" gradient="from-orange-600 to-orange-700">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="col-span-2">
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Morada Completa *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Morada Completa *</Label>
                     <Input
                       value={formData.street}
                       onChange={(e) => setFormData({...formData, street: e.target.value})}
@@ -338,7 +338,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Código Postal *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Código Postal *</Label>
                     <Input
                       value={formData.postal_code}
                       onChange={(e) => setFormData({...formData, postal_code: e.target.value})}
@@ -349,7 +349,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Localidade *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Localidade *</Label>
                     <Input
                       value={formData.locality}
                       onChange={(e) => setFormData({...formData, locality: e.target.value})}
@@ -359,14 +359,14 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Morada de Instalação/Fornecimento</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Morada de Instalação/Fornecimento</Label>
                     <Input
                       value={formData.installation_address}
                       onChange={(e) => setFormData({...formData, installation_address: e.target.value})}
                       className="glass-input"
                       placeholder="Se diferente da morada do cliente"
                     />
-                    <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>Apenas preencher se for diferente da morada principal</p>
+                    <p className="text-xs mt-1 text-dark-400">Apenas preencher se for diferente da morada principal</p>
                   </div>
                 </div>
               </FormSection>
@@ -386,7 +386,7 @@ const SaleFormDialog = ({
                     <FormSection icon={TrendingUp} title="Detalhes da Venda - Telecomunicações" gradient="from-cyan-600 to-cyan-700">
                       <div className="grid grid-cols-2 gap-6">
                         <div>
-                          <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Tipo de Serviço *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Serviço *</Label>
                           <Select
                             value={formData.service_type}
                             onValueChange={(v) => {
@@ -421,7 +421,7 @@ const SaleFormDialog = ({
                         </div>
                         {availableActivationTypes.length > 0 && (
                           <div>
-                            <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Tipo de Ativação *</Label>
+                            <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Ativação *</Label>
                             <Select
                               value={formData.activation_type}
                               onValueChange={(v) => setFormData({...formData, activation_type: v})}
@@ -441,12 +441,12 @@ const SaleFormDialog = ({
 
                       {(formData.service_type === 'REFID' || formData.service_type === 'Refid') ? (
                         <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
-                          <h4 className="font-bold mb-4" style={{ color: '#000000' }}>
+                          <h4 className="font-bold mb-4 text-white">
                             Dados REFID - Downsell/Upsell
                           </h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Mensalidade Atual (€) *</Label>
+                              <Label className="text-sm font-semibold mb-2 text-dark-200">Mensalidade Atual (€) *</Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -456,10 +456,10 @@ const SaleFormDialog = ({
                                 placeholder="Ex: 45.00"
                                 className="glass-input"
                               />
-                              <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>Valor que o cliente paga atualmente</p>
+                              <p className="text-xs mt-1 text-dark-400">Valor que o cliente paga atualmente</p>
                             </div>
                             <div>
-                              <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Mensalidade Contratada (€) *</Label>
+                              <Label className="text-sm font-semibold mb-2 text-dark-200">Mensalidade Contratada (€) *</Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -469,7 +469,7 @@ const SaleFormDialog = ({
                                 placeholder="Ex: 35.00"
                                 className="glass-input"
                               />
-                              <p className="text-xs mt-1" style={{ color: '#7a7a7a' }}>Novo valor contratado</p>
+                              <p className="text-xs mt-1 text-dark-400">Novo valor contratado</p>
                             </div>
                           </div>
                           {formData.current_monthly_fee && formData.contracted_monthly_fee && (
@@ -480,7 +480,7 @@ const SaleFormDialog = ({
                                 ) : parseFloat(formData.current_monthly_fee) < parseFloat(formData.contracted_monthly_fee) ? (
                                   <span className="text-green-600">📈 Upsell: Cliente aumenta mensalidade de €{formData.current_monthly_fee} para €{formData.contracted_monthly_fee}</span>
                                 ) : (
-                                  <span style={{ color: '#595959' }}>➖ Mensalidades iguais</span>
+                                  <span className="text-dark-200">➖ Mensalidades iguais</span>
                                 )}
                               </p>
                             </div>
@@ -488,7 +488,7 @@ const SaleFormDialog = ({
                         </div>
                       ) : (
                         <div>
-                          <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Mensalidade (€) *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-dark-200">Mensalidade (€) *</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -502,7 +502,7 @@ const SaleFormDialog = ({
                       )}
 
                       <div className="border-t border-white/10 pt-4 mt-4">
-                        <Label className="text-base font-bold mb-4 block" style={{ color: '#000000' }}>Serviços Contratados</Label>
+                        <Label className="text-base font-bold mb-4 block text-white">Serviços Contratados</Label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="flex items-center space-x-3">
                             <input
@@ -512,7 +512,7 @@ const SaleFormDialog = ({
                               onChange={(e) => setFormData({...formData, has_tv: e.target.checked})}
                               className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <Label htmlFor="has_tv" className="cursor-pointer font-medium" style={{ color: '#000000' }}>TV</Label>
+                            <Label htmlFor="has_tv" className="cursor-pointer font-medium text-white">TV</Label>
                           </div>
                           <div className="flex items-center space-x-3">
                             <input
@@ -522,7 +522,7 @@ const SaleFormDialog = ({
                               onChange={(e) => setFormData({...formData, has_net: e.target.checked})}
                               className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <Label htmlFor="has_net" className="cursor-pointer font-medium" style={{ color: '#000000' }}>NET/Fibra</Label>
+                            <Label htmlFor="has_net" className="cursor-pointer font-medium text-white">NET/Fibra</Label>
                           </div>
                           <div className="flex items-center space-x-3">
                             <input
@@ -532,10 +532,10 @@ const SaleFormDialog = ({
                               onChange={(e) => setFormData({...formData, has_lr: e.target.checked})}
                               className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <Label htmlFor="has_lr" className="cursor-pointer font-medium" style={{ color: '#000000' }}>Linha Fixa/LR</Label>
+                            <Label htmlFor="has_lr" className="cursor-pointer font-medium text-white">Linha Fixa/LR</Label>
                           </div>
                           <div>
-                            <Label htmlFor="mobile_count" className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Móveis</Label>
+                            <Label htmlFor="mobile_count" className="text-sm font-semibold mb-2 text-dark-200">Móveis</Label>
                             <Input
                               id="mobile_count"
                               type="number"
@@ -556,7 +556,7 @@ const SaleFormDialog = ({
                 <FormSection icon={Zap} title="Detalhes Solar" gradient="from-yellow-500 to-yellow-600">
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>CPE * (PT0002...)</Label>
+                      <Label className="text-sm font-semibold mb-2 text-dark-200">CPE * (PT0002...)</Label>
                       <Input
                         value={formData.cpe}
                         onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})}
@@ -566,7 +566,7 @@ const SaleFormDialog = ({
                       />
                     </div>
                     <div>
-                      <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Potência *</Label>
+                      <Label className="text-sm font-semibold mb-2 text-dark-200">Potência *</Label>
                       <Select
                         value={formData.power}
                         onValueChange={(v) => setFormData({...formData, power: v})}
@@ -602,7 +602,7 @@ const SaleFormDialog = ({
                         />
 
                         <div className="mt-4">
-                          <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Tipo de Entrada *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Entrada *</Label>
                           <Select
                             value={formData.entry_type}
                             onValueChange={(v) => setFormData({...formData, entry_type: v})}
@@ -636,7 +636,7 @@ const SaleFormDialog = ({
                             onChange={(e) => setFormData({...formData, has_direct_debit: e.target.checked})}
                             className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <Label htmlFor="has_direct_debit" className="cursor-pointer font-medium" style={{ color: '#000000' }}>
+                          <Label htmlFor="has_direct_debit" className="cursor-pointer font-medium text-white">
                             Cliente aderiu a Débito Direto (DD)
                           </Label>
                         </div>
@@ -650,12 +650,12 @@ const SaleFormDialog = ({
                             onChange={(e) => setFormData({...formData, has_electronic_invoice: e.target.checked})}
                             className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <Label htmlFor="has_electronic_invoice" className="cursor-pointer font-medium" style={{ color: '#000000' }}>
+                          <Label htmlFor="has_electronic_invoice" className="cursor-pointer font-medium text-white">
                             Cliente aderiu a Fatura Eletrónica (FE)
                           </Label>
                         </div>
                       )}
-                      <p className="text-xs mt-3" style={{ color: '#7a7a7a' }}>
+                      <p className="text-xs mt-3 text-dark-400">
                         ℹ️ Valores adicionais serão somados à comissão conforme configuração da operadora
                       </p>
                     </div>
@@ -675,16 +675,16 @@ const SaleFormDialog = ({
                       onChange={(e) => setFormData({...formData, is_proposal: e.target.checked})}
                       className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <Label htmlFor="is_proposal" className="cursor-pointer font-medium" style={{ color: '#000000' }}>
+                    <Label htmlFor="is_proposal" className="cursor-pointer font-medium text-white">
                       Esta venda é uma proposta?
                     </Label>
                   </div>
-                  <p className="text-xs" style={{ color: '#7a7a7a' }}>
+                  <p className="text-xs text-dark-400">
                     ℹ️ Propostas ficam no estado "Em proposta" e aparecem apenas no separador Propostas
                   </p>
 
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>Observações</Label>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Observações</Label>
                     <Textarea
                       value={formData.observations}
                       onChange={(e) => setFormData({...formData, observations: e.target.value})}
@@ -695,7 +695,7 @@ const SaleFormDialog = ({
                   </div>
 
                   <div>
-                    <Label className="text-sm font-semibold mb-2" style={{ color: '#595959' }}>
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">
                       Documentos {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
                         const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
@@ -713,11 +713,10 @@ const SaleFormDialog = ({
                           const selectedPartner = partners.find(p => p.id === formData.partner_id);
                           return selectedPartner && selectedPartner.partner_type === 'D2D';
                         })()}
-                        className="block w-full text-sm file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-700 hover:file:bg-blue-500/20 transition-colors cursor-pointer"
-                        style={{ color: '#595959' }}
+                        className="block w-full text-sm text-dark-200 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-700 hover:file:bg-blue-500/20 transition-colors cursor-pointer"
                       />
                       {uploadFiles.length > 0 && (
-                        <p className="text-sm mt-3 flex items-center gap-2" style={{ color: '#595959' }}>
+                        <p className="text-sm mt-3 flex items-center gap-2 text-dark-200">
                           <Upload className="w-4 h-4 text-blue-600" />
                           {uploadFiles.length} ficheiro(s) selecionado(s)
                         </p>

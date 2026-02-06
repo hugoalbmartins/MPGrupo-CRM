@@ -415,7 +415,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
@@ -431,7 +431,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">Template de Importação</h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-dark-400">
                   Descarregue o template base com as colunas necessárias
                 </p>
               </div>
@@ -462,7 +462,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
           </div>
 
           <div className="space-y-4">
-            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-dark-600 rounded-lg p-6 text-center">
               <input
                 type="file"
                 accept=".xlsx,.xls"
@@ -475,18 +475,18 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
                 htmlFor="file-upload"
                 className="cursor-pointer flex flex-col items-center gap-2"
               >
-                <FileSpreadsheet className="h-12 w-12 text-gray-400" />
+                <FileSpreadsheet className="h-12 w-12 text-dark-400" />
                 {file ? (
                   <div className="space-y-1">
                     <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-dark-400">
                       Clique para selecionar outro ficheiro
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-1">
                     <p className="font-medium">Clique para selecionar ficheiro</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-dark-400">
                       Formatos suportados: .xlsx, .xls
                     </p>
                   </div>
@@ -501,11 +501,11 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
                   <span>{Math.round(progress)}%</span>
                 </div>
                 <ProgressPrimitive.Root
-                  className="relative h-2 w-full overflow-hidden rounded-full bg-gray-200"
+                  className="relative h-2 w-full overflow-hidden rounded-full bg-dark-700"
                   value={progress}
                 >
                   <ProgressPrimitive.Indicator
-                    className="h-full w-full flex-1 bg-blue-600 transition-all"
+                    className="h-full w-full flex-1 bg-gold-400 transition-all"
                     style={{ transform: `translateX(-${100 - (progress || 0)}%)` }}
                   />
                 </ProgressPrimitive.Root>
@@ -515,31 +515,31 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             {results && (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-blue-600">{results.total}</div>
-                    <div className="text-sm text-blue-600">Total</div>
+                  <div className="bg-blue-500/10 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-blue-400">{results.total}</div>
+                    <div className="text-sm text-blue-400">Total</div>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-green-600">{results.successful}</div>
-                    <div className="text-sm text-green-600">Sucesso</div>
+                  <div className="bg-green-500/10 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-green-400">{results.successful}</div>
+                    <div className="text-sm text-green-400">Sucesso</div>
                   </div>
-                  <div className="bg-red-50 p-4 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-red-600">{results.failed}</div>
-                    <div className="text-sm text-red-600">Erros</div>
+                  <div className="bg-red-500/10 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-red-400">{results.failed}</div>
+                    <div className="text-sm text-red-400">Erros</div>
                   </div>
                 </div>
 
                 {results.successfulImports.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-medium flex items-center gap-2 text-green-600">
+                    <h4 className="font-medium flex items-center gap-2 text-green-400">
                       <CheckCircle2 className="h-4 w-4" />
                       Vendas Importadas ({results.successfulImports.length})
                     </h4>
-                    <div className="max-h-40 overflow-y-auto border rounded p-2 space-y-1">
+                    <div className="max-h-40 overflow-y-auto border border-dark-600 rounded p-2 space-y-1">
                       {results.successfulImports.map((item, idx) => (
                         <div key={idx} className="text-sm flex justify-between">
                           <span>Linha {item.row}: {item.clientName}</span>
-                          <span className="text-gray-500">{item.saleCode}</span>
+                          <span className="text-dark-400">{item.saleCode}</span>
                         </div>
                       ))}
                     </div>
@@ -548,17 +548,17 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
 
                 {results.failedImports.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-medium flex items-center gap-2 text-red-600">
+                    <h4 className="font-medium flex items-center gap-2 text-red-400">
                       <AlertCircle className="h-4 w-4" />
                       Vendas com Erro ({results.failedImports.length})
                     </h4>
-                    <div className="max-h-40 overflow-y-auto border rounded p-2 space-y-1">
+                    <div className="max-h-40 overflow-y-auto border border-dark-600 rounded p-2 space-y-1">
                       {results.failedImports.map((item, idx) => (
                         <div key={idx} className="text-sm space-y-1">
                           <div className="flex justify-between">
                             <span className="font-medium">Linha {item.row}: {item.clientName}</span>
                           </div>
-                          <div className="text-red-600 text-xs pl-4">{item.error}</div>
+                          <div className="text-red-400 text-xs pl-4">{item.error}</div>
                         </div>
                       ))}
                     </div>

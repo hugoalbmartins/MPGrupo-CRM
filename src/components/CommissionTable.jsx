@@ -75,26 +75,26 @@ const CommissionTable = ({
 
   return (
     <div className="space-y-4">
-      <div className="glass-card overflow-hidden">
+      <div className="glass-ultra overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-gradient-to-r from-navy-50 to-navy-100/50 border-b-2 border-navy-200/70">
+            <thead className="bg-dark-800/50 border-b-2 border-dark-600">
               <tr>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">Cliente</th>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">Serviço</th>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">Modo</th>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">Valor/Mult.</th>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">Patamar</th>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">Min Vendas / Range</th>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">Retenção</th>
-                <th className="text-left p-3 font-bold text-navy-900 text-xs uppercase tracking-wide">DD/FE</th>
-                <th className="text-right p-3 font-bold text-navy-900 text-xs uppercase tracking-wide w-24">Ações</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">Cliente</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">Serviço</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">Modo</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">Valor/Mult.</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">Patamar</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">Min Vendas / Range</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">Retenção</th>
+                <th className="text-left p-3 font-bold text-white text-xs uppercase tracking-wide">DD/FE</th>
+                <th className="text-right p-3 font-bold text-white text-xs uppercase tracking-wide w-24">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filteredConfigs.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="text-center p-8 text-navy-500">
+                  <td colSpan="9" className="text-center p-8 text-dark-400">
                     Nenhuma configuração. Clique em "+ Nova Regra" para adicionar.
                   </td>
                 </tr>
@@ -104,11 +104,11 @@ const CommissionTable = ({
                   const isEditing = editingIndex === actualIndex;
 
                   return (
-                    <tr key={actualIndex} className="hover:bg-gold-50/30 transition-all duration-150 border-b border-navy-100/40">
+                    <tr key={actualIndex} className="hover:bg-gold-400/10 transition-all duration-150 border-b border-dark-600/40">
                       <td className="p-2">
                         {isEditing ? (
                           <Select value={config.client_type} onValueChange={(v) => onUpdateConfig(actualIndex, 'client_type', v)}>
-                            <SelectTrigger className="h-8 text-xs border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                            <SelectTrigger className="h-8 text-xs border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -139,7 +139,7 @@ const CommissionTable = ({
                       <td className="p-2">
                         {isEditing ? (
                           <Select value={config.commission_mode} onValueChange={(v) => onUpdateConfig(actualIndex, 'commission_mode', v)}>
-                            <SelectTrigger className="h-8 text-xs border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                            <SelectTrigger className="h-8 text-xs border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -159,7 +159,7 @@ const CommissionTable = ({
                             <Input
                               type="number"
                               step="0.01"
-                              className="h-8 text-xs border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                              className="h-8 text-xs border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                               value={config.commission_value || 0}
                               onChange={(e) => onUpdateConfig(actualIndex, 'commission_value', e.target.value)}
                             />
@@ -175,7 +175,7 @@ const CommissionTable = ({
                         {config.commission_mode !== 'per_contract' && (
                           isEditing ? (
                             <Select value={config.tier_mode} onValueChange={(v) => onUpdateConfig(actualIndex, 'tier_mode', v)}>
-                              <SelectTrigger className="h-8 text-xs border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                              <SelectTrigger className="h-8 text-xs border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -196,7 +196,7 @@ const CommissionTable = ({
                               isEditing ? (
                                 <Input
                                   type="number"
-                                  className="h-8 text-xs border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                                  className="h-8 text-xs border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                                   value={config.min_sales || 0}
                                   onChange={(e) => onUpdateConfig(actualIndex, 'min_sales', e.target.value)}
                                 />
@@ -210,7 +210,7 @@ const CommissionTable = ({
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    className="h-8 text-xs w-20 border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                                    className="h-8 text-xs w-20 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                                     value={config.monthly_value_min || 0}
                                     onChange={(e) => onUpdateConfig(actualIndex, 'monthly_value_min', e.target.value)}
                                   />
@@ -218,7 +218,7 @@ const CommissionTable = ({
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    className="h-8 text-xs w-20 border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                                    className="h-8 text-xs w-20 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                                     value={config.monthly_value_max || 0}
                                     onChange={(e) => onUpdateConfig(actualIndex, 'monthly_value_max', e.target.value)}
                                   />
@@ -250,14 +250,14 @@ const CommissionTable = ({
                                 <Input
                                   type="number"
                                   step="0.1"
-                                  className="h-7 text-xs w-12 border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                                  className="h-7 text-xs w-12 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                                   value={config.retention_percentage || 0}
                                   onChange={(e) => onUpdateConfig(actualIndex, 'retention_percentage', e.target.value)}
                                 />
                                 <span>%</span>
                                 <Input
                                   type="number"
-                                  className="h-7 text-xs w-12 border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                                  className="h-7 text-xs w-12 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                                   value={config.retention_months || 0}
                                   onChange={(e) => onUpdateConfig(actualIndex, 'retention_months', e.target.value)}
                                 />
@@ -282,7 +282,7 @@ const CommissionTable = ({
                             <Input
                               type="number"
                               step="0.01"
-                              className="h-7 text-xs w-16 border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                              className="h-7 text-xs w-16 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                               value={config.direct_debit_bonus || 0}
                               onChange={(e) => onUpdateConfig(actualIndex, 'direct_debit_bonus', e.target.value)}
                               placeholder="DD"
@@ -290,7 +290,7 @@ const CommissionTable = ({
                             <Input
                               type="number"
                               step="0.01"
-                              className="h-7 text-xs w-16 border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
+                              className="h-7 text-xs w-16 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                               value={config.electronic_invoice_bonus || 0}
                               onChange={(e) => onUpdateConfig(actualIndex, 'electronic_invoice_bonus', e.target.value)}
                               placeholder="FE"
@@ -329,7 +329,7 @@ const CommissionTable = ({
                               size="sm"
                               variant="ghost"
                               onClick={() => setEditingIndex(actualIndex)}
-                              className="h-7 w-7 p-0 text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-all duration-200"
+                              className="h-7 w-7 p-0 text-dark-200 hover:text-white hover:bg-dark-700 transition-all duration-200"
                             >
                               <Edit2 className="w-3 h-3" />
                             </Button>
@@ -355,16 +355,16 @@ const CommissionTable = ({
       </div>
 
       {showAddForm ? (
-        <div className="glass-card border-2 border-gold-400/50 bg-gradient-to-br from-gold-50/50 to-white p-6 shadow-gold-glow">
-          <h3 className="text-sm font-bold text-navy-900 mb-4 flex items-center gap-2">
-            <Plus className="w-4 h-4 text-gold-500" />
+        <div className="glass-ultra border-2 border-gold-400/20 bg-dark-800 p-6 shadow-lg shadow-gold-400/20">
+          <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <Plus className="w-4 h-4 text-gold-400" />
             Nova Regra de Comissão
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div>
-              <Label className="text-xs font-semibold text-navy-900">Cliente</Label>
+              <Label className="text-xs font-semibold text-white">Cliente</Label>
               <Select value={newConfig.client_type} onValueChange={(v) => setNewConfig({...newConfig, client_type: v})}>
-                <SelectTrigger className="h-9 text-xs bg-white border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                <SelectTrigger className="h-9 text-xs bg-dark-800 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -376,9 +376,9 @@ const CommissionTable = ({
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-navy-900">Serviço</Label>
+              <Label className="text-xs font-semibold text-white">Serviço</Label>
               <Select value={newConfig.service_type} onValueChange={(v) => setNewConfig({...newConfig, service_type: v, service_types: [v]})}>
-                <SelectTrigger className="h-9 text-xs bg-white border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                <SelectTrigger className="h-9 text-xs bg-dark-800 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
@@ -393,9 +393,9 @@ const CommissionTable = ({
 
             {(newConfig.service_type === 'NI' || newConfig.service_type === 'MC') && (
               <div>
-                <Label className="text-xs font-semibold text-navy-900">Ativação</Label>
+                <Label className="text-xs font-semibold text-white">Ativação</Label>
                 <Select value={newConfig.activation_type || 'M2'} onValueChange={(v) => setNewConfig({...newConfig, activation_type: v})}>
-                  <SelectTrigger className="h-9 text-xs bg-white border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                  <SelectTrigger className="h-9 text-xs bg-dark-800 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -409,9 +409,9 @@ const CommissionTable = ({
 
             {newConfig.service_type === 'REFID' && (
               <div>
-                <Label className="text-xs font-semibold text-navy-900">Op. REFID</Label>
+                <Label className="text-xs font-semibold text-white">Op. REFID</Label>
                 <Select value={newConfig.refid_operation_type || 'both'} onValueChange={(v) => setNewConfig({...newConfig, refid_operation_type: v})}>
-                  <SelectTrigger className="h-9 text-xs bg-white border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                  <SelectTrigger className="h-9 text-xs bg-dark-800 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -424,9 +424,9 @@ const CommissionTable = ({
             )}
 
             <div>
-              <Label className="text-xs font-semibold text-navy-900">Modo Comissão</Label>
+              <Label className="text-xs font-semibold text-white">Modo Comissão</Label>
               <Select value={newConfig.commission_mode} onValueChange={(v) => setNewConfig({...newConfig, commission_mode: v})}>
-                <SelectTrigger className="h-9 text-xs bg-white border-2 border-navy-200 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
+                <SelectTrigger className="h-9 text-xs bg-dark-800 border-2 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -447,7 +447,7 @@ const CommissionTable = ({
                 setShowAddForm(false);
                 setNewConfig(getEmptyConfig());
               }}
-              className="h-8 border-2 border-navy-200 hover:border-navy-300 hover:bg-navy-50 transition-all duration-200"
+              className="h-8 border-2 border-dark-600 hover:border-dark-500 hover:bg-dark-700 transition-all duration-200"
             >
               <X className="w-3 h-3 mr-1" />
               Cancelar
@@ -456,7 +456,7 @@ const CommissionTable = ({
               type="button"
               size="sm"
               onClick={handleAdd}
-              className="h-8 bg-gradient-to-r from-gold-400 to-gold-500 hover:from-gold-500 hover:to-gold-600 text-gold-900 shadow-lg shadow-gold-400/30 font-semibold transition-all duration-300"
+              className="h-8 bg-gold-400 hover:bg-gold-500 text-dark-900 shadow-lg shadow-gold-400/20 font-semibold transition-all duration-300"
             >
               <Check className="w-3 h-3 mr-1" />
               Adicionar
@@ -468,7 +468,7 @@ const CommissionTable = ({
           type="button"
           variant="outline"
           onClick={() => setShowAddForm(true)}
-          className="w-full border-dashed border-2 border-navy-300 hover:border-gold-400 hover:bg-gold-50/30 text-navy-700 hover:text-navy-900 font-semibold transition-all duration-300 h-12"
+          className="w-full border-dashed border-2 border-dark-600 hover:border-gold-400 hover:bg-gold-400/10 text-dark-200 hover:text-white font-semibold transition-all duration-300 h-12"
         >
           <Plus className="w-5 h-5 mr-2" />
           Nova Regra para {partnerType}{d2dLevel ? ` ${d2dLevel}` : ''}
