@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { ResponsiveTable, TruncatedCell, TableSkeleton } from "@/components/ui/responsive-table";
+import { TableSkeleton } from "@/components/ui/responsive-table";
+import { Card } from "@/components/ui/card";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
@@ -848,161 +849,91 @@ const Sales = ({ user }) => {
     );
   }
 
-  // Render - NOTE: This is a very long file so I'm including dialogs at the end
-  const headers = [
-    'Código',
-    'Data',
-    'Parceiro',
-    'Âmbito',
-    'Cliente',
-    'Operadora',
-    'Status',
-    ...(user?.role !== 'bo' && user?.role !== 'partner_commercial' ? ['Comissão'] : []),
-    'Ações'
-  ];
+  const renderSaleCard = (sale, index) => {
+    const partner = partners.find(p => p.id === sale.partner_id);
+    const operator = operators.find(o => o.id === sale.operator_id);
+    const commission = sale.manual_commission || sale.calculated_commission;
 
-  const renderRow = (sale) => (
-    <>
-      <td className="px-6 py-4">
-        <span className="font-semibold">
-          {sale.sale_code}
-        </span>
-      </td>
-      <td className="px-6 py-4">
-        <span>
-          {new Date(sale.date).toLocaleDateString('pt-PT')}
-        </span>
-      </td>
-      <td className="px-6 py-4">
-        <TruncatedCell text={partners.find(p => p.id === sale.partner_id)?.name} />
-      </td>
-      <td className="px-6 py-4">
-        <span className="capitalize">{sale.scope}</span>
-      </td>
-      <td className="px-6 py-4">
-        <TruncatedCell text={sale.client_name} />
-      </td>
-      <td className="px-6 py-4">
-        <TruncatedCell text={operators.find(o => o.id === sale.operator_id)?.name} />
-      </td>
-      <td className="px-6 py-4">
-        <Badge className={getStatusBadge(sale.status)}>
-          {sale.status}
-        </Badge>
-      </td>
-      {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
-        <td className="px-6 py-4">
-          <span className="font-bold text-green-400">
-            {(() => {
-              const commission = sale.manual_commission || sale.calculated_commission;
-              return commission ? `€${parseFloat(commission).toFixed(2)}` : '-';
-            })()}
-          </span>
-        </td>
-      )}
-      <td className="px-6 py-4">
-        <div className="flex gap-2">
-          {(user?.role === 'admin' || user?.role === 'bo') ? (
-            <Button
-              onClick={() => openEditDialog(sale)}
-              size="sm"
-              variant="ghost"
-              className="text-blue-400 hover:bg-blue-500/10"
-            >
-              Editar
-            </Button>
-          ) : (
-            <Button
-              onClick={() => {
-                setSelectedSaleId(sale.id);
-                setDetailDialogOpen(true);
-              }}
-              size="sm"
-              variant="ghost"
-              className="text-blue-400 hover:bg-blue-500/10"
-            >
-              Ver
-            </Button>
-          )}
-          {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
-            <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-dark-300 hover:bg-dark-700">
-              Notas ({sale.notes?.length || 0})
-            </Button>
-          )}
-          {user?.role === 'admin' && (
-            <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-400 hover:bg-red-500/10">
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </td>
-    </>
-  );
+    return (
+      <motion.div
+        key={sale.id || index}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.03, duration: 0.3 }}
+      >
+        <Card className="glass-ultra p-5 spring-transition hover:border-gold-400/20">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-lg text-white">{sale.sale_code}</span>
+                <span className="text-sm text-dark-400">{new Date(sale.date).toLocaleDateString('pt-PT')}</span>
+              </div>
+              <Badge className={getStatusBadge(sale.status)}>{sale.status}</Badge>
+            </div>
 
-  const renderMobileCard = (sale) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="font-bold text-lg text-white">
-          {sale.sale_code}
-        </span>
-        <Badge className={getStatusBadge(sale.status)}>
-          {sale.status}
-        </Badge>
-      </div>
-      <div className="space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span className="text-dark-400">Cliente:</span>
-          <span className="text-white font-semibold">{sale.client_name}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-dark-400">Parceiro:</span>
-          <span className="text-white">{partners.find(p => p.id === sale.partner_id)?.name}</span>
-        </div>
-        <div className="flex justify-between">
-          <span style={{ color: '#595959' }}>Operadora:</span>
-          <span style={{ color: '#000000' }}>{operators.find(o => o.id === sale.operator_id)?.name}</span>
-        </div>
-        {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
-          <div className="flex justify-between">
-            <span style={{ color: '#595959' }}>Comissão:</span>
-            <span className="font-bold text-green-600">
-              {(() => {
-                const commission = sale.manual_commission || sale.calculated_commission;
-                return commission ? `€${parseFloat(commission).toFixed(2)}` : '-';
-              })()}
-            </span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+              <div>
+                <span className="text-dark-400 text-xs uppercase tracking-wide">Cliente</span>
+                <p className="text-white font-semibold truncate">{sale.client_name || '-'}</p>
+              </div>
+              <div>
+                <span className="text-dark-400 text-xs uppercase tracking-wide">Parceiro</span>
+                <p className="text-dark-200 truncate">{partner?.name || '-'}</p>
+              </div>
+              <div>
+                <span className="text-dark-400 text-xs uppercase tracking-wide">Operadora</span>
+                <p className="text-dark-200 truncate">{operator?.name || '-'}</p>
+              </div>
+              <div>
+                <span className="text-dark-400 text-xs uppercase tracking-wide">Ambito</span>
+                <p className="text-dark-200 capitalize">{sale.scope || '-'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+              <div className="flex items-center gap-4">
+                {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
+                  <span className="font-bold text-green-400 text-sm">
+                    {commission ? `€${parseFloat(commission).toFixed(2)}` : '-'}
+                  </span>
+                )}
+                {sale.service_type && (
+                  <span className="text-xs text-dark-400 bg-dark-700/50 px-2 py-0.5 rounded">{sale.service_type}</span>
+                )}
+                {sale.activation_type && (
+                  <span className="text-xs text-dark-400 bg-dark-700/50 px-2 py-0.5 rounded">{sale.activation_type}</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {(user?.role === 'admin' || user?.role === 'bo') ? (
+                  <Button onClick={() => openEditDialog(sale)} size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10">
+                    Editar
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => { setSelectedSaleId(sale.id); setDetailDialogOpen(true); }}
+                    size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10"
+                  >
+                    Ver
+                  </Button>
+                )}
+                {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
+                  <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-dark-300 hover:bg-dark-700">
+                    Notas ({sale.notes?.length || 0})
+                  </Button>
+                )}
+                {user?.role === 'admin' && (
+                  <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-400 hover:bg-red-500/10">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-      <div className="flex gap-2 pt-2 border-t border-white/20">
-        {(user?.role === 'admin' || user?.role === 'bo') ? (
-          <Button
-            onClick={() => openEditDialog(sale)}
-            size="sm"
-            className="flex-1 btn-primary"
-          >
-            Editar
-          </Button>
-        ) : (
-          <Button
-            onClick={() => {
-              setSelectedSaleId(sale.id);
-              setDetailDialogOpen(true);
-            }}
-            size="sm"
-            className="flex-1 btn-primary"
-          >
-            Ver Detalhes
-          </Button>
-        )}
-        {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
-          <Button onClick={() => openNotesDialog(sale)} size="sm" variant="outline" className="flex-1">
-            Notas
-          </Button>
-        )}
-      </div>
-    </div>
-  );
+        </Card>
+      </motion.div>
+    );
+  };
 
   return (
     <div className="space-y-6 p-6 animate-fade-in">
@@ -1311,19 +1242,21 @@ const Sales = ({ user }) => {
         </motion.div>
       )}
 
-      {/* Table */}
+      {/* Sales Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.4 }}
       >
-        <ResponsiveTable
-          headers={headers}
-          data={paginatedSales}
-          renderRow={renderRow}
-          renderMobileCard={renderMobileCard}
-          emptyMessage="Nenhuma venda encontrada"
-        />
+        {paginatedSales.length === 0 ? (
+          <div className="glass-ultra p-12 text-center">
+            <p className="text-sm font-medium text-dark-300">Nenhuma venda encontrada</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {paginatedSales.map((sale, index) => renderSaleCard(sale, index))}
+          </div>
+        )}
 
         {/* Pagination */}
         {filteredSales.length > 0 && (
