@@ -1333,28 +1333,28 @@ const Sales = ({ user }) => {
 
       {/* Edit Sale Dialog (Admin/BO) */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-premium" style={{ background: '#141c27', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)' }}>
           <DialogHeader>
-            <DialogTitle className="text-2xl text-white">Editar Venda - {editingSale?.sale_code}</DialogTitle>
-            <DialogDescription className="text-dark-400">Altere os campos necessários</DialogDescription>
+            <DialogTitle className="text-2xl" style={{ color: '#ffffff' }}>Editar Venda - {editingSale?.sale_code}</DialogTitle>
+            <DialogDescription style={{ color: '#64748b' }}>Altere os campos necessarios</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-dark-200">Data da Venda *</Label>
+                <Label style={{ color: '#bcccdc' }}>Data da Venda *</Label>
                 <Input
                   type="date"
                   value={editFormData.date}
                   max={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setEditFormData({...editFormData, date: e.target.value})}
                   required
-                  className="glass-input"
+                  style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                 />
-                <p className="text-xs text-dark-400 mt-1">Data não pode ser futura</p>
+                <p className="text-xs mt-1" style={{ color: '#64748b' }}>Data nao pode ser futura</p>
               </div>
 
               <div>
-                <Label className="text-dark-200">Status *</Label>
+                <Label style={{ color: '#bcccdc' }}>Status *</Label>
                 <Select
                   value={editFormData.status}
                   onValueChange={(v) => {
@@ -1366,11 +1366,11 @@ const Sales = ({ user }) => {
                     setEditFormData(newFormData);
                   }}
                 >
-                  <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue /></SelectTrigger>
+                  <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                     <SelectItem value="Para registo">Para registo</SelectItem>
                     <SelectItem value="Pendente">Pendente</SelectItem>
-                    <SelectItem value="Concluido">Concluído</SelectItem>
+                    <SelectItem value="Concluido">Concluido</SelectItem>
                     <SelectItem value="Ativo">Ativo</SelectItem>
                     <SelectItem value="Cancelado">Cancelado</SelectItem>
                     <SelectItem value="Em proposta">Em proposta</SelectItem>
@@ -1379,13 +1379,13 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label className="text-dark-200">Parceiro *</Label>
+                <Label style={{ color: '#bcccdc' }}>Parceiro *</Label>
                 <Select
                   value={editFormData.partner_id || ""}
                   onValueChange={(v) => setEditFormData({...editFormData, partner_id: v === "admin_commissioned" ? null : v})}
                 >
-                  <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                     {user?.is_commissioned && (
                       <SelectItem value="admin_commissioned">Venda Própria (Admin Comissionado)</SelectItem>
                     )}
@@ -1395,10 +1395,10 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label className="text-dark-200">Tipo de Cliente *</Label>
+                <Label style={{ color: '#bcccdc' }}>Tipo de Cliente *</Label>
                 <Select value={editFormData.client_type} onValueChange={(v) => setEditFormData({...editFormData, client_type: v})}>
-                  <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue /></SelectTrigger>
+                  <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                     <SelectItem value="particular">Particular</SelectItem>
                     <SelectItem value="empresarial">Empresarial</SelectItem>
                   </SelectContent>
@@ -1406,13 +1406,13 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label className="text-dark-200">Operadora *</Label>
+                <Label style={{ color: '#bcccdc' }}>Operadora *</Label>
                 <Select
                   value={editFormData.operator_id}
                   onValueChange={(v) => setEditFormData({...editFormData, operator_id: v})}
                 >
-                  <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                     {operators.map(op => (
                       <SelectItem key={op.id} value={op.id}>
                         {op.name}
@@ -1429,49 +1429,49 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label className="text-dark-200">Nome Cliente (Bloqueado)</Label>
+                <Label style={{ color: '#bcccdc' }}>Nome Cliente (Bloqueado)</Label>
                 <Input
                   value={editFormData.client_name}
                   disabled
-                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
+                  style={{ background: 'rgba(26,35,50,0.5)', color: '#7b8fa8', borderColor: 'rgba(255,255,255,0.06)', cursor: 'not-allowed' }}
                 />
               </div>
 
               <div>
-                <Label className="text-dark-200">NIF Cliente (Bloqueado)</Label>
+                <Label style={{ color: '#bcccdc' }}>NIF Cliente (Bloqueado)</Label>
                 <Input
                   value={editFormData.client_nif}
                   disabled
-                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
+                  style={{ background: 'rgba(26,35,50,0.5)', color: '#7b8fa8', borderColor: 'rgba(255,255,255,0.06)', cursor: 'not-allowed' }}
                 />
               </div>
 
               <div>
-                <Label className="text-dark-200">Contacto Cliente *</Label>
+                <Label style={{ color: '#bcccdc' }}>Contacto Cliente *</Label>
                 <Input
                   value={editFormData.client_contact}
                   onChange={(e) => setEditFormData({...editFormData, client_contact: e.target.value})}
                   required
-                  className="glass-input"
+                  style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                 />
               </div>
 
               <div>
-                <Label className="text-dark-200">Email Cliente</Label>
+                <Label style={{ color: '#bcccdc' }}>Email Cliente</Label>
                 <Input
                   type="email"
                   value={editFormData.client_email}
                   onChange={(e) => setEditFormData({...editFormData, client_email: e.target.value})}
-                  className="glass-input"
+                  style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                 />
               </div>
 
               <div>
-                <Label className="text-dark-200">IBAN Cliente</Label>
+                <Label style={{ color: '#bcccdc' }}>IBAN Cliente</Label>
                 <Input
                   value={editFormData.client_iban}
                   onChange={(e) => setEditFormData({...editFormData, client_iban: e.target.value})}
-                  className="glass-input"
+                  style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                 />
               </div>
 
@@ -1483,49 +1483,49 @@ const Sales = ({ user }) => {
               </div>
 
               <div className="col-span-2">
-                <Label className="text-dark-200">Morada do Cliente *</Label>
+                <Label style={{ color: '#bcccdc' }}>Morada do Cliente *</Label>
                 <Input
                   value={editFormData.street}
                   disabled
-                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
+                  style={{ background: 'rgba(26,35,50,0.5)', color: '#7b8fa8', borderColor: 'rgba(255,255,255,0.06)', cursor: 'not-allowed' }}
                 />
               </div>
 
               <div>
-                <Label className="text-dark-200">Código Postal *</Label>
+                <Label style={{ color: '#bcccdc' }}>Código Postal *</Label>
                 <Input
                   value={editFormData.postal_code}
                   disabled
-                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
+                  style={{ background: 'rgba(26,35,50,0.5)', color: '#7b8fa8', borderColor: 'rgba(255,255,255,0.06)', cursor: 'not-allowed' }}
                 />
               </div>
 
               <div>
-                <Label className="text-dark-200">Localidade *</Label>
+                <Label style={{ color: '#bcccdc' }}>Localidade *</Label>
                 <Input
                   value={editFormData.locality}
                   disabled
-                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
+                  style={{ background: 'rgba(26,35,50,0.5)', color: '#7b8fa8', borderColor: 'rgba(255,255,255,0.06)', cursor: 'not-allowed' }}
                 />
               </div>
 
               <div className="col-span-2">
-                <Label className="text-dark-200">Morada de Instalação/Fornecimento</Label>
+                <Label style={{ color: '#bcccdc' }}>Morada de Instalação/Fornecimento</Label>
                 <Input
                   value={editFormData.installation_address}
                   disabled
-                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
+                  style={{ background: 'rgba(26,35,50,0.5)', color: '#7b8fa8', borderColor: 'rgba(255,255,255,0.06)', cursor: 'not-allowed' }}
                 />
-                <p className="text-xs text-dark-400 mt-1">Se diferente da morada do cliente</p>
+                <p className="text-xs" style={{ color: '#64748b' }}>Se diferente da morada do cliente</p>
               </div>
 
               {editFormData.scope === 'telecomunicacoes' && (
                 <>
                   <div>
-                    <Label className="text-dark-200">Tipo de Serviço</Label>
+                    <Label style={{ color: '#bcccdc' }}>Tipo de Serviço</Label>
                     <Select value={editFormData.service_type} onValueChange={(v) => setEditFormData({...editFormData, service_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                         <SelectItem value="NI">NI (Nova Instalação)</SelectItem>
                         <SelectItem value="MC">MC (Mudança de Casa)</SelectItem>
                         <SelectItem value="REFID">REFID (Refidelização)</SelectItem>
@@ -1534,10 +1534,10 @@ const Sales = ({ user }) => {
                   </div>
 
                   <div>
-                    <Label className="text-dark-200">Tipo de Ativação</Label>
+                    <Label style={{ color: '#bcccdc' }}>Tipo de Ativação</Label>
                     <Select value={editFormData.activation_type} onValueChange={(v) => setEditFormData({...editFormData, activation_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                         <SelectItem value="Fast">Fast</SelectItem>
                         <SelectItem value="Normal">Normal</SelectItem>
                       </SelectContent>
@@ -1545,55 +1545,55 @@ const Sales = ({ user }) => {
                   </div>
 
                   <div>
-                    <Label className="text-dark-200">Requisição (REQ)</Label>
+                    <Label style={{ color: '#bcccdc' }}>Requisição (REQ)</Label>
                     <Input
                       value={editFormData.request_number}
                       onChange={(e) => setEditFormData({...editFormData, request_number: e.target.value})}
                       placeholder="Número de requisição"
-                      className="glass-input"
+                      style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                     />
                   </div>
 
                   {(editFormData.service_type === 'REFID' || editFormData.service_type === 'Refid') ? (
                     <>
                       <div>
-                        <Label className="text-dark-200">Mensalidade Atual (€)</Label>
+                        <Label style={{ color: '#bcccdc' }}>Mensalidade Atual (€)</Label>
                         <Input
                           type="number"
                           step="0.01"
                           value={editFormData.current_monthly_fee}
                           onChange={(e) => setEditFormData({...editFormData, current_monthly_fee: e.target.value})}
                           placeholder="Ex: 45.00"
-                          className="glass-input"
+                          style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                         />
                       </div>
                       <div>
-                        <Label className="text-dark-200">Mensalidade Contratada (€)</Label>
+                        <Label style={{ color: '#bcccdc' }}>Mensalidade Contratada (€)</Label>
                         <Input
                           type="number"
                           step="0.01"
                           value={editFormData.contracted_monthly_fee}
                           onChange={(e) => setEditFormData({...editFormData, contracted_monthly_fee: e.target.value})}
                           placeholder="Ex: 35.00"
-                          className="glass-input"
+                          style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                         />
                       </div>
                     </>
                   ) : (
                     <div>
-                      <Label className="text-dark-200">Mensalidade (€)</Label>
+                      <Label style={{ color: '#bcccdc' }}>Mensalidade (€)</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={editFormData.monthly_value}
                         onChange={(e) => setEditFormData({...editFormData, monthly_value: e.target.value})}
-                        className="glass-input"
+                        style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                       />
                     </div>
                   )}
 
                   <div className="col-span-2 border-t border-white/10 pt-4">
-                    <Label className="text-base font-semibold mb-3 block text-dark-200">Serviços Contratados</Label>
+                    <Label className="text-base font-semibold mb-3 block" style={{ color: '#bcccdc' }}>Serviços Contratados</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="flex items-center space-x-2">
                         <input
@@ -1603,7 +1603,7 @@ const Sales = ({ user }) => {
                           onChange={(e) => setEditFormData({...editFormData, has_tv: e.target.checked})}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor="edit_has_tv" className="cursor-pointer text-white">TV</Label>
+                        <Label htmlFor="edit_has_tv" className="cursor-pointer" style={{ color: '#ffffff' }}>TV</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -1613,7 +1613,7 @@ const Sales = ({ user }) => {
                           onChange={(e) => setEditFormData({...editFormData, has_net: e.target.checked})}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor="edit_has_net" className="cursor-pointer text-white">NET/Fibra</Label>
+                        <Label htmlFor="edit_has_net" className="cursor-pointer" style={{ color: '#ffffff' }}>NET/Fibra</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -1623,17 +1623,17 @@ const Sales = ({ user }) => {
                           onChange={(e) => setEditFormData({...editFormData, has_lr: e.target.checked})}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor="edit_has_lr" className="cursor-pointer text-white">Linha Fixa/LR</Label>
+                        <Label htmlFor="edit_has_lr" className="cursor-pointer" style={{ color: '#ffffff' }}>Linha Fixa/LR</Label>
                       </div>
                       <div>
-                        <Label htmlFor="edit_mobile_count" className="text-sm text-dark-200">Móveis</Label>
+                        <Label htmlFor="edit_mobile_count" className="text-sm" style={{ color: '#bcccdc' }}>Móveis</Label>
                         <Input
                           id="edit_mobile_count"
                           type="number"
                           min="0"
                           value={editFormData.mobile_count}
                           onChange={(e) => setEditFormData({...editFormData, mobile_count: parseInt(e.target.value) || 0})}
-                          className="mt-1 glass-input"
+                          className="mt-1" style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                         />
                       </div>
                     </div>
@@ -1644,19 +1644,19 @@ const Sales = ({ user }) => {
               {editFormData.scope === 'solar' && (
                 <>
                   <div>
-                    <Label className="text-dark-200">CPE</Label>
+                    <Label style={{ color: '#bcccdc' }}>CPE</Label>
                     <Input
                       value={editFormData.cpe}
                       onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
                       placeholder="PT0002XXXXXXXXXXXX"
-                      className="glass-input"
+                      style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                     />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Potência</Label>
+                    <Label style={{ color: '#bcccdc' }}>Potência</Label>
                     <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                         {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -1667,10 +1667,10 @@ const Sales = ({ user }) => {
               {editFormData.scope === 'energia' && (
                 <>
                   <div>
-                    <Label className="text-dark-200">Tipo de Venda Energia</Label>
+                    <Label style={{ color: '#bcccdc' }}>Tipo de Venda Energia</Label>
                     <Select value={editFormData.energy_sale_type} onValueChange={(v) => setEditFormData({...editFormData, energy_sale_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                         <SelectItem value="eletricidade">Eletricidade</SelectItem>
                         <SelectItem value="gas">Gás</SelectItem>
                         <SelectItem value="dual">Dual (Eletricidade + Gás)</SelectItem>
@@ -1679,10 +1679,10 @@ const Sales = ({ user }) => {
                   </div>
 
                   <div>
-                    <Label className="text-dark-200">Tipo de Entrada</Label>
+                    <Label style={{ color: '#bcccdc' }}>Tipo de Entrada</Label>
                     <Select value={editFormData.entry_type} onValueChange={(v) => setEditFormData({...editFormData, entry_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>
+                      <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                         <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
                         <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
                         <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
@@ -1693,19 +1693,19 @@ const Sales = ({ user }) => {
                   {(editFormData.energy_sale_type === 'eletricidade' || editFormData.energy_sale_type === 'dual') && (
                     <>
                       <div>
-                        <Label className="text-dark-200">CPE</Label>
+                        <Label style={{ color: '#bcccdc' }}>CPE</Label>
                         <Input
                           value={editFormData.cpe}
                           onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
                           placeholder="PT0002XXXXXXXXXXXX"
-                          className="glass-input"
+                          style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                         />
                       </div>
                       <div>
-                        <Label className="text-dark-200">Potência</Label>
+                        <Label style={{ color: '#bcccdc' }}>Potência</Label>
                         <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
-                          <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                          <SelectContent>
+                          <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                             {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                           </SelectContent>
                         </Select>
@@ -1716,19 +1716,19 @@ const Sales = ({ user }) => {
                   {(editFormData.energy_sale_type === 'gas' || editFormData.energy_sale_type === 'dual') && (
                     <>
                       <div>
-                        <Label className="text-dark-200">CUI</Label>
+                        <Label style={{ color: '#bcccdc' }}>CUI</Label>
                         <Input
                           value={editFormData.cui}
                           onChange={(e) => setEditFormData({...editFormData, cui: e.target.value.toUpperCase()})}
                           placeholder="PT16XXXXXXXXXXXXXX"
-                          className="glass-input"
+                          style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                         />
                       </div>
                       <div>
-                        <Label className="text-dark-200">Escalão</Label>
+                        <Label style={{ color: '#bcccdc' }}>Escalão</Label>
                         <Select value={editFormData.tier} onValueChange={(v) => setEditFormData({...editFormData, tier: v})}>
-                          <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                          <SelectContent>
+                          <SelectTrigger style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectContent style={{ background: '#1a2332', color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)' }}>
                             <SelectItem value="Escalão 1">Escalão 1</SelectItem>
                             <SelectItem value="Escalão 2">Escalão 2</SelectItem>
                             <SelectItem value="Escalão 3">Escalão 3</SelectItem>
@@ -1749,7 +1749,7 @@ const Sales = ({ user }) => {
                     onChange={(e) => setEditFormData({...editFormData, has_direct_debit: e.target.checked})}
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="edit_direct_debit" className="text-white">Débito Direto (DD)</Label>
+                  <Label htmlFor="edit_direct_debit" style={{ color: '#ffffff' }}>Débito Direto (DD)</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -1759,17 +1759,17 @@ const Sales = ({ user }) => {
                     onChange={(e) => setEditFormData({...editFormData, has_electronic_invoice: e.target.checked})}
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="edit_electronic_invoice" className="text-white">Fatura Eletrónica (FE)</Label>
+                  <Label htmlFor="edit_electronic_invoice" style={{ color: '#ffffff' }}>Fatura Eletrónica (FE)</Label>
                 </div>
               </div>
 
               <div className="col-span-2">
-                <Label className="text-dark-200">Observações</Label>
+                <Label style={{ color: '#bcccdc' }}>Observações</Label>
                 <Textarea
                   value={editFormData.observations}
                   onChange={(e) => setEditFormData({...editFormData, observations: e.target.value})}
                   rows={3}
-                  className="glass-input"
+                  style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                 />
               </div>
 
@@ -1783,23 +1783,23 @@ const Sales = ({ user }) => {
                     disabled={editFormData.status !== 'Ativo'}
                     className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <Label htmlFor="edit_paid_to_operator" className={editFormData.status !== 'Ativo' ? 'text-dark-500' : 'text-white'}>
+                  <Label htmlFor="edit_paid_to_operator" style={{ color: editFormData.status !== 'Ativo' ? '#475569' : '#ffffff' }}>
                     Paga pelo Operador
                   </Label>
                 </div>
                 {editFormData.status !== 'Ativo' && (
-                  <p className="text-xs text-dark-400">Apenas disponível para vendas com estado "Ativo"</p>
+                  <p className="text-xs" style={{ color: '#64748b' }}>Apenas disponível para vendas com estado "Ativo"</p>
                 )}
               </div>
 
               {editFormData.paid_to_operator && (
                 <div className="col-span-2">
-                  <Label className="text-dark-200">Data de Pagamento</Label>
+                  <Label style={{ color: '#bcccdc' }}>Data de Pagamento</Label>
                   <Input
                     type="date"
                     value={editFormData.payment_date}
                     onChange={(e) => setEditFormData({...editFormData, payment_date: e.target.value})}
-                    className="glass-input"
+                    style={{ background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                   />
                 </div>
               )}
@@ -1812,7 +1812,7 @@ const Sales = ({ user }) => {
 
                 return (
                   <div className="col-span-2">
-                    <Label className="text-dark-200">Comissão Manual (€) {!canEditCommission && <span className="text-red-400">*Apenas Administradores</span>}</Label>
+                    <Label style={{ color: '#bcccdc' }}>Comissão Manual (€) {!canEditCommission && <span className="text-red-400">*Apenas Administradores</span>}</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -1820,7 +1820,7 @@ const Sales = ({ user }) => {
                       onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
                       placeholder={hasAutomaticCommission ? "Deixar vazio para cálculo automático" : "Definir comissão"}
                       disabled={!canEditCommission}
-                      className={!canEditCommission ? "bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed" : "glass-input"}
+                      style={!canEditCommission ? { background: 'rgba(26,35,50,0.5)', color: '#7b8fa8', borderColor: 'rgba(255,255,255,0.06)', cursor: 'not-allowed' } : { background: '#1a2332', color: '#ffffff', borderColor: 'rgba(255,255,255,0.1)' }}
                     />
                     {hasAutomaticCommission && commissionChanged && editFormData.manual_commission && (
                       <div className="mt-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
@@ -1833,7 +1833,7 @@ const Sales = ({ user }) => {
                         </div>
                       </div>
                     )}
-                    <p className="text-xs text-dark-400 mt-1">
+                    <p className="text-xs mt-1" style={{ color: '#64748b' }}>
                       {hasAutomaticCommission
                         ? 'Operadora com cálculo automático de comissão'
                         : saleOperator?.commission_mode === 'manual'
@@ -1847,7 +1847,7 @@ const Sales = ({ user }) => {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)} style={{ background: 'transparent', color: '#bcccdc', borderColor: 'rgba(255,255,255,0.15)' }}>
                 Cancelar
               </Button>
               <Button type="submit" className="btn-gold">

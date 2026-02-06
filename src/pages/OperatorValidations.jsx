@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle, Download, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 
 const OperatorValidations = ({ user }) => {
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [validationHistory, setValidationHistory] = useState([]);
   const [currentReport, setCurrentReport] = useState(null);
 
@@ -39,10 +39,11 @@ const OperatorValidations = ({ user }) => {
         return;
       }
       setFile(selectedFile);
+      setCurrentReport(null);
     }
   };
 
-  const processExcelFile = (file) => {
+  const parseExcelFile = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
@@ -53,54 +54,58 @@ const OperatorValidations = ({ user }) => {
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
-          const processedData = jsonData.map((row, index) => {
-            const normalizedRow = {};
+          const rows = jsonData.map((row, index) => {
+            const norm = {};
             Object.keys(row).forEach(key => {
-              const normalizedKey = key.toLowerCase().trim();
-              normalizedRow[normalizedKey] = row[key];
+              norm[key.toLowerCase().trim()] = row[key];
             });
 
-            const paidValue = normalizedRow['pago pelo operador'] ||
-                             normalizedRow['pago operador'] ||
-                             normalizedRow['paid'] ||
-                             normalizedRow['pago'] ||
-                             normalizedRow['pago pela operadora'] ||
-                             normalizedRow['validado'] ||
-                             '';
+            const paidRaw = norm['pago pelo operador'] ||
+                            norm['pago operador'] ||
+                            norm['paid'] ||
+                            norm['pago'] ||
+                            norm['pago pela operadora'] ||
+                            norm['validado'] ||
+                            '';
+            const paidStr = String(paidRaw).trim().toUpperCase();
+            const isPaid = paidStr === 'SIM' || paidStr === 'YES' || paidStr === 'S' || paidStr === '1' || paidRaw === true;
+
+            let dateVal = norm.data || norm.date || norm['data de ativação'] || norm['data ativação'] || norm['data ativacao'] || null;
+            if (dateVal && typeof dateVal === 'number') {
+              const excelDate = new Date((dateVal - 25569) * 86400 * 1000);
+              dateVal = excelDate.toISOString().split('T')[0];
+            } else if (dateVal && typeof dateVal === 'string') {
+              const parts = dateVal.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+              if (parts) {
+                const year = parts[3].length === 2 ? '20' + parts[3] : parts[3];
+                dateVal = `${year}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+              }
+            }
 
             return {
               lineNumber: index + 2,
-              cpe: normalizedRow.cpe?.toString().trim() || null,
-              cui: normalizedRow.cui?.toString().trim() || null,
-              req: normalizedRow.req?.toString().trim() || normalizedRow['requisição']?.toString().trim() || normalizedRow['requisicao']?.toString().trim() || null,
-              date: normalizedRow.data || normalizedRow.date || null,
-              paidByOperator: paidValue?.toString().toUpperCase() === 'SIM' ||
-                             paidValue?.toString().toUpperCase() === 'YES' ||
-                             paidValue?.toString().toUpperCase() === 'S' ||
-                             paidValue?.toString() === '1' ||
-                             paidValue === true
+              cpe: norm.cpe ? String(norm.cpe).trim() : null,
+              cui: norm.cui ? String(norm.cui).trim() : null,
+              req: norm.req ? String(norm.req).trim() : (norm['requisição'] ? String(norm['requisição']).trim() : (norm['requisicao'] ? String(norm['requisicao']).trim() : null)),
+              date: dateVal,
+              paidByOperator: isPaid
             };
           });
 
-          const validRows = processedData.filter(row =>
-            row.cpe || row.cui || row.req
-          );
+          const validRows = rows.filter(r => r.cpe || r.cui || r.req);
 
           if (validRows.length === 0) {
-            reject(new Error('Nenhum registo valido encontrado no ficheiro. Certifique-se que tem colunas: CPE, CUI ou REQ'));
+            reject(new Error('Nenhum registo valido encontrado. O ficheiro deve ter colunas: CPE, CUI ou REQ'));
             return;
           }
 
           resolve(validRows);
         } catch (error) {
-          reject(new Error('Erro ao processar ficheiro Excel: ' + error.message));
+          reject(new Error('Erro ao processar ficheiro: ' + error.message));
         }
       };
 
-      reader.onerror = () => {
-        reject(new Error('Erro ao ler ficheiro'));
-      };
-
+      reader.onerror = () => reject(new Error('Erro ao ler ficheiro'));
       reader.readAsArrayBuffer(file);
     });
   };
@@ -113,212 +118,138 @@ const OperatorValidations = ({ user }) => {
 
     setProcessing(true);
     setCurrentReport(null);
+    setProgress({ current: 0, total: 0 });
 
     try {
-      const excelData = await processExcelFile(file);
+      const excelRows = await parseExcelFile(file);
 
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0];
+      const dateStr = ninetyDaysAgo.toISOString().split('T')[0];
 
       const { data: sales, error: salesError } = await supabase
         .from('sales')
-        .select('*')
-        .gte('date', ninetyDaysAgoStr)
-        .or('paid_to_operator.is.null,paid_to_operator.eq.false,electricity_paid.is.null,electricity_paid.eq.false,gas_paid.is.null,gas_paid.eq.false');
+        .select('id, sale_code, date, status, scope, energy_sale_type, cpe, cui, request_number, client_name, operator_validated, paid_to_operator, electricity_paid, gas_paid')
+        .gte('date', dateStr);
 
       if (salesError) throw salesError;
 
       const results = {
-        processed: excelData.length,
+        processed: excelRows.length,
         matched: 0,
-        partiallyMatched: 0,
-        notFound: [],
-        updated: []
+        updated: [],
+        errors: [],
+        notFound: []
       };
 
-      const batchUpdates = [];
+      const matchedSales = [];
 
-      for (const excelRow of excelData) {
-        let matchedSale = null;
+      for (const row of excelRows) {
+        let matched = null;
 
-        if (excelRow.cpe) {
-          matchedSale = sales.find(sale =>
-            sale.cpe?.toUpperCase() === excelRow.cpe.toUpperCase()
-          );
+        if (row.cpe) {
+          matched = sales.find(s => s.cpe && s.cpe.toUpperCase() === row.cpe.toUpperCase());
+        }
+        if (!matched && row.cui) {
+          matched = sales.find(s => s.cui && s.cui.toUpperCase() === row.cui.toUpperCase());
+        }
+        if (!matched && row.req) {
+          matched = sales.find(s => s.request_number && s.request_number.toUpperCase() === row.req.toUpperCase());
         }
 
-        if (!matchedSale && excelRow.cui) {
-          matchedSale = sales.find(sale =>
-            sale.cui?.toUpperCase() === excelRow.cui.toUpperCase()
-          );
-        }
-
-        if (!matchedSale && excelRow.req) {
-          matchedSale = sales.find(sale =>
-            sale.request_number?.toUpperCase() === excelRow.req.toUpperCase()
-          );
-        }
-
-        if (matchedSale) {
-          const updates = {
-            sale_id: matchedSale.id,
-            status: 'Ativo',
-            operator_validated: true,
-            operator_validation_date: new Date().toISOString()
-          };
-
-          const isEnergy = matchedSale.scope === 'energia';
-          const isDualEnergy = isEnergy && matchedSale.energy_sale_type === 'dual';
-          const paymentDate = excelRow.date || new Date().toISOString().split('T')[0];
-
-          if (isDualEnergy) {
-            const hasCPE = excelRow.cpe &&
-                          matchedSale.cpe?.toUpperCase() === excelRow.cpe.toUpperCase();
-            const hasCUI = excelRow.cui &&
-                          matchedSale.cui?.toUpperCase() === excelRow.cui.toUpperCase();
-
-            if (hasCPE && !hasCUI) {
-              updates.electricity_paid = excelRow.paidByOperator;
-              if (excelRow.paidByOperator) {
-                updates.electricity_payment_date = paymentDate;
-              }
-              updates.is_partial_payment = true;
-              results.partiallyMatched++;
-            } else if (hasCUI && !hasCPE) {
-              updates.gas_paid = excelRow.paidByOperator;
-              if (excelRow.paidByOperator) {
-                updates.gas_payment_date = paymentDate;
-              }
-              updates.is_partial_payment = true;
-              results.partiallyMatched++;
-            } else {
-              updates.electricity_paid = excelRow.paidByOperator;
-              updates.gas_paid = excelRow.paidByOperator;
-              if (excelRow.paidByOperator) {
-                updates.electricity_payment_date = paymentDate;
-                updates.gas_payment_date = paymentDate;
-              }
-              updates.paid_to_operator = excelRow.paidByOperator;
-              updates.is_partial_payment = false;
-              results.matched++;
-            }
-          } else if (isEnergy && matchedSale.energy_sale_type === 'eletricidade') {
-            updates.electricity_paid = excelRow.paidByOperator;
-            updates.paid_to_operator = excelRow.paidByOperator;
-            if (excelRow.paidByOperator) {
-              updates.electricity_payment_date = paymentDate;
-              updates.payment_date = paymentDate;
-            }
-            results.matched++;
-          } else if (isEnergy && matchedSale.energy_sale_type === 'gas') {
-            updates.gas_paid = excelRow.paidByOperator;
-            updates.paid_to_operator = excelRow.paidByOperator;
-            if (excelRow.paidByOperator) {
-              updates.gas_payment_date = paymentDate;
-              updates.payment_date = paymentDate;
-            }
-            results.matched++;
-          } else {
-            updates.paid_to_operator = excelRow.paidByOperator;
-            if (excelRow.paidByOperator) {
-              updates.payment_date = paymentDate;
-            }
-            results.matched++;
-          }
-
-          batchUpdates.push({
-            updates,
-            saleCode: matchedSale.sale_code,
-            clientName: matchedSale.client_name,
-            cpe: excelRow.cpe,
-            cui: excelRow.cui,
-            req: excelRow.req,
-            paid: excelRow.paidByOperator
-          });
+        if (matched) {
+          matchedSales.push({ sale: matched, row });
         } else {
           results.notFound.push({
-            lineNumber: excelRow.lineNumber,
-            cpe: excelRow.cpe,
-            cui: excelRow.cui,
-            req: excelRow.req
+            lineNumber: row.lineNumber,
+            cpe: row.cpe,
+            cui: row.cui,
+            req: row.req
           });
         }
       }
 
-      if (batchUpdates.length > 0) {
-        const rpcPayload = batchUpdates.map(item => item.updates);
+      setProgress({ current: 0, total: matchedSales.length });
 
-        const { data: rpcResult, error: rpcError } = await supabase
-          .rpc('batch_validate_sales', { p_updates: rpcPayload });
+      for (let i = 0; i < matchedSales.length; i++) {
+        const { sale, row } = matchedSales[i];
+        const activationDate = row.date || new Date().toISOString().split('T')[0];
 
-        if (rpcError) {
-          console.error('Batch validation RPC error:', rpcError);
-          toast.error('Erro ao atualizar vendas: ' + rpcError.message);
-        } else if (rpcResult) {
-          const updatedIds = rpcResult.updated_ids || [];
-          const rpcErrors = rpcResult.errors || [];
+        const updateData = {
+          status: 'Ativo',
+          operator_validated: true,
+          operator_validation_date: new Date().toISOString()
+        };
 
-          if (rpcErrors.length > 0) {
-            console.error('Validation RPC errors:', rpcErrors);
-            toast.error('Erros na validacao: ' + rpcErrors.join('; '));
-          }
+        if (row.paidByOperator) {
+          updateData.paid_to_operator = true;
+          updateData.payment_date = activationDate;
 
-          for (const item of batchUpdates) {
-            const saleId = item.updates.sale_id;
-            if (updatedIds.some(uid => uid === saleId)) {
-              results.updated.push({
-                saleCode: item.saleCode,
-                clientName: item.clientName,
-                cpe: item.cpe,
-                cui: item.cui,
-                req: item.req,
-                paid: item.paid
-              });
+          if (sale.scope === 'energia') {
+            if (sale.energy_sale_type === 'dual') {
+              updateData.electricity_paid = true;
+              updateData.electricity_payment_date = activationDate;
+              updateData.gas_paid = true;
+              updateData.gas_payment_date = activationDate;
+              updateData.is_partial_payment = false;
+            } else if (sale.energy_sale_type === 'eletricidade') {
+              updateData.electricity_paid = true;
+              updateData.electricity_payment_date = activationDate;
+            } else if (sale.energy_sale_type === 'gas') {
+              updateData.gas_paid = true;
+              updateData.gas_payment_date = activationDate;
             }
           }
-
-          if (updatedIds.length > 0 && results.updated.length === 0) {
-            results.updated = batchUpdates.map(item => ({
-              saleCode: item.saleCode,
-              clientName: item.clientName,
-              cpe: item.cpe,
-              cui: item.cui,
-              req: item.req,
-              paid: item.paid
-            }));
-          }
-        } else {
-          console.error('RPC returned null result');
-          toast.error('Erro inesperado na validacao - resultado vazio');
         }
+
+        const { error: updateError } = await supabase
+          .from('sales')
+          .update(updateData)
+          .eq('id', sale.id);
+
+        if (updateError) {
+          console.error(`Erro ao atualizar venda ${sale.sale_code}:`, updateError);
+          results.errors.push({ saleCode: sale.sale_code, error: updateError.message });
+        } else {
+          results.updated.push({
+            saleCode: sale.sale_code,
+            clientName: sale.client_name,
+            cpe: row.cpe,
+            cui: row.cui,
+            req: row.req,
+            paid: row.paidByOperator,
+            date: activationDate
+          });
+        }
+
+        setProgress({ current: i + 1, total: matchedSales.length });
       }
 
-      const { data: validationRecord, error: recordError } = await supabase
+      results.matched = results.updated.length;
+
+      await supabase
         .from('operator_validations')
         .insert({
           user_id: user.id,
           filename: file.name,
           records_processed: results.processed,
           sales_updated: results.updated.length,
-          partially_paid: results.partiallyMatched,
+          partially_paid: 0,
           not_found: results.notFound
-        })
-        .select()
-        .single();
-
-      if (recordError) {
-        console.error('Error saving validation record:', recordError);
-      }
+        });
 
       setCurrentReport(results);
       fetchValidationHistory();
 
-      if (results.notFound.length > 0) {
-        toast.warning(`${results.notFound.length} registo(s) nao encontrado(s) nas vendas do sistema.`);
+      if (results.errors.length > 0) {
+        toast.error(`${results.errors.length} erro(s) ao atualizar vendas`);
       }
-
-      toast.success(`Validacao concluida! ${results.updated.length} vendas atualizadas.`);
+      if (results.notFound.length > 0) {
+        toast.warning(`${results.notFound.length} registo(s) nao encontrado(s)`);
+      }
+      if (results.updated.length > 0) {
+        toast.success(`${results.updated.length} venda(s) atualizada(s) com sucesso!`);
+      }
 
       setFile(null);
       const fileInput = document.getElementById('excel-file-input');
@@ -329,6 +260,7 @@ const OperatorValidations = ({ user }) => {
       toast.error(error.message || 'Erro ao processar validacao');
     } finally {
       setProcessing(false);
+      setProgress({ current: 0, total: 0 });
     }
   };
 
@@ -354,30 +286,30 @@ const OperatorValidations = ({ user }) => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white">Validacao de Ativacoes</h1>
-          <p className="text-dark-300 mt-1">Upload de autos de operadoras para validacao automatica</p>
+          <p className="text-dark-300 mt-1">Upload de ficheiros de operadoras para validacao automatica</p>
         </div>
       </div>
 
-      <div className="glass-ultra p-6 space-y-4">
+      <div style={{ background: '#141c27', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1rem' }} className="p-6 space-y-4">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
           <Upload className="w-5 h-5 text-gold-400" />
           Upload de Ficheiro Excel
         </h2>
 
-        <div className="bg-dark-800 border border-dark-600 rounded-xl p-4">
+        <div style={{ background: '#0f1923', border: '1px solid rgba(255,255,255,0.1)' }} className="rounded-xl p-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-gold-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-dark-200">
+            <div className="text-sm" style={{ color: '#bcccdc' }}>
               <strong className="text-white">Formato do ficheiro Excel:</strong> O ficheiro deve conter as colunas:
-              <ul className="list-disc list-inside mt-2 space-y-1 text-dark-300">
-                <li><strong className="text-dark-200">CPE</strong>: Codigo do ponto de entrega (eletricidade)</li>
-                <li><strong className="text-dark-200">CUI</strong>: Codigo unico de instalacao (gas)</li>
-                <li><strong className="text-dark-200">REQ</strong>: Numero de requisicao (telecomunicacoes)</li>
-                <li><strong className="text-dark-200">Data</strong>: Data de ativacao/pagamento</li>
-                <li><strong className="text-dark-200">Pago pelo operador</strong>: SIM ou NAO</li>
+              <ul className="list-disc list-inside mt-2 space-y-1" style={{ color: '#94a3b8' }}>
+                <li><strong style={{ color: '#bcccdc' }}>CPE</strong>: Codigo do ponto de entrega (eletricidade)</li>
+                <li><strong style={{ color: '#bcccdc' }}>CUI</strong>: Codigo unico de instalacao (gas)</li>
+                <li><strong style={{ color: '#bcccdc' }}>REQ</strong>: Numero de requisicao (telecomunicacoes)</li>
+                <li><strong style={{ color: '#bcccdc' }}>Data</strong>: Data de ativacao</li>
+                <li><strong style={{ color: '#bcccdc' }}>Pago pelo operador</strong>: SIM ou NAO</li>
               </ul>
-              <p className="mt-2 text-dark-400">
-                O sistema ira pesquisar vendas dos ultimos 90 dias e atualizar automaticamente as correspondencias.
+              <p className="mt-2" style={{ color: '#64748b' }}>
+                O sistema pesquisa vendas dos ultimos 90 dias e marca como Ativo as que constam no ficheiro.
               </p>
             </div>
           </div>
@@ -389,10 +321,11 @@ const OperatorValidations = ({ user }) => {
             type="file"
             accept=".xlsx,.xls"
             onChange={handleFileChange}
-            className="block w-full text-sm text-dark-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gold-400/10 file:text-gold-400 hover:file:bg-gold-400/20"
+            className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold"
+            style={{ color: '#94a3b8' }}
           />
           {file && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-dark-200">
+            <div className="mt-2 flex items-center gap-2 text-sm" style={{ color: '#bcccdc' }}>
               <FileSpreadsheet className="w-4 h-4" />
               <span>{file.name}</span>
             </div>
@@ -405,47 +338,95 @@ const OperatorValidations = ({ user }) => {
           className="btn-gold w-full"
         >
           {processing ? (
-            <>
-              <div className="spinner w-4 h-4 mr-2"></div>
-              A processar...
-            </>
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              A processar... {progress.total > 0 ? `(${progress.current}/${progress.total})` : ''}
+            </span>
           ) : (
-            <>
-              <CheckCircle className="w-4 h-4 mr-2" />
+            <span className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
               Processar Validacao
-            </>
+            </span>
           )}
         </Button>
       </div>
 
       {currentReport && (
-        <div className="glass-ultra p-6 space-y-4">
+        <div style={{ background: '#141c27', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1rem' }} className="p-6 space-y-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-green-400" />
             Resultado da Validacao
           </h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl">
-              <p className="text-sm text-dark-300">Registos Processados</p>
-              <p className="text-2xl font-bold text-blue-400">{currentReport.processed}</p>
+            <div style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }} className="p-4 rounded-xl">
+              <p className="text-sm" style={{ color: '#94a3b8' }}>Registos Processados</p>
+              <p className="text-2xl font-bold" style={{ color: '#60a5fa' }}>{currentReport.processed}</p>
             </div>
-            <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
-              <p className="text-sm text-dark-300">Vendas Atualizadas</p>
-              <p className="text-2xl font-bold text-green-400">{currentReport.updated.length}</p>
+            <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }} className="p-4 rounded-xl">
+              <p className="text-sm" style={{ color: '#94a3b8' }}>Vendas Atualizadas</p>
+              <p className="text-2xl font-bold" style={{ color: '#4ade80' }}>{currentReport.updated.length}</p>
             </div>
-            <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl">
-              <p className="text-sm text-dark-300">Parcialmente Pagas</p>
-              <p className="text-2xl font-bold text-orange-400">{currentReport.partiallyMatched}</p>
+            <div style={{ background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)' }} className="p-4 rounded-xl">
+              <p className="text-sm" style={{ color: '#94a3b8' }}>Erros</p>
+              <p className="text-2xl font-bold" style={{ color: '#fb923c' }}>{currentReport.errors.length}</p>
             </div>
-            <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
-              <p className="text-sm text-dark-300">Nao Encontrados</p>
-              <p className="text-2xl font-bold text-red-400">{currentReport.notFound.length}</p>
+            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }} className="p-4 rounded-xl">
+              <p className="text-sm" style={{ color: '#94a3b8' }}>Nao Encontrados</p>
+              <p className="text-2xl font-bold" style={{ color: '#f87171' }}>{currentReport.notFound.length}</p>
             </div>
           </div>
 
+          {currentReport.updated.length > 0 && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} className="pt-4">
+              <h3 className="font-semibold text-white mb-3">Vendas Atualizadas</h3>
+              <div className="max-h-48 overflow-y-auto scrollbar-premium" style={{ background: '#0f1923', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>Codigo</th>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>Cliente</th>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>Pago</th>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>Data</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentReport.updated.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td className="px-4 py-2" style={{ color: '#e2e8f0' }}>{item.saleCode}</td>
+                        <td className="px-4 py-2" style={{ color: '#cbd5e1' }}>{item.clientName || '-'}</td>
+                        <td className="px-4 py-2">
+                          {item.paid ? (
+                            <span style={{ color: '#4ade80' }}>Sim</span>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}>Nao</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2" style={{ color: '#cbd5e1' }}>{item.date || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {currentReport.errors.length > 0 && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} className="pt-4">
+              <h3 className="font-semibold mb-3" style={{ color: '#fb923c' }}>Erros ao Atualizar</h3>
+              <div className="space-y-1">
+                {currentReport.errors.map((err, idx) => (
+                  <div key={idx} className="text-sm" style={{ color: '#f87171' }}>
+                    <XCircle className="w-3 h-3 inline mr-1" />
+                    {err.saleCode}: {err.error}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {currentReport.notFound.length > 0 && (
-            <div className="border-t border-dark-600 pt-4">
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} className="pt-4">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold text-white">Registos Nao Encontrados</h3>
                 <Button onClick={downloadReport} className="btn-secondary" size="sm">
@@ -453,23 +434,23 @@ const OperatorValidations = ({ user }) => {
                   Exportar Excel
                 </Button>
               </div>
-              <div className="max-h-64 overflow-y-auto table-container">
+              <div className="max-h-48 overflow-y-auto scrollbar-premium" style={{ background: '#0f1923', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr>
-                      <th className="px-4 py-2 text-left">Linha</th>
-                      <th className="px-4 py-2 text-left">CPE</th>
-                      <th className="px-4 py-2 text-left">CUI</th>
-                      <th className="px-4 py-2 text-left">REQ</th>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>Linha</th>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>CPE</th>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>CUI</th>
+                      <th className="px-4 py-2 text-left" style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>REQ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentReport.notFound.map((record, idx) => (
-                      <tr key={idx}>
-                        <td className="px-4 py-2 text-dark-200">{record.lineNumber}</td>
-                        <td className="px-4 py-2 text-dark-200">{record.cpe || '-'}</td>
-                        <td className="px-4 py-2 text-dark-200">{record.cui || '-'}</td>
-                        <td className="px-4 py-2 text-dark-200">{record.req || '-'}</td>
+                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td className="px-4 py-2" style={{ color: '#cbd5e1' }}>{record.lineNumber}</td>
+                        <td className="px-4 py-2" style={{ color: '#cbd5e1' }}>{record.cpe || '-'}</td>
+                        <td className="px-4 py-2" style={{ color: '#cbd5e1' }}>{record.cui || '-'}</td>
+                        <td className="px-4 py-2" style={{ color: '#cbd5e1' }}>{record.req || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -480,37 +461,37 @@ const OperatorValidations = ({ user }) => {
         </div>
       )}
 
-      <div className="glass-ultra p-6">
+      <div style={{ background: '#141c27', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1rem' }} className="p-6">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
           <Clock className="w-5 h-5 text-gold-400" />
           Historico de Validacoes
         </h2>
 
         {validationHistory.length === 0 ? (
-          <p className="text-dark-400 text-center py-8">Nenhuma validacao realizada ainda</p>
+          <p className="text-center py-8" style={{ color: '#64748b' }}>Nenhuma validacao realizada ainda</p>
         ) : (
           <div className="space-y-3">
             {validationHistory.map((validation) => (
-              <div key={validation.id} className="flex items-center justify-between p-4 bg-dark-800/50 border border-dark-600 rounded-xl">
+              <div key={validation.id} className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'rgba(15,25,35,0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex-1">
                   <p className="font-medium text-white">{validation.filename}</p>
-                  <p className="text-sm text-dark-300">
+                  <p className="text-sm" style={{ color: '#94a3b8' }}>
                     {new Date(validation.created_at).toLocaleString('pt-PT')}
                   </p>
                 </div>
                 <div className="flex gap-4 text-sm">
                   <div className="text-center">
-                    <p className="text-dark-400">Processados</p>
+                    <p style={{ color: '#64748b' }}>Processados</p>
                     <p className="font-semibold text-white">{validation.records_processed}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-dark-400">Atualizados</p>
-                    <p className="font-semibold text-green-400">{validation.sales_updated}</p>
+                    <p style={{ color: '#64748b' }}>Atualizados</p>
+                    <p className="font-semibold" style={{ color: '#4ade80' }}>{validation.sales_updated}</p>
                   </div>
                   {validation.not_found && validation.not_found.length > 0 && (
                     <div className="text-center">
-                      <p className="text-dark-400">Nao Encontrados</p>
-                      <p className="font-semibold text-red-400">{validation.not_found.length}</p>
+                      <p style={{ color: '#64748b' }}>Nao Encontrados</p>
+                      <p className="font-semibold" style={{ color: '#f87171' }}>{validation.not_found.length}</p>
                     </div>
                   )}
                 </div>
