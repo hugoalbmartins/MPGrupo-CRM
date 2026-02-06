@@ -54,7 +54,18 @@ const Operators = ({ user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await operatorsService.create(formData);
+      const submitData = { ...formData };
+      if (submitData.scope === 'energia') {
+        const types = submitData.allowed_energy_types || [];
+        if (types.includes('eletricidade') && types.includes('gas')) {
+          submitData.energy_type = 'dual';
+        } else if (types.includes('eletricidade')) {
+          submitData.energy_type = 'eletricidade';
+        } else if (types.includes('gas')) {
+          submitData.energy_type = 'gas';
+        }
+      }
+      await operatorsService.create(submitData);
       toast.success("Operadora criada com sucesso!");
       setDialogOpen(false);
       resetForm();
@@ -301,7 +312,7 @@ const Operators = ({ user }) => {
                 </div>
                 <div>
                   <Label className="text-dark-200">Âmbito *</Label>
-                  <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: v === 'energia' ? 'eletricidade' : ''})}>
+                  <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: '', allowed_energy_types: v === 'energia' ? ['eletricidade', 'gas'] : []})}>
                     <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>

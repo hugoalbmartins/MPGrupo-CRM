@@ -167,7 +167,7 @@ const CommissionTable = ({
                             <span>{config.commission_value?.toFixed(2) || '0.00'}</span>
                           )
                         ) : (
-                          <span className="text-xs text-gray-500">Manual</span>
+                          <span className="text-xs text-dark-400">Manual</span>
                         )}
                       </td>
 
@@ -271,7 +271,7 @@ const CommissionTable = ({
                               {config.retention_percentage}% / {config.retention_months}m
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400">Não</span>
+                            <span className="text-xs text-dark-400">Não</span>
                           )
                         )}
                       </td>
@@ -305,7 +305,7 @@ const CommissionTable = ({
                                 {config.electronic_invoice_bonus > 0 && `FE: ${config.electronic_invoice_bonus.toFixed(2)}\u20AC`}
                               </>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-dark-400">-</span>
                             )}
                           </span>
                         )}
@@ -319,7 +319,7 @@ const CommissionTable = ({
                               size="sm"
                               variant="ghost"
                               onClick={() => setEditingIndex(null)}
-                              className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 transition-all duration-200"
+                              className="h-7 w-7 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10 transition-all duration-200"
                             >
                               <Check className="w-4 h-4" />
                             </Button>
@@ -339,7 +339,7 @@ const CommissionTable = ({
                             size="sm"
                             variant="ghost"
                             onClick={() => onRemoveConfig(actualIndex)}
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200"
+                            className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all duration-200"
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>

@@ -223,7 +223,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-semibold text-dark-200">{level}</span>
-                              <span className="text-xs text-gray-500">({levelConfigs.length} regra{levelConfigs.length !== 1 ? 's' : ''})</span>
+                              <span className="text-xs text-dark-400">({levelConfigs.length} regra{levelConfigs.length !== 1 ? 's' : ''})</span>
                             </div>
                             {d2dLevels.length > 1 && (
                               <Button
@@ -231,7 +231,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeD2DLevel(level)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 text-xs"
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 text-xs"
                               >
                                 <Trash2 className="w-3 h-3 mr-1" />
                                 Remover {level}

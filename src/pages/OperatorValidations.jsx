@@ -60,15 +60,25 @@ const OperatorValidations = ({ user }) => {
               normalizedRow[normalizedKey] = row[key];
             });
 
+            const paidValue = normalizedRow['pago pelo operador'] ||
+                             normalizedRow['pago operador'] ||
+                             normalizedRow['paid'] ||
+                             normalizedRow['pago'] ||
+                             normalizedRow['pago pela operadora'] ||
+                             normalizedRow['validado'] ||
+                             '';
+
             return {
               lineNumber: index + 2,
               cpe: normalizedRow.cpe?.toString().trim() || null,
               cui: normalizedRow.cui?.toString().trim() || null,
-              req: normalizedRow.req?.toString().trim() || null,
+              req: normalizedRow.req?.toString().trim() || normalizedRow['requisição']?.toString().trim() || normalizedRow['requisicao']?.toString().trim() || null,
               date: normalizedRow.data || normalizedRow.date || null,
-              paidByOperator: normalizedRow['pago pelo operador']?.toString().toUpperCase() === 'SIM' ||
-                             normalizedRow['paid']?.toString().toUpperCase() === 'SIM' ||
-                             normalizedRow['pago']?.toString().toUpperCase() === 'SIM'
+              paidByOperator: paidValue?.toString().toUpperCase() === 'SIM' ||
+                             paidValue?.toString().toUpperCase() === 'YES' ||
+                             paidValue?.toString().toUpperCase() === 'S' ||
+                             paidValue?.toString() === '1' ||
+                             paidValue === true
             };
           });
 
@@ -107,15 +117,15 @@ const OperatorValidations = ({ user }) => {
     try {
       const excelData = await processExcelFile(file);
 
-      const sixtyDaysAgo = new Date();
-      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-      const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      const ninetyDaysAgoStr = ninetyDaysAgo.toISOString().split('T')[0];
 
       const { data: sales, error: salesError } = await supabase
         .from('sales')
         .select('*')
-        .gte('date', sixtyDaysAgoStr)
-        .or('paid_to_operator.eq.false,electricity_paid.eq.false,gas_paid.eq.false');
+        .gte('date', ninetyDaysAgoStr)
+        .or('paid_to_operator.is.null,paid_to_operator.eq.false,electricity_paid.is.null,electricity_paid.eq.false,gas_paid.is.null,gas_paid.eq.false');
 
       if (salesError) throw salesError;
 
@@ -199,13 +209,17 @@ const OperatorValidations = ({ user }) => {
             results.matched++;
           }
 
-          const { error: updateError } = await supabase
+          const { data: updatedSale, error: updateError } = await supabase
             .from('sales')
             .update(updates)
-            .eq('id', matchedSale.id);
+            .eq('id', matchedSale.id)
+            .select()
+            .maybeSingle();
 
           if (updateError) {
             console.error('Error updating sale:', updateError);
+          } else if (!updatedSale) {
+            console.error('Sale update returned no data - possible RLS issue for sale:', matchedSale.id);
           } else {
             results.updated.push({
               saleCode: matchedSale.sale_code,
@@ -339,7 +353,7 @@ const OperatorValidations = ({ user }) => {
                 <li><strong className="text-dark-200">Pago pelo operador</strong>: SIM ou NAO</li>
               </ul>
               <p className="mt-2 text-dark-400">
-                O sistema ira pesquisar vendas dos ultimos 60 dias e atualizar automaticamente as correspondencias.
+                O sistema ira pesquisar vendas dos ultimos 90 dias e atualizar automaticamente as correspondencias.
               </p>
             </div>
           </div>

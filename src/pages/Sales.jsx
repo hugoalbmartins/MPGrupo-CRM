@@ -960,7 +960,7 @@ const Sales = ({ user }) => {
             </DialogTrigger>
             <DialogContent className="glass-ultra">
               <DialogHeader>
-                <DialogTitle style={{ color: '#000000' }}>Exportar Vendas para Excel</DialogTitle>
+                <DialogTitle className="text-white">Exportar Vendas para Excel</DialogTitle>
                 <DialogDescription>Selecione o formato de exportação</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 mt-4">
@@ -1135,7 +1135,7 @@ const Sales = ({ user }) => {
           className="glass-ultra p-6 space-y-4"
         >
           <div className="flex justify-between items-center">
-            <h3 className="font-semibold text-lg" style={{ color: '#000000' }}>Filtros Avançados</h3>
+            <h3 className="font-semibold text-lg text-white">Filtros Avançados</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -1236,7 +1236,7 @@ const Sales = ({ user }) => {
             </div>
           </div>
 
-          <div className="text-sm pt-2 border-t border-white/10" style={{ color: '#7a7a7a' }}>
+          <div className="text-sm pt-2 border-t border-white/10" className="text-dark-400">
             {filteredSales.length} venda(s) encontrada(s) {filteredSales.length !== sales.length && `de ${sales.length} total`}
           </div>
         </motion.div>
@@ -1261,7 +1261,7 @@ const Sales = ({ user }) => {
         {/* Pagination */}
         {filteredSales.length > 0 && (
           <div className="mt-6 glass-ultra p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-sm" style={{ color: '#7a7a7a' }}>
+            <div className="text-sm" className="text-dark-400">
               A mostrar {startIndex + 1} a {Math.min(endIndex, sortedSales.length)} de {sortedSales.length} vendas
             </div>
             <div className="flex items-center gap-2">
@@ -1335,13 +1335,13 @@ const Sales = ({ user }) => {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle style={{ color: '#000000' }}>Editar Venda - {editingSale?.sale_code}</DialogTitle>
-            <DialogDescription>Altere os campos necessários</DialogDescription>
+            <DialogTitle className="text-2xl text-white">Editar Venda - {editingSale?.sale_code}</DialogTitle>
+            <DialogDescription className="text-dark-400">Altere os campos necessários</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateSale} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Data da Venda *</Label>
+                <Label className="text-dark-200">Data da Venda *</Label>
                 <Input
                   type="date"
                   value={editFormData.date}
@@ -1350,11 +1350,11 @@ const Sales = ({ user }) => {
                   required
                   className="glass-input"
                 />
-                <p className="text-xs text-gray-500 mt-1">Data não pode ser futura</p>
+                <p className="text-xs text-dark-400 mt-1">Data não pode ser futura</p>
               </div>
 
               <div>
-                <Label>Status *</Label>
+                <Label className="text-dark-200">Status *</Label>
                 <Select
                   value={editFormData.status}
                   onValueChange={(v) => {
@@ -1379,7 +1379,7 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label>Parceiro *</Label>
+                <Label className="text-dark-200">Parceiro *</Label>
                 <Select
                   value={editFormData.partner_id || ""}
                   onValueChange={(v) => setEditFormData({...editFormData, partner_id: v === "admin_commissioned" ? null : v})}
@@ -1395,7 +1395,7 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label>Tipo de Cliente *</Label>
+                <Label className="text-dark-200">Tipo de Cliente *</Label>
                 <Select value={editFormData.client_type} onValueChange={(v) => setEditFormData({...editFormData, client_type: v})}>
                   <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -1406,7 +1406,7 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label>Operadora *</Label>
+                <Label className="text-dark-200">Operadora *</Label>
                 <Select
                   value={editFormData.operator_id}
                   onValueChange={(v) => setEditFormData({...editFormData, operator_id: v})}
@@ -1422,32 +1422,32 @@ const Sales = ({ user }) => {
                 </Select>
               </div>
 
-              <div className="col-span-2 bg-amber-100 border border-amber-300 rounded-lg p-3">
-                <p className="text-sm text-amber-900 font-semibold">
-                  🔒 Nome e NIF do cliente não podem ser alterados
+              <div className="col-span-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                <p className="text-sm text-amber-400 font-semibold">
+                  Nome e NIF do cliente não podem ser alterados
                 </p>
               </div>
 
               <div>
-                <Label>Nome Cliente (Bloqueado)</Label>
+                <Label className="text-dark-200">Nome Cliente (Bloqueado)</Label>
                 <Input
                   value={editFormData.client_name}
                   disabled
-                  className="bg-gray-100 cursor-not-allowed"
+                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <Label>NIF Cliente (Bloqueado)</Label>
+                <Label className="text-dark-200">NIF Cliente (Bloqueado)</Label>
                 <Input
                   value={editFormData.client_nif}
                   disabled
-                  className="bg-gray-100 cursor-not-allowed"
+                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <Label>Contacto Cliente *</Label>
+                <Label className="text-dark-200">Contacto Cliente *</Label>
                 <Input
                   value={editFormData.client_contact}
                   onChange={(e) => setEditFormData({...editFormData, client_contact: e.target.value})}
@@ -1457,7 +1457,7 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label>Email Cliente</Label>
+                <Label className="text-dark-200">Email Cliente</Label>
                 <Input
                   type="email"
                   value={editFormData.client_email}
@@ -1467,7 +1467,7 @@ const Sales = ({ user }) => {
               </div>
 
               <div>
-                <Label>IBAN Cliente</Label>
+                <Label className="text-dark-200">IBAN Cliente</Label>
                 <Input
                   value={editFormData.client_iban}
                   onChange={(e) => setEditFormData({...editFormData, client_iban: e.target.value})}
@@ -1475,56 +1475,54 @@ const Sales = ({ user }) => {
                 />
               </div>
 
-              <div className="col-span-2">
-                <Alert>
-                  <AlertTriangle className="w-4 h-4" />
-                  <AlertDescription>
-                    Os campos de morada não podem ser alterados após a criação da venda
-                  </AlertDescription>
-                </Alert>
+              <div className="col-span-2 bg-dark-800/50 border border-dark-600 rounded-xl p-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-dark-400" />
+                  <p className="text-sm text-dark-300">Os campos de morada não podem ser alterados após a criação da venda</p>
+                </div>
               </div>
 
               <div className="col-span-2">
-                <Label>Morada do Cliente *</Label>
+                <Label className="text-dark-200">Morada do Cliente *</Label>
                 <Input
                   value={editFormData.street}
                   disabled
-                  className="bg-gray-100"
+                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <Label>Código Postal *</Label>
+                <Label className="text-dark-200">Código Postal *</Label>
                 <Input
                   value={editFormData.postal_code}
                   disabled
-                  className="bg-gray-100"
+                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <Label>Localidade *</Label>
+                <Label className="text-dark-200">Localidade *</Label>
                 <Input
                   value={editFormData.locality}
                   disabled
-                  className="bg-gray-100"
+                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
                 />
               </div>
 
               <div className="col-span-2">
-                <Label>Morada de Instalação/Fornecimento</Label>
+                <Label className="text-dark-200">Morada de Instalação/Fornecimento</Label>
                 <Input
                   value={editFormData.installation_address}
                   disabled
-                  className="bg-gray-100"
+                  className="bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-500 mt-1">Se diferente da morada do cliente</p>
+                <p className="text-xs text-dark-400 mt-1">Se diferente da morada do cliente</p>
               </div>
 
               {editFormData.scope === 'telecomunicacoes' && (
                 <>
                   <div>
-                    <Label>Tipo de Serviço</Label>
+                    <Label className="text-dark-200">Tipo de Serviço</Label>
                     <Select value={editFormData.service_type} onValueChange={(v) => setEditFormData({...editFormData, service_type: v})}>
                       <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
@@ -1536,7 +1534,7 @@ const Sales = ({ user }) => {
                   </div>
 
                   <div>
-                    <Label>Tipo de Ativação</Label>
+                    <Label className="text-dark-200">Tipo de Ativação</Label>
                     <Select value={editFormData.activation_type} onValueChange={(v) => setEditFormData({...editFormData, activation_type: v})}>
                       <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
@@ -1547,7 +1545,7 @@ const Sales = ({ user }) => {
                   </div>
 
                   <div>
-                    <Label>Requisição (REQ)</Label>
+                    <Label className="text-dark-200">Requisição (REQ)</Label>
                     <Input
                       value={editFormData.request_number}
                       onChange={(e) => setEditFormData({...editFormData, request_number: e.target.value})}
@@ -1559,7 +1557,7 @@ const Sales = ({ user }) => {
                   {(editFormData.service_type === 'REFID' || editFormData.service_type === 'Refid') ? (
                     <>
                       <div>
-                        <Label>Mensalidade Atual (€)</Label>
+                        <Label className="text-dark-200">Mensalidade Atual (€)</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -1570,7 +1568,7 @@ const Sales = ({ user }) => {
                         />
                       </div>
                       <div>
-                        <Label>Mensalidade Contratada (€)</Label>
+                        <Label className="text-dark-200">Mensalidade Contratada (€)</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -1583,7 +1581,7 @@ const Sales = ({ user }) => {
                     </>
                   ) : (
                     <div>
-                      <Label>Mensalidade (€)</Label>
+                      <Label className="text-dark-200">Mensalidade (€)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -1594,8 +1592,8 @@ const Sales = ({ user }) => {
                     </div>
                   )}
 
-                  <div className="col-span-2 border-t pt-4">
-                    <Label className="text-base font-semibold mb-3 block">Serviços Contratados</Label>
+                  <div className="col-span-2 border-t border-white/10 pt-4">
+                    <Label className="text-base font-semibold mb-3 block text-dark-200">Serviços Contratados</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="flex items-center space-x-2">
                         <input
@@ -1605,7 +1603,7 @@ const Sales = ({ user }) => {
                           onChange={(e) => setEditFormData({...editFormData, has_tv: e.target.checked})}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor="edit_has_tv" className="cursor-pointer">TV</Label>
+                        <Label htmlFor="edit_has_tv" className="cursor-pointer text-white">TV</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -1615,7 +1613,7 @@ const Sales = ({ user }) => {
                           onChange={(e) => setEditFormData({...editFormData, has_net: e.target.checked})}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor="edit_has_net" className="cursor-pointer">NET/Fibra</Label>
+                        <Label htmlFor="edit_has_net" className="cursor-pointer text-white">NET/Fibra</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -1625,10 +1623,10 @@ const Sales = ({ user }) => {
                           onChange={(e) => setEditFormData({...editFormData, has_lr: e.target.checked})}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor="edit_has_lr" className="cursor-pointer">Linha Fixa/LR</Label>
+                        <Label htmlFor="edit_has_lr" className="cursor-pointer text-white">Linha Fixa/LR</Label>
                       </div>
                       <div>
-                        <Label htmlFor="edit_mobile_count" className="text-sm">Móveis</Label>
+                        <Label htmlFor="edit_mobile_count" className="text-sm text-dark-200">Móveis</Label>
                         <Input
                           id="edit_mobile_count"
                           type="number"
@@ -1646,7 +1644,7 @@ const Sales = ({ user }) => {
               {editFormData.scope === 'solar' && (
                 <>
                   <div>
-                    <Label>CPE</Label>
+                    <Label className="text-dark-200">CPE</Label>
                     <Input
                       value={editFormData.cpe}
                       onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
@@ -1655,7 +1653,7 @@ const Sales = ({ user }) => {
                     />
                   </div>
                   <div>
-                    <Label>Potência</Label>
+                    <Label className="text-dark-200">Potência</Label>
                     <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
                       <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
@@ -1669,7 +1667,7 @@ const Sales = ({ user }) => {
               {editFormData.scope === 'energia' && (
                 <>
                   <div>
-                    <Label>Tipo de Venda Energia</Label>
+                    <Label className="text-dark-200">Tipo de Venda Energia</Label>
                     <Select value={editFormData.energy_sale_type} onValueChange={(v) => setEditFormData({...editFormData, energy_sale_type: v})}>
                       <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
@@ -1681,7 +1679,7 @@ const Sales = ({ user }) => {
                   </div>
 
                   <div>
-                    <Label>Tipo de Entrada</Label>
+                    <Label className="text-dark-200">Tipo de Entrada</Label>
                     <Select value={editFormData.entry_type} onValueChange={(v) => setEditFormData({...editFormData, entry_type: v})}>
                       <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
@@ -1695,7 +1693,7 @@ const Sales = ({ user }) => {
                   {(editFormData.energy_sale_type === 'eletricidade' || editFormData.energy_sale_type === 'dual') && (
                     <>
                       <div>
-                        <Label>CPE</Label>
+                        <Label className="text-dark-200">CPE</Label>
                         <Input
                           value={editFormData.cpe}
                           onChange={(e) => setEditFormData({...editFormData, cpe: e.target.value.toUpperCase()})}
@@ -1704,7 +1702,7 @@ const Sales = ({ user }) => {
                         />
                       </div>
                       <div>
-                        <Label>Potência</Label>
+                        <Label className="text-dark-200">Potência</Label>
                         <Select value={editFormData.power} onValueChange={(v) => setEditFormData({...editFormData, power: v})}>
                           <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
@@ -1718,7 +1716,7 @@ const Sales = ({ user }) => {
                   {(editFormData.energy_sale_type === 'gas' || editFormData.energy_sale_type === 'dual') && (
                     <>
                       <div>
-                        <Label>CUI</Label>
+                        <Label className="text-dark-200">CUI</Label>
                         <Input
                           value={editFormData.cui}
                           onChange={(e) => setEditFormData({...editFormData, cui: e.target.value.toUpperCase()})}
@@ -1727,7 +1725,7 @@ const Sales = ({ user }) => {
                         />
                       </div>
                       <div>
-                        <Label>Escalão</Label>
+                        <Label className="text-dark-200">Escalão</Label>
                         <Select value={editFormData.tier} onValueChange={(v) => setEditFormData({...editFormData, tier: v})}>
                           <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
@@ -1742,7 +1740,7 @@ const Sales = ({ user }) => {
                 </>
               )}
 
-              <div className="col-span-2 flex items-center gap-4 border-t pt-4">
+              <div className="col-span-2 flex items-center gap-4 border-t border-white/10 pt-4">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -1751,7 +1749,7 @@ const Sales = ({ user }) => {
                     onChange={(e) => setEditFormData({...editFormData, has_direct_debit: e.target.checked})}
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="edit_direct_debit">Débito Direto (DD)</Label>
+                  <Label htmlFor="edit_direct_debit" className="text-white">Débito Direto (DD)</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -1761,12 +1759,12 @@ const Sales = ({ user }) => {
                     onChange={(e) => setEditFormData({...editFormData, has_electronic_invoice: e.target.checked})}
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="edit_electronic_invoice">Fatura Eletrónica (FE)</Label>
+                  <Label htmlFor="edit_electronic_invoice" className="text-white">Fatura Eletrónica (FE)</Label>
                 </div>
               </div>
 
               <div className="col-span-2">
-                <Label>Observações</Label>
+                <Label className="text-dark-200">Observações</Label>
                 <Textarea
                   value={editFormData.observations}
                   onChange={(e) => setEditFormData({...editFormData, observations: e.target.value})}
@@ -1775,7 +1773,7 @@ const Sales = ({ user }) => {
                 />
               </div>
 
-              <div className="col-span-2 flex flex-col gap-2 border-t pt-4">
+              <div className="col-span-2 flex flex-col gap-2 border-t border-white/10 pt-4">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -1785,18 +1783,18 @@ const Sales = ({ user }) => {
                     disabled={editFormData.status !== 'Ativo'}
                     className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <Label htmlFor="edit_paid_to_operator" className={editFormData.status !== 'Ativo' ? 'text-gray-400' : ''}>
+                  <Label htmlFor="edit_paid_to_operator" className={editFormData.status !== 'Ativo' ? 'text-dark-500' : 'text-white'}>
                     Paga pelo Operador
                   </Label>
                 </div>
                 {editFormData.status !== 'Ativo' && (
-                  <p className="text-xs text-gray-500">Apenas disponível para vendas com estado "Ativo"</p>
+                  <p className="text-xs text-dark-400">Apenas disponível para vendas com estado "Ativo"</p>
                 )}
               </div>
 
               {editFormData.paid_to_operator && (
                 <div className="col-span-2">
-                  <Label>Data de Pagamento</Label>
+                  <Label className="text-dark-200">Data de Pagamento</Label>
                   <Input
                     type="date"
                     value={editFormData.payment_date}
@@ -1814,7 +1812,7 @@ const Sales = ({ user }) => {
 
                 return (
                   <div className="col-span-2">
-                    <Label>Comissão Manual (€) {!canEditCommission && <span className="text-red-500">*Apenas Administradores</span>}</Label>
+                    <Label className="text-dark-200">Comissão Manual (€) {!canEditCommission && <span className="text-red-400">*Apenas Administradores</span>}</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -1822,18 +1820,20 @@ const Sales = ({ user }) => {
                       onChange={(e) => setEditFormData({...editFormData, manual_commission: e.target.value})}
                       placeholder={hasAutomaticCommission ? "Deixar vazio para cálculo automático" : "Definir comissão"}
                       disabled={!canEditCommission}
-                      className={!canEditCommission ? "bg-gray-100 cursor-not-allowed" : "glass-input"}
+                      className={!canEditCommission ? "bg-dark-700/50 border-dark-600 text-dark-400 cursor-not-allowed" : "glass-input"}
                     />
                     {hasAutomaticCommission && commissionChanged && editFormData.manual_commission && (
-                      <Alert className="mt-2 bg-amber-50 border-amber-300">
-                        <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        <AlertDescription className="text-amber-900 text-sm">
-                          <strong>Atenção:</strong> Esta operadora tem comissão automática. Ao definir um valor manual,
-                          você está sobrescrevendo o cálculo automático. Deixe o campo vazio para manter o cálculo automático.
-                        </AlertDescription>
-                      </Alert>
+                      <div className="mt-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                          <p className="text-amber-400 text-sm">
+                            <strong>Atenção:</strong> Esta operadora tem comissão automática. Ao definir um valor manual,
+                            está a sobrescrever o cálculo automático. Deixe o campo vazio para manter o cálculo automático.
+                          </p>
+                        </div>
+                      </div>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-dark-400 mt-1">
                       {hasAutomaticCommission
                         ? 'Operadora com cálculo automático de comissão'
                         : saleOperator?.commission_mode === 'manual'
@@ -1846,11 +1846,11 @@ const Sales = ({ user }) => {
               })()}
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)} className="btn-secondary">
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" className="btn-primary">
+              <Button type="submit" className="btn-gold">
                 Guardar Alterações
               </Button>
             </div>
@@ -1872,7 +1872,7 @@ const Sales = ({ user }) => {
         <Dialog open={true} onOpenChange={() => handleCancelWarnings()}>
           <DialogContent className="glass-ultra">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2" style={{ color: '#000000' }}>
+              <DialogTitle className="flex items-center gap-2" className="text-white">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
                 Aviso de Validação
               </DialogTitle>
@@ -1910,7 +1910,7 @@ const Sales = ({ user }) => {
       <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
         <DialogContent className="glass-ultra max-w-2xl">
           <DialogHeader>
-            <DialogTitle style={{ color: '#000000' }}>Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
+            <DialogTitle className="text-white">Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
             <DialogDescription>Visualize e adicione notas a esta venda</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
@@ -1926,9 +1926,9 @@ const Sales = ({ user }) => {
 
               <div className="flex items-center gap-2">
                 <Label htmlFor="note-attachments" className="cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 transition-colors">
-                    <Paperclip className="w-4 h-4" />
-                    <span className="text-sm">Anexar Documentos</span>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-dark-700/50 hover:bg-dark-600/50 rounded-lg border border-white/10 transition-colors">
+                    <Paperclip className="w-4 h-4 text-dark-300" />
+                    <span className="text-sm text-dark-200">Anexar Documentos</span>
                   </div>
                 </Label>
                 <input
@@ -1939,7 +1939,7 @@ const Sales = ({ user }) => {
                   className="hidden"
                 />
                 {noteAttachments.length > 0 && (
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-dark-300">
                     {noteAttachments.length} ficheiro(s) selecionado(s)
                   </span>
                 )}
@@ -1951,20 +1951,20 @@ const Sales = ({ user }) => {
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-semibold" style={{ color: '#000000' }}>Histórico de Notas (últimas 3):</h3>
+              <h3 className="font-semibold text-white">Histórico de Notas (últimas 3):</h3>
               {(!selectedSaleForNotes?.notes || selectedSaleForNotes.notes.length === 0) ? (
-                <p className="text-gray-500 text-sm py-4 text-center">Nenhuma nota ainda</p>
+                <p className="text-dark-400 text-sm py-4 text-center">Nenhuma nota ainda</p>
               ) : (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto border border-gray-200 rounded-lg p-2">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto border border-white/10 rounded-lg p-2">
                   {selectedSaleForNotes.notes.slice(0, 3).map((note) => (
-                    <div key={note.id} className="p-3 bg-gray-50 rounded-lg">
+                    <div key={note.id} className="p-3 bg-dark-700/50 rounded-lg">
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-medium text-sm">{note.author}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="font-medium text-sm text-white">{note.author}</span>
+                        <span className="text-xs text-dark-400">
                           {new Date(note.created_at).toLocaleString('pt-PT')}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700">{note.content}</p>
+                      <p className="text-sm text-dark-200">{note.content}</p>
                       {note.attachments && note.attachments.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {note.attachments.map((attachment) => (
@@ -2022,7 +2022,7 @@ const Sales = ({ user }) => {
       <Dialog open={recalcDialogOpen} onOpenChange={setRecalcDialogOpen}>
         <DialogContent className="glass-ultra">
           <DialogHeader>
-            <DialogTitle style={{ color: '#000000' }}>Recalcular Comissões</DialogTitle>
+            <DialogTitle className="text-white">Recalcular Comissões</DialogTitle>
             <DialogDescription>
               Escolha a data a partir da qual as comissões devem ser recalculadas. Vendas anteriores a esta data não serão afetadas.
             </DialogDescription>
