@@ -315,7 +315,7 @@ const OperatorValidations = ({ user }) => {
       fetchValidationHistory();
 
       if (results.notFound.length > 0) {
-        await sendNotificationsToAdminsAndBO(results, file.name);
+        toast.warning(`${results.notFound.length} registo(s) nao encontrado(s) nas vendas do sistema.`);
       }
 
       toast.success(`Validacao concluida! ${results.updated.length} vendas atualizadas.`);
@@ -329,36 +329,6 @@ const OperatorValidations = ({ user }) => {
       toast.error(error.message || 'Erro ao processar validacao');
     } finally {
       setProcessing(false);
-    }
-  };
-
-  const sendNotificationsToAdminsAndBO = async (results, filename) => {
-    try {
-      const { data: adminsAndBO } = await supabase
-        .from('users')
-        .select('id, name, email')
-        .in('role', ['admin', 'bo']);
-
-      if (!adminsAndBO || adminsAndBO.length === 0) return;
-
-      const message = `Validacao de ativacoes concluida para ficheiro "${filename}". ${results.notFound.length} registo(s) nao encontrado(s) nas vendas.`;
-
-      const userIds = adminsAndBO.map(u => u.id);
-
-      await supabase
-        .from('alerts')
-        .insert({
-          type: 'operator_validation',
-          sale_id: null,
-          sale_code: 'VALIDATION',
-          message,
-          user_ids: userIds,
-          created_by: user.id,
-          created_by_name: user.name
-        });
-
-    } catch (error) {
-      console.error('Error sending notifications:', error);
     }
   };
 

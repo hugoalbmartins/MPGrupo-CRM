@@ -140,9 +140,10 @@
   }
 
   .glass-ultra {
-    background: #141c27;
+    background: #141c27 !important;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 1rem;
+    color: #e2e8f0;
   }
 
   .nav-item-active {
@@ -290,4 +291,95 @@
   .shadow-gold-glow {
     box-shadow: 0 0 20px rgba(212, 175, 55, 0.35);
   }
+}
+
+[data-radix-dialog-content],
+[data-radix-alert-dialog-content],
+[role="dialog"],
+[role="alertdialog"] {
+  background: #141c27 !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-radix-select-content],
+[data-radix-popover-content],
+[data-radix-dropdown-menu-content],
+[data-radix-context-menu-content],
+[data-radix-menubar-content],
+[data-radix-tooltip-content],
+[role="listbox"],
+[data-radix-popper-content-wrapper] > div,
+[data-side] {
+  background: #1a2332 !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-radix-select-item]:focus,
+[data-radix-dropdown-menu-item]:focus,
+[data-radix-context-menu-item]:focus,
+[role="option"]:focus,
+[role="option"][data-highlighted],
+[role="menuitem"]:focus,
+[role="menuitem"][data-highlighted] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+[role="option"],
+[role="menuitem"] {
+  color: #e2e8f0 !important;
+}
+
+[data-radix-dialog-content] input,
+[data-radix-dialog-content] textarea,
+[data-radix-dialog-content] select,
+[data-radix-alert-dialog-content] input,
+[data-radix-alert-dialog-content] textarea,
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] select {
+  background: #1a2332 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-radix-dialog-content] input::placeholder,
+[data-radix-dialog-content] textarea::placeholder,
+[role="dialog"] input::placeholder,
+[role="dialog"] textarea::placeholder {
+  color: #7b8fa8 !important;
+}
+
+[data-radix-dialog-content] input:disabled,
+[role="dialog"] input:disabled {
+  background: rgba(26, 35, 50, 0.5) !important;
+  color: #7b8fa8 !important;
+}
+
+[data-radix-dialog-content] label,
+[role="dialog"] label {
+  color: #bcccdc !important;
+}
+
+[data-radix-dialog-content] h2,
+[data-radix-dialog-content] h3,
+[data-radix-dialog-content] [class*="DialogTitle"],
+[role="dialog"] h2,
+[role="dialog"] h3 {
+  color: #ffffff !important;
+}
+
+[data-radix-dialog-content] p,
+[data-radix-dialog-content] [class*="DialogDescription"],
+[role="dialog"] p {
+  color: #94a3b8 !important;
+}
+
+[data-radix-dialog-content] button[type="button"]:not([class*="gold"]):not([class*="primary"]):not([class*="destructive"]),
+[data-radix-sheet-content] {
+  background: #141c27 !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
