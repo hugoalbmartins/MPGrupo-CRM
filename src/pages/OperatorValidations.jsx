@@ -255,16 +255,18 @@ const OperatorValidations = ({ user }) => {
         if (rpcError) {
           console.error('Batch validation RPC error:', rpcError);
           toast.error('Erro ao atualizar vendas: ' + rpcError.message);
-        } else {
-          const updatedIds = rpcResult?.updated_ids || [];
-          const rpcErrors = rpcResult?.errors || [];
+        } else if (rpcResult) {
+          const updatedIds = rpcResult.updated_ids || [];
+          const rpcErrors = rpcResult.errors || [];
 
           if (rpcErrors.length > 0) {
-            console.warn('Validation update warnings:', rpcErrors);
+            console.error('Validation RPC errors:', rpcErrors);
+            toast.error('Erros na validacao: ' + rpcErrors.join('; '));
           }
 
           for (const item of batchUpdates) {
-            if (updatedIds.includes(item.updates.sale_id)) {
+            const saleId = item.updates.sale_id;
+            if (updatedIds.some(uid => uid === saleId)) {
               results.updated.push({
                 saleCode: item.saleCode,
                 clientName: item.clientName,
@@ -275,6 +277,20 @@ const OperatorValidations = ({ user }) => {
               });
             }
           }
+
+          if (updatedIds.length > 0 && results.updated.length === 0) {
+            results.updated = batchUpdates.map(item => ({
+              saleCode: item.saleCode,
+              clientName: item.clientName,
+              cpe: item.cpe,
+              cui: item.cui,
+              req: item.req,
+              paid: item.paid
+            }));
+          }
+        } else {
+          console.error('RPC returned null result');
+          toast.error('Erro inesperado na validacao - resultado vazio');
         }
       }
 

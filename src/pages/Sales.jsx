@@ -953,7 +953,7 @@ const Sales = ({ user }) => {
         <div className="flex flex-wrap gap-3">
           <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-green-500 text-green-600 hover:bg-green-50 spring-transition">
+              <Button variant="outline" className="border-green-500 text-green-400 hover:bg-green-500/10 spring-transition">
                 <Download className="w-4 h-4 mr-2" />
                 Exportar Excel
               </Button>
@@ -1147,7 +1147,7 @@ const Sales = ({ user }) => {
                 setFilterStartDate("");
                 setFilterEndDate("");
               }}
-              className="text-red-600 hover:bg-red-50"
+              className="text-red-400 hover:bg-red-500/10"
             >
               <XIcon className="w-4 h-4 mr-1" />
               Limpar Filtros
@@ -1158,7 +1158,7 @@ const Sales = ({ user }) => {
             <div>
               <Label>Pesquisar</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
                 <Input
                   placeholder="Código, Cliente, NIF, Contacto..."
                   value={searchQuery}
@@ -1236,7 +1236,7 @@ const Sales = ({ user }) => {
             </div>
           </div>
 
-          <div className="text-sm pt-2 border-t border-white/10" className="text-dark-400">
+          <div className="text-sm pt-2 border-t border-white/10 text-dark-400">
             {filteredSales.length} venda(s) encontrada(s) {filteredSales.length !== sales.length && `de ${sales.length} total`}
           </div>
         </motion.div>
@@ -1261,7 +1261,7 @@ const Sales = ({ user }) => {
         {/* Pagination */}
         {filteredSales.length > 0 && (
           <div className="mt-6 glass-ultra p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-sm" className="text-dark-400">
+            <div className="text-sm text-dark-400">
               A mostrar {startIndex + 1} a {Math.min(endIndex, sortedSales.length)} de {sortedSales.length} vendas
             </div>
             <div className="flex items-center gap-2">
@@ -1872,15 +1872,15 @@ const Sales = ({ user }) => {
         <Dialog open={true} onOpenChange={() => handleCancelWarnings()}>
           <DialogContent className="glass-ultra">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2" className="text-white">
+              <DialogTitle className="flex items-center gap-2 text-white">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
                 Aviso de Validação
               </DialogTitle>
               <DialogDescription>Os seguintes avisos foram detectados</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <Alert className="bg-amber-50 border-amber-200">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <Alert className="bg-amber-500/10 border border-amber-500/20">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
                 <AlertDescription>
                   <p className="font-semibold mb-2">Foram detetados os seguintes avisos:</p>
                   <ul className="list-disc list-inside space-y-1">
@@ -2002,7 +2002,7 @@ const Sales = ({ user }) => {
                     </div>
                   ))}
                   {selectedSaleForNotes.notes.length > 3 && (
-                    <p className="text-xs text-gray-500 text-center py-2">
+                    <p className="text-xs text-dark-400 text-center py-2">
                       + {selectedSaleForNotes.notes.length - 3} nota(s) mais antiga(s)
                     </p>
                   )}
@@ -2037,13 +2037,13 @@ const Sales = ({ user }) => {
                 placeholder="Deixe vazio para recalcular todas"
                 className="glass-input"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-dark-400 mt-1">
                 Se deixar vazio, todas as comissões serão recalculadas desde sempre.
                 Se selecionar uma data (ex: 01/01/2024), apenas vendas a partir desta data serão recalculadas.
               </p>
             </div>
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <Alert className="bg-amber-500/10 border border-amber-500/20">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
               <AlertDescription>
                 Esta operação pode demorar alguns minutos dependendo do número de vendas.
                 As comissões serão recalculadas com base nas configurações atuais.

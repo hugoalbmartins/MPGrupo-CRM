@@ -126,10 +126,10 @@ const CommissionTable = ({
                         <div>
                           <span className="font-medium">{getServiceTypeLabel(config)}</span>
                           {config.activation_type && (
-                            <span className="ml-1 text-xs text-blue-600">({config.activation_type})</span>
+                            <span className="ml-1 text-xs text-blue-400">({config.activation_type})</span>
                           )}
                           {config.refid_operation_type && (
-                            <span className="ml-1 text-xs text-amber-600">
+                            <span className="ml-1 text-xs text-amber-400">
                               ({config.refid_operation_type === 'both' ? 'Up+Down' : config.refid_operation_type === 'upsell' ? 'Up' : 'Down'})
                             </span>
                           )}
@@ -267,7 +267,7 @@ const CommissionTable = ({
                           </div>
                         ) : (
                           config.has_retention ? (
-                            <span className="text-xs text-green-700">
+                            <span className="text-xs text-green-400">
                               {config.retention_percentage}% / {config.retention_months}m
                             </span>
                           ) : (
