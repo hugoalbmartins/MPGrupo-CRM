@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,15 @@ const Operators = ({ user }) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [hiddenDialogOpen, setHiddenDialogOpen] = useState(false);
   const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
+  const [editOperatorDialogOpen, setEditOperatorDialogOpen] = useState(false);
   const [selectedOperator, setSelectedOperator] = useState(null);
+  const [editOperatorData, setEditOperatorData] = useState({
+    activation_types: [],
+    allowed_energy_types: [],
+    allowed_client_types: [],
+    pays_direct_debit: false,
+    pays_electronic_invoice: false,
+  });
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -154,6 +162,76 @@ const Operators = ({ user }) => {
     setCommissionDialogOpen(false);
     setSelectedOperator(null);
     fetchOperators();
+  };
+
+  const openEditOperatorDialog = async (operator) => {
+    try {
+      const freshData = await operatorsService.getById(operator.id);
+      setSelectedOperator(freshData);
+      setEditOperatorData({
+        activation_types: freshData.activation_types || [],
+        allowed_energy_types: freshData.allowed_energy_types || [],
+        allowed_client_types: freshData.allowed_client_types || ['particular', 'empresarial'],
+        pays_direct_debit: freshData.pays_direct_debit || false,
+        pays_electronic_invoice: freshData.pays_electronic_invoice || false,
+      });
+      setEditOperatorDialogOpen(true);
+    } catch (error) {
+      toast.error("Erro ao carregar dados da operadora");
+    }
+  };
+
+  const handleEditOperatorSave = async () => {
+    if (!selectedOperator) return;
+    try {
+      const updatePayload = { ...editOperatorData };
+      if (selectedOperator.scope === 'energia') {
+        const types = updatePayload.allowed_energy_types || [];
+        if (types.includes('eletricidade') && types.includes('gas')) {
+          updatePayload.energy_type = 'dual';
+        } else if (types.includes('eletricidade')) {
+          updatePayload.energy_type = 'eletricidade';
+        } else if (types.includes('gas')) {
+          updatePayload.energy_type = 'gas';
+        } else {
+          updatePayload.energy_type = null;
+        }
+      }
+      await operatorsService.updateSettings(selectedOperator.id, updatePayload);
+      toast.success("Configurações da operadora atualizadas!");
+      setEditOperatorDialogOpen(false);
+      setSelectedOperator(null);
+      fetchOperators();
+    } catch (error) {
+      toast.error("Erro ao atualizar operadora");
+    }
+  };
+
+  const toggleEditActivationType = (type) => {
+    setEditOperatorData(prev => ({
+      ...prev,
+      activation_types: prev.activation_types.includes(type)
+        ? prev.activation_types.filter(t => t !== type)
+        : [...prev.activation_types, type]
+    }));
+  };
+
+  const toggleEditEnergyType = (type) => {
+    setEditOperatorData(prev => ({
+      ...prev,
+      allowed_energy_types: prev.allowed_energy_types.includes(type)
+        ? prev.allowed_energy_types.filter(t => t !== type)
+        : [...prev.allowed_energy_types, type]
+    }));
+  };
+
+  const toggleEditClientType = (type) => {
+    setEditOperatorData(prev => ({
+      ...prev,
+      allowed_client_types: prev.allowed_client_types.includes(type)
+        ? prev.allowed_client_types.filter(t => t !== type)
+        : [...prev.allowed_client_types, type]
+    }));
   };
 
   const openUploadDialog = (operator) => {
@@ -470,6 +548,9 @@ const Operators = ({ user }) => {
                   <div className="flex gap-2">
                     {user?.role === 'admin' && (
                       <>
+                        <Button onClick={() => openEditOperatorDialog(op)} size="sm" variant="ghost" title="Editar Configurações">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
                         <Button onClick={() => openCommissionConfig(op)} size="sm" variant="ghost" title="Configurar Comissões">
                           <Settings className="w-4 h-4" />
                         </Button>
@@ -636,6 +717,112 @@ const Operators = ({ user }) => {
                 setSelectedOperator(null);
               }}
             />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOperatorDialogOpen} onOpenChange={setEditOperatorDialogOpen}>
+        <DialogContent className="max-w-lg glass-ultra">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-white">
+              Editar Operadora - {selectedOperator?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOperator && (
+            <div className="space-y-5 mt-4">
+              {selectedOperator.scope === 'telecomunicacoes' && (
+                <div>
+                  <Label className="text-dark-200 text-sm font-semibold">Tipos de Ativação Permitidos</Label>
+                  <div className="mt-2 space-y-2">
+                    {['M2', 'M3', 'M4'].map(type => (
+                      <div key={type} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`edit-activation-${type}`}
+                          checked={editOperatorData.activation_types.includes(type)}
+                          onChange={() => toggleEditActivationType(type)}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor={`edit-activation-${type}`} className="cursor-pointer font-normal text-dark-300">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedOperator.scope === 'energia' && (
+                <div>
+                  <Label className="text-dark-200 text-sm font-semibold">Tipos de Energia Permitidos</Label>
+                  <div className="mt-2 space-y-2">
+                    {['eletricidade', 'gas'].map(type => (
+                      <div key={type} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`edit-energy-${type}`}
+                          checked={editOperatorData.allowed_energy_types.includes(type)}
+                          onChange={() => toggleEditEnergyType(type)}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor={`edit-energy-${type}`} className="cursor-pointer font-normal capitalize text-dark-300">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label className="text-dark-200 text-sm font-semibold">Tipos de Cliente Permitidos</Label>
+                <div className="mt-2 space-y-2">
+                  {['particular', 'empresarial'].map(type => (
+                    <div key={type} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`edit-client-${type}`}
+                        checked={editOperatorData.allowed_client_types.includes(type)}
+                        onChange={() => toggleEditClientType(type)}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor={`edit-client-${type}`} className="cursor-pointer font-normal capitalize text-dark-300">{type}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-dark-600 pt-4">
+                <Label className="text-dark-200 text-sm font-semibold block mb-3">Serviços Adicionais</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit_pays_direct_debit"
+                      checked={editOperatorData.pays_direct_debit}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, pays_direct_debit: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="edit_pays_direct_debit" className="cursor-pointer font-normal text-dark-300">
+                      Paga adesão a Débito Direto
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit_pays_electronic_invoice"
+                      checked={editOperatorData.pays_electronic_invoice}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, pays_electronic_invoice: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="edit_pays_electronic_invoice" className="cursor-pointer font-normal text-dark-300">
+                      Paga adesão a Fatura Eletrónica
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-dark-600">
+                <Button type="button" onClick={() => setEditOperatorDialogOpen(false)} variant="outline">Cancelar</Button>
+                <Button onClick={handleEditOperatorSave} className="btn-gold">Guardar</Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

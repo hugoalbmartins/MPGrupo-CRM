@@ -45,7 +45,7 @@ const Sales = ({ user }) => {
   const [exportEndDate, setExportEndDate] = useState("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [sortField, setSortField] = useState("created_at");
+  const [sortField, setSortField] = useState("date");
   const [sortDirection, setSortDirection] = useState("desc");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -1241,6 +1241,39 @@ const Sales = ({ user }) => {
           </div>
         </motion.div>
       )}
+
+      {/* Sort Controls */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-dark-400">
+          {filteredSales.length} venda(s)
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-dark-400">Ordenar por:</span>
+          <Select value={sortField} onValueChange={(v) => { setSortField(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date">Data</SelectItem>
+              <SelectItem value="client_name">Cliente</SelectItem>
+              <SelectItem value="partner_name">Parceiro</SelectItem>
+              <SelectItem value="operator_name">Operadora</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="scope">Ambito</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc'); setCurrentPage(1); }}
+            className="h-8 px-2 text-dark-300 hover:text-white"
+            title={sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+            <span className="text-xs ml-1">{sortDirection === 'asc' ? 'A-Z' : 'Z-A'}</span>
+          </Button>
+        </div>
+      </div>
 
       {/* Sales Cards */}
       <motion.div

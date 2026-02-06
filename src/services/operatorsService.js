@@ -100,6 +100,38 @@ export const operatorsService = {
     return data;
   },
 
+  async updateSettings(id, settingsData) {
+    const updateData = {};
+    if (settingsData.hasOwnProperty('activation_types')) {
+      updateData.activation_types = settingsData.activation_types;
+    }
+    if (settingsData.hasOwnProperty('allowed_energy_types')) {
+      updateData.allowed_energy_types = settingsData.allowed_energy_types;
+    }
+    if (settingsData.hasOwnProperty('allowed_client_types')) {
+      updateData.allowed_client_types = settingsData.allowed_client_types;
+    }
+    if (settingsData.hasOwnProperty('energy_type')) {
+      updateData.energy_type = settingsData.energy_type;
+    }
+    if (settingsData.hasOwnProperty('pays_direct_debit')) {
+      updateData.pays_direct_debit = settingsData.pays_direct_debit;
+    }
+    if (settingsData.hasOwnProperty('pays_electronic_invoice')) {
+      updateData.pays_electronic_invoice = settingsData.pays_electronic_invoice;
+    }
+
+    const { data, error } = await supabase
+      .from('operators')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
   async toggleVisibility(id) {
     const { data: operator } = await supabase
       .from('operators')
