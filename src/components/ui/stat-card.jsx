@@ -6,7 +6,7 @@ export const StatCard = ({
   value,
   subtitle,
   icon: Icon,
-  gradient = "from-navy-900 to-navy-800",
+  gradient = "from-gray-800 to-gray-700",
   delay = 0,
   onClick,
   badge,
@@ -90,7 +90,7 @@ export const StatCardGold = ({
           )}
         </div>
         <div className="w-14 h-14 bg-gradient-to-r from-gold-ultra to-gold-500 rounded-xl flex items-center justify-center shadow-gold-glow spring-transition hover:scale-110">
-          <Icon className="w-7 h-7 text-navy-900" />
+          <Icon className="w-7 h-7 text-gray-900" />
         </div>
       </div>
     </motion.div>
@@ -101,11 +101,11 @@ export const StatCardSkeleton = () => (
   <div className="glass-ultra p-6 animate-pulse">
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <div className="h-4 bg-navy-200 rounded w-1/2 mb-3" />
-        <div className="h-8 bg-navy-200 rounded w-3/4 mb-2" />
-        <div className="h-3 bg-navy-100 rounded w-1/3" />
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-3" />
+        <div className="h-8 bg-gray-200 rounded w-3/4 mb-2" />
+        <div className="h-3 bg-gray-100 rounded w-1/3" />
       </div>
-      <div className="w-14 h-14 bg-navy-200 rounded-xl" />
+      <div className="w-14 h-14 bg-gray-200 rounded-xl" />
     </div>
   </div>
 );
