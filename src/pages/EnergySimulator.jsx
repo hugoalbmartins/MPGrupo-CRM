@@ -1,122 +1,270 @@
-import React, { useState } from "react";
-import { Loader2, ExternalLink, RotateCcw, Maximize2, Minimize2 } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { simulatorService } from '../services/simulatorService';
+import SimulatorForm from '../components/simulator/SimulatorForm';
+import SimulatorResults from '../components/simulator/SimulatorResults';
 
-const SIMULATOR_URL = "https://mpgrupo-site.vercel.app";
-
-const EnergySimulator = () => {
+const EnergySimulator = ({ user }) => {
+  const [operators, setOperators] = useState([]);
+  const [settings, setSettings] = useState({});
+  const [electricityPlans, setElectricityPlans] = useState([]);
+  const [gasPlans, setGasPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [results, setResults] = useState(null);
 
-  const handleLoad = () => {
-    setLoading(false);
-    setError(false);
-  };
+  const [formData, setFormData] = useState({
+    energyType: '',
+    operatorId: '',
+    power: '',
+    tariffType: '',
+    consumption: {
+      vazio: '',
+      fora_vazio: '',
+      ponta: '',
+      cheia: ''
+    },
+    currentBill: '',
+    gasConsumption: '',
+    currentGasBill: ''
+  });
 
-  const handleError = () => {
-    setLoading(false);
-    setError(true);
-  };
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const handleReload = () => {
-    setLoading(true);
-    setError(false);
-    const iframe = document.getElementById("simulator-iframe");
-    if (iframe) {
-      iframe.src = SIMULATOR_URL;
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [ops, setts, elecPlans, gPlans] = await Promise.all([
+        simulatorService.getOperators(),
+        simulatorService.getSettings(),
+        simulatorService.getElectricityPlans(),
+        simulatorService.getGasPlans()
+      ]);
+
+      setOperators(ops);
+      setSettings(setts);
+      setElectricityPlans(elecPlans);
+      setGasPlans(gPlans);
+    } catch (error) {
+      console.error('Failed to load simulator data:', error);
+      toast.error('Erro ao carregar dados do simulador');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleSimulate = async () => {
+    try {
+      setSimulating(true);
+
+      const { energyType, power, tariffType, consumption, currentBill, gasConsumption, currentGasBill } = formData;
+
+      let plans = [];
+
+      if (energyType === 'eletricidade') {
+        const filteredPlans = electricityPlans.filter(p =>
+          p.tariff_type === tariffType
+        );
+
+        const currentCost = parseFloat(currentBill) || simulatorService.calculateElectricityCost(consumption, tariffType, settings);
+
+        plans = filteredPlans.map(plan => {
+          const monthlyCost = simulatorService.calculateElectricityPlanCost(plan, consumption, power);
+          const savings = currentCost - monthlyCost;
+
+          return {
+            operatorName: plan.simulator_operators?.name || 'Desconhecido',
+            planName: plan.name,
+            monthlyCost,
+            savings,
+            discount: plan.discount_percentage || 0,
+            electricityCost: monthlyCost
+          };
+        });
+
+        if (plans.length === 0) {
+          const erseCost = simulatorService.calculateElectricityCost(consumption, tariffType, settings);
+          plans.push({
+            operatorName: 'ERSE',
+            planName: 'Preco Regulado',
+            monthlyCost: erseCost,
+            savings: currentCost - erseCost,
+            discount: 0,
+            electricityCost: erseCost
+          });
+        }
+
+      } else if (energyType === 'gas') {
+        const filteredPlans = gasPlans;
+
+        const currentCost = parseFloat(currentGasBill) || simulatorService.calculateGasCost(gasConsumption, settings);
+
+        plans = filteredPlans.map(plan => {
+          const monthlyCost = simulatorService.calculateGasPlanCost(plan, gasConsumption);
+          const savings = currentCost - monthlyCost;
+
+          return {
+            operatorName: plan.simulator_operators?.name || 'Desconhecido',
+            planName: plan.name,
+            monthlyCost,
+            savings,
+            discount: plan.discount_percentage || 0,
+            gasCost: monthlyCost
+          };
+        });
+
+        if (plans.length === 0) {
+          const erseCost = simulatorService.calculateGasCost(gasConsumption, settings);
+          plans.push({
+            operatorName: 'ERSE',
+            planName: 'Preco Regulado Gas',
+            monthlyCost: erseCost,
+            savings: currentCost - erseCost,
+            discount: 0,
+            gasCost: erseCost
+          });
+        }
+
+      } else if (energyType === 'dual') {
+        const filteredElecPlans = electricityPlans.filter(p =>
+          p.tariff_type === tariffType
+        );
+        const filteredGasPlans = gasPlans;
+
+        const currentElecCost = parseFloat(currentBill) || simulatorService.calculateElectricityCost(consumption, tariffType, settings);
+        const currentGasCost = parseFloat(currentGasBill) || simulatorService.calculateGasCost(gasConsumption, settings);
+        const currentTotalCost = currentElecCost + currentGasCost;
+
+        filteredElecPlans.forEach(elecPlan => {
+          filteredGasPlans.forEach(gasPlan => {
+            if (elecPlan.operator_id === gasPlan.operator_id) {
+              const elecCost = simulatorService.calculateElectricityPlanCost(elecPlan, consumption, power);
+              const gasCost = simulatorService.calculateGasPlanCost(gasPlan, gasConsumption);
+              const monthlyCost = elecCost + gasCost;
+              const savings = currentTotalCost - monthlyCost;
+
+              plans.push({
+                operatorName: elecPlan.simulator_operators?.name || 'Desconhecido',
+                planName: `${elecPlan.name} + ${gasPlan.name}`,
+                monthlyCost,
+                savings,
+                discount: Math.max(elecPlan.discount_percentage || 0, gasPlan.discount_percentage || 0),
+                electricityCost: elecCost,
+                gasCost: gasCost
+              });
+            }
+          });
+        });
+
+        if (plans.length === 0) {
+          const erseElecCost = simulatorService.calculateElectricityCost(consumption, tariffType, settings);
+          const erseGasCost = simulatorService.calculateGasCost(gasConsumption, settings);
+          const erseTotalCost = erseElecCost + erseGasCost;
+
+          plans.push({
+            operatorName: 'ERSE',
+            planName: 'Preco Regulado Dual',
+            monthlyCost: erseTotalCost,
+            savings: currentTotalCost - erseTotalCost,
+            discount: 0,
+            electricityCost: erseElecCost,
+            gasCost: erseGasCost
+          });
+        }
+      }
+
+      plans.sort((a, b) => b.savings - a.savings);
+
+      const bestSavings = plans.length > 0 && plans[0].savings > 0 ? plans[0].savings : 0;
+
+      setResults({
+        plans,
+        bestSavings
+      });
+
+      toast.success('Simulacao concluida com sucesso!');
+    } catch (error) {
+      console.error('Simulation error:', error);
+      toast.error('Erro ao realizar simulacao');
+    } finally {
+      setSimulating(false);
+    }
+  };
+
+  const handleReset = () => {
+    setResults(null);
+    setFormData({
+      energyType: '',
+      operatorId: '',
+      power: '',
+      tariffType: '',
+      consumption: {
+        vazio: '',
+        fora_vazio: '',
+        ponta: '',
+        cheia: ''
+      },
+      currentBill: '',
+      gasConsumption: '',
+      currentGasBill: ''
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-blue-600" />
+          <p className="text-sm text-dark-300">Carregando simulador...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (simulating) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-blue-600" />
+          <p className="text-sm text-dark-300">Simulando planos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`${fullscreen ? "fixed inset-0 z-50 bg-dark-900" : "h-full"} flex flex-col`}>
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-white/[0.06] bg-dark-800/50 flex-shrink-0">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-white">Simulador de Poupanca Energetica</h1>
-          <p className="text-xs text-dark-400 mt-0.5">
-            Simulador integrado do MPGrupo - atualizado automaticamente
+          <h1 className="text-2xl font-bold text-white mb-1">Simulador de Poupanca Energetica</h1>
+          <p className="text-sm text-dark-400">
+            Compare planos e encontre a melhor opcao para os seus clientes
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleReload}
-            className="p-2 rounded-lg text-dark-300 hover:text-white hover:bg-white/5 transition-colors"
-            title="Recarregar simulador"
-          >
-            <RotateCcw className="w-4 h-4" />
+        {results && (
+          <button onClick={handleReset} className="btn-outline text-sm">
+            Nova Simulacao
           </button>
-          <button
-            onClick={() => setFullscreen(!fullscreen)}
-            className="p-2 rounded-lg text-dark-300 hover:text-white hover:bg-white/5 transition-colors"
-            title={fullscreen ? "Sair do ecra inteiro" : "Ecra inteiro"}
-          >
-            {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-          <a
-            href={SIMULATOR_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-lg text-dark-300 hover:text-white hover:bg-white/5 transition-colors"
-            title="Abrir em nova aba"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </a>
-        </div>
+        )}
       </div>
 
-      <div className="flex-1 relative min-h-0">
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-10">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-gold-400" />
-              <p className="text-sm text-dark-300">A carregar simulador...</p>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-10">
-            <div className="text-center max-w-md px-6">
-              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                <ExternalLink className="w-8 h-8 text-red-400" />
-              </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
-                Simulador indisponivel
-              </h2>
-              <p className="text-dark-300 text-sm mb-6">
-                Nao foi possivel carregar o simulador. Verifique a sua ligacao ou tente abrir diretamente.
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={handleReload}
-                  className="px-4 py-2 rounded-lg bg-white/5 text-white hover:bg-white/10 transition-colors text-sm font-medium"
-                >
-                  Tentar novamente
-                </button>
-                <a
-                  href={SIMULATOR_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-lg btn-gold text-sm font-medium"
-                >
-                  Abrir em nova aba
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <iframe
-          id="simulator-iframe"
-          src={SIMULATOR_URL}
-          onLoad={handleLoad}
-          onError={handleError}
-          title="Simulador de Poupanca Energetica"
-          className="w-full h-full border-0"
-          style={{ minHeight: fullscreen ? "calc(100vh - 56px)" : "calc(100vh - 120px)" }}
-          allow="clipboard-write"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+      {!results ? (
+        <SimulatorForm
+          formData={formData}
+          setFormData={setFormData}
+          operators={operators}
+          onSubmit={handleSimulate}
         />
-      </div>
+      ) : (
+        <SimulatorResults
+          results={results}
+          formData={formData}
+          user={user}
+        />
+      )}
     </div>
   );
 };

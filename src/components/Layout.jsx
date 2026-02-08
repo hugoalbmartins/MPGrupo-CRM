@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap
+  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, SlidersHorizontal
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
@@ -69,7 +69,8 @@ const Layout = ({ children, user, onLogout }) => {
       { path: "/objectives", label: "Objetivos", icon: Target, roles: ["admin"], section: "SISTEMA" },
       { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"], section: "SISTEMA" },
       { path: "/commission-reports", label: "Comissoes", icon: FileSpreadsheet, roles: ["admin"], section: "SISTEMA" },
-      { path: "/bo-website", label: "BO Website", icon: Globe, roles: ["admin"], section: "SISTEMA" }
+      { path: "/bo-website", label: "BO Website", icon: Globe, roles: ["admin"], section: "SISTEMA" },
+      { path: "/simulador-config", label: "Config. Simulador", icon: SlidersHorizontal, roles: ["admin"], section: "SISTEMA" }
     );
   } else if (user?.role === "bo") {
     menuItems.push(
