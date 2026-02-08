@@ -187,5 +187,15 @@ export const commissionReportsService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async getPartnersWithSalesForMonth(month, year) {
+    const { data, error } = await supabase.rpc('get_partners_with_sales_for_month', {
+      p_month: month,
+      p_year: year
+    });
+
+    if (error) throw error;
+    return data || [];
   }
 };

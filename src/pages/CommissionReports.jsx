@@ -198,7 +198,7 @@ const CommissionReports = ({ user }) => {
         return;
       }
 
-      const allSales = await salesService.getAll();
+      const allSales = await salesService.getAll(null, true);
       const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
       const filteredByMonth = filterSalesByMonth(paidSales);
       let finalSales = filteredByMonth.filter(s => s.partner_id === partnerId);
@@ -271,6 +271,7 @@ const CommissionReports = ({ user }) => {
           <tr>
             <td>${sale.client_name}</td>
             <td>${sale.client_nif}</td>
+            <td>${sale.operator?.name || '-'}</td>
             <td>${sale.cpe || '-'}</td>
             <td>${sale.cui || '-'}</td>
             <td>${sale.request_number || '-'}</td>
@@ -410,6 +411,7 @@ const CommissionReports = ({ user }) => {
               <tr>
                 <th>Nome Cliente</th>
                 <th>NIF</th>
+                <th>Operadora</th>
                 <th>CPE</th>
                 <th>CUI</th>
                 <th>REQ</th>
@@ -422,7 +424,7 @@ const CommissionReports = ({ user }) => {
             <tbody>
               ${salesRows}
               <tr class="total-row">
-                <td colspan="8" style="text-align: right">TOTAL:</td>
+                <td colspan="9" style="text-align: right">TOTAL:</td>
                 <td style="text-align: right">€${total.toFixed(2)}</td>
               </tr>
             </tbody>
@@ -666,7 +668,7 @@ const CommissionReports = ({ user }) => {
   const generateCommissionReport = async (partnerId = null) => {
     setLoading(true);
     try {
-      const allSales = await salesService.getAll();
+      const allSales = await salesService.getAll(null, true);
       const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
       const filteredByMonth = filterSalesByMonth(paidSales);
       const finalSales = partnerId
@@ -735,6 +737,61 @@ const CommissionReports = ({ user }) => {
     const monthName = months.find(m => m.value === selectedMonth)?.label;
     const fileName = `Autos_Comissoes_Todos_${monthName}_${selectedYear}.xlsx`;
     XLSX.writeFile(wb, fileName);
+  };
+
+  const handleBulkPrintCommissionReports = async () => {
+    if (!selectedMonth) {
+      toast.error("Por favor, selecione um mês");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const isAvailable = await commissionReportsService.isMonthAvailableForEmission(selectedMonth, selectedYear);
+      if (!isAvailable) {
+        const monthName = months.find(m => m.value === selectedMonth)?.label;
+        toast.error(`O mês de ${monthName}/${selectedYear} ainda não está disponível para emissão. Autos só podem ser emitidos após o dia 22 do mês seguinte.`);
+        setLoading(false);
+        return;
+      }
+
+      const partnersWithSales = await commissionReportsService.getPartnersWithSalesForMonth(selectedMonth, selectedYear);
+
+      if (!partnersWithSales || partnersWithSales.length === 0) {
+        const monthName = months.find(m => m.value === selectedMonth)?.label;
+        toast.error(`Não existem parceiros com vendas elegíveis para emissão no mês de ${monthName}/${selectedYear}`);
+        setLoading(false);
+        return;
+      }
+
+      const monthName = months.find(m => m.value === selectedMonth)?.label;
+      const confirmMsg = `Será aberta uma janela individual para cada um dos ${partnersWithSales.length} parceiro(s) com vendas em ${monthName}/${selectedYear}:\n\n${partnersWithSales.map(p => `• ${p.partner_name} (${p.sales_count} venda(s), €${parseFloat(p.total_commission).toFixed(2)})`).join('\n')}\n\nDeseja continuar?`;
+
+      if (!window.confirm(confirmMsg)) {
+        setLoading(false);
+        return;
+      }
+
+      let openedWindows = 0;
+      for (const partnerData of partnersWithSales) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        try {
+          await printCommissionReport(partnerData.partner_id);
+          openedWindows++;
+        } catch (error) {
+          console.error(`Erro ao gerar auto para ${partnerData.partner_name}:`, error);
+          toast.error(`Erro ao gerar auto para ${partnerData.partner_name}`);
+        }
+      }
+
+      toast.success(`${openedWindows} janela(s) de auto aberta(s) com sucesso`);
+    } catch (error) {
+      console.error("Erro ao emitir autos em massa:", error);
+      toast.error("Erro ao emitir autos em massa: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createStyledWorksheet = (partner, sales, XLSX) => {
@@ -1009,6 +1066,17 @@ const CommissionReports = ({ user }) => {
                   Excel
                 </Button>
               </div>
+              <Button
+                onClick={handleBulkPrintCommissionReports}
+                disabled={!selectedMonth || loading || checkingAvailability}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+              >
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                Emitir PDFs para Todos os Parceiros
+              </Button>
+              <p className="text-xs text-dark-400 text-center">
+                Abre janela individual para cada parceiro com vendas no mês
+              </p>
             </div>
           </CardContent>
         </Card>

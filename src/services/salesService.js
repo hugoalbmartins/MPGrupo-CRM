@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { generateSaleCode, calculateCommission, validateCPE, validateCUI } from '../lib/utils-crm';
 
 export const salesService = {
-  async getAll(statusFilter = null) {
+  async getAll(statusFilter = null, includeOperator = false) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
@@ -14,9 +14,13 @@ export const salesService = {
 
     if (!currentUser) throw new Error('User not found');
 
+    const selectFields = includeOperator
+      ? '*, operator:operators!sales_operator_id_fkey(id, name)'
+      : '*';
+
     let query = supabase
       .from('sales')
-      .select('*')
+      .select(selectFields)
       .order('date', { ascending: false });
 
     if (currentUser.role === 'partner') {
