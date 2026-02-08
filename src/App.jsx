@@ -25,8 +25,6 @@ const CommissionReportsPartner = lazy(() => import("./pages/CommissionReportsPar
 const OperatorValidations = lazy(() => import("./pages/OperatorValidations.jsx"));
 const Objectives = lazy(() => import("./pages/Objectives.jsx"));
 const BOWebsite = lazy(() => import("./pages/BOWebsite.jsx"));
-const EnergySimulator = lazy(() => import("./pages/EnergySimulator.jsx"));
-const SimulatorSettings = lazy(() => import("./pages/SimulatorSettings.jsx"));
 const EnergySimulatorNew = lazy(() => import("./pages/EnergySimulatorNew.jsx"));
 const EnergySimulatorAdmin = lazy(() => import("./pages/EnergySimulatorAdmin.jsx"));
 
@@ -297,7 +295,6 @@ function App() {
                 <Route path="/profile" element={<Profile user={user} />} />
                 <Route path="/forms" element={<Forms user={user} />} />
                 <Route path="/forms/:operatorId" element={<Forms user={user} />} />
-                <Route path="/simulador" element={<EnergySimulator user={user} />} />
                 <Route path="/simulador-energia" element={<EnergySimulatorNew user={user} />} />
                 {user?.role === "partner" && (
                   <Route path="/my-reports" element={<CommissionReportsPartner user={user} />} />
@@ -310,7 +307,6 @@ function App() {
                     <Route path="/commission-reports" element={<CommissionReports user={user} />} />
                     <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
                     <Route path="/bo-website" element={<BOWebsite user={user} />} />
-                    <Route path="/simulador-config" element={<SimulatorSettings user={user} />} />
                     <Route path="/simulador-energia-admin" element={<EnergySimulatorAdmin user={user} />} />
                   </>
                 )}
