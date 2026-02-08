@@ -238,9 +238,9 @@ Deno.serve(async (req: Request) => {
 
     const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
     const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER") || "noreply@mpgrupo.pt";
+    const smtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
     const smtpPass = Deno.env.get("SMTP_PASS") || "";
-    const fromEmail = Deno.env.get("FROM_EMAIL") || "noreply@mpgrupo.pt";
+    const fromEmail = "info@mpgrupo.pt";
     const fromName = "MP Grupo CRM";
 
     if (!smtpPass) {
