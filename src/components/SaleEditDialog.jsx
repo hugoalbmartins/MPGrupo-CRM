@@ -17,7 +17,7 @@ const SectionHeader = ({ children }) => (
 
 const FieldGroup = ({ label, children, colSpan, hint, locked }) => (
   <div className={colSpan === 2 ? "col-span-2" : ""}>
-    <Label className={locked ? "text-dark-400 text-sm" : "text-dark-200 text-sm"}>{label}</Label>
+    <Label className={locked ? "text-sm text-dark-400" : "text-sm font-semibold mb-2 text-dark-200"}>{label}</Label>
     {children}
     {hint && <p className="text-xs mt-1 text-dark-400">{hint}</p>}
   </div>
@@ -46,28 +46,32 @@ const SaleEditDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto glass-ultra">
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-white">
-            Editar Venda - {editingSale?.sale_code}
-          </DialogTitle>
-          <DialogDescription className="text-dark-400">
-            Altere os campos necessarios
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden glass-ultra border-white/10 flex flex-col p-0">
+        <div className="sticky top-0 z-10 glass-ultra border-b border-white/10 px-8 py-6">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-gradient-gold">
+              Editar Venda - {editingSale?.sale_code}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-dark-200 mt-1">
+              Altere os campos necessários da venda
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <form onSubmit={onSubmit} className="space-y-4 mt-2">
+        <form onSubmit={onSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="overflow-y-auto flex-1 px-8 py-6 scrollbar-modern">
+            <div className="space-y-4">
           {/* Client identification - read only */}
           <div className="rounded-xl border border-white/[0.06] bg-dark-800/50 p-4">
             <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wide mb-3">Identificacao do Cliente</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-dark-400 text-sm">Nome</Label>
-                <Input value={editFormData.client_name} disabled className="opacity-60 cursor-not-allowed" />
+                <Label className="text-sm text-dark-400">Nome</Label>
+                <Input value={editFormData.client_name} disabled className="glass-input opacity-60 cursor-not-allowed" />
               </div>
               <div>
-                <Label className="text-dark-400 text-sm">NIF</Label>
-                <Input value={editFormData.client_nif} disabled className="opacity-60 cursor-not-allowed" />
+                <Label className="text-sm text-dark-400">NIF</Label>
+                <Input value={editFormData.client_nif} disabled className="glass-input opacity-60 cursor-not-allowed" />
               </div>
             </div>
           </div>
@@ -483,14 +487,19 @@ const SaleEditDialog = ({
             </div>
           </div>
 
+            </div>
+          </div>
+
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/[0.06]">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="btn-gold">
-              Guardar Alteracoes
-            </Button>
+          <div className="sticky bottom-0 glass-ultra border-t border-white/10 px-8 py-4">
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-white/20 text-white hover:bg-white/10">
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-gold-400 hover:bg-gold-500 text-dark-900 font-semibold">
+                Guardar Alteracoes
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
