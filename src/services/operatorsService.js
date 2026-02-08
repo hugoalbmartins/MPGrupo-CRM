@@ -120,6 +120,9 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('pays_electronic_invoice')) {
       updateData.pays_electronic_invoice = settingsData.pays_electronic_invoice;
     }
+    if (settingsData.hasOwnProperty('notification_emails')) {
+      updateData.notification_emails = settingsData.notification_emails;
+    }
 
     const { data, error } = await supabase
       .from('operators')

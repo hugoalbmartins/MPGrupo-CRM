@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,9 @@ const Operators = ({ user }) => {
     allowed_client_types: [],
     pays_direct_debit: false,
     pays_electronic_invoice: false,
+    notification_emails: [],
   });
+  const [newNotifEmail, setNewNotifEmail] = useState("");
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -174,7 +176,9 @@ const Operators = ({ user }) => {
         allowed_client_types: freshData.allowed_client_types || ['particular', 'empresarial'],
         pays_direct_debit: freshData.pays_direct_debit || false,
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
+        notification_emails: freshData.notification_emails || [],
       });
+      setNewNotifEmail("");
       setEditOperatorDialogOpen(true);
     } catch (error) {
       toast.error("Erro ao carregar dados da operadora");
@@ -544,6 +548,9 @@ const Operators = ({ user }) => {
                     {op.documents && op.documents.length > 0 && (
                       <span className="text-xs text-blue-400 block">📄 {op.documents.length} formulário(s)</span>
                     )}
+                    {op.notification_emails && op.notification_emails.length > 0 && (
+                      <span className="text-xs text-amber-400 block">✉ {op.notification_emails.length} email(s) notificação</span>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     {user?.role === 'admin' && (
@@ -815,6 +822,79 @@ const Operators = ({ user }) => {
                       Paga adesão a Fatura Eletrónica
                     </Label>
                   </div>
+                </div>
+              </div>
+
+              <div className="border-t border-dark-600 pt-4">
+                <Label className="text-dark-200 text-sm font-semibold block mb-3">
+                  <Mail className="w-4 h-4 inline mr-1" />
+                  Emails de Notificacao de Vendas
+                </Label>
+                <p className="text-xs text-dark-400 mb-3">
+                  Estes emails receberao notificacao de novas vendas desta operadora em BCC.
+                </p>
+                <div className="space-y-2 mb-3">
+                  {(editOperatorData.notification_emails || []).map((email, idx) => (
+                    <div key={idx} className="flex items-center gap-2 bg-dark-800/60 border border-dark-600 rounded-lg px-3 py-2">
+                      <Mail className="w-3.5 h-3.5 text-dark-400 shrink-0" />
+                      <span className="text-sm text-white flex-1 truncate">{email}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditOperatorData(prev => ({
+                          ...prev,
+                          notification_emails: prev.notification_emails.filter((_, i) => i !== idx)
+                        }))}
+                        className="text-red-400 hover:text-red-300 shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="email@exemplo.pt"
+                    value={newNotifEmail}
+                    onChange={(e) => setNewNotifEmail(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const email = newNotifEmail.trim();
+                        if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                          if (!editOperatorData.notification_emails.includes(email)) {
+                            setEditOperatorData(prev => ({
+                              ...prev,
+                              notification_emails: [...prev.notification_emails, email]
+                            }));
+                          }
+                          setNewNotifEmail("");
+                        }
+                      }
+                    }}
+                    className="glass-input flex-1"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      const email = newNotifEmail.trim();
+                      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        if (!editOperatorData.notification_emails.includes(email)) {
+                          setEditOperatorData(prev => ({
+                            ...prev,
+                            notification_emails: [...prev.notification_emails, email]
+                          }));
+                        }
+                        setNewNotifEmail("");
+                      } else {
+                        toast.error("Email invalido");
+                      }
+                    }}
+                    className="btn-gold"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
 

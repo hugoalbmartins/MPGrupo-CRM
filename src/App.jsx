@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster, toast } from "@/components/ui/sonner";
 import { authService } from "./lib/auth";
 import { supabase } from "./lib/supabase";
+import { notificationService } from "./services/notificationService";
 import { AlertCircle, Loader2 } from "lucide-react";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import Layout from "./components/Layout.jsx";
@@ -52,11 +53,69 @@ const LoadingFallback = () => (
   </div>
 );
 
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window._deferredPWAPrompt = e;
+});
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [logoutReason, setLogoutReason] = useState(null);
+
+  useEffect(() => {
+    notificationService.registerServiceWorker();
+  }, []);
+
+  useEffect(() => {
+    if (!user || mustChangePassword) return;
+
+    const channel = supabase
+      .channel('app-alerts-push')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, (payload) => {
+        const alert = payload.new;
+        if (!alert || !alert.user_ids?.includes(user.id)) return;
+
+        const type = alert.type;
+        if (type === 'new_sale') {
+          notificationService.showNotification('Nova Venda Registada', {
+            body: alert.message,
+            tag: `new-sale-${alert.sale_code}`,
+            data: { url: '/sales' }
+          });
+        } else if (type === 'status_change') {
+          notificationService.showNotification('Estado Alterado', {
+            body: alert.message,
+            tag: `status-${alert.sale_code}`,
+            data: { url: '/alerts' }
+          });
+        } else if (type === 'note_added') {
+          notificationService.showNotification('Nova Nota', {
+            body: alert.message,
+            tag: `note-${alert.sale_code}`,
+            data: { url: '/alerts' }
+          });
+        } else if (type === 'sale_edit') {
+          notificationService.showNotification('Venda Editada', {
+            body: alert.message,
+            tag: `edit-${alert.sale_code}`,
+            data: { url: '/sales' }
+          });
+        } else if (type === 'proposal_reminder') {
+          notificationService.showNotification('Propostas Pendentes', {
+            body: alert.message,
+            tag: 'proposal-reminder',
+            data: { url: '/sales' }
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, mustChangePassword]);
 
   useEffect(() => {
     if (!supabase) return;

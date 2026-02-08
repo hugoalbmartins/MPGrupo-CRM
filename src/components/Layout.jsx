@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, SlidersHorizontal
+  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
+import { notificationService } from "../services/notificationService";
 
 const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
@@ -15,6 +16,9 @@ const Layout = ({ children, user, onLogout }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [partnerType, setPartnerType] = useState(null);
+  const [notifPermission, setNotifPermission] = useState('default');
+  const [showNotifBanner, setShowNotifBanner] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -49,6 +53,36 @@ const Layout = ({ children, user, onLogout }) => {
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
+  };
+
+  useEffect(() => {
+    const perm = notificationService.getPermissionStatus();
+    setNotifPermission(perm);
+    if (perm === 'default') {
+      const dismissed = localStorage.getItem('notif_banner_dismissed');
+      if (!dismissed) setShowNotifBanner(true);
+    }
+    setCanInstall(!!window._deferredPWAPrompt);
+    const checkInstall = () => setCanInstall(!!window._deferredPWAPrompt);
+    window.addEventListener('beforeinstallprompt', checkInstall);
+    return () => window.removeEventListener('beforeinstallprompt', checkInstall);
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    const result = await notificationService.requestPermission();
+    setNotifPermission(result);
+    setShowNotifBanner(false);
+    localStorage.setItem('notif_banner_dismissed', '1');
+  };
+
+  const dismissNotifBanner = () => {
+    setShowNotifBanner(false);
+    localStorage.setItem('notif_banner_dismissed', '1');
+  };
+
+  const handleInstallPWA = async () => {
+    const installed = await notificationService.installPWA();
+    if (installed) setCanInstall(false);
   };
 
   const isD2DPartner = user?.role === 'partner' && partnerType === 'D2D';
@@ -295,6 +329,40 @@ const Layout = ({ children, user, onLogout }) => {
 
       <main className={`flex-1 flex flex-col h-screen overflow-hidden ${mainMargin} transition-all duration-300`}>
         <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-premium pt-16 lg:pt-0">
+          <AnimatePresence>
+            {(showNotifBanner || canInstall) && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mx-4 mt-4 lg:mx-6 flex flex-wrap gap-3">
+                  {showNotifBanner && notifPermission === 'default' && (
+                    <div className="flex-1 min-w-[280px] flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                      <BellRing className="w-5 h-5 text-blue-400 shrink-0" />
+                      <p className="text-sm text-blue-200 flex-1">Ative as notificacoes para receber alertas de vendas e propostas.</p>
+                      <button onClick={handleEnableNotifications} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors shrink-0">
+                        Ativar
+                      </button>
+                      <button onClick={dismissNotifBanner} className="p-1 text-blue-400 hover:text-blue-300 shrink-0">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  {canInstall && (
+                    <div className="flex-1 min-w-[280px] flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <Download className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <p className="text-sm text-emerald-200 flex-1">Instale a aplicacao para acesso rapido e notificacoes.</p>
+                      <button onClick={handleInstallPWA} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shrink-0">
+                        Instalar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="page-container min-h-full">
             <motion.div
               key={location.pathname}
