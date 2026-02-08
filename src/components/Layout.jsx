@@ -60,6 +60,7 @@ const Layout = ({ children, user, onLogout }) => {
     { path: "/forms", label: "Formularios", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
     { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], badge: unreadCount, excludeD2D: true, section: "MENU PRINCIPAL" },
     { path: "/simulador", label: "Simulador", icon: Zap, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
+    { path: "/simulador-energia", label: "Simulador Energia", icon: Zap, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
   ];
 
   if (user?.role === "admin") {
@@ -70,7 +71,8 @@ const Layout = ({ children, user, onLogout }) => {
       { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"], section: "SISTEMA" },
       { path: "/commission-reports", label: "Comissoes", icon: FileSpreadsheet, roles: ["admin"], section: "SISTEMA" },
       { path: "/bo-website", label: "BO Website", icon: Globe, roles: ["admin"], section: "SISTEMA" },
-      { path: "/simulador-config", label: "Config. Simulador", icon: SlidersHorizontal, roles: ["admin"], section: "SISTEMA" }
+      { path: "/simulador-config", label: "Config. Simulador", icon: SlidersHorizontal, roles: ["admin"], section: "SISTEMA" },
+      { path: "/simulador-energia-admin", label: "Admin Simulador Energia", icon: Settings, roles: ["admin"], section: "SISTEMA" }
     );
   } else if (user?.role === "bo") {
     menuItems.push(
