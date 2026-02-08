@@ -40,7 +40,7 @@ const INITIAL_GAS_DATA = {
   preco_kwh: ''
 };
 
-const EnergySimulatorNew = () => {
+const EnergySimulatorNew = ({ user }) => {
   const [step, setStep] = useState(0);
   const [tipoEnergia, setTipoEnergia] = useState(null);
   const [availableTypes, setAvailableTypes] = useState([]);
@@ -274,6 +274,7 @@ const EnergySimulatorNew = () => {
                 simulationData={simulationResults}
                 onBack={handleBack}
                 onNewSimulation={handleNewSimulation}
+                user={user}
               />
             )}
           </>

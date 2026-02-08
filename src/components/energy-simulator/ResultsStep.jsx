@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Download, MessageCircle, ChevronDown, ChevronUp, TrendingUp, AlertCircle, Gift, X } from 'lucide-react';
+import { ArrowLeft, Download, ChevronDown, ChevronUp, TrendingUp, AlertCircle, Gift, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 import { toast } from 'sonner';
 
-const ResultsStep = ({ simulationData, onBack, onNewSimulation }) => {
+const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
   const [expandedOperator, setExpandedOperator] = useState(null);
   const { custoAtual, resultados, todosResultados } = simulationData;
 
@@ -27,13 +27,17 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation }) => {
       const margin = 20;
       let yPos = 20;
 
+      const partnerName = user?.name || 'MP GRUPO';
       doc.setFontSize(20);
       doc.setTextColor(255, 193, 7);
-      doc.text('MP GRUPO', margin, yPos);
+      doc.text(partnerName, margin, yPos);
+      doc.setFontSize(11);
+      doc.setTextColor(80, 80, 80);
+      doc.text('O seu comercial de energias.', margin, yPos + 7);
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text('Simulação de Energia', margin, yPos + 7);
-      yPos += 20;
+      doc.text('Simulação de Energia', margin, yPos + 14);
+      yPos += 27;
 
       doc.setFontSize(10);
       doc.text(`Data: ${new Date().toLocaleDateString('pt-PT')}`, margin, yPos);
@@ -135,9 +139,14 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation }) => {
 
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text('MP GRUPO - Comparador de Energia', margin, yPos);
+      doc.text(`${partnerName} - Comparador de Energia`, margin, yPos);
       yPos += 4;
-      doc.text('Contacto: geral@mpgrupo.pt | Tel: +351 XXX XXX XXX', margin, yPos);
+      const contactParts = [];
+      if (user?.contact_email) contactParts.push(user.contact_email);
+      if (user?.contact_phone) contactParts.push(user.contact_phone);
+      if (contactParts.length > 0) {
+        doc.text(`Contacto: ${contactParts.join(' | ')}`, margin, yPos);
+      }
 
       const fileName = operadora
         ? `MPGrupo_Simulacao_${operadora.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
@@ -149,40 +158,6 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation }) => {
       console.error('Error exporting PDF:', error);
       toast.error('Erro ao exportar PDF');
     }
-  };
-
-  const sendWhatsApp = (operadora = null, isAdesao = false) => {
-    const baseNumber = '351XXXXXXXXX';
-
-    let message = `Olá! Fiz uma simulação no simulador MP GRUPO.\n\n`;
-    message += `*Custo Atual:* ${formatCurrency(custoAtual.total)}/mês\n\n`;
-
-    if (operadora) {
-      const resultado = resultados.find(r => r.operadora.id === operadora.id);
-      if (resultado) {
-        message += `*Operadora de Interesse:* ${operadora.nome}\n`;
-        message += `*Novo Custo:* ${formatCurrency(resultado.custoNovaOperadora.total)}/mês\n`;
-        message += `*Poupança Mensal:* ${formatCurrency(resultado.poupancaMensal)}\n`;
-        message += `*Poupança Anual:* ${formatCurrency(resultado.poupancaAnual)}\n\n`;
-
-        if (isAdesao) {
-          message += `Gostaria de aderir a esta operadora. Podem contactar-me?\n`;
-        } else {
-          message += `Gostaria de mais informações sobre esta simulação.\n`;
-        }
-      }
-    } else {
-      message += `*Melhores Resultados:*\n`;
-      resultados.slice(0, 3).forEach((r, i) => {
-        message += `${i + 1}. ${r.operadora.nome}: ${formatCurrency(r.poupancaMensal)}/mês\n`;
-      });
-      message += `\nGostaria de mais informações.\n`;
-    }
-
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${baseNumber}?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank');
   };
 
   const toggleExpanded = (operadoraId) => {
@@ -321,14 +296,6 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation }) => {
                           </>
                         )}
                       </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => sendWhatsApp(resultado.operadora, true)}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Quero Aderir
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -454,13 +421,6 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation }) => {
         >
           <Download className="w-4 h-4 mr-2" />
           Exportar Todas
-        </Button>
-        <Button
-          onClick={() => sendWhatsApp()}
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
-          <MessageCircle className="w-4 h-4 mr-2" />
-          Contactar por WhatsApp
         </Button>
         <Button
           onClick={onNewSimulation}

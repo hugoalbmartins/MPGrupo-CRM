@@ -351,7 +351,7 @@ function App() {
                 <Route path="/sales" element={<ErrorBoundary><Sales user={user} /></ErrorBoundary>} />
                 <Route path="/alerts" element={<Alerts user={user} />} />
                 <Route path="/alerts/archived" element={<AlertsArchived user={user} />} />
-                <Route path="/profile" element={<Profile user={user} />} />
+                <Route path="/profile" element={<Profile user={user} onUserUpdate={setUser} />} />
                 <Route path="/forms" element={<Forms user={user} />} />
                 <Route path="/forms/:operatorId" element={<Forms user={user} />} />
                 <Route path="/simulador-energia" element={<EnergySimulatorNew user={user} />} />

@@ -79,14 +79,16 @@ function getMonthRange(year, month) {
   };
 }
 
-async function calculateRetentions(year, month) {
+async function calculateRetentions(year, month, partnerId = null) {
   const { start, end } = getMonthRange(year, month);
 
-  const { data: currentSales } = await supabase
+  let currentQuery = supabase
     .from('sales')
     .select('*, operator_id')
     .gte('date', start.split('T')[0])
     .lt('date', end.split('T')[0]);
+  if (partnerId) currentQuery = currentQuery.eq('partner_id', partnerId);
+  const { data: currentSales } = await currentQuery;
 
   const { data: allCommissionConfigs } = await supabase
     .from('commission_configurations')
@@ -128,11 +130,13 @@ async function calculateRetentions(year, month) {
   const returnStartDate = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth(), 1);
   const returnEndDate = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth() + 1, 1);
 
-  const { data: returnSales } = await supabase
+  let returnQuery = supabase
     .from('sales')
     .select('*, operator_id')
     .gte('date', returnStartDate.toISOString().split('T')[0])
     .lt('date', returnEndDate.toISOString().split('T')[0]);
+  if (partnerId) returnQuery = returnQuery.eq('partner_id', partnerId);
+  const { data: returnSales } = await returnQuery;
 
   let retentionsToReturn = 0;
   let returnPeriod = `${sixMonthsAgo.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}`;
@@ -494,7 +498,7 @@ async function getPartnerDashboard(partnerId, year, month) {
 
   const sales = salesResult.data;
   const operators = operatorsResult.data || [];
-  const retentions = await calculateRetentions(year, month);
+  const retentions = await calculateRetentions(year, month, partnerId);
   const netCommissions = await calculateNetCommission(sales);
 
   const stats = {
