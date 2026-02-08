@@ -227,9 +227,11 @@ export const energySimulatorService = {
 
   async upsertDiscount(discount) {
     try {
+      const { operadoras, ...discountData } = discount;
+
       const { data, error } = await supabase
         .from('configuracoes_descontos')
-        .upsert([discount], {
+        .upsert([discountData], {
           onConflict: 'operadora_id,tipo_energia'
         })
         .select()

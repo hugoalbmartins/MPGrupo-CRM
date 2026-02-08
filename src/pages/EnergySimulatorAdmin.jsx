@@ -407,46 +407,52 @@ const EnergySimulatorAdmin = () => {
         </Tabs>
 
         <Dialog open={showOperatorDialog} onOpenChange={setShowOperatorDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-dark-800 border-white/10">
-            <DialogHeader>
-              <DialogTitle className="text-white">
-                {editingOperator?.id ? 'Editar Operadora' : 'Nova Operadora'}
-              </DialogTitle>
-            </DialogHeader>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden glass-ultra border-white/10 flex flex-col">
+            <div className="glass-ultra border-b border-white/10 px-2 py-4">
+              <DialogHeader>
+                <DialogTitle className="text-3xl font-bold text-gradient-gold">
+                  {editingOperator?.id ? 'Editar Operadora' : 'Nova Operadora'}
+                </DialogTitle>
+                <p className="text-sm text-dark-200 mt-1">
+                  Configure os dados da operadora de energia
+                </p>
+              </DialogHeader>
+            </div>
 
             {editingOperator && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-white">Nome *</Label>
-                    <Input
-                      value={editingOperator.nome}
-                      onChange={(e) => setEditingOperator({ ...editingOperator, nome: e.target.value })}
-                      className="bg-dark-700 border-white/10 text-white"
-                      placeholder="Nome da operadora"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-white">Logotipo</Label>
-                    <div className="flex gap-2">
+              <div className="overflow-y-auto flex-1 px-2 py-6 scrollbar-modern">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold mb-2 text-dark-200">Nome *</Label>
                       <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        disabled={uploading}
-                        className="bg-dark-700 border-white/10 text-white"
+                        value={editingOperator.nome}
+                        onChange={(e) => setEditingOperator({ ...editingOperator, nome: e.target.value })}
+                        className="glass-input"
+                        placeholder="Nome da operadora"
                       />
-                      {uploading && <Loader2 className="w-5 h-5 text-gold-400 animate-spin" />}
                     </div>
-                    {editingOperator.logotipo_url && (
-                      <img src={editingOperator.logotipo_url} alt="Preview" className="w-16 h-16 object-contain rounded bg-white/5 p-2" />
-                    )}
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label className="text-white">Tipos de Energia</Label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold mb-2 text-dark-200">Logotipo</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          disabled={uploading}
+                          className="glass-input"
+                        />
+                        {uploading && <Loader2 className="w-5 h-5 text-gold-400 animate-spin" />}
+                      </div>
+                      {editingOperator.logotipo_url && (
+                        <img src={editingOperator.logotipo_url} alt="Preview" className="w-16 h-16 object-contain rounded bg-white/5 p-2" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Energia</Label>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -463,31 +469,31 @@ const EnergySimulatorAdmin = () => {
                           setEditingOperator({ ...editingOperator, tipos_energia: tipos });
                         }}
                       />
-                      <label htmlFor="elet" className="text-white cursor-pointer">Eletricidade</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="gas"
-                        checked={editingOperator.tipos_energia?.includes('gas')}
-                        onCheckedChange={(checked) => {
-                          const tipos = [...(editingOperator.tipos_energia || [])];
-                          if (checked) {
-                            tipos.push('gas');
-                          } else {
-                            const idx = tipos.indexOf('gas');
-                            if (idx > -1) tipos.splice(idx, 1);
-                          }
-                          setEditingOperator({ ...editingOperator, tipos_energia: tipos });
-                        }}
-                      />
-                      <label htmlFor="gas" className="text-white cursor-pointer">Gás</label>
+                        <label htmlFor="elet" className="text-white cursor-pointer">Eletricidade</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="gas"
+                          checked={editingOperator.tipos_energia?.includes('gas')}
+                          onCheckedChange={(checked) => {
+                            const tipos = [...(editingOperator.tipos_energia || [])];
+                            if (checked) {
+                              tipos.push('gas');
+                            } else {
+                              const idx = tipos.indexOf('gas');
+                              if (idx > -1) tipos.splice(idx, 1);
+                            }
+                            setEditingOperator({ ...editingOperator, tipos_energia: tipos });
+                          }}
+                        />
+                        <label htmlFor="gas" className="text-white cursor-pointer">Gás</label>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {editingOperator.tipos_energia?.includes('eletricidade') && (
-                  <div className="space-y-2">
-                    <Label className="text-white">Ciclos Disponíveis (Eletricidade)</Label>
+                  {editingOperator.tipos_energia?.includes('eletricidade') && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold mb-2 text-dark-200">Ciclos Disponíveis (Eletricidade)</Label>
                     <div className="flex gap-4">
                       {CICLOS_HORARIOS.map((ciclo) => (
                         <div key={ciclo.value} className="flex items-center space-x-2">
@@ -505,307 +511,319 @@ const EnergySimulatorAdmin = () => {
                               setEditingOperator({ ...editingOperator, ciclos_disponiveis: ciclos });
                             }}
                           />
-                          <label htmlFor={ciclo.value} className="text-white cursor-pointer">{ciclo.label}</label>
-                        </div>
-                      ))}
+                            <label htmlFor={ciclo.value} className="text-white cursor-pointer">{ciclo.label}</label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  )}
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={editingOperator.ativa}
+                      onCheckedChange={(checked) => setEditingOperator({ ...editingOperator, ativa: checked })}
+                    />
+                    <Label className="text-white">Operadora Ativa</Label>
                   </div>
-                )}
 
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={editingOperator.ativa}
-                    onCheckedChange={(checked) => setEditingOperator({ ...editingOperator, ativa: checked })}
-                  />
-                  <Label className="text-white">Operadora Ativa</Label>
-                </div>
-
-                <div className="text-sm text-dark-400">
-                  <strong>Nota:</strong> Configure as tarifas e preços específicos após criar a operadora, na secção de tarifas.
+                  <div className="text-sm text-dark-300 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                    <strong className="text-blue-400">Nota:</strong> Configure as tarifas e preços específicos após criar a operadora, na secção de tarifas.
+                  </div>
                 </div>
               </div>
             )}
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowOperatorDialog(false);
-                  setEditingOperator(null);
-                }}
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSaveOperator}
-                disabled={loading}
-                className="bg-gold-400 hover:bg-gold-500 text-dark-900"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                Guardar
-              </Button>
-            </DialogFooter>
+            <div className="sticky bottom-0 glass-ultra border-t border-white/10 px-8 py-4">
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowOperatorDialog(false);
+                    setEditingOperator(null);
+                  }}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveOperator}
+                  disabled={loading}
+                  className="bg-gold-400 hover:bg-gold-500 text-dark-900 font-semibold"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Guardar
+                </Button>
+              </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
         <Dialog open={showDiscountDialog} onOpenChange={setShowDiscountDialog}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-dark-800 border-white/10">
-            <DialogHeader>
-              <DialogTitle className="text-white">
-                {editingDiscount?.id ? 'Editar Descontos' : 'Novos Descontos'}
-              </DialogTitle>
-            </DialogHeader>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden glass-ultra border-white/10 flex flex-col">
+            <div className="glass-ultra border-b border-white/10 px-2 py-4">
+              <DialogHeader>
+                <DialogTitle className="text-3xl font-bold text-gradient-gold">
+                  {editingDiscount?.id ? 'Editar Descontos' : 'Novos Descontos'}
+                </DialogTitle>
+                <p className="text-sm text-dark-200 mt-1">
+                  Configure os descontos para a operadora selecionada
+                </p>
+              </DialogHeader>
+            </div>
 
             {editingDiscount && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-white">Operadora *</Label>
-                    <Select
-                      value={editingDiscount.operadora_id}
-                      onValueChange={(value) => setEditingDiscount({ ...editingDiscount, operadora_id: value })}
-                      disabled={!!editingDiscount.id}
-                    >
-                      <SelectTrigger className="bg-dark-700 border-white/10 text-white">
-                        <SelectValue placeholder="Selecione a operadora" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {operators.map((op) => (
-                          <SelectItem key={op.id} value={op.id}>{op.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-white">Tipo de Energia *</Label>
-                    <Select
-                      value={editingDiscount.tipo_energia}
-                      onValueChange={(value) => setEditingDiscount({ ...editingDiscount, tipo_energia: value })}
-                      disabled={!!editingDiscount.id}
-                    >
-                      <SelectTrigger className="bg-dark-700 border-white/10 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="eletricidade">Eletricidade</SelectItem>
-                        <SelectItem value="gas">Gás</SelectItem>
-                        <SelectItem value="dual">Dual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-white text-lg">Descontos (%)</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="bg-dark-700/50 border-white/10 p-4">
-                      <h4 className="text-white font-semibold mb-3 text-center">Base</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-dark-300 text-xs">Potência/Diário</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_base_potencia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_base_potencia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-dark-300 text-xs">Energia</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_base_energia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_base_energia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="bg-dark-700/50 border-white/10 p-4">
-                      <h4 className="text-white font-semibold mb-3 text-center">DD</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-dark-300 text-xs">Potência/Diário</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_dd_potencia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_potencia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-dark-300 text-xs">Energia</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_dd_energia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_energia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="bg-dark-700/50 border-white/10 p-4">
-                      <h4 className="text-white font-semibold mb-3 text-center">FE</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-dark-300 text-xs">Potência/Diário</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_fe_potencia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_fe_potencia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-dark-300 text-xs">Energia</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_fe_energia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_fe_energia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="bg-dark-700/50 border-white/10 p-4">
-                      <h4 className="text-white font-semibold mb-3 text-center">DD+FE</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-dark-300 text-xs">Potência/Diário</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_dd_fe_potencia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_fe_potencia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-dark-300 text-xs">Energia</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            value={editingDiscount.desconto_dd_fe_energia}
-                            onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_fe_energia: e.target.value })}
-                            className="bg-dark-600 border-white/10 text-white"
-                          />
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-4">
-                  <Label className="text-white text-lg mb-4 block">Campanha Temporária (Opcional)</Label>
+              <div className="overflow-y-auto flex-1 px-2 py-6 scrollbar-modern">
+                <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-white">Desconto Mensal (€)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={editingDiscount.desconto_mensal_temporario}
-                        onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_mensal_temporario: e.target.value })}
-                        className="bg-dark-700 border-white/10 text-white"
-                      />
+                      <Label className="text-sm font-semibold mb-2 text-dark-200">Operadora *</Label>
+                      <Select
+                        value={editingDiscount.operadora_id}
+                        onValueChange={(value) => setEditingDiscount({ ...editingDiscount, operadora_id: value })}
+                        disabled={!!editingDiscount.id}
+                      >
+                        <SelectTrigger className="glass-input">
+                          <SelectValue placeholder="Selecione a operadora" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {operators.map((op) => (
+                            <SelectItem key={op.id} value={op.id}>{op.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+
                     <div className="space-y-2">
-                      <Label className="text-white">Duração (meses)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={editingDiscount.duracao_meses_desconto}
-                        onChange={(e) => setEditingDiscount({ ...editingDiscount, duracao_meses_desconto: e.target.value })}
-                        className="bg-dark-700 border-white/10 text-white"
-                      />
+                      <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Energia *</Label>
+                      <Select
+                        value={editingDiscount.tipo_energia}
+                        onValueChange={(value) => setEditingDiscount({ ...editingDiscount, tipo_energia: value })}
+                        disabled={!!editingDiscount.id}
+                      >
+                        <SelectTrigger className="glass-input">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="eletricidade">Eletricidade</SelectItem>
+                          <SelectItem value="gas">Gás</SelectItem>
+                          <SelectItem value="dual">Dual</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label className="text-white">Descrição da Campanha</Label>
-                      <Input
-                        value={editingDiscount.descricao_desconto_temporario || ''}
-                        onChange={(e) => setEditingDiscount({ ...editingDiscount, descricao_desconto_temporario: e.target.value })}
-                        className="bg-dark-700 border-white/10 text-white"
-                        placeholder="Ex: Campanha de verão 2024"
-                      />
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label className="text-lg font-semibold text-white">Descontos (%)</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <Card className="bg-dark-700/50 border-white/10 p-4">
+                        <h4 className="text-white font-semibold mb-3 text-center">Base</h4>
+                        <div className="space-y-2">
+                          <div>
+                            <Label className="text-dark-300 text-xs">Potência/Diário</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_base_potencia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_base_potencia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-dark-300 text-xs">Energia</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_base_energia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_base_energia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="bg-dark-700/50 border-white/10 p-4">
+                        <h4 className="text-white font-semibold mb-3 text-center">DD</h4>
+                        <div className="space-y-2">
+                          <div>
+                            <Label className="text-dark-300 text-xs">Potência/Diário</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_dd_potencia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_potencia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-dark-300 text-xs">Energia</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_dd_energia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_energia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="bg-dark-700/50 border-white/10 p-4">
+                        <h4 className="text-white font-semibold mb-3 text-center">FE</h4>
+                        <div className="space-y-2">
+                          <div>
+                            <Label className="text-dark-300 text-xs">Potência/Diário</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_fe_potencia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_fe_potencia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-dark-300 text-xs">Energia</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_fe_energia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_fe_energia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="bg-dark-700/50 border-white/10 p-4">
+                        <h4 className="text-white font-semibold mb-3 text-center">DD+FE</h4>
+                        <div className="space-y-2">
+                          <div>
+                            <Label className="text-dark-300 text-xs">Potência/Diário</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_dd_fe_potencia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_fe_potencia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-dark-300 text-xs">Energia</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                              value={editingDiscount.desconto_dd_fe_energia}
+                              onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_dd_fe_energia: e.target.value })}
+                              className="glass-input"
+                            />
+                          </div>
+                        </div>
+                      </Card>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="req-dd"
-                        checked={editingDiscount.desconto_temp_requer_dd}
-                        onCheckedChange={(checked) => setEditingDiscount({ ...editingDiscount, desconto_temp_requer_dd: checked })}
-                      />
-                      <label htmlFor="req-dd" className="text-white cursor-pointer">Requer Débito Direto</label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="req-fe"
-                        checked={editingDiscount.desconto_temp_requer_fe}
-                        onCheckedChange={(checked) => setEditingDiscount({ ...editingDiscount, desconto_temp_requer_fe: checked })}
-                      />
-                      <label htmlFor="req-fe" className="text-white cursor-pointer">Requer Fatura Eletrónica</label>
+                  </div>
+
+                  <div className="border-t border-white/10 pt-4">
+                    <Label className="text-lg font-semibold text-white mb-4 block">Campanha Temporária (Opcional)</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold mb-2 text-dark-200">Desconto Mensal (€)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editingDiscount.desconto_mensal_temporario}
+                          onChange={(e) => setEditingDiscount({ ...editingDiscount, desconto_mensal_temporario: e.target.value })}
+                          className="glass-input"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold mb-2 text-dark-200">Duração (meses)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editingDiscount.duracao_meses_desconto}
+                          onChange={(e) => setEditingDiscount({ ...editingDiscount, duracao_meses_desconto: e.target.value })}
+                          className="glass-input"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label className="text-sm font-semibold mb-2 text-dark-200">Descrição da Campanha</Label>
+                        <Input
+                          value={editingDiscount.descricao_desconto_temporario || ''}
+                          onChange={(e) => setEditingDiscount({ ...editingDiscount, descricao_desconto_temporario: e.target.value })}
+                          className="glass-input"
+                          placeholder="Ex: Campanha de verão 2024"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="req-dd"
+                          checked={editingDiscount.desconto_temp_requer_dd}
+                          onCheckedChange={(checked) => setEditingDiscount({ ...editingDiscount, desconto_temp_requer_dd: checked })}
+                        />
+                        <label htmlFor="req-dd" className="text-white cursor-pointer">Requer Débito Direto</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="req-fe"
+                          checked={editingDiscount.desconto_temp_requer_fe}
+                          onCheckedChange={(checked) => setEditingDiscount({ ...editingDiscount, desconto_temp_requer_fe: checked })}
+                        />
+                        <label htmlFor="req-fe" className="text-white cursor-pointer">Requer Fatura Eletrónica</label>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDiscountDialog(false);
-                  setEditingDiscount(null);
-                }}
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSaveDiscount}
-                disabled={loading}
-                className="bg-gold-400 hover:bg-gold-500 text-dark-900"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                Guardar
-              </Button>
-            </DialogFooter>
+            <div className="sticky bottom-0 glass-ultra border-t border-white/10 px-8 py-4">
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDiscountDialog(false);
+                    setEditingDiscount(null);
+                  }}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveDiscount}
+                  disabled={loading}
+                  className="bg-gold-400 hover:bg-gold-500 text-dark-900 font-semibold"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Guardar
+                </Button>
+              </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
