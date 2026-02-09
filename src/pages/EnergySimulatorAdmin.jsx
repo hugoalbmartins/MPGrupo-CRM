@@ -244,9 +244,19 @@ const EnergySimulatorAdmin = () => {
       if (!current[keys[i]]) current[keys[i]] = {};
       current = current[keys[i]];
     }
-    current[keys[keys.length - 1]] = parseFloat(value) || 0;
+    current[keys[keys.length - 1]] = value === '' ? null : parseFloat(value);
 
     setEditingTariffs({ ...editingTariffs, tarifas: newTarifas });
+  };
+
+  const getTariffValue = (obj, path) => {
+    const keys = path.split('.');
+    let current = obj;
+    for (const key of keys) {
+      if (current == null) return '';
+      current = current[key];
+    }
+    return current == null || current === 0 ? '' : current;
   };
 
   return (
@@ -957,131 +967,166 @@ const EnergySimulatorAdmin = () => {
                         <h3 className="text-lg font-bold text-white">Tarifas de Eletricidade</h3>
                       </div>
 
-                      <Card className="bg-dark-700/50 border-white/10">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-white text-base">Preço de Potência (EUR/dia)</CardTitle>
-                          <p className="text-sm text-dark-200 mt-1">Valor diário cobrado por cada nível de potência contratada</p>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            {POTENCIAS_PORTUGAL.map((potencia) => (
-                              <div key={potencia} className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">{potencia} kVA</Label>
-                                <Input
-                                  type="number"
-                                  step="0.0001"
-                                  value={editingTariffs.tarifas?.eletricidade?.potencia?.[potencia] || 0}
-                                  onChange={(e) => updateTariff('eletricidade', `potencia.${potencia}`, e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl h-9 text-sm"
-                                  placeholder="EUR/dia"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-
                       {editingTariffs.ciclos_disponiveis?.includes('simples') && (
-                        <Card className="bg-dark-700/50 border-white/10">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-white text-base">Ciclo Simples</CardTitle>
-                            <p className="text-sm text-dark-200 mt-1">Preço único de energia independente do horário</p>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="max-w-xs space-y-1.5">
-                              <Label className="text-xs font-semibold text-dark-100">Energia (EUR/kWh)</Label>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 pt-2">
+                            <div className="h-px flex-1 bg-gradient-to-r from-yellow-500/40 to-transparent" />
+                            <span className="text-sm font-bold text-yellow-400 uppercase tracking-wider">Ciclo Simples</span>
+                            <div className="h-px flex-1 bg-gradient-to-l from-yellow-500/40 to-transparent" />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-white">Preço Energia (EUR/kWh)</Label>
+                            <div className="max-w-xs">
                               <Input
                                 type="number"
                                 step="0.000001"
-                                value={editingTariffs.tarifas?.eletricidade?.simples?.energia || 0}
+                                value={getTariffValue(editingTariffs.tarifas, 'eletricidade.simples.energia')}
                                 onChange={(e) => updateTariff('eletricidade', 'simples.energia', e.target.value)}
-                                className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                placeholder="EUR/kWh"
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
                               />
                             </div>
-                          </CardContent>
-                        </Card>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-white">Preço Potência por nível (EUR/dia)</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                              {POTENCIAS_PORTUGAL.map((p) => (
+                                <div key={p} className="space-y-1">
+                                  <span className="text-[11px] text-dark-200 block">{p} kVA</span>
+                                  <Input
+                                    type="number"
+                                    step="0.0001"
+                                    value={getTariffValue(editingTariffs.tarifas, `eletricidade.simples.potencia.${p}`)}
+                                    onChange={(e) => updateTariff('eletricidade', `simples.potencia.${p}`, e.target.value)}
+                                    className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl h-9 text-sm"
+                                    placeholder="0.0000"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       )}
 
                       {editingTariffs.ciclos_disponiveis?.includes('bi-horario') && (
-                        <Card className="bg-dark-700/50 border-white/10">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-white text-base">Ciclo Bi-Horário</CardTitle>
-                            <p className="text-sm text-dark-200 mt-1">Preços diferenciados para períodos de Vazio e Fora de Vazio</p>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">Vazio (EUR/kWh)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.000001"
-                                  value={editingTariffs.tarifas?.eletricidade?.['bi-horario']?.vazio || 0}
-                                  onChange={(e) => updateTariff('eletricidade', 'bi-horario.vazio', e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                  placeholder="EUR/kWh"
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">Fora de Vazio (EUR/kWh)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.000001"
-                                  value={editingTariffs.tarifas?.eletricidade?.['bi-horario']?.fora_vazio || 0}
-                                  onChange={(e) => updateTariff('eletricidade', 'bi-horario.fora_vazio', e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                  placeholder="EUR/kWh"
-                                />
-                              </div>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 pt-2">
+                            <div className="h-px flex-1 bg-gradient-to-r from-blue-500/40 to-transparent" />
+                            <span className="text-sm font-bold text-blue-400 uppercase tracking-wider">Ciclo Bi-Horário</span>
+                            <div className="h-px flex-1 bg-gradient-to-l from-blue-500/40 to-transparent" />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-white">Vazio (EUR/kWh)</Label>
+                              <Input
+                                type="number"
+                                step="0.000001"
+                                value={getTariffValue(editingTariffs.tarifas, 'eletricidade.bi-horario.vazio')}
+                                onChange={(e) => updateTariff('eletricidade', 'bi-horario.vazio', e.target.value)}
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
+                              />
                             </div>
-                          </CardContent>
-                        </Card>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-white">Fora de Vazio (EUR/kWh)</Label>
+                              <Input
+                                type="number"
+                                step="0.000001"
+                                value={getTariffValue(editingTariffs.tarifas, 'eletricidade.bi-horario.fora_vazio')}
+                                onChange={(e) => updateTariff('eletricidade', 'bi-horario.fora_vazio', e.target.value)}
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-white">Preço Potência por nível (EUR/dia)</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                              {POTENCIAS_PORTUGAL.map((p) => (
+                                <div key={p} className="space-y-1">
+                                  <span className="text-[11px] text-dark-200 block">{p} kVA</span>
+                                  <Input
+                                    type="number"
+                                    step="0.0001"
+                                    value={getTariffValue(editingTariffs.tarifas, `eletricidade.bi-horario.potencia.${p}`)}
+                                    onChange={(e) => updateTariff('eletricidade', `bi-horario.potencia.${p}`, e.target.value)}
+                                    className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl h-9 text-sm"
+                                    placeholder="0.0000"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       )}
 
                       {editingTariffs.ciclos_disponiveis?.includes('tri-horario') && (
-                        <Card className="bg-dark-700/50 border-white/10">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-white text-base">Ciclo Tri-Horário</CardTitle>
-                            <p className="text-sm text-dark-200 mt-1">Preços diferenciados para Vazio, Cheias e Ponta</p>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">Vazio (EUR/kWh)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.000001"
-                                  value={editingTariffs.tarifas?.eletricidade?.['tri-horario']?.vazio || 0}
-                                  onChange={(e) => updateTariff('eletricidade', 'tri-horario.vazio', e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                  placeholder="EUR/kWh"
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">Cheias (EUR/kWh)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.000001"
-                                  value={editingTariffs.tarifas?.eletricidade?.['tri-horario']?.cheia || 0}
-                                  onChange={(e) => updateTariff('eletricidade', 'tri-horario.cheia', e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                  placeholder="EUR/kWh"
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">Ponta (EUR/kWh)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.000001"
-                                  value={editingTariffs.tarifas?.eletricidade?.['tri-horario']?.ponta || 0}
-                                  onChange={(e) => updateTariff('eletricidade', 'tri-horario.ponta', e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                  placeholder="EUR/kWh"
-                                />
-                              </div>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 pt-2">
+                            <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/40 to-transparent" />
+                            <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Ciclo Tri-Horário</span>
+                            <div className="h-px flex-1 bg-gradient-to-l from-emerald-500/40 to-transparent" />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-white">Vazio (EUR/kWh)</Label>
+                              <Input
+                                type="number"
+                                step="0.000001"
+                                value={getTariffValue(editingTariffs.tarifas, 'eletricidade.tri-horario.vazio')}
+                                onChange={(e) => updateTariff('eletricidade', 'tri-horario.vazio', e.target.value)}
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
+                              />
                             </div>
-                          </CardContent>
-                        </Card>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-white">Cheias (EUR/kWh)</Label>
+                              <Input
+                                type="number"
+                                step="0.000001"
+                                value={getTariffValue(editingTariffs.tarifas, 'eletricidade.tri-horario.cheia')}
+                                onChange={(e) => updateTariff('eletricidade', 'tri-horario.cheia', e.target.value)}
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-white">Ponta (EUR/kWh)</Label>
+                              <Input
+                                type="number"
+                                step="0.000001"
+                                value={getTariffValue(editingTariffs.tarifas, 'eletricidade.tri-horario.ponta')}
+                                onChange={(e) => updateTariff('eletricidade', 'tri-horario.ponta', e.target.value)}
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-white">Preço Potência por nível (EUR/dia)</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                              {POTENCIAS_PORTUGAL.map((p) => (
+                                <div key={p} className="space-y-1">
+                                  <span className="text-[11px] text-dark-200 block">{p} kVA</span>
+                                  <Input
+                                    type="number"
+                                    step="0.0001"
+                                    value={getTariffValue(editingTariffs.tarifas, `eletricidade.tri-horario.potencia.${p}`)}
+                                    onChange={(e) => updateTariff('eletricidade', `tri-horario.potencia.${p}`, e.target.value)}
+                                    className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl h-9 text-sm"
+                                    placeholder="0.0000"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
@@ -1096,37 +1141,37 @@ const EnergySimulatorAdmin = () => {
                       </div>
 
                       {ESCALOES_GAS.map((escalao) => (
-                        <Card key={escalao.value} className="bg-dark-700/50 border-white/10">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-white text-base">{escalao.label}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">Termo Fixo Diário (EUR/dia)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.0001"
-                                  value={editingTariffs.tarifas?.gas?.[`escalao_${escalao.value}`]?.diario || 0}
-                                  onChange={(e) => updateTariff('gas', `escalao_${escalao.value}.diario`, e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                  placeholder="EUR/dia"
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-dark-100">Preço Energia (EUR/kWh)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.000001"
-                                  value={editingTariffs.tarifas?.gas?.[`escalao_${escalao.value}`]?.energia || 0}
-                                  onChange={(e) => updateTariff('gas', `escalao_${escalao.value}.energia`, e.target.value)}
-                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
-                                  placeholder="EUR/kWh"
-                                />
-                              </div>
+                        <div key={escalao.value} className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="h-px flex-1 bg-gradient-to-r from-blue-500/30 to-transparent" />
+                            <span className="text-xs font-bold text-blue-300 uppercase tracking-wider">{escalao.label}</span>
+                            <div className="h-px flex-1 bg-gradient-to-l from-blue-500/30 to-transparent" />
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-white">Termo Fixo Diário (EUR/dia)</Label>
+                              <Input
+                                type="number"
+                                step="0.0001"
+                                value={getTariffValue(editingTariffs.tarifas, `gas.escalao_${escalao.value}.diario`)}
+                                onChange={(e) => updateTariff('gas', `escalao_${escalao.value}.diario`, e.target.value)}
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
+                              />
                             </div>
-                          </CardContent>
-                        </Card>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-semibold text-white">Preço Energia (EUR/kWh)</Label>
+                              <Input
+                                type="number"
+                                step="0.000001"
+                                value={getTariffValue(editingTariffs.tarifas, `gas.escalao_${escalao.value}.energia`)}
+                                onChange={(e) => updateTariff('gas', `escalao_${escalao.value}.energia`, e.target.value)}
+                                className="bg-dark-800 border-dark-600 text-white placeholder:text-dark-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                placeholder="0.0000"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}

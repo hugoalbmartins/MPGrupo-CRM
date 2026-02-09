@@ -36,18 +36,19 @@ export const CICLOS_HORARIOS = [
   { value: 'tri-horario', label: 'Tri-horário' }
 ];
 
+const POTENCIA_TEMPLATE = () => Object.fromEntries(POTENCIAS_PORTUGAL.map(p => [p.toString(), null]));
+
 export const TARIFAS_EMPTY_TEMPLATE = {
   eletricidade: {
-    potencia: Object.fromEntries(POTENCIAS_PORTUGAL.map(p => [p.toString(), 0])),
-    simples: { energia: 0 },
-    'bi-horario': { vazio: 0, fora_vazio: 0 },
-    'tri-horario': { vazio: 0, cheia: 0, ponta: 0 }
+    simples: { potencia: POTENCIA_TEMPLATE(), energia: null },
+    'bi-horario': { potencia: POTENCIA_TEMPLATE(), vazio: null, fora_vazio: null },
+    'tri-horario': { potencia: POTENCIA_TEMPLATE(), vazio: null, cheia: null, ponta: null }
   },
   gas: {
-    escalao_1: { diario: 0, energia: 0 },
-    escalao_2: { diario: 0, energia: 0 },
-    escalao_3: { diario: 0, energia: 0 },
-    escalao_4: { diario: 0, energia: 0 }
+    escalao_1: { diario: null, energia: null },
+    escalao_2: { diario: null, energia: null },
+    escalao_3: { diario: null, energia: null },
+    escalao_4: { diario: null, energia: null }
   }
 };
 
@@ -384,7 +385,7 @@ export const energySimulatorService = {
           const dias = parseFloat(formData.eletricidade.dias) || 0;
           const ciclo = formData.eletricidade.ciclo;
 
-          const precoPotencia = parseFloat(tarifasElet.potencia?.[potencia]) || 0;
+          const precoPotencia = parseFloat(tarifasElet[ciclo]?.potencia?.[potencia]) || parseFloat(tarifasElet.potencia?.[potencia]) || 0;
           let custoPotencia = precoPotencia * dias;
 
           let custoEnergia = 0;
