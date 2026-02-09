@@ -20,8 +20,10 @@ const EnergySimulatorAdmin = () => {
   const [loading, setLoading] = useState(false);
   const [editingOperator, setEditingOperator] = useState(null);
   const [editingDiscount, setEditingDiscount] = useState(null);
+  const [editingTariffs, setEditingTariffs] = useState(null);
   const [showOperatorDialog, setShowOperatorDialog] = useState(false);
   const [showDiscountDialog, setShowDiscountDialog] = useState(false);
+  const [showTariffsDialog, setShowTariffsDialog] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -211,6 +213,40 @@ const EnergySimulatorAdmin = () => {
     setEditingOperator({ ...editingOperator, tarifas: newTarifas });
   };
 
+  const handleConfigureTariffs = (operator) => {
+    setEditingTariffs({ ...operator });
+    setShowTariffsDialog(true);
+  };
+
+  const handleSaveTariffs = async () => {
+    try {
+      setLoading(true);
+      await energySimulatorService.updateOperator(editingTariffs.id, editingTariffs);
+      toast.success('Tarifas atualizadas com sucesso');
+      setShowTariffsDialog(false);
+      setEditingTariffs(null);
+      await loadOperators();
+    } catch (error) {
+      console.error('Error saving tariffs:', error);
+      toast.error('Erro ao guardar tarifas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTariff = (energyType, path, value) => {
+    const newTarifas = { ...editingTariffs.tarifas };
+    const keys = path.split('.');
+    let current = newTarifas[energyType];
+
+    for (let i = 0; i < keys.length - 1; i++) {
+      current = current[keys[i]];
+    }
+    current[keys[keys.length - 1]] = parseFloat(value) || 0;
+
+    setEditingTariffs({ ...editingTariffs, tarifas: newTarifas });
+  };
+
   return (
     <div className="min-h-screen pb-8">
       <div className="max-w-7xl mx-auto">
@@ -228,6 +264,10 @@ const EnergySimulatorAdmin = () => {
             <TabsTrigger value="operators" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
               <Settings2 className="w-4 h-4 mr-2" />
               Operadoras
+            </TabsTrigger>
+            <TabsTrigger value="tariffs" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
+              <Flame className="w-4 h-4 mr-2" />
+              Tarifas e Preços
             </TabsTrigger>
             <TabsTrigger value="discounts" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
               <Zap className="w-4 h-4 mr-2" />
@@ -308,6 +348,69 @@ const EnergySimulatorAdmin = () => {
                           <Badge variant={op.ativa ? 'default' : 'secondary'}>
                             {op.ativa ? 'Ativa' : 'Inativa'}
                           </Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tariffs" className="space-y-6">
+            <Card className="border-white/10 bg-dark-800/50">
+              <CardHeader>
+                <CardTitle className="text-white">Tarifas e Preços por Operadora</CardTitle>
+                <p className="text-sm text-dark-300 mt-2">Configure os preços específicos de cada tarifa e potência</p>
+              </CardHeader>
+              <CardContent>
+                {loading && operators.length === 0 ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-gold-400 animate-spin" />
+                  </div>
+                ) : operators.length === 0 ? (
+                  <div className="text-center py-12 text-dark-400">
+                    Crie uma operadora primeiro
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {operators.map((op) => (
+                      <Card key={op.id} className="bg-dark-700/50 border-white/10">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              {op.logotipo_url && (
+                                <img
+                                  src={op.logotipo_url}
+                                  alt={op.nome}
+                                  className="w-10 h-10 object-contain rounded bg-white/5 p-1"
+                                />
+                              )}
+                              <h3 className="font-semibold text-white">{op.nome}</h3>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {op.tipos_energia?.includes('eletricidade') && (
+                              <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                                <Zap className="w-3 h-3 mr-1" />
+                                Eletricidade
+                              </Badge>
+                            )}
+                            {op.tipos_energia?.includes('gas') && (
+                              <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                                <Flame className="w-3 h-3 mr-1" />
+                                Gás
+                              </Badge>
+                            )}
+                          </div>
+                          <Button
+                            onClick={() => handleConfigureTariffs(op)}
+                            className="w-full bg-gold-400 hover:bg-gold-500 text-dark-900"
+                            size="sm"
+                          >
+                            <Settings2 className="w-4 h-4 mr-2" />
+                            Configurar Tarifas
+                          </Button>
                         </CardContent>
                       </Card>
                     ))}
@@ -424,24 +527,24 @@ const EnergySimulatorAdmin = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold mb-2 text-dark-200">Nome *</Label>
+                      <Label className="text-sm font-semibold mb-2 text-white">Nome *</Label>
                       <Input
                         value={editingOperator.nome}
                         onChange={(e) => setEditingOperator({ ...editingOperator, nome: e.target.value })}
-                        className="glass-input"
+                        className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
                         placeholder="Nome da operadora"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold mb-2 text-dark-200">Logotipo</Label>
+                      <Label className="text-sm font-semibold mb-2 text-white">Logotipo</Label>
                       <div className="flex gap-2">
                         <Input
                           type="file"
                           accept="image/*"
                           onChange={handleLogoUpload}
                           disabled={uploading}
-                          className="glass-input"
+                          className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
                         />
                         {uploading && <Loader2 className="w-5 h-5 text-gold-400 animate-spin" />}
                       </div>
@@ -452,7 +555,7 @@ const EnergySimulatorAdmin = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Energia</Label>
+                    <Label className="text-sm font-semibold mb-2 text-white">Tipos de Energia</Label>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
@@ -493,7 +596,7 @@ const EnergySimulatorAdmin = () => {
 
                   {editingOperator.tipos_energia?.includes('eletricidade') && (
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold mb-2 text-dark-200">Ciclos Disponíveis (Eletricidade)</Label>
+                      <Label className="text-sm font-semibold mb-2 text-white">Ciclos Disponíveis (Eletricidade)</Label>
                     <div className="flex gap-4">
                       {CICLOS_HORARIOS.map((ciclo) => (
                         <div key={ciclo.value} className="flex items-center space-x-2">
@@ -812,6 +915,134 @@ const EnergySimulatorAdmin = () => {
                 </Button>
                 <Button
                   onClick={handleSaveDiscount}
+                  disabled={loading}
+                  className="bg-gold-400 hover:bg-gold-500 text-dark-900 font-semibold"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Guardar
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showTariffsDialog} onOpenChange={setShowTariffsDialog}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden glass-ultra border-white/10 flex flex-col p-0">
+            <div className="sticky top-0 z-10 glass-ultra border-b border-white/10 px-8 py-6">
+              <DialogHeader>
+                <DialogTitle className="text-3xl font-bold text-gradient-gold">
+                  Configurar Tarifas - {editingTariffs?.nome}
+                </DialogTitle>
+                <p className="text-sm text-dark-200 mt-1">
+                  Configure os preços específicos de cada tarifa e potência
+                </p>
+              </DialogHeader>
+            </div>
+
+            {editingTariffs && (
+              <div className="overflow-y-auto flex-1 px-8 py-6 scrollbar-modern">
+                <div className="space-y-8">
+                  {editingTariffs.tipos_energia?.includes('eletricidade') && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-r from-yellow-600 to-yellow-700 rounded-lg flex items-center justify-center shadow-lg">
+                          <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white">Tarifas de Eletricidade</h3>
+                      </div>
+
+                      {POTENCIAS_PORTUGAL.map((potencia) => (
+                        <Card key={potencia} className="bg-dark-700/50 border-white/10">
+                          <CardHeader>
+                            <CardTitle className="text-white text-base">Potência {potencia}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              {editingTariffs.ciclos_disponiveis?.map((ciclo) => (
+                                <div key={ciclo} className="space-y-2">
+                                  <Label className="text-sm font-semibold text-white">
+                                    {CICLOS_HORARIOS.find(c => c.value === ciclo)?.label}
+                                  </Label>
+                                  <Input
+                                    type="number"
+                                    step="0.0001"
+                                    value={editingTariffs.tarifas?.eletricidade?.[potencia]?.[ciclo] || 0}
+                                    onChange={(e) => updateTariff('eletricidade', `${potencia}.${ciclo}`, e.target.value)}
+                                    className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                    placeholder="€/kWh"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {editingTariffs.tipos_energia?.includes('gas') && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
+                          <Flame className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white">Tarifas de Gás</h3>
+                      </div>
+
+                      {ESCALOES_GAS.map((escalao) => (
+                        <Card key={escalao} className="bg-dark-700/50 border-white/10">
+                          <CardHeader>
+                            <CardTitle className="text-white text-base">{escalao}</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-sm font-semibold text-white">Preço Energia</Label>
+                                <Input
+                                  type="number"
+                                  step="0.0001"
+                                  value={editingTariffs.tarifas?.gas?.[escalao]?.energia || 0}
+                                  onChange={(e) => updateTariff('gas', `${escalao}.energia`, e.target.value)}
+                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                  placeholder="€/kWh"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-sm font-semibold text-white">Termo Fixo</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={editingTariffs.tarifas?.gas?.[escalao]?.termo_fixo || 0}
+                                  onChange={(e) => updateTariff('gas', `${escalao}.termo_fixo`, e.target.value)}
+                                  className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
+                                  placeholder="€/dia"
+                                />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="sticky bottom-0 glass-ultra border-t border-white/10 px-8 py-4">
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTariffsDialog(false)}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveTariffs}
                   disabled={loading}
                   className="bg-gold-400 hover:bg-gold-500 text-dark-900 font-semibold"
                 >
