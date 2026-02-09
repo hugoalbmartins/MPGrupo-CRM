@@ -164,6 +164,13 @@
   .color-orange { color: #fb923c; }
   .color-green { color: #4ade80; }
   .color-blue { color: #60a5fa; }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #D4AF37, #f5e9b8, #D4AF37);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
 @layer utilities {
@@ -191,6 +198,30 @@
   }
 
   .scrollbar-premium::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.5);
+  }
+
+  .scrollbar-modern {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 175, 55, 0.3) rgba(255, 255, 255, 0.03);
+  }
+
+  .scrollbar-modern::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb {
+    background: rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb:hover {
     background: rgba(212, 175, 55, 0.5);
   }
 
