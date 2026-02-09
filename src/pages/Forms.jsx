@@ -66,19 +66,19 @@ const Forms = ({ user }) => {
 
   const getScopeBadgeColor = (scope) => {
     const colors = {
-      'telecomunicacoes': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      'energia': 'bg-green-500/10 text-green-400 border-green-500/20',
-      'solar': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-      'dual': 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+      'telecomunicacoes': 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+      'energia': 'bg-green-500/10 text-green-400 border border-green-500/20',
+      'solar': 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+      'dual': 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
     };
-    return colors[scope] || 'bg-dark-700 text-dark-300 border-dark-600';
+    return colors[scope] || 'bg-dark-700 text-slate-300 border border-dark-700';
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-64" />
-        <Card className="p-8">
+        <Card className="p-8 bg-dark-850 border border-white/[0.06]">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => (
               <Skeleton key={i} className="h-36 w-full rounded-xl" />
@@ -98,18 +98,18 @@ const Forms = ({ user }) => {
       >
         <div>
           <h1 className="text-3xl font-bold text-white">Formulários</h1>
-          <p className="text-sm text-dark-400 mt-1">Documentos das operadoras</p>
+          <p className="text-sm text-slate-400 mt-1">Documentos das operadoras</p>
         </div>
 
-        <Card className="p-12">
+        <Card className="p-12 bg-dark-850 border border-white/[0.06]">
           <div className="text-center max-w-md mx-auto">
-            <div className="w-20 h-20 bg-dark-700 rounded-2xl flex items-center justify-center mx-auto mb-6 ring-4 ring-dark-600">
-              <FolderOpen className="w-10 h-10 text-dark-500" />
+            <div className="w-20 h-20 bg-dark-700 rounded-2xl flex items-center justify-center mx-auto mb-6 ring-4 ring-dark-700">
+              <FolderOpen className="w-10 h-10 text-slate-500" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">
               Nenhum formulário disponível
             </h3>
-            <p className="text-dark-400">
+            <p className="text-slate-400">
               Os formulários das operadoras serão disponibilizados assim que forem adicionados pelo administrador.
             </p>
           </div>
@@ -127,12 +127,12 @@ const Forms = ({ user }) => {
       >
         <div>
           <h1 className="text-3xl font-bold text-white">Formulários</h1>
-          <p className="text-sm text-dark-400 mt-1">
+          <p className="text-sm text-slate-400 mt-1">
             Selecione uma operadora para visualizar os formulários disponíveis
           </p>
         </div>
 
-        <Card className="p-6">
+        <Card className="p-6 bg-dark-850 border border-white/[0.06]">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {operators.map((operator, index) => (
               <motion.button
@@ -141,16 +141,16 @@ const Forms = ({ user }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => navigate(`/forms/${operator.id}`)}
-                className="group relative bg-dark-800 hover:bg-dark-700 border-2 border-dark-600 hover:border-gold-400 rounded-xl p-6 text-left transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                className="group relative bg-dark-800 hover:bg-dark-700 border-2 border-dark-700 hover:border-cyber-500/30 rounded-xl p-6 text-left transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] hover:-translate-y-1"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-dark-600 to-dark-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <Building2 className="w-6 h-6 text-gold-400" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-dark-700 to-dark-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <Building2 className="w-6 h-6 text-cyber-400" />
                   </div>
-                  <ChevronRight className="w-5 h-5 text-dark-500 group-hover:text-gold-500 group-hover:translate-x-1 transition-all duration-300" />
+                  <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-cyber-400 group-hover:translate-x-1 transition-all duration-300" />
                 </div>
 
-                <h3 className="font-bold text-lg text-white mb-2 group-hover:text-gold-600 transition-colors">
+                <h3 className="font-bold text-lg text-white mb-2 group-hover:text-cyber-400 transition-colors">
                   {operator.name}
                 </h3>
 
@@ -159,13 +159,13 @@ const Forms = ({ user }) => {
                 </Badge>
 
                 <div className="flex items-center gap-2 text-sm">
-                  <FileText className="w-4 h-4 text-gold-500" />
-                  <span className="font-semibold text-gold-600">
+                  <FileText className="w-4 h-4 text-cyber-400" />
+                  <span className="font-semibold text-cyber-400">
                     {operator.documents.length} {operator.documents.length === 1 ? 'formulário' : 'formulários'}
                   </span>
                 </div>
 
-                <div className="absolute inset-0 rounded-xl ring-2 ring-transparent group-hover:ring-gold-400/50 transition-all duration-300 pointer-events-none" />
+                <div className="absolute inset-0 rounded-xl ring-2 ring-transparent group-hover:ring-cyber-500/30 transition-all duration-300 pointer-events-none" />
               </motion.button>
             ))}
           </div>
@@ -176,9 +176,9 @@ const Forms = ({ user }) => {
 
   if (!selectedOperator) {
     return (
-      <Card className="p-12">
+      <Card className="p-12 bg-dark-850 border border-white/[0.06]">
         <div className="text-center">
-          <p className="text-dark-400">Operadora não encontrada</p>
+          <p className="text-slate-400">Operadora não encontrada</p>
         </div>
       </Card>
     );
@@ -195,7 +195,7 @@ const Forms = ({ user }) => {
           <Button
             onClick={() => navigate('/forms')}
             variant="outline"
-            className="border-2 border-dark-600 hover:border-dark-500 hover:bg-dark-700"
+            className="border-2 border-dark-700 hover:border-cyber-500/30 hover:bg-dark-700 text-slate-300"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
@@ -209,14 +209,14 @@ const Forms = ({ user }) => {
                 {getScopeLabel(selectedOperator.scope)}
               </Badge>
             </div>
-            <p className="text-sm text-dark-400 mt-1">
+            <p className="text-sm text-slate-400 mt-1">
               {selectedOperator.documents?.length || 0} {selectedOperator.documents?.length === 1 ? 'formulário disponível' : 'formulários disponíveis'}
             </p>
           </div>
         </div>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6 bg-dark-850 border border-white/[0.06]">
         {selectedOperator.documents && selectedOperator.documents.length > 0 ? (
           <div className="space-y-3">
             {selectedOperator.documents.map((doc, index) => (
@@ -225,18 +225,18 @@ const Forms = ({ user }) => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-dark-800 hover:bg-dark-700 border-2 border-dark-700 hover:border-gold-300 rounded-xl transition-all duration-300 hover:shadow-md"
+                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-dark-800 hover:bg-dark-700 border-2 border-dark-700 hover:border-cyber-500/30 rounded-xl transition-all duration-300 hover:shadow-md"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-dark-600 to-dark-700 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-lg">
-                    <FileText className="w-6 h-6 text-gold-400" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-dark-700 to-dark-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-lg">
+                    <FileText className="w-6 h-6 text-cyber-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-white truncate group-hover:text-gold-600 transition-colors">
+                    <h3 className="font-bold text-white truncate group-hover:text-cyber-400 transition-colors">
                       {doc.filename || 'Documento'}
                     </h3>
                     {doc.uploaded_at && (
-                      <p className="text-xs text-dark-500 mt-0.5">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Adicionado em {new Date(doc.uploaded_at).toLocaleDateString('pt-PT', {
                           day: '2-digit',
                           month: '2-digit',
@@ -248,7 +248,7 @@ const Forms = ({ user }) => {
                 </div>
                 <Button
                   onClick={() => handleDownloadDocument(doc)}
-                  className="btn-gold w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-400 hover:to-cyber-500 w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300"
                   size="sm"
                 >
                   <Download className="w-4 h-4 mr-2" />
@@ -260,9 +260,9 @@ const Forms = ({ user }) => {
         ) : (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-dark-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-dark-500" />
+              <FileText className="w-8 h-8 text-slate-500" />
             </div>
-            <p className="text-dark-400">
+            <p className="text-slate-400">
               Nenhum formulário disponível para esta operadora
             </p>
           </div>

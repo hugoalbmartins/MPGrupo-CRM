@@ -86,7 +86,7 @@ const Partners = ({ user }) => {
     }
 
     if (formData.nif.startsWith('5') && !formData.crc) {
-      toast.error("Código CRC é obrigatório para NIF iniciado por 5");
+      toast.error("Codigo CRC e obrigatorio para NIF iniciado por 5");
       return;
     }
 
@@ -162,7 +162,7 @@ const Partners = ({ user }) => {
   };
 
   const handleDelete = async (partnerId, partnerName) => {
-    if (!window.confirm(`Tem a certeza que deseja eliminar o parceiro "${partnerName}"? Esta ação não pode ser revertida.`)) {
+    if (!window.confirm(`Tem a certeza que deseja eliminar o parceiro "${partnerName}"? Esta acao nao pode ser revertida.`)) {
       return;
     }
 
@@ -235,11 +235,11 @@ const Partners = ({ user }) => {
 
   const getSortIcon = (column) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="w-4 h-4 inline ml-1 text-dark-400" />;
+      return <ArrowUpDown className="w-4 h-4 inline ml-1 text-slate-500" />;
     }
     return sortDirection === "asc" ?
-      <ArrowUp className="w-4 h-4 inline ml-1 text-blue-400" /> :
-      <ArrowDown className="w-4 h-4 inline ml-1 text-blue-400" />;
+      <ArrowUp className="w-4 h-4 inline ml-1 text-cyan-400" /> :
+      <ArrowDown className="w-4 h-4 inline ml-1 text-cyan-400" />;
   };
 
   const filteredAndSortedPartners = partners
@@ -295,9 +295,9 @@ const Partners = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-6" style={{ backgroundColor: '#080c14' }}>
         <div className="flex items-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+          <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
           <div className="h-8 bg-dark-700 rounded-lg w-48 animate-pulse"></div>
         </div>
         <SkeletonTable rows={8} columns={7} />
@@ -313,21 +313,21 @@ const Partners = ({ user }) => {
       }
 
       const excelData = partners.map(partner => ({
-        'Código': partner.partner_code,
+        'Codigo': partner.partner_code,
         'Tipo': partner.partner_type,
         'Nome': partner.name,
         'Email Principal': partner.email,
-        'Emails Comunicação': (partner.communication_emails || []).join(', '),
+        'Emails Comunicacao': (partner.communication_emails || []).join(', '),
         'Telefone': partner.phone,
         'Pessoa Contacto': partner.contact_person,
         'Rua': partner.street,
-        'Nº Porta': partner.door_number,
-        'Código Postal': partner.postal_code,
+        'N Porta': partner.door_number,
+        'Codigo Postal': partner.postal_code,
         'Localidade': partner.locality,
         'NIF': partner.nif,
         'CRC': partner.crc || '',
         'IBAN': partner.iban || '',
-        'Data Criação': new Date(partner.created_at).toLocaleDateString('pt-PT')
+        'Data Criacao': new Date(partner.created_at).toLocaleDateString('pt-PT')
       }));
 
       const XLSX = await import('xlsx');
@@ -346,14 +346,18 @@ const Partners = ({ user }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ backgroundColor: '#080c14', minHeight: '100%' }}>
+      {/* Page Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Parceiros</h1>
+        <div>
+          <h1 className="text-2xl font-display font-bold text-white">Parceiros</h1>
+          <p className="text-slate-400 text-sm mt-1">Gestao de parceiros e documentos</p>
+        </div>
         <div className="flex gap-3">
           <Button
             onClick={handleExportExcel}
             variant="outline"
-            className="border-green-500 text-green-400 hover:bg-green-500/10"
+            className="border-green-500/20 text-green-400 hover:bg-green-500/10 bg-dark-900"
           >
             <Download className="w-4 h-4 mr-2" />
             Exportar Excel
@@ -361,21 +365,23 @@ const Partners = ({ user }) => {
           {user?.role === 'admin' && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={resetForm} className="btn-primary"><Plus className="w-4 h-4 mr-2" />Novo Parceiro</Button>
+                <Button onClick={resetForm} className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-lg shadow-cyan-500/20">
+                  <Plus className="w-4 h-4 mr-2" />Novo Parceiro
+                </Button>
               </DialogTrigger>
-            <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="bg-dark-850 border border-cyan-500/10 max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-2xl text-white">{editingPartner ? "Editar Parceiro" : "Novo Parceiro"}</DialogTitle>
-                <DialogDescription className="text-dark-400">
-                  {editingPartner ? "Atualize as informações do parceiro" : "Preencha os dados para criar um novo parceiro"}
+                <DialogTitle className="text-2xl font-display text-white">{editingPartner ? "Editar Parceiro" : "Novo Parceiro"}</DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  {editingPartner ? "Atualize as informacoes do parceiro" : "Preencha os dados para criar um novo parceiro"}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-dark-200">Tipo *</Label>
+                    <Label className="text-slate-400">Tipo *</Label>
                     <Select value={formData.partner_type} onValueChange={(v) => setFormData({...formData, partner_type: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="D2D">D2D</SelectItem>
                         <SelectItem value="REV">REV</SelectItem>
@@ -384,41 +390,41 @@ const Partners = ({ user }) => {
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-dark-200">Nome *</Label>
-                    <Input className="glass-input" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
+                    <Label className="text-slate-400">Nome *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Email Principal *</Label>
-                    <Input className="glass-input" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
+                    <Label className="text-slate-400">Email Principal *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Telefone *</Label>
-                    <Input className="glass-input" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} required />
+                    <Label className="text-slate-400">Telefone *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Pessoa Contacto *</Label>
-                    <Input className="glass-input" value={formData.contact_person} onChange={(e) => setFormData({...formData, contact_person: e.target.value})} required />
+                    <Label className="text-slate-400">Pessoa Contacto *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.contact_person} onChange={(e) => setFormData({...formData, contact_person: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Rua *</Label>
-                    <Input className="glass-input" value={formData.street} onChange={(e) => setFormData({...formData, street: e.target.value})} required />
+                    <Label className="text-slate-400">Rua *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.street} onChange={(e) => setFormData({...formData, street: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Numero Porta *</Label>
-                    <Input className="glass-input" value={formData.door_number} onChange={(e) => setFormData({...formData, door_number: e.target.value})} required />
+                    <Label className="text-slate-400">Numero Porta *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.door_number} onChange={(e) => setFormData({...formData, door_number: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Codigo Postal *</Label>
-                    <Input className="glass-input" value={formData.postal_code} onChange={(e) => setFormData({...formData, postal_code: e.target.value})} required />
+                    <Label className="text-slate-400">Codigo Postal *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.postal_code} onChange={(e) => setFormData({...formData, postal_code: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">Localidade *</Label>
-                    <Input className="glass-input" value={formData.locality} onChange={(e) => setFormData({...formData, locality: e.target.value})} required />
+                    <Label className="text-slate-400">Localidade *</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.locality} onChange={(e) => setFormData({...formData, locality: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-dark-200">NIF *</Label>
+                    <Label className="text-slate-400">NIF *</Label>
                     <Input
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white"
                       value={formData.nif}
                       onChange={(e) => setFormData({...formData, nif: e.target.value})}
                       required
@@ -441,33 +447,33 @@ const Partners = ({ user }) => {
                   </div>
                   {formData.nif.startsWith('5') && (
                     <div>
-                      <Label className="text-dark-200">Codigo CRC *</Label>
+                      <Label className="text-slate-400">Codigo CRC *</Label>
                       <Input
-                        className="glass-input"
+                        className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white"
                         value={formData.crc}
                         onChange={(e) => setFormData({...formData, crc: e.target.value})}
                         required
                         placeholder="Codigo CRC"
                       />
-                      <p className="text-xs text-dark-400 mt-1">Obrigatorio para NIF iniciado por 5</p>
+                      <p className="text-xs text-slate-500 mt-1">Obrigatorio para NIF iniciado por 5</p>
                     </div>
                   )}
                   <div>
-                    <Label className="text-dark-200">IBAN para Pagamento de Comissoes *</Label>
+                    <Label className="text-slate-400">IBAN para Pagamento de Comissoes *</Label>
                     <Input
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white"
                       value={formData.iban}
                       onChange={(e) => setFormData({...formData, iban: e.target.value})}
                       required
                       placeholder="PT50..."
                       maxLength={25}
                     />
-                    <p className="text-xs text-dark-400 mt-1">IBAN para receber pagamento de comissoes</p>
+                    <p className="text-xs text-slate-500 mt-1">IBAN para receber pagamento de comissoes</p>
                   </div>
                   <div>
-                    <Label className="text-dark-200">Gestor Responsavel (Opcional)</Label>
+                    <Label className="text-slate-400">Gestor Responsavel (Opcional)</Label>
                     <Select value={formData.manager_id || undefined} onValueChange={(v) => setFormData({...formData, manager_id: v})}>
-                      <SelectTrigger className="glass-input">
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20">
                         <SelectValue placeholder="Nenhum gestor atribuido" />
                       </SelectTrigger>
                       <SelectContent>
@@ -478,19 +484,19 @@ const Partners = ({ user }) => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-dark-400 mt-1">Gestor que tera acesso as vendas deste parceiro</p>
+                    <p className="text-xs text-slate-500 mt-1">Gestor que tera acesso as vendas deste parceiro</p>
                   </div>
                 </div>
                 {editingPartner && editingPartner.partner_type === 'D2D' && operatorsWithD2D.length > 0 && (
-                  <div className="border border-dark-600 rounded-xl p-4 bg-dark-800/50">
+                  <div className="border border-dark-700 rounded-xl p-4 bg-dark-900">
                     <div className="flex items-center gap-2 mb-3">
-                      <Building2 className="w-4 h-4 text-gold-400" />
-                      <Label className="text-sm font-semibold text-dark-200">Niveis de Comissao D2D por Operadora</Label>
+                      <Building2 className="w-4 h-4 text-cyan-400" />
+                      <Label className="text-sm font-semibold text-slate-300">Niveis de Comissao D2D por Operadora</Label>
                     </div>
                     {loadingLevels ? (
                       <div className="flex items-center gap-2 py-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm text-dark-400">A carregar niveis...</span>
+                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                        <span className="text-sm text-slate-400">A carregar niveis...</span>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -498,7 +504,7 @@ const Partners = ({ user }) => {
                           const currentLevel = d2dLevels.find(l => l.operator_id === op.id);
                           return (
                             <div key={op.id} className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-dark-200 w-40 truncate">{op.name}</span>
+                              <span className="text-sm font-medium text-slate-300 w-40 truncate">{op.name}</span>
                               <Select
                                 value={currentLevel?.d2d_level || "none"}
                                 onValueChange={(v) => {
@@ -509,7 +515,7 @@ const Partners = ({ user }) => {
                                   setD2dLevels(newLevels);
                                 }}
                               >
-                                <SelectTrigger className="glass-input flex-1 h-9">
+                                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 flex-1 h-9">
                                   <SelectValue placeholder="Sem nivel" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -522,7 +528,7 @@ const Partners = ({ user }) => {
                             </div>
                           );
                         })}
-                        <p className="text-xs text-dark-400 mt-2">
+                        <p className="text-xs text-slate-500 mt-2">
                           Operadoras sem nivel atribuido nao permitem registar vendas para este parceiro
                         </p>
                       </div>
@@ -531,24 +537,24 @@ const Partners = ({ user }) => {
                 )}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <Label className="text-dark-200">Emails de Comunicacao</Label>
-                    <Button type="button" onClick={addEmailField} size="sm" className="btn-secondary">+ Email</Button>
+                    <Label className="text-slate-400">Emails de Comunicacao</Label>
+                    <Button type="button" onClick={addEmailField} size="sm" className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyan-500/30 hover:text-cyan-400">+ Email</Button>
                   </div>
                   {formData.communication_emails.map((email, idx) => (
-                    <Input key={idx} type="email" value={email} onChange={(e) => updateEmail(idx, e.target.value)} className="glass-input mb-2" placeholder="email@exemplo.com" />
+                    <Input key={idx} type="email" value={email} onChange={(e) => updateEmail(idx, e.target.value)} className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white mb-2" placeholder="email@exemplo.com" />
                   ))}
                 </div>
                 {!editingPartner && formData.email && generatedPassword && (
-                  <div className="bg-dark-800 border border-dark-600 rounded-lg p-4">
+                  <div className="bg-dark-900 border border-cyan-500/20 rounded-lg p-4">
                     <p className="text-sm font-semibold text-white mb-2">Utilizador a criar:</p>
-                    <p className="text-sm text-dark-200"><strong>Email:</strong> {formData.email}</p>
-                    <p className="text-sm text-dark-200"><strong>Password:</strong> <span className="font-mono">{generatedPassword}</span></p>
-                    <p className="text-xs text-dark-400 mt-2">O utilizador sera criado automaticamente com estes dados</p>
+                    <p className="text-sm text-slate-300"><strong>Email:</strong> {formData.email}</p>
+                    <p className="text-sm text-slate-300"><strong>Password:</strong> <span className="font-mono text-cyan-400">{generatedPassword}</span></p>
+                    <p className="text-xs text-slate-500 mt-2">O utilizador sera criado automaticamente com estes dados</p>
                   </div>
                 )}
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" onClick={() => setDialogOpen(false)} className="btn-secondary">Cancelar</Button>
-                  <Button type="submit" className="btn-primary">{editingPartner ? "Atualizar" : "Criar"} Parceiro</Button>
+                  <Button type="button" onClick={() => setDialogOpen(false)} className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyan-500/30">Cancelar</Button>
+                  <Button type="submit" className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white">{editingPartner ? "Atualizar" : "Criar"} Parceiro</Button>
                 </div>
               </form>
             </DialogContent>
@@ -557,20 +563,21 @@ const Partners = ({ user }) => {
         </div>
       </div>
 
-      <div className="glass-ultra p-6">
+      {/* Search & Filter Bar */}
+      <div className="bg-dark-850 border border-white/[0.06] rounded-xl p-6">
         <div className="mb-4 flex gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
             <Input
               type="text"
               placeholder="Pesquisar por codigo, nome ou email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="glass-input pl-10"
+              className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white pl-10 placeholder:text-slate-500"
             />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="glass-input w-48">
+            <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -582,59 +589,60 @@ const Partners = ({ user }) => {
           </Select>
         </div>
 
+        {/* Table */}
         <div className="table-container">
           <table>
             <thead>
-              <tr>
-                <th onClick={() => handleSort("code")} className="cursor-pointer">
+              <tr className="border-b border-dark-700">
+                <th onClick={() => handleSort("code")} className="cursor-pointer text-cyan-400 font-semibold text-xs uppercase tracking-wider">
                   Codigo{getSortIcon("code")}
                 </th>
-                <th onClick={() => handleSort("name")} className="cursor-pointer">
+                <th onClick={() => handleSort("name")} className="cursor-pointer text-cyan-400 font-semibold text-xs uppercase tracking-wider">
                   Nome{getSortIcon("name")}
                 </th>
-                <th onClick={() => handleSort("type")} className="cursor-pointer">
+                <th onClick={() => handleSort("type")} className="cursor-pointer text-cyan-400 font-semibold text-xs uppercase tracking-wider">
                   Tipo{getSortIcon("type")}
                 </th>
-                <th onClick={() => handleSort("email")} className="cursor-pointer">
+                <th onClick={() => handleSort("email")} className="cursor-pointer text-cyan-400 font-semibold text-xs uppercase tracking-wider">
                   Email{getSortIcon("email")}
                 </th>
-                <th onClick={() => handleSort("phone")} className="cursor-pointer">
+                <th onClick={() => handleSort("phone")} className="cursor-pointer text-cyan-400 font-semibold text-xs uppercase tracking-wider">
                   Telefone{getSortIcon("phone")}
                 </th>
-                <th onClick={() => handleSort("contact")} className="cursor-pointer">
+                <th onClick={() => handleSort("contact")} className="cursor-pointer text-cyan-400 font-semibold text-xs uppercase tracking-wider">
                   Contacto{getSortIcon("contact")}
                 </th>
-                {user?.role === 'admin' && <th className="text-center">Documentos</th>}
-                {user?.role === 'admin' && <th className="text-center">Acoes</th>}
+                {user?.role === 'admin' && <th className="text-center text-cyan-400 font-semibold text-xs uppercase tracking-wider">Documentos</th>}
+                {user?.role === 'admin' && <th className="text-center text-cyan-400 font-semibold text-xs uppercase tracking-wider">Acoes</th>}
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedPartners.length === 0 ? (
-                <tr><td colSpan={user?.role === 'admin' ? 8 : 6} className="text-center py-8 text-dark-400">Nenhum parceiro encontrado</td></tr>
+                <tr><td colSpan={user?.role === 'admin' ? 8 : 6} className="text-center py-8 text-slate-500">Nenhum parceiro encontrado</td></tr>
               ) : (
                 filteredAndSortedPartners.map((partner) => (
-                  <tr key={partner.id}>
-                    <td className="font-semibold text-blue-400">{partner.partner_code}</td>
-                    <td className="font-medium text-dark-200">{partner.name}</td>
+                  <tr key={partner.id} className="border-b border-white/[0.06] hover:bg-white/[0.02] transition-colors">
+                    <td className="font-semibold text-cyan-400">{partner.partner_code}</td>
+                    <td className="font-medium text-white">{partner.name}</td>
                     <td>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
                         partner.partner_type === 'D2D'
-                          ? 'bg-gold-400/10 text-gold-400'
+                          ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
                           : partner.partner_type === 'REV'
-                            ? 'bg-blue-400/10 text-blue-400'
-                            : 'bg-purple-400/10 text-purple-400'
+                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                            : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                       }`}>{partner.partner_type}</span>
                     </td>
-                    <td className="text-dark-200">{partner.email}</td>
-                    <td className="text-dark-200">{partner.phone}</td>
-                    <td className="text-dark-200">{partner.contact_person}</td>
+                    <td className="text-slate-300">{partner.email}</td>
+                    <td className="text-slate-300">{partner.phone}</td>
+                    <td className="text-slate-300">{partner.contact_person}</td>
                     {user?.role === 'admin' && (
                       <td className="text-center">
                         <Button
                           onClick={() => openDocumentsDialog(partner)}
                           size="sm"
                           variant="ghost"
-                          className="text-dark-200"
+                          className="text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10"
                         >
                           <File className="w-4 h-4 mr-1" />
                           {partner.documents?.length || 0}
@@ -653,10 +661,10 @@ const Partners = ({ user }) => {
                           >
                             <ShoppingCart className="w-4 h-4" />
                           </Button>
-                          <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-blue-400">
+                          <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10">
                             Editar
                           </Button>
-                          <Button onClick={() => handleDelete(partner.id, partner.name)} size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
+                          <Button onClick={() => handleDelete(partner.id, partner.name)} size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -670,14 +678,15 @@ const Partners = ({ user }) => {
         </div>
       </div>
 
+      {/* Documents Dialog */}
       <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
-        <DialogContent className="glass-ultra max-w-2xl">
+        <DialogContent className="bg-dark-850 border border-cyan-500/10 max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Documentos - {selectedPartnerForDocs?.name}</DialogTitle>
-            <DialogDescription className="text-dark-400">Gerir documentos associados ao parceiro</DialogDescription>
+            <DialogTitle className="text-white font-display">Documentos - {selectedPartnerForDocs?.name}</DialogTitle>
+            <DialogDescription className="text-slate-400">Gerir documentos associados ao parceiro</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="border-2 border-dashed border-dark-600 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-dark-700 rounded-lg p-6 text-center hover:border-cyan-500/30 transition-colors">
               <input
                 type="file"
                 id="doc-upload"
@@ -690,8 +699,8 @@ const Partners = ({ user }) => {
                 }}
               />
               <label htmlFor="doc-upload" className="cursor-pointer">
-                <Upload className="w-12 h-12 mx-auto text-dark-400 mb-2" />
-                <p className="text-sm text-dark-400">
+                <Upload className="w-12 h-12 mx-auto text-slate-500 mb-2" />
+                <p className="text-sm text-slate-500">
                   {uploadingDoc ? 'A carregar...' : 'Clique para selecionar um ficheiro'}
                 </p>
               </label>
@@ -700,21 +709,21 @@ const Partners = ({ user }) => {
             <div className="space-y-2">
               <h3 className="font-semibold text-white">Documentos anexados:</h3>
               {(!selectedPartnerForDocs?.documents || selectedPartnerForDocs.documents.length === 0) ? (
-                <p className="text-dark-400 text-sm py-4 text-center">Nenhum documento anexado</p>
+                <p className="text-slate-500 text-sm py-4 text-center">Nenhum documento anexado</p>
               ) : (
                 <div className="space-y-2">
                   {selectedPartnerForDocs.documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 bg-dark-800/50 rounded-lg border border-dark-600">
+                    <div key={doc.id} className="flex items-center justify-between p-3 bg-dark-900 rounded-lg border border-dark-700 hover:border-cyan-500/30 transition-colors">
                       <div className="flex items-center gap-3">
-                        <File className="w-5 h-5 text-blue-400" />
+                        <File className="w-5 h-5 text-cyan-400" />
                         <div>
-                          <p className="font-medium text-sm text-dark-200">{doc.filename}</p>
-                          <p className="text-xs text-dark-400">
+                          <p className="font-medium text-sm text-slate-300">{doc.filename}</p>
+                          <p className="text-xs text-slate-500">
                             {new Date(doc.uploaded_at).toLocaleDateString('pt-PT')}
                           </p>
                         </div>
                       </div>
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" className="text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10">
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>

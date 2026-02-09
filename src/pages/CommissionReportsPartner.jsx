@@ -82,15 +82,15 @@ const CommissionReportsPartner = ({ user }) => {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Autos de Comissao</h1>
-          <p className="text-dark-300 mt-2">Consulte e faca download dos seus autos de comissao emitidos</p>
+          <p className="text-slate-300 mt-2">Consulte e faca download dos seus autos de comissao emitidos</p>
         </div>
-        <div className="glass-ultra p-12">
+        <div className="bg-dark-850 border border-white/[0.06] rounded-lg p-12">
           <div className="text-center">
-            <FileText className="w-16 h-16 text-orange-400/50 mx-auto mb-4" />
+            <FileText className="w-16 h-16 text-cyber-400/50 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">
               Configuracao Pendente
             </h3>
-            <p className="text-dark-300 max-w-md mx-auto">
+            <p className="text-slate-300 max-w-md mx-auto">
               O seu utilizador ainda nao esta associado a um parceiro no sistema. Por favor, contacte o administrador para concluir a configuracao da sua conta.
             </p>
           </div>
@@ -104,13 +104,13 @@ const CommissionReportsPartner = ({ user }) => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white">Autos de Comissao</h1>
-          <p className="text-dark-300 mt-2">Consulte e faca download dos seus autos de comissao emitidos</p>
+          <p className="text-slate-300 mt-2">Consulte e faca download dos seus autos de comissao emitidos</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-dark-400" />
+          <Calendar className="w-5 h-5 text-slate-500" />
           <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(parseInt(val))}>
-            <SelectTrigger className="w-32 glass-input">
+            <SelectTrigger className="w-32 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -131,13 +131,13 @@ const CommissionReportsPartner = ({ user }) => {
       </div>
 
       {reports.length === 0 ? (
-        <div className="glass-ultra p-12">
+        <div className="bg-dark-850 border border-white/[0.06] rounded-lg p-12">
           <div className="text-center">
-            <FileText className="w-16 h-16 text-dark-500 mx-auto mb-4" />
+            <FileText className="w-16 h-16 text-slate-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white mb-2">
               Nenhum auto disponivel
             </h3>
-            <p className="text-dark-300">
+            <p className="text-slate-300">
               Nao existem autos de comissao emitidos para o ano selecionado
             </p>
           </div>
@@ -145,34 +145,34 @@ const CommissionReportsPartner = ({ user }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {reports.map(report => (
-            <div key={report.id} className="glass-ultra p-6 hover:border-gold-400/30 transition-all">
+            <div key={report.id} className="bg-dark-850 border border-white/[0.06] rounded-lg p-6 hover:border-cyber-500/30 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">{MONTHS[report.month - 1]} {report.year}</h3>
-                <span className="text-sm text-dark-400">V{report.version}</span>
+                <span className="text-sm text-slate-500">V{report.version}</span>
               </div>
 
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Emitido em:</span>
-                  <span className="font-medium text-dark-200">{formatDate(report.created_at)}</span>
+                  <span className="text-slate-400">Emitido em:</span>
+                  <span className="font-medium text-slate-300">{formatDate(report.created_at)}</span>
                 </div>
                 {report.emailed_at && (
                   <div className="flex justify-between">
-                    <span className="text-dark-400">Email enviado:</span>
+                    <span className="text-slate-400">Email enviado:</span>
                     <span className="font-medium text-green-400">Sim</span>
                   </div>
                 )}
                 {report.creator && (
                   <div className="flex justify-between">
-                    <span className="text-dark-400">Emitido por:</span>
-                    <span className="font-medium text-dark-200">{report.creator.name}</span>
+                    <span className="text-slate-400">Emitido por:</span>
+                    <span className="font-medium text-slate-300">{report.creator.name}</span>
                   </div>
                 )}
               </div>
 
               <Button
                 onClick={() => handleDownload(report)}
-                className="btn-gold w-full"
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700 w-full"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF

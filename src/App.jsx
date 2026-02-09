@@ -47,8 +47,11 @@ const queryClient = new QueryClient({
 const LoadingFallback = () => (
   <div className="min-h-[60vh] flex items-center justify-center">
     <div className="text-center">
-      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-blue-600" />
-      <p className="text-xs font-medium text-slate-600">Carregando...</p>
+      <div className="relative">
+        <div className="w-10 h-10 border-2 border-cyber-500/20 rounded-full mx-auto" />
+        <div className="w-10 h-10 border-2 border-transparent border-t-cyber-400 rounded-full animate-spin absolute inset-0 mx-auto" />
+      </div>
+      <p className="text-xs font-medium text-slate-500 mt-3">Carregando...</p>
     </div>
   </div>
 );
@@ -176,8 +179,8 @@ function App() {
 
   useEffect(() => {
     if (!user && logoutReason === 'inactivity') {
-      toast.warning('Sessão terminada por inatividade', {
-        description: 'A sua sessão foi terminada automaticamente devido a 30 minutos de inatividade. Por favor, faça login novamente.',
+      toast.warning('Sessao terminada por inatividade', {
+        description: 'A sua sessao foi terminada automaticamente devido a 30 minutos de inatividade. Por favor, faca login novamente.',
         duration: 8000,
       });
       setLogoutReason(null);
@@ -186,24 +189,24 @@ function App() {
 
   if (!supabase) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080c14' }}>
         <div className="max-w-md w-full mx-auto p-6">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Erro de Configuração
+          <div className="bg-dark-850 border border-cyber-500/10 rounded-xl shadow-2xl p-8 text-center">
+            <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white mb-2">
+              Erro de Configuracao
             </h1>
-            <p className="text-gray-600 mb-4">
-              As variáveis de ambiente do Supabase não estão configuradas corretamente.
+            <p className="text-slate-400 mb-4">
+              As variaveis de ambiente do Supabase nao estao configuradas corretamente.
             </p>
-            <div className="bg-gray-50 rounded-lg p-4 text-left text-sm">
-              <p className="font-semibold text-gray-700 mb-2">Variáveis necessárias:</p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1">
+            <div className="bg-dark-900 border border-dark-700 rounded-lg p-4 text-left text-sm">
+              <p className="font-semibold text-slate-300 mb-2">Variaveis necessarias:</p>
+              <ul className="list-disc list-inside text-slate-400 space-y-1">
                 <li>VITE_SUPABASE_URL</li>
                 <li>VITE_SUPABASE_ANON_KEY</li>
               </ul>
             </div>
-            <p className="text-gray-500 text-sm mt-4">
+            <p className="text-slate-500 text-sm mt-4">
               Verifique o console do navegador para mais detalhes.
             </p>
           </div>
@@ -303,8 +306,11 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="spinner"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080c14' }}>
+        <div className="relative">
+          <div className="w-12 h-12 border-2 border-cyber-500/20 rounded-full" />
+          <div className="w-12 h-12 border-2 border-transparent border-t-cyber-400 rounded-full animate-spin absolute inset-0" />
+        </div>
       </div>
     );
   }

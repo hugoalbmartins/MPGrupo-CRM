@@ -90,7 +90,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
 
   const parseNumericValue = (value) => {
     if (!value) return null;
-    const str = String(value).replace(/[€\s]/g, '').replace(',', '.');
+    const str = String(value).replace(/[\u20AC\s]/g, '').replace(',', '.');
     const num = parseFloat(str);
     return isNaN(num) ? null : num;
   };
@@ -109,7 +109,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       return 'eletricidade';
     }
 
-    if (normalized === 'gas' || normalized === 'gás') {
+    if (normalized === 'gas' || normalized === 'gas') {
       return 'gas';
     }
 
@@ -189,7 +189,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       if (jsonData.length === 0) {
-        toast.error("O ficheiro não contém dados");
+        toast.error("O ficheiro nao contem dados");
         setImporting(false);
         return;
       }
@@ -206,47 +206,47 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
           const saleData = {
             date: parseDate(row['Data']),
             partner_id: row['ID Parceiro'],
-            scope: normalizeScope(row['Âmbito']),
+            scope: normalizeScope(row['\u00C2mbito']),
             client_type: normalizeClientType(row['Tipo Cliente']),
             client_name: row['Nome Cliente'],
             client_nif: row['NIF'],
             client_contact: row['Contacto'],
             client_email: row['Email'] || null,
             client_iban: row['IBAN'] || null,
-            has_direct_debit: parseBooleanValue(row['Débito Direto']),
-            has_electronic_invoice: parseBooleanValue(row['Fatura Eletrónica']),
+            has_direct_debit: parseBooleanValue(row['D\u00E9bito Direto']),
+            has_electronic_invoice: parseBooleanValue(row['Fatura Eletr\u00F3nica']),
             street: row['Morada'] || null,
-            postal_code: row['Código Postal'] || null,
+            postal_code: row['C\u00F3digo Postal'] || null,
             locality: row['Localidade'] || null,
-            installation_address: row['Morada Instalação'] || null,
+            installation_address: row['Morada Instala\u00E7\u00E3o'] || null,
             operator_id: row['ID Operadora'],
-            service_type: row['Tipo Serviço'] || null,
-            activation_type: row['Tipo Ativação'] || null,
+            service_type: row['Tipo Servi\u00E7o'] || null,
+            activation_type: row['Tipo Ativa\u00E7\u00E3o'] || null,
             monthly_value: parseNumericValue(row['Valor Mensal']),
             energy_sale_type: normalizeEnergySaleType(row['Tipo Venda Energia']),
             paid_to_operator: parseBooleanValue(row['Paga Operador']),
             payment_date: parseDate(row['Data Pagamento']),
             cpe: row['CPE'] || null,
-            power: row['Potência'] || null,
+            power: row['Pot\u00EAncia'] || null,
             cui: row['CUI'] || null,
-            tier: row['Escalão'] || null,
+            tier: row['Escal\u00E3o'] || null,
             entry_type: row['Tipo Entrada'] || null,
             status: row['Status'] || 'pendente',
-            request_number: row['Nº Requisição'] || null,
-            observations: row['Observações'] || null,
+            request_number: row['N\u00BA Requisi\u00E7\u00E3o'] || null,
+            observations: row['Observa\u00E7\u00F5es'] || null,
           };
 
           if (!saleData.date) {
-            throw new Error("Data inválida ou em falta");
+            throw new Error("Data invalida ou em falta");
           }
           if (!saleData.partner_id) {
             throw new Error("ID Parceiro em falta");
           }
           if (!saleData.scope) {
-            throw new Error(`Âmbito inválido: "${row['Âmbito']}". Valores válidos: telecomunicacoes, energia, solar, dual`);
+            throw new Error(`Ambito invalido: "${row['\u00C2mbito']}". Valores validos: telecomunicacoes, energia, solar, dual`);
           }
           if (!saleData.client_type) {
-            throw new Error(`Tipo Cliente inválido: "${row['Tipo Cliente']}". Valores válidos: particular, empresarial`);
+            throw new Error(`Tipo Cliente invalido: "${row['Tipo Cliente']}". Valores validos: particular, empresarial`);
           }
           if (!saleData.client_name) {
             throw new Error("Nome Cliente em falta");
@@ -298,7 +298,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       }
 
       if (failedImports.length > 0) {
-        toast.error(`${failedImports.length} vendas falharam na importação`);
+        toast.error(`${failedImports.length} vendas falharam na importacao`);
       }
 
     } catch (error) {
@@ -316,34 +316,34 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       const templateData = [{
         'Data': '',
         'ID Parceiro': '',
-        'Âmbito': '',
+        '\u00C2mbito': '',
         'Tipo Cliente': '',
         'Nome Cliente': '',
         'NIF': '',
         'Contacto': '',
         'Email': '',
         'IBAN': '',
-        'Débito Direto': '',
-        'Fatura Eletrónica': '',
+        'D\u00E9bito Direto': '',
+        'Fatura Eletr\u00F3nica': '',
         'Morada': '',
-        'Código Postal': '',
+        'C\u00F3digo Postal': '',
         'Localidade': '',
-        'Morada Instalação': '',
+        'Morada Instala\u00E7\u00E3o': '',
         'ID Operadora': '',
-        'Tipo Serviço': '',
-        'Tipo Ativação': '',
+        'Tipo Servi\u00E7o': '',
+        'Tipo Ativa\u00E7\u00E3o': '',
         'Valor Mensal': '',
         'Tipo Venda Energia': '',
         'Paga Operador': '',
         'Data Pagamento': '',
         'CPE': '',
-        'Potência': '',
+        'Pot\u00EAncia': '',
         'CUI': '',
-        'Escalão': '',
+        'Escal\u00E3o': '',
         'Tipo Entrada': '',
         'Status': '',
-        'Nº Requisição': '',
-        'Observações': ''
+        'N\u00BA Requisi\u00E7\u00E3o': '',
+        'Observa\u00E7\u00F5es': ''
       }];
 
       const ws = XLSX.utils.json_to_sheet(templateData);
@@ -374,27 +374,27 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       const reportData = [];
 
       if (results.successfulImports.length > 0) {
-        reportData.push({ 'Tipo': 'VENDAS IMPORTADAS COM SUCESSO', 'Linha': '', 'Cliente': '', 'Código Venda': '', 'Erro': '' });
+        reportData.push({ 'Tipo': 'VENDAS IMPORTADAS COM SUCESSO', 'Linha': '', 'Cliente': '', 'Codigo Venda': '', 'Erro': '' });
         results.successfulImports.forEach(item => {
           reportData.push({
             'Tipo': 'Sucesso',
             'Linha': item.row,
             'Cliente': item.clientName,
-            'Código Venda': item.saleCode,
+            'Codigo Venda': item.saleCode,
             'Erro': ''
           });
         });
-        reportData.push({ 'Tipo': '', 'Linha': '', 'Cliente': '', 'Código Venda': '', 'Erro': '' });
+        reportData.push({ 'Tipo': '', 'Linha': '', 'Cliente': '', 'Codigo Venda': '', 'Erro': '' });
       }
 
       if (results.failedImports.length > 0) {
-        reportData.push({ 'Tipo': 'VENDAS COM ERRO', 'Linha': '', 'Cliente': '', 'Código Venda': '', 'Erro': '' });
+        reportData.push({ 'Tipo': 'VENDAS COM ERRO', 'Linha': '', 'Cliente': '', 'Codigo Venda': '', 'Erro': '' });
         results.failedImports.forEach(item => {
           reportData.push({
             'Tipo': 'Erro',
             'Linha': item.row,
             'Cliente': item.clientName,
-            'Código Venda': '',
+            'Codigo Venda': '',
             'Erro': item.error
           });
         });
@@ -402,27 +402,27 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
 
       const ws = XLSX.utils.json_to_sheet(reportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Relatório");
+      XLSX.utils.book_append_sheet(wb, ws, "Relatorio");
 
       const timestamp = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `relatorio_importacao_${timestamp}.xlsx`);
-      toast.success("Relatório descarregado com sucesso");
+      toast.success("Relatorio descarregado com sucesso");
     } catch (error) {
-      console.error('Erro ao criar relatório:', error);
-      toast.error("Erro ao descarregar relatório");
+      console.error('Erro ao criar relatorio:', error);
+      toast.error("Erro ao descarregar relatorio");
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-dark-850 border border-cyber-500/10 max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Importação de Vendas
+          <DialogTitle className="flex items-center gap-2 text-white">
+            <Upload className="h-5 w-5 text-cyber-400" />
+            Importacao de Vendas
           </DialogTitle>
-          <DialogDescription>
-            Importe vendas em massa através de um ficheiro Excel
+          <DialogDescription className="text-slate-400">
+            Importe vendas em massa atraves de um ficheiro Excel
           </DialogDescription>
         </DialogHeader>
 
@@ -430,39 +430,39 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium">Template de Importação</h3>
-                <p className="text-sm text-dark-400">
-                  Descarregue o template base com as colunas necessárias
+                <h3 className="font-medium text-white">Template de Importacao</h3>
+                <p className="text-sm text-slate-400">
+                  Descarregue o template base com as colunas necessarias
                 </p>
               </div>
               <Button
                 variant="outline"
                 onClick={downloadTemplate}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-dark-900 border-dark-700 text-cyber-400 hover:text-cyber-300 hover:border-cyber-500/30"
               >
                 <Download className="h-4 w-4" />
                 Descarregar Template
               </Button>
             </div>
 
-            <Alert>
-              <FileSpreadsheet className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Instruções:</strong>
+            <Alert className="bg-cyber-500/10 border border-cyber-500/20">
+              <FileSpreadsheet className="h-4 w-4 text-cyber-400" />
+              <AlertDescription className="text-slate-300">
+                <strong className="text-white">Instrucoes:</strong>
                 <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
                   <li>Descarregue o template e preencha os dados das vendas</li>
                   <li>O ID Parceiro e ID Operadora devem ser os IDs existentes no sistema</li>
                   <li>As datas podem estar em qualquer formato (DD/MM/AAAA, AAAA-MM-DD, etc.)</li>
-                  <li>Paga Operador deve ser "Sim" ou "Não"</li>
+                  <li>Paga Operador deve ser "Sim" ou "Nao"</li>
                   <li>Campos opcionais podem ficar em branco</li>
-                  <li>Se houver erros em algumas linhas, as restantes serão importadas</li>
+                  <li>Se houver erros em algumas linhas, as restantes serao importadas</li>
                 </ul>
               </AlertDescription>
             </Alert>
           </div>
 
           <div className="space-y-4">
-            <div className="border-2 border-dashed border-dark-600 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-dark-700 rounded-lg p-6 text-center hover:border-cyber-500/30 transition-colors">
               <input
                 type="file"
                 accept=".xlsx,.xls"
@@ -475,18 +475,18 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
                 htmlFor="file-upload"
                 className="cursor-pointer flex flex-col items-center gap-2"
               >
-                <FileSpreadsheet className="h-12 w-12 text-dark-400" />
+                <FileSpreadsheet className="h-12 w-12 text-slate-500" />
                 {file ? (
                   <div className="space-y-1">
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-dark-400">
+                    <p className="font-medium text-white">{file.name}</p>
+                    <p className="text-sm text-slate-400">
                       Clique para selecionar outro ficheiro
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <p className="font-medium">Clique para selecionar ficheiro</p>
-                    <p className="text-sm text-dark-400">
+                    <p className="font-medium text-slate-300">Clique para selecionar ficheiro</p>
+                    <p className="text-sm text-slate-500">
                       Formatos suportados: .xlsx, .xls
                     </p>
                   </div>
@@ -497,15 +497,15 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             {importing && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>A importar vendas...</span>
-                  <span>{Math.round(progress)}%</span>
+                  <span className="text-slate-300">A importar vendas...</span>
+                  <span className="text-cyber-400">{Math.round(progress)}%</span>
                 </div>
                 <ProgressPrimitive.Root
                   className="relative h-2 w-full overflow-hidden rounded-full bg-dark-700"
                   value={progress}
                 >
                   <ProgressPrimitive.Indicator
-                    className="h-full w-full flex-1 bg-gold-400 transition-all"
+                    className="h-full w-full flex-1 bg-cyber-500 transition-all"
                     style={{ transform: `translateX(-${100 - (progress || 0)}%)` }}
                   />
                 </ProgressPrimitive.Root>
@@ -515,15 +515,15 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             {results && (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-blue-500/10 p-4 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-blue-400">{results.total}</div>
-                    <div className="text-sm text-blue-400">Total</div>
+                  <div className="bg-cyber-500/10 border border-cyber-500/20 p-4 rounded-lg text-center">
+                    <div className="text-2xl font-bold text-cyber-400">{results.total}</div>
+                    <div className="text-sm text-cyber-400">Total</div>
                   </div>
-                  <div className="bg-green-500/10 p-4 rounded-lg text-center">
+                  <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-lg text-center">
                     <div className="text-2xl font-bold text-green-400">{results.successful}</div>
                     <div className="text-sm text-green-400">Sucesso</div>
                   </div>
-                  <div className="bg-red-500/10 p-4 rounded-lg text-center">
+                  <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg text-center">
                     <div className="text-2xl font-bold text-red-400">{results.failed}</div>
                     <div className="text-sm text-red-400">Erros</div>
                   </div>
@@ -535,11 +535,11 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
                       <CheckCircle2 className="h-4 w-4" />
                       Vendas Importadas ({results.successfulImports.length})
                     </h4>
-                    <div className="max-h-40 overflow-y-auto border border-dark-600 rounded p-2 space-y-1">
+                    <div className="max-h-40 overflow-y-auto border border-dark-700 rounded p-2 space-y-1 bg-dark-900">
                       {results.successfulImports.map((item, idx) => (
                         <div key={idx} className="text-sm flex justify-between">
-                          <span>Linha {item.row}: {item.clientName}</span>
-                          <span className="text-dark-400">{item.saleCode}</span>
+                          <span className="text-slate-300">Linha {item.row}: {item.clientName}</span>
+                          <span className="text-slate-500">{item.saleCode}</span>
                         </div>
                       ))}
                     </div>
@@ -552,11 +552,11 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
                       <AlertCircle className="h-4 w-4" />
                       Vendas com Erro ({results.failedImports.length})
                     </h4>
-                    <div className="max-h-40 overflow-y-auto border border-dark-600 rounded p-2 space-y-1">
+                    <div className="max-h-40 overflow-y-auto border border-dark-700 rounded p-2 space-y-1 bg-dark-900">
                       {results.failedImports.map((item, idx) => (
                         <div key={idx} className="text-sm space-y-1">
                           <div className="flex justify-between">
-                            <span className="font-medium">Linha {item.row}: {item.clientName}</span>
+                            <span className="font-medium text-slate-300">Linha {item.row}: {item.clientName}</span>
                           </div>
                           <div className="text-red-400 text-xs pl-4">{item.error}</div>
                         </div>
@@ -568,23 +568,28 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
                 <Button
                   onClick={downloadResultsReport}
                   variant="outline"
-                  className="w-full"
+                  className="w-full bg-dark-900 border-dark-700 text-cyber-400 hover:text-cyber-300 hover:border-cyber-500/30"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Descarregar Relatório Completo
+                  Descarregar Relatorio Completo
                 </Button>
               </div>
             )}
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={handleClose} disabled={importing}>
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              disabled={importing}
+              className="bg-dark-900 border-dark-700 text-slate-300 hover:border-dark-600 hover:bg-dark-800"
+            >
               Fechar
             </Button>
             <Button
               onClick={handleImport}
               disabled={!file || importing}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
             >
               <Upload className="h-4 w-4" />
               {importing ? 'A Importar...' : 'Importar Vendas'}

@@ -203,15 +203,15 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
   const getStatusColor = (status) => {
     const colors = {
-      "Pendente": "bg-yellow-100 text-yellow-800",
-      "Para registo": "bg-blue-100 text-blue-800",
-      "Registado": "bg-cyan-100 text-cyan-800",
-      "Ativo": "bg-green-100 text-green-800",
-      "Concluido": "bg-green-100 text-green-800",
-      "Cancelado": "bg-red-100 text-red-800",
-      "Recusado": "bg-red-100 text-red-800"
+      "Pendente": "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+      "Para registo": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      "Registado": "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+      "Ativo": "bg-green-500/10 text-green-400 border-green-500/20",
+      "Concluido": "bg-green-500/10 text-green-400 border-green-500/20",
+      "Cancelado": "bg-red-500/10 text-red-400 border-red-500/20",
+      "Recusado": "bg-red-500/10 text-red-400 border-red-500/20"
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-slate-500/10 text-slate-400 border-slate-500/20";
   };
 
   const getActionTypeLabel = (actionType) => {
@@ -227,27 +227,27 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
   const getActionTypeColor = (actionType) => {
     const colors = {
-      create: "bg-blue-100 text-blue-800",
-      update: "bg-cyan-100 text-cyan-800",
-      status_change: "bg-purple-100 text-purple-800",
-      note_added: "bg-green-100 text-green-800",
-      payment_update: "bg-orange-100 text-orange-800"
+      create: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      update: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+      status_change: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+      note_added: "bg-green-500/10 text-green-400 border-green-500/20",
+      payment_update: "bg-orange-500/10 text-orange-400 border-orange-500/20"
     };
-    return colors[actionType] || "bg-gray-100 text-gray-800";
+    return colors[actionType] || "bg-slate-500/10 text-slate-400 border-slate-500/20";
   };
 
   if (!open) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-ultra max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="border-b border-dark-600 pb-4">
+      <DialogContent className="bg-dark-850 border border-cyber-500/10 max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="border-b border-dark-700 pb-4">
           <div className="flex items-start justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold text-white">
                 Detalhes da Venda
               </DialogTitle>
-              <DialogDescription className="text-sm text-dark-400 mt-1">
+              <DialogDescription className="text-sm text-slate-500 mt-1">
                 Código: {sale?.sale_code}
               </DialogDescription>
             </div>
@@ -255,10 +255,10 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <Button
                 size="sm"
                 onClick={() => setIsEditing(true)}
-                className="gap-2 bg-gold-400 hover:bg-gold-500 text-dark-900"
+                className="gap-2 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white"
               >
                 <Edit2 className="w-4 h-4" />
-                <span className="text-dark-900">Editar</span>
+                <span>Editar</span>
               </Button>
             )}
           </div>
@@ -266,22 +266,22 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-400 mx-auto"></div>
-            <p className="mt-4 text-dark-400">A carregar...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyber-500 mx-auto"></div>
+            <p className="mt-4 text-slate-500">A carregar...</p>
           </div>
         ) : sale ? (
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-dark-800 p-1 rounded-lg">
-              <TabsTrigger value="details" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
+            <TabsList className="grid w-full grid-cols-4 bg-dark-900 border border-dark-700 p-1 rounded-lg">
+              <TabsTrigger value="details" className="data-[state=active]:bg-cyber-500/10 data-[state=active]:text-cyber-400 text-slate-400">
                 Detalhes
               </TabsTrigger>
-              <TabsTrigger value="notes" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
+              <TabsTrigger value="notes" className="data-[state=active]:bg-cyber-500/10 data-[state=active]:text-cyber-400 text-slate-400">
                 Notas {sale.notes?.length > 0 && `(${sale.notes.length})`}
               </TabsTrigger>
-              <TabsTrigger value="attachments" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
+              <TabsTrigger value="attachments" className="data-[state=active]:bg-cyber-500/10 data-[state=active]:text-cyber-400 text-slate-400">
                 Anexos {sale.attachments?.length > 0 && `(${sale.attachments.length})`}
               </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-gold-400 data-[state=active]:text-dark-900">
+              <TabsTrigger value="history" className="data-[state=active]:bg-cyber-500/10 data-[state=active]:text-cyber-400 text-slate-400">
                 Histórico {auditLogs.length > 0 && `(${auditLogs.length})`}
               </TabsTrigger>
             </TabsList>
@@ -289,9 +289,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
             <TabsContent value="details" className="space-y-6 mt-4">
               {isEditing ? (
                 <div className="space-y-4">
-                  <Alert>
-                    <AlertTriangle className="w-4 h-4" />
-                    <AlertDescription>
+                  <Alert className="bg-cyber-500/10 border border-cyber-500/20">
+                    <AlertTriangle className="w-4 h-4 text-cyber-400" />
+                    <AlertDescription className="text-slate-300">
                       {user?.role === 'bo'
                         ? 'Modo de edição - Pode alterar Estado e Número de Requisição'
                         : 'Modo de edição - Apenas campos específicos podem ser alterados'}
@@ -300,24 +300,24 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Data da Venda</Label>
+                      <Label className="text-slate-400">Data da Venda</Label>
                       <Input
                         type="date"
                         value={editData.date}
                         max={new Date().toISOString().split('T')[0]}
                         onChange={(e) => setEditData({ ...editData, date: e.target.value })}
-                        className="glass-input"
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       />
-                      <p className="text-xs text-dark-400 mt-1">Data não pode ser futura</p>
+                      <p className="text-xs text-slate-500 mt-1">Data não pode ser futura</p>
                     </div>
 
                     <div>
-                      <Label>Estado</Label>
+                      <Label className="text-slate-400">Estado</Label>
                       <Select
                         value={editData.status}
                         onValueChange={(value) => setEditData({ ...editData, status: value })}
                       >
-                        <SelectTrigger className="glass-input">
+                        <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -331,36 +331,36 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     </div>
 
                     <div>
-                      <Label>Número de Requisição</Label>
+                      <Label className="text-slate-400">Número de Requisição</Label>
                       <Input
                         value={editData.request_number}
                         onChange={(e) => setEditData({ ...editData, request_number: e.target.value })}
                         placeholder="REQ-XXXXX"
-                        className="glass-input"
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       />
                     </div>
 
                     {user?.role === 'admin' && (
                       <>
                         <div>
-                          <Label>Comissão Manual</Label>
+                          <Label className="text-slate-400">Comissão Manual</Label>
                           <Input
                             type="number"
                             step="0.01"
                             value={editData.manual_commission}
                             onChange={(e) => setEditData({ ...editData, manual_commission: e.target.value })}
                             placeholder="0.00"
-                            className="glass-input"
+                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                           />
                         </div>
 
                         <div>
-                          <Label>Data de Pagamento</Label>
+                          <Label className="text-slate-400">Data de Pagamento</Label>
                           <Input
                             type="date"
                             value={editData.payment_date}
                             onChange={(e) => setEditData({ ...editData, payment_date: e.target.value })}
-                            className="glass-input"
+                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                           />
                         </div>
 
@@ -369,19 +369,20 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                             <Switch
                               checked={editData.paid_to_operator}
                               onCheckedChange={(checked) => setEditData({ ...editData, paid_to_operator: checked })}
+                              className="data-[state=checked]:bg-cyber-500"
                             />
-                            <Label>Pago ao Operador</Label>
+                            <Label className="text-white">Pago ao Operador</Label>
                           </div>
                         </div>
                       </>
                     )}
 
                     {(user?.role === 'admin' || user?.role === 'bo') && (
-                      <div className="col-span-2 pt-4 border-t border-dark-600">
-                        <Label className="text-base font-semibold mb-2 block">Validação pela Operadora</Label>
+                      <div className="col-span-2 pt-4 border-t border-dark-700">
+                        <Label className="text-base font-semibold mb-2 block text-white">Validação pela Operadora</Label>
 
                         {sale?.operator_doc_file ? (
-                          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
@@ -398,7 +399,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                                 variant="outline"
                                 size="sm"
                                 onClick={handleDownloadOperatorDoc}
-                                className="gap-2"
+                                className="gap-2 bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
                               >
                                 <Download className="w-4 h-4" />
                                 Download
@@ -417,15 +418,15 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               />
                               <label
                                 htmlFor="operator-doc-upload"
-                                className="flex-1 cursor-pointer bg-dark-800 border-2 border-dashed border-dark-600 rounded-lg p-4 hover:bg-dark-700 transition-colors"
+                                className="flex-1 cursor-pointer bg-dark-900 border-2 border-dashed border-dark-700 rounded-lg p-4 hover:bg-dark-800 transition-colors"
                               >
                                 <div className="flex items-center gap-3">
-                                  <FileText className="w-5 h-5 text-dark-400" />
+                                  <FileText className="w-5 h-5 text-slate-500" />
                                   <div>
-                                    <p className="text-sm font-medium text-dark-200">
+                                    <p className="text-sm font-medium text-slate-300">
                                       {operatorDoc ? operatorDoc.name : 'Clique para selecionar documento'}
                                     </p>
-                                    <p className="text-xs text-dark-400">PDF, JPG, PNG (máx 10MB)</p>
+                                    <p className="text-xs text-slate-500">PDF, JPG, PNG (máx 10MB)</p>
                                   </div>
                                 </div>
                               </label>
@@ -433,14 +434,14 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                                 onClick={handleUploadOperatorDoc}
                                 disabled={!operatorDoc || uploadingDoc}
                                 size="sm"
-                                className="gap-2"
+                                className="gap-2 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white"
                               >
                                 <Upload className="w-4 h-4" />
                                 {uploadingDoc ? 'A carregar...' : 'Carregar'}
                               </Button>
                             </div>
-                            <p className="text-xs text-dark-400">
-                              📋 Carregue o auto ou documento de validação fornecido pela operadora
+                            <p className="text-xs text-slate-500">
+                              Carregue o auto ou documento de validação fornecido pela operadora
                             </p>
                           </div>
                         )}
@@ -450,17 +451,17 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                   {user?.role === 'admin' && (
                     <>
-                      <div className="pt-4 border-t border-dark-600 space-y-4">
+                      <div className="pt-4 border-t border-dark-700 space-y-4">
                         <h3 className="font-semibold text-lg text-white">Dados Comerciais</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label>Parceiro *</Label>
+                            <Label className="text-slate-400">Parceiro *</Label>
                             <Select
                               value={editData.partner_id}
                               onValueChange={(v) => setEditData({...editData, partner_id: v})}
                             >
-                              <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione parceiro" /></SelectTrigger>
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione parceiro" /></SelectTrigger>
                               <SelectContent>
                                 {partners.map((partner) => (
                                   <SelectItem key={partner.id} value={partner.id}>
@@ -472,12 +473,12 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           </div>
 
                           <div>
-                            <Label>Operadora *</Label>
+                            <Label className="text-slate-400">Operadora *</Label>
                             <Select
                               value={editData.operator_id}
                               onValueChange={(v) => setEditData({...editData, operator_id: v})}
                             >
-                              <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione operadora" /></SelectTrigger>
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione operadora" /></SelectTrigger>
                               <SelectContent>
                                 {operators.map((operator) => (
                                   <SelectItem key={operator.id} value={operator.id}>
@@ -490,73 +491,73 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                         </div>
 
                         <div>
-                          <Label>Valor Mensal (€)</Label>
+                          <Label className="text-slate-400">Valor Mensal (€)</Label>
                           <Input
                             type="number"
                             step="0.01"
                             value={editData.monthly_value}
                             onChange={(e) => setEditData({...editData, monthly_value: e.target.value})}
                             placeholder="0.00"
-                            className="glass-input"
+                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                           />
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-dark-600 space-y-4">
+                      <div className="pt-4 border-t border-dark-700 space-y-4">
                         <h3 className="font-semibold text-lg text-white">Dados do Cliente</h3>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label>Nome do Cliente *</Label>
+                            <Label className="text-slate-400">Nome do Cliente *</Label>
                             <Input
                               value={editData.client_name}
                               onChange={(e) => setEditData({...editData, client_name: e.target.value})}
                               placeholder="Nome completo"
-                              className="glass-input"
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                             />
                           </div>
 
                           <div>
-                            <Label>NIF *</Label>
+                            <Label className="text-slate-400">NIF *</Label>
                             <Input
                               value={editData.client_nif}
                               onChange={(e) => setEditData({...editData, client_nif: e.target.value})}
                               placeholder="000000000"
-                              className="glass-input"
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                             />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label>Contacto *</Label>
+                            <Label className="text-slate-400">Contacto *</Label>
                             <Input
                               value={editData.client_contact}
                               onChange={(e) => setEditData({...editData, client_contact: e.target.value})}
                               placeholder="Telefone"
-                              className="glass-input"
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                             />
                           </div>
 
                           <div>
-                            <Label>Email</Label>
+                            <Label className="text-slate-400">Email</Label>
                             <Input
                               type="email"
                               value={editData.client_email}
                               onChange={(e) => setEditData({...editData, client_email: e.target.value})}
                               placeholder="email@exemplo.com"
-                              className="glass-input"
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label>IBAN</Label>
+                          <Label className="text-slate-400">IBAN</Label>
                           <Input
                             value={editData.client_iban}
                             onChange={(e) => setEditData({...editData, client_iban: e.target.value})}
                             placeholder="PT50 0000 0000 0000 0000 0000 0"
-                            className="glass-input"
+                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                           />
                         </div>
 
@@ -567,9 +568,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               id="has_direct_debit"
                               checked={editData.has_direct_debit}
                               onChange={(e) => setEditData({...editData, has_direct_debit: e.target.checked})}
-                              className="w-4 h-4"
+                              className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                             />
-                            <Label htmlFor="has_direct_debit">Débito Direto</Label>
+                            <Label htmlFor="has_direct_debit" className="text-white">Débito Direto</Label>
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -578,64 +579,64 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               id="has_electronic_invoice"
                               checked={editData.has_electronic_invoice}
                               onChange={(e) => setEditData({...editData, has_electronic_invoice: e.target.checked})}
-                              className="w-4 h-4"
+                              className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                             />
-                            <Label htmlFor="has_electronic_invoice">Fatura Eletrónica</Label>
+                            <Label htmlFor="has_electronic_invoice" className="text-white">Fatura Eletrónica</Label>
                           </div>
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-dark-600 space-y-4">
+                      <div className="pt-4 border-t border-dark-700 space-y-4">
                         <h3 className="font-semibold text-lg text-white">Moradas</h3>
-                        <Alert>
-                          <AlertTriangle className="w-4 h-4" />
-                          <AlertDescription>
+                        <Alert className="bg-cyber-500/10 border border-cyber-500/20">
+                          <AlertTriangle className="w-4 h-4 text-cyber-400" />
+                          <AlertDescription className="text-slate-300">
                             Os campos de morada não podem ser alterados após a criação da venda
                           </AlertDescription>
                         </Alert>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label>Morada</Label>
+                            <Label className="text-slate-400">Morada</Label>
                             <Input
                               value={editData.street}
                               disabled
-                              className="bg-dark-700 text-dark-400"
+                              className="bg-dark-900 border-dark-700 text-slate-500"
                             />
                           </div>
 
                           <div>
-                            <Label>Código Postal</Label>
+                            <Label className="text-slate-400">Código Postal</Label>
                             <Input
                               value={editData.postal_code}
                               disabled
-                              className="bg-dark-700 text-dark-400"
+                              className="bg-dark-900 border-dark-700 text-slate-500"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label>Localidade</Label>
+                          <Label className="text-slate-400">Localidade</Label>
                           <Input
                             value={editData.locality}
                             disabled
-                            className="bg-dark-700 text-dark-400"
+                            className="bg-dark-900 border-dark-700 text-slate-500"
                           />
                         </div>
 
                         <div>
-                          <Label>Morada de Instalação</Label>
+                          <Label className="text-slate-400">Morada de Instalação</Label>
                           <Input
                             value={editData.installation_address}
                             disabled
-                            className="bg-dark-700 text-dark-400"
+                            className="bg-dark-900 border-dark-700 text-slate-500"
                           />
                         </div>
                       </div>
                     </>
                   )}
 
-                  <div className="flex gap-2 justify-end pt-4 border-t border-dark-600">
+                  <div className="flex gap-2 justify-end pt-4 border-t border-dark-700">
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -663,13 +664,14 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                           has_electronic_invoice: sale.has_electronic_invoice || false
                         });
                       }}
+                      className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
                     >
                       Cancelar
                     </Button>
                     <Button
                       onClick={handleSaveEdit}
                       disabled={savingEdit}
-                      className="btn-primary"
+                      className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white"
                     >
                       <Save className="w-4 h-4 mr-2" />
                       <span className="text-white">{savingEdit ? "A guardar..." : "Guardar"}</span>
@@ -678,100 +680,100 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-dark-700 to-dark-600 rounded-lg p-5 text-white">
+                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm opacity-90">Código</p>
-                        <p className="font-bold text-lg">{sale.sale_code}</p>
+                        <p className="text-sm text-slate-500">Código</p>
+                        <p className="font-bold text-lg text-white">{sale.sale_code}</p>
                       </div>
                       <div>
-                        <p className="text-sm opacity-90">Data</p>
-                        <p className="font-bold text-lg">
+                        <p className="text-sm text-slate-500">Data</p>
+                        <p className="font-bold text-lg text-white">
                           {new Date(sale.date).toLocaleDateString('pt-PT')}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm opacity-90">Estado</p>
-                        <Badge className="mt-1 bg-gold-400 text-dark-900 hover:bg-gold-400">{sale.status}</Badge>
+                        <p className="text-sm text-slate-500">Estado</p>
+                        <Badge className={`mt-1 border ${getStatusColor(sale.status)}`}>{sale.status}</Badge>
                       </div>
                       <div>
-                        <p className="text-sm opacity-90">Âmbito</p>
-                        <p className="font-bold capitalize">{sale.scope}</p>
+                        <p className="text-sm text-slate-500">Âmbito</p>
+                        <p className="font-bold capitalize text-white">{sale.scope}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="glass-ultra p-5">
+                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
                     <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-gold-400 rounded"></div>
+                      <div className="w-1 h-6 bg-cyber-500 rounded"></div>
                       Informação do Cliente
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
 
                       <div>
-                        <Label className="text-dark-400 text-xs uppercase">Nome</Label>
+                        <Label className="text-slate-500 text-xs uppercase">Nome</Label>
                         <p className="font-semibold text-white mt-1">{sale.client_name}</p>
                       </div>
 
                       <div>
-                        <Label className="text-dark-400 text-xs uppercase">NIF</Label>
+                        <Label className="text-slate-500 text-xs uppercase">NIF</Label>
                         <p className="font-semibold text-white mt-1">{sale.client_nif}</p>
                       </div>
 
                       <div>
-                        <Label className="text-dark-400 text-xs uppercase">Tipo</Label>
+                        <Label className="text-slate-500 text-xs uppercase">Tipo</Label>
                         <p className="font-semibold text-white mt-1 capitalize">{sale.client_type}</p>
                       </div>
 
                       <div>
-                        <Label className="text-dark-400 text-xs uppercase">Contacto</Label>
+                        <Label className="text-slate-500 text-xs uppercase">Contacto</Label>
                         <p className="font-semibold text-white mt-1">{sale.client_contact}</p>
                       </div>
 
                       {sale.client_email && (
                         <div className="col-span-2">
-                          <Label className="text-dark-400 text-xs uppercase">Email</Label>
+                          <Label className="text-slate-500 text-xs uppercase">Email</Label>
                           <p className="font-semibold text-white mt-1">{sale.client_email}</p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="glass-ultra p-5">
+                  <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
                     <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
-                      <div className="w-1 h-6 bg-gold-400 rounded"></div>
+                      <div className="w-1 h-6 bg-cyber-500 rounded"></div>
                       Detalhes da Venda
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
 
                       <div>
-                        <Label className="text-dark-400 text-xs uppercase">Parceiro</Label>
+                        <Label className="text-slate-500 text-xs uppercase">Parceiro</Label>
                         <p className="font-semibold text-white mt-1">{sale.partner_name}</p>
                       </div>
 
                       <div>
-                        <Label className="text-dark-400 text-xs uppercase">Operador</Label>
+                        <Label className="text-slate-500 text-xs uppercase">Operador</Label>
                         <p className="font-semibold text-white mt-1">{sale.operator_name}</p>
                       </div>
 
                       {sale.request_number && (
                         <div>
-                          <Label className="text-dark-400 text-xs uppercase">Requisição</Label>
+                          <Label className="text-slate-500 text-xs uppercase">Requisição</Label>
                           <p className="font-semibold text-white mt-1">{sale.request_number}</p>
                         </div>
                       )}
 
                       {sale.monthly_value && (
                         <div>
-                          <Label className="text-dark-400 text-xs uppercase">Valor Mensal</Label>
+                          <Label className="text-slate-500 text-xs uppercase">Valor Mensal</Label>
                           <p className="font-semibold text-white mt-1">€{parseFloat(sale.monthly_value).toFixed(2)}</p>
                         </div>
                       )}
 
                       {user?.role !== 'bo' && user?.role !== 'partner_commercial' && sale.calculated_commission && (
                         <div>
-                          <Label className="text-dark-400 text-xs uppercase">Comissão</Label>
-                          <p className="font-bold text-green-600 mt-1 text-lg">
+                          <Label className="text-slate-500 text-xs uppercase">Comissão</Label>
+                          <p className="font-bold text-cyber-400 mt-1 text-lg">
                             €{parseFloat(sale.calculated_commission).toFixed(2)}
                           </p>
                         </div>
@@ -779,20 +781,20 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
 
                       {sale.cpe && (
                         <div>
-                          <Label className="text-dark-400 text-xs uppercase">CPE</Label>
+                          <Label className="text-slate-500 text-xs uppercase">CPE</Label>
                           <p className="font-semibold text-white mt-1">{sale.cpe}</p>
                         </div>
                       )}
 
                       {sale.cui && (
                         <div>
-                          <Label className="text-dark-400 text-xs uppercase">CUI</Label>
+                          <Label className="text-slate-500 text-xs uppercase">CUI</Label>
                           <p className="font-semibold text-white mt-1">{sale.cui}</p>
                         </div>
                       )}
 
                       {sale.paid_to_operator && (
-                        <div className="col-span-2 bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                        <div className="col-span-2 bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                           <div className="flex items-center gap-2 text-green-400">
                             <CheckCircle className="w-5 h-5" />
                             <span className="font-bold">Pago ao Operador</span>
@@ -814,22 +816,22 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <div className="space-y-3">
                 {sale.notes && sale.notes.length > 0 ? (
                   sale.notes.map((note) => (
-                    <div key={note.id} className="p-4 bg-dark-800 rounded-lg border border-dark-600">
+                    <div key={note.id} className="p-4 bg-dark-900 rounded-lg border border-dark-700">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <span className="font-semibold text-sm">{note.author}</span>
-                          <Badge className="ml-2 text-xs">{note.author_role}</Badge>
+                          <span className="font-semibold text-sm text-white">{note.author}</span>
+                          <Badge className="ml-2 text-xs bg-cyber-500/10 text-cyber-400 border-cyber-500/20">{note.author_role}</Badge>
                         </div>
-                        <span className="text-xs text-dark-400">
+                        <span className="text-xs text-slate-500">
                           {new Date(note.created_at).toLocaleString('pt-PT')}
                         </span>
                       </div>
-                      <p className="text-sm text-dark-200 whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-sm text-slate-300 whitespace-pre-wrap">{note.content}</p>
                       {note.attachments && note.attachments.length > 0 && (
-                        <div className="mt-3 space-y-1 border-t border-dark-600 pt-2">
-                          <p className="text-xs text-dark-400 font-medium mb-1">Anexos:</p>
+                        <div className="mt-3 space-y-1 border-t border-dark-700 pt-2">
+                          <p className="text-xs text-slate-500 font-medium mb-1">Anexos:</p>
                           {note.attachments.map((attachment) => (
-                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-blue-400">
+                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-cyber-400">
                               <Paperclip className="w-3 h-3" />
                               <button
                                 onClick={async () => {
@@ -863,26 +865,26 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-dark-400">
+                  <div className="text-center py-8 text-slate-500">
                     <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Nenhuma nota adicionada</p>
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-dark-600 pt-4">
-                <Label>Adicionar Nova Nota</Label>
+              <div className="border-t border-dark-700 pt-4">
+                <Label className="text-slate-400">Adicionar Nova Nota</Label>
                 <Textarea
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Escreva uma nota..."
-                  className="glass-input mt-2"
+                  className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white mt-2"
                   rows={3}
                 />
                 <Button
                   onClick={handleAddNote}
                   disabled={savingNote || !newNote.trim()}
-                  className="mt-2"
+                  className="mt-2 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white"
                 >
                   {savingNote ? "A adicionar..." : "Adicionar Nota"}
                 </Button>
@@ -893,13 +895,13 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <div className="space-y-3">
                 {sale.attachments && sale.attachments.length > 0 ? (
                   sale.attachments.map((attachment) => (
-                    <div key={attachment.id} className="p-4 bg-dark-800 rounded-lg border border-dark-600 hover:bg-dark-700 transition-colors">
+                    <div key={attachment.id} className="p-4 bg-dark-900 rounded-lg border border-dark-700 hover:bg-dark-800 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Paperclip className="w-5 h-5 text-gold-400" />
+                          <Paperclip className="w-5 h-5 text-cyber-400" />
                           <div>
-                            <p className="font-medium text-sm">{attachment.filename}</p>
-                            <p className="text-xs text-dark-400">
+                            <p className="font-medium text-sm text-white">{attachment.filename}</p>
+                            <p className="text-xs text-slate-500">
                               {new Date(attachment.uploaded_at).toLocaleString('pt-PT')}
                             </p>
                           </div>
@@ -930,7 +932,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                               toast.error('Erro ao transferir ficheiro');
                             }
                           }}
-                          className="gap-1"
+                          className="gap-1 bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
                         >
                           <Download className="w-4 h-4" />
                           Transferir
@@ -939,7 +941,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-dark-400">
+                  <div className="text-center py-8 text-slate-500">
                     <Paperclip className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Nenhum anexo disponível</p>
                   </div>
@@ -950,21 +952,21 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
             <TabsContent value="history" className="space-y-3 mt-4">
               {auditLogs.length > 0 ? (
                 auditLogs.map((log) => (
-                  <div key={log.id} className="p-4 bg-dark-800 rounded-lg border border-dark-600">
+                  <div key={log.id} className="p-4 bg-dark-900 rounded-lg border border-dark-700">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
-                        <Badge className={getActionTypeColor(log.action_type)}>
+                        <Badge className={`border ${getActionTypeColor(log.action_type)}`}>
                           {getActionTypeLabel(log.action_type)}
                         </Badge>
-                        <span className="text-sm font-medium">{log.user_name}</span>
+                        <span className="text-sm font-medium text-white">{log.user_name}</span>
                       </div>
-                      <span className="text-xs text-dark-400">
+                      <span className="text-xs text-slate-500">
                         {new Date(log.created_at).toLocaleString('pt-PT')}
                       </span>
                     </div>
-                    <p className="text-sm text-dark-200">{log.description}</p>
+                    <p className="text-sm text-slate-300">{log.description}</p>
                     {log.changed_fields && log.changed_fields.length > 0 && (
-                      <div className="mt-2 text-xs text-dark-400">
+                      <div className="mt-2 text-xs text-slate-500">
                         <span className="font-semibold">Campos alterados: </span>
                         {log.changed_fields.join(', ')}
                       </div>
@@ -972,7 +974,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-dark-400">
+                <div className="text-center py-8 text-slate-500">
                   <History className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>Nenhum histórico disponível</p>
                 </div>
@@ -980,7 +982,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
             </TabsContent>
           </Tabs>
         ) : (
-          <div className="text-center py-8 text-dark-400">Venda não encontrada</div>
+          <div className="text-center py-8 text-slate-500">Venda não encontrada</div>
         )}
       </DialogContent>
     </Dialog>

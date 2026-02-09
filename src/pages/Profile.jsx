@@ -118,32 +118,32 @@ const Profile = ({ user, onUserUpdate }) => {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Meu Perfil</h1>
 
-      <div className="glass-ultra p-8">
+      <div className="bg-dark-850 border border-white/[0.06] rounded-xl p-8">
         <div className="flex items-start gap-6">
-          <div className="w-24 h-24 bg-dark-600 rounded-full flex items-center justify-center shrink-0">
+          <div className="w-24 h-24 bg-dark-700 rounded-full flex items-center justify-center shrink-0">
             <UserIcon className="w-12 h-12 text-white" />
           </div>
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
-            <p className="text-lg text-dark-400 mt-1">{user?.position}</p>
+            <p className="text-lg text-slate-400 mt-1">{user?.position}</p>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-dark-400">Email de Conta</p>
+                <p className="text-sm text-slate-400">Email de Conta</p>
                 <p className="text-white font-medium">{user?.email}</p>
               </div>
               <div>
-                <p className="text-sm text-dark-400">Funcao</p>
+                <p className="text-sm text-slate-400">Funcao</p>
                 <p className="text-white font-medium">{getRoleLabel(user?.role)}</p>
               </div>
               {user?.contact_email && (
                 <div>
-                  <p className="text-sm text-dark-400">Email de Contacto</p>
+                  <p className="text-sm text-slate-400">Email de Contacto</p>
                   <p className="text-white font-medium">{user.contact_email}</p>
                 </div>
               )}
               {user?.contact_phone && (
                 <div>
-                  <p className="text-sm text-dark-400">Telefone</p>
+                  <p className="text-sm text-slate-400">Telefone</p>
                   <p className="text-white font-medium">{user.contact_phone}</p>
                 </div>
               )}
@@ -152,76 +152,76 @@ const Profile = ({ user, onUserUpdate }) => {
         </div>
       </div>
 
-      <div className="glass-ultra p-6">
+      <div className="bg-dark-850 border border-white/[0.06] rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
-              <Pencil className="w-5 h-5 text-gold-400" />
+              <Pencil className="w-5 h-5 text-cyber-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">Dados de Contacto</h3>
-              <p className="text-sm text-dark-400">Edite o nome a apresentar, email e telefone</p>
+              <p className="text-sm text-slate-400">Edite o nome a apresentar, email e telefone</p>
             </div>
           </div>
           <button
             onClick={() => setShowContactForm(!showContactForm)}
-            className="btn-gold"
+            className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-cyber-400 hover:to-cyber-500 transition-all"
           >
             {showContactForm ? "Cancelar" : "Editar"}
           </button>
         </div>
 
         {showContactForm && (
-          <div className="mt-6 border-t border-dark-600 pt-6">
+          <div className="mt-6 border-t border-dark-700 pt-6">
             <div className="space-y-4 max-w-lg">
               <div>
-                <label className="block text-sm font-medium mb-2 text-dark-200">Nome a Apresentar</label>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Nome a Apresentar</label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
                     value={contactData.name}
                     onChange={(e) => setContactData(prev => ({ ...prev, name: e.target.value }))}
-                    className="glass-input w-full pl-10"
+                    className="w-full pl-10 bg-dark-900 border border-dark-700 rounded-lg px-4 py-2.5 text-white focus:border-cyber-500 focus:ring-1 focus:ring-cyber-500/20 outline-none transition-all"
                     placeholder="O seu nome"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-dark-200">Email de Contacto</label>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Email de Contacto</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="email"
                     value={contactData.contact_email}
                     onChange={(e) => setContactData(prev => ({ ...prev, contact_email: e.target.value }))}
-                    className="glass-input w-full pl-10"
+                    className="w-full pl-10 bg-dark-900 border border-dark-700 rounded-lg px-4 py-2.5 text-white focus:border-cyber-500 focus:ring-1 focus:ring-cyber-500/20 outline-none transition-all"
                     placeholder="email@exemplo.pt"
                   />
                 </div>
-                <p className="text-xs text-dark-400 mt-1">Este email aparecera nos PDFs de simulacao</p>
+                <p className="text-xs text-slate-500 mt-1">Este email aparecera nos PDFs de simulacao</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-dark-200">Telefone / Telemovel</label>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Telefone / Telemovel</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="tel"
                     value={contactData.contact_phone}
                     onChange={(e) => setContactData(prev => ({ ...prev, contact_phone: e.target.value }))}
-                    className="glass-input w-full pl-10"
+                    className="w-full pl-10 bg-dark-900 border border-dark-700 rounded-lg px-4 py-2.5 text-white focus:border-cyber-500 focus:ring-1 focus:ring-cyber-500/20 outline-none transition-all"
                     placeholder="+351 912 345 678"
                   />
                 </div>
-                <p className="text-xs text-dark-400 mt-1">Este numero aparecera nos PDFs de simulacao</p>
+                <p className="text-xs text-slate-500 mt-1">Este numero aparecera nos PDFs de simulacao</p>
               </div>
 
               <button
                 onClick={handleSaveContact}
                 disabled={savingContact}
-                className="btn-gold disabled:opacity-50 flex items-center gap-2"
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-cyber-400 hover:to-cyber-500 transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 {savingContact ? "A guardar..." : "Guardar Alteracoes"}
@@ -231,31 +231,31 @@ const Profile = ({ user, onUserUpdate }) => {
         )}
       </div>
 
-      <div className="glass-ultra p-6">
+      <div className="bg-dark-850 border border-white/[0.06] rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
-              <Lock className="w-5 h-5 text-gold-400" />
+              <Lock className="w-5 h-5 text-cyber-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">Alterar Password</h3>
-              <p className="text-sm text-dark-400">Mantenha a sua conta segura</p>
+              <p className="text-sm text-slate-400">Mantenha a sua conta segura</p>
             </div>
           </div>
           <button
             onClick={() => setShowPasswordForm(!showPasswordForm)}
-            className="btn-gold"
+            className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-cyber-400 hover:to-cyber-500 transition-all"
           >
             {showPasswordForm ? "Cancelar" : "Alterar Password"}
           </button>
         </div>
 
         {showPasswordForm && (
-          <div className="mt-6 border-t border-dark-600 pt-6">
-            <div className="bg-dark-800 border border-dark-600 rounded-lg p-4 mb-6">
+          <div className="mt-6 border-t border-dark-700 pt-6">
+            <div className="bg-dark-900 border border-dark-700 rounded-lg p-4 mb-6">
               <div className="flex">
-                <AlertCircle className="w-5 h-5 text-gold-400 mr-2 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-gold-400">
+                <AlertCircle className="w-5 h-5 text-cyber-400 mr-2 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-cyber-400">
                   <p className="font-semibold mb-1">Requisitos da password:</p>
                   <ul className="list-disc ml-4 space-y-1">
                     <li>Minimo 8 caracteres</li>
@@ -269,19 +269,19 @@ const Profile = ({ user, onUserUpdate }) => {
 
             <form onSubmit={handleChangePassword} className="space-y-4 max-w-lg">
               <div>
-                <label className="block text-sm font-medium mb-2 text-dark-200">Password Atual</label>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Password Atual</label>
                 <div className="relative">
                   <input
                     type={showCurrent ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
-                    className="glass-input w-full pr-12"
+                    className="w-full bg-dark-900 border border-dark-700 rounded-lg px-4 py-2.5 pr-12 text-white focus:border-cyber-500 focus:ring-1 focus:ring-cyber-500/20 outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                   >
                     {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -289,19 +289,19 @@ const Profile = ({ user, onUserUpdate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-dark-200">Nova Password</label>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Nova Password</label>
                 <div className="relative">
                   <input
                     type={showNew ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    className="glass-input w-full pr-12"
+                    className="w-full bg-dark-900 border border-dark-700 rounded-lg px-4 py-2.5 pr-12 text-white focus:border-cyber-500 focus:ring-1 focus:ring-cyber-500/20 outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNew(!showNew)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                   >
                     {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -309,19 +309,19 @@ const Profile = ({ user, onUserUpdate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-dark-200">Confirmar Nova Password</label>
+                <label className="block text-sm font-medium mb-2 text-slate-300">Confirmar Nova Password</label>
                 <div className="relative">
                   <input
                     type={showConfirm ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="glass-input w-full pr-12"
+                    className="w-full bg-dark-900 border border-dark-700 rounded-lg px-4 py-2.5 pr-12 text-white focus:border-cyber-500 focus:ring-1 focus:ring-cyber-500/20 outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                   >
                     {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -331,7 +331,7 @@ const Profile = ({ user, onUserUpdate }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-gold disabled:opacity-50"
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-cyber-400 hover:to-cyber-500 transition-all disabled:opacity-50"
               >
                 {loading ? "A alterar..." : "Confirmar Alteracao"}
               </button>

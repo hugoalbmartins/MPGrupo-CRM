@@ -183,7 +183,7 @@ const Alerts = ({ user }) => {
       case 'note_added':
         return <MessageSquare className="w-5 h-5 text-purple-500" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+        return <Bell className="w-5 h-5 text-slate-500" />;
     }
   };
 
@@ -193,7 +193,7 @@ const Alerts = ({ user }) => {
     return (
       <div className="space-y-6 p-6 animate-fade-in">
         <div className="h-10 bg-dark-700 rounded-lg w-1/4 animate-pulse"></div>
-        <div className="glass-ultra p-6">
+        <div className="bg-dark-850 border border-white/[0.06] rounded-xl p-6">
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-24 bg-dark-800 rounded-lg animate-pulse"></div>
@@ -211,17 +211,17 @@ const Alerts = ({ user }) => {
         <div className="flex items-center gap-4">
           <Button
             onClick={() => navigate('/alerts/archived')}
-            className="btn-secondary spring-transition gap-2"
+            className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyber-500/30 hover:text-white transition-all gap-2"
           >
             <Archive className="w-4 h-4" />
             Ver Arquivados
           </Button>
-          <div className="glass-ultra px-4 py-2 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-gold-ultra" />
+          <div className="bg-dark-850 border border-white/[0.06] rounded-lg px-4 py-2 flex items-center gap-2">
+            <Bell className="w-4 h-4 text-cyber-400" />
             <span className="text-sm font-bold text-white">
               {alerts.filter(a => isUnread(a)).length}
             </span>
-            <span className="text-sm text-dark-400">
+            <span className="text-sm text-slate-400">
               não lidos de {totalAlerts}
             </span>
           </div>
@@ -230,17 +230,17 @@ const Alerts = ({ user }) => {
 
       {user?.role === 'admin' && (
         <>
-          <div className={`glass-ultra p-5 spring-transition ${
+          <div className={`bg-dark-850 border-2 border-white/[0.06] rounded-xl p-5 transition-all ${
             alertsSuspended
-              ? 'border-red-300'
-              : 'border-green-300'
-          }`} style={{ borderWidth: '2px' }}>
+              ? 'border-red-500/30'
+              : 'border-green-500/30'
+          }`}>
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   alertsSuspended
                     ? 'bg-red-500/10'
-                    : 'bg-gold-400/10'
+                    : 'bg-cyber-500/10'
                 }`}>
                   {alertsSuspended ? (
                     <BellOff className="w-5 h-5 text-red-600" />
@@ -252,7 +252,7 @@ const Alerts = ({ user }) => {
                   <Label htmlFor="global-alerts-suspension" className="text-sm font-bold cursor-pointer text-white">
                     Suspensão Global de Alertas
                   </Label>
-                  <p className="text-xs mt-1 text-dark-400">
+                  <p className="text-xs mt-1 text-slate-400">
                     {alertsSuspended
                       ? 'Nenhum alerta novo será criado no sistema'
                       : 'Os alertas estão a ser criados normalmente'
@@ -269,7 +269,7 @@ const Alerts = ({ user }) => {
             </div>
           </div>
 
-          <div className="glass-ultra p-5 spring-transition" style={{ borderWidth: '2px', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+          <div className="bg-dark-850 border-2 border-blue-500/30 rounded-xl p-5 transition-all">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center">
@@ -279,7 +279,7 @@ const Alerts = ({ user }) => {
                   <Label htmlFor="email-alerts" className="text-sm font-bold cursor-pointer text-white">
                     Receber Alertas por Email
                   </Label>
-                  <p className="text-xs mt-1 text-dark-400">
+                  <p className="text-xs mt-1 text-slate-400">
                     Desative para receber alertas apenas na aplicação
                   </p>
                 </div>
@@ -297,7 +297,7 @@ const Alerts = ({ user }) => {
       <div className="flex justify-between items-center gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Select value={filter} onValueChange={(value) => { setFilter(value); setCurrentPage(1); }}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-48 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
               <SelectValue placeholder="Filtrar alertas" />
             </SelectTrigger>
             <SelectContent>
@@ -314,7 +314,7 @@ const Alerts = ({ user }) => {
                 onCheckedChange={handleSelectAll}
                 id="select-all"
               />
-              <Label htmlFor="select-all" className="text-sm cursor-pointer text-dark-300">
+              <Label htmlFor="select-all" className="text-sm cursor-pointer text-slate-300">
                 Selecionar todos
               </Label>
             </div>
@@ -323,12 +323,12 @@ const Alerts = ({ user }) => {
 
         {selectedAlerts.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-dark-400">{selectedAlerts.length} selecionado(s)</span>
-            <Button size="sm" onClick={handleMarkAsRead} className="gap-1">
+            <span className="text-sm text-slate-400">{selectedAlerts.length} selecionado(s)</span>
+            <Button size="sm" onClick={handleMarkAsRead} className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-400 hover:to-cyber-500 gap-1">
               <Check className="w-4 h-4" />
               Marcar como Lido
             </Button>
-            <Button size="sm" variant="outline" onClick={handleMarkAsUnread} className="gap-1">
+            <Button size="sm" onClick={handleMarkAsUnread} className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyber-500/30 gap-1">
               <X className="w-4 h-4" />
               Marcar como Não Lido
             </Button>
@@ -337,11 +337,11 @@ const Alerts = ({ user }) => {
       </div>
 
       {alerts.length === 0 ? (
-        <div className="glass-ultra p-12 text-center spring-transition">
-          <div className="w-20 h-20 bg-gradient-to-r from-navy-900 to-navy-800 rounded-full flex items-center justify-center mx-auto mb-4 animate-scale-in">
+        <div className="bg-dark-850 border border-white/[0.06] rounded-xl p-12 text-center transition-all">
+          <div className="w-20 h-20 bg-gradient-to-r from-dark-900 to-dark-800 rounded-full flex items-center justify-center mx-auto mb-4 animate-scale-in">
             <Bell className="w-10 h-10 text-white" />
           </div>
-          <p className="text-lg font-semibold text-dark-400">
+          <p className="text-lg font-semibold text-slate-400">
             {filter === 'all' ? 'Nenhum alerta' : filter === 'unread' ? 'Nenhum alerta não lido' : 'Nenhum alerta lido'}
           </p>
         </div>
@@ -354,9 +354,9 @@ const Alerts = ({ user }) => {
               return (
                 <div
                   key={alert.id}
-                  className={`glass-ultra p-4 spring-transition ${
-                    unread ? 'border-gold-400/20 bg-gold-400/5' : 'border-dark-600 bg-dark-800'
-                  } ${isSelected ? 'ring-2 ring-gold-400/30 shadow-gold-glow' : ''}`}
+                  className={`bg-dark-850 border border-white/[0.06] rounded-xl p-4 transition-all ${
+                    unread ? 'border-cyber-500/20 bg-cyber-500/5' : 'border-dark-700 bg-dark-800'
+                  } ${isSelected ? 'ring-2 ring-cyber-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]' : ''}`}
                   style={{
                     animationDelay: `${index * 0.03}s`,
                     borderWidth: unread ? '2px' : '1px'
@@ -373,16 +373,16 @@ const Alerts = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className={`text-sm ${unread ? 'font-bold' : 'font-medium'} text-dark-200`}>
+                          <p className={`text-sm ${unread ? 'font-bold' : 'font-medium'} text-slate-300`}>
                             {alert.message}
                           </p>
-                          <p className="text-xs mt-1 text-dark-400">
+                          <p className="text-xs mt-1 text-slate-500">
                             {new Date(alert.created_at).toLocaleString('pt-PT')}
                           </p>
                         </div>
 
                         {unread && (
-                          <span className="bg-gradient-to-r from-gold-ultra to-gold-500 text-navy-900 text-xs px-3 py-1 rounded-full font-bold shadow-gold">
+                          <span className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white text-xs px-3 py-1 rounded-full font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)]">
                             Novo
                           </span>
                         )}
@@ -391,7 +391,7 @@ const Alerts = ({ user }) => {
                       <div className="mt-3 flex items-center gap-2">
                         <Button
                           size="sm"
-                          className="btn-gold shadow-gold spring-transition h-8"
+                          className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-400 hover:to-cyber-500 shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all h-8"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleViewSale(alert);
@@ -411,22 +411,22 @@ const Alerts = ({ user }) => {
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-4 mt-6">
               <Button
-                variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
+                className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyber-500/30"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Anterior
               </Button>
-              <span className="text-sm text-dark-400">
+              <span className="text-sm text-slate-400">
                 Página {currentPage} de {totalPages}
               </span>
               <Button
-                variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
+                className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyber-500/30"
               >
                 Seguinte
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -437,7 +437,7 @@ const Alerts = ({ user }) => {
       )}
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="glass-ultra max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-dark-850 border border-cyber-500/10 max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">Detalhes da Venda - {selectedSale?.sale_code}</DialogTitle>
           </DialogHeader>
@@ -445,31 +445,31 @@ const Alerts = ({ user }) => {
             <div className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-semibold text-dark-400">Código</label>
+                  <label className="text-sm font-semibold text-slate-400">Código</label>
                   <p className="text-white">{selectedSale.sale_code}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-dark-400">Data</label>
+                  <label className="text-sm font-semibold text-slate-400">Data</label>
                   <p className="text-white">{new Date(selectedSale.date).toLocaleDateString('pt-PT')}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-dark-400">Âmbito</label>
+                  <label className="text-sm font-semibold text-slate-400">Âmbito</label>
                   <p className="text-white capitalize">{selectedSale.scope}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-dark-400">Tipo Cliente</label>
+                  <label className="text-sm font-semibold text-slate-400">Tipo Cliente</label>
                   <p className="text-white capitalize">{selectedSale.client_type}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-dark-400">Nome Cliente</label>
+                  <label className="text-sm font-semibold text-slate-400">Nome Cliente</label>
                   <p className="text-white">{selectedSale.client_name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-dark-400">NIF</label>
+                  <label className="text-sm font-semibold text-slate-400">NIF</label>
                   <p className="text-white">{selectedSale.client_nif}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-dark-400">Status</label>
+                  <label className="text-sm font-semibold text-slate-400">Status</label>
                   <p className="text-white">
                     <span className={`status-badge status-${selectedSale.status.toLowerCase().replace(' ', '-')}`}>
                       {selectedSale.status}
@@ -478,33 +478,33 @@ const Alerts = ({ user }) => {
                 </div>
                 {selectedSale.commission && user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
                   <div>
-                    <label className="text-sm font-semibold text-dark-400">Comissão</label>
-                    <p className="text-green-600 font-semibold">€{selectedSale.commission.toFixed(2)}</p>
+                    <label className="text-sm font-semibold text-slate-400">Comissão</label>
+                    <p className="text-green-400 font-semibold">&euro;{selectedSale.commission.toFixed(2)}</p>
                   </div>
                 )}
               </div>
 
               {selectedSale.notes && selectedSale.notes.length > 0 && (
                 <div>
-                  <label className="text-sm font-semibold text-dark-400 block mb-2">Notas</label>
+                  <label className="text-sm font-semibold text-slate-400 block mb-2">Notas</label>
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {selectedSale.notes.map((note) => (
-                      <div key={note.id} className="p-3 bg-dark-800 rounded-lg">
+                      <div key={note.id} className="p-3 bg-dark-900 border border-dark-700 rounded-lg">
                         <div className="flex justify-between items-start mb-2">
                           <span className="font-medium text-sm text-white">{note.author}</span>
-                          <span className="text-xs text-dark-400">
+                          <span className="text-xs text-slate-500">
                             {new Date(note.created_at).toLocaleString('pt-PT')}
                           </span>
                         </div>
-                        <p className="text-sm text-dark-300">{note.content}</p>
+                        <p className="text-sm text-slate-300">{note.content}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end pt-4 border-t border-dark-600">
-                <Button onClick={() => setViewDialogOpen(false)}>
+              <div className="flex justify-end pt-4 border-t border-dark-700">
+                <Button onClick={() => setViewDialogOpen(false)} className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-400 hover:to-cyber-500">
                   Fechar
                 </Button>
               </div>

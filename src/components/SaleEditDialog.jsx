@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
-const FormSection = ({ icon: Icon, title, children, gradient = "from-dark-600 to-dark-700" }) => (
+const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 to-cyber-600" }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -30,9 +30,9 @@ const FormSection = ({ icon: Icon, title, children, gradient = "from-dark-600 to
 
 const FieldGroup = ({ label, children, colSpan, hint, locked }) => (
   <div className={colSpan === 2 ? "col-span-2" : ""}>
-    <Label className={locked ? "text-sm text-dark-400" : "text-sm font-semibold mb-2 text-dark-200"}>{label}</Label>
+    <Label className={locked ? "text-sm text-slate-500" : "text-sm font-semibold mb-2 text-slate-400"}>{label}</Label>
     {children}
-    {hint && <p className="text-xs mt-1 text-dark-400">{hint}</p>}
+    {hint && <p className="text-xs mt-1 text-slate-500">{hint}</p>}
   </div>
 );
 
@@ -59,13 +59,13 @@ const SaleEditDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden glass-ultra border-white/10 flex flex-col p-0">
-        <div className="sticky top-0 z-10 glass-ultra border-b border-white/10 px-8 py-6">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-dark-850 border border-cyber-500/10 flex flex-col p-0">
+        <div className="sticky top-0 z-10 bg-dark-850 border-b border-dark-700 px-8 py-6">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-bold text-gradient-gold">
+            <DialogTitle className="text-3xl font-bold text-white">
               Editar Venda - {editingSale?.sale_code}
             </DialogTitle>
-            <DialogDescription className="text-sm text-dark-200 mt-1">
+            <DialogDescription className="text-sm text-slate-400 mt-1">
               Altere os campos necessários da venda
             </DialogDescription>
           </DialogHeader>
@@ -74,18 +74,18 @@ const SaleEditDialog = ({
         <form onSubmit={onSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="overflow-y-auto flex-1 px-8 py-6 scrollbar-modern">
             <div className="space-y-8">
-              <FormSection icon={User} title="Identificação do Cliente" gradient="from-slate-600 to-slate-700">
+              <FormSection icon={User} title="Identificação do Cliente" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="Nome" locked>
-                    <Input value={editFormData.client_name} disabled className="glass-input opacity-60 cursor-not-allowed" />
+                    <Input value={editFormData.client_name} disabled className="bg-dark-900 border-dark-700 text-white opacity-60 cursor-not-allowed" />
                   </FieldGroup>
                   <FieldGroup label="NIF" locked>
-                    <Input value={editFormData.client_nif} disabled className="glass-input opacity-60 cursor-not-allowed" />
+                    <Input value={editFormData.client_nif} disabled className="bg-dark-900 border-dark-700 text-white opacity-60 cursor-not-allowed" />
                   </FieldGroup>
                 </div>
               </FormSection>
 
-              <FormSection icon={Clock} title="Informações Gerais" gradient="from-blue-600 to-blue-700">
+              <FormSection icon={Clock} title="Informações Gerais" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="Data da Venda *" hint="Data nao pode ser futura">
                     <Input
@@ -94,7 +94,7 @@ const SaleEditDialog = ({
                       max={new Date().toISOString().split('T')[0]}
                       onChange={(e) => update('date', e.target.value)}
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
 
@@ -107,7 +107,7 @@ const SaleEditDialog = ({
                         setEditFormData(d);
                       }}
                     >
-                      <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Para registo">Para registo</SelectItem>
                         <SelectItem value="Pendente">Pendente</SelectItem>
@@ -124,7 +124,7 @@ const SaleEditDialog = ({
                       value={editFormData.partner_id || ""}
                       onValueChange={(v) => update('partner_id', v === "admin_commissioned" ? null : v)}
                     >
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {user?.is_commissioned && (
                           <SelectItem value="admin_commissioned">Venda Propria (Admin Comissionado)</SelectItem>
@@ -136,7 +136,7 @@ const SaleEditDialog = ({
 
                   <FieldGroup label="Tipo de Cliente *">
                     <Select value={editFormData.client_type} onValueChange={(v) => update('client_type', v)}>
-                      <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="particular">Particular</SelectItem>
                         <SelectItem value="empresarial">Empresarial</SelectItem>
@@ -146,11 +146,11 @@ const SaleEditDialog = ({
                 </div>
               </FormSection>
 
-              <FormSection icon={Building2} title="Operadora" gradient="from-purple-600 to-purple-700">
+              <FormSection icon={Building2} title="Operadora" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="Operadora *" colSpan={2}>
                     <Select value={editFormData.operator_id} onValueChange={(v) => update('operator_id', v)}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {operators.map(op => <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>)}
                       </SelectContent>
@@ -159,14 +159,14 @@ const SaleEditDialog = ({
                 </div>
               </FormSection>
 
-              <FormSection icon={Phone} title="Contactos" gradient="from-green-600 to-green-700">
+              <FormSection icon={Phone} title="Contactos" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="Contacto *">
                     <Input
                       value={editFormData.client_contact}
                       onChange={(e) => update('client_contact', e.target.value)}
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
 
@@ -175,7 +175,7 @@ const SaleEditDialog = ({
                       type="email"
                       value={editFormData.client_email}
                       onChange={(e) => update('client_email', e.target.value)}
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
 
@@ -183,39 +183,39 @@ const SaleEditDialog = ({
                     <Input
                       value={editFormData.client_iban}
                       onChange={(e) => update('client_iban', e.target.value)}
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
                 </div>
               </FormSection>
 
-              <FormSection icon={MapPin} title="Morada" gradient="from-orange-600 to-orange-700">
+              <FormSection icon={MapPin} title="Morada" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="Morada" colSpan={2} locked>
-                    <Input value={editFormData.street} disabled className="opacity-60 cursor-not-allowed" />
+                    <Input value={editFormData.street} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
                   </FieldGroup>
 
                   <FieldGroup label="Codigo Postal" locked>
-                    <Input value={editFormData.postal_code} disabled className="opacity-60 cursor-not-allowed" />
+                    <Input value={editFormData.postal_code} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
                   </FieldGroup>
 
                   <FieldGroup label="Localidade" locked>
-                    <Input value={editFormData.locality} disabled className="opacity-60 cursor-not-allowed" />
+                    <Input value={editFormData.locality} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
                   </FieldGroup>
 
                   <FieldGroup label="Morada de Instalacao" colSpan={2} locked>
-                    <Input value={editFormData.installation_address} disabled className="opacity-60 cursor-not-allowed" />
+                    <Input value={editFormData.installation_address} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
                   </FieldGroup>
                 </div>
               </FormSection>
 
             {/* Telecom fields */}
             {editFormData.scope === 'telecomunicacoes' && (
-              <FormSection icon={Phone} title="Detalhes Telecomunicações" gradient="from-cyan-600 to-cyan-700">
+              <FormSection icon={Phone} title="Detalhes Telecomunicações" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="Tipo de Servico">
                     <Select value={editFormData.service_type} onValueChange={(v) => update('service_type', v)}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="NI">NI (Nova Instalacao)</SelectItem>
                         <SelectItem value="MC">MC (Mudanca de Casa)</SelectItem>
@@ -226,7 +226,7 @@ const SaleEditDialog = ({
 
                   <FieldGroup label="Tipo de Ativacao">
                     <Select value={editFormData.activation_type} onValueChange={(v) => update('activation_type', v)}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Fast">Fast</SelectItem>
                         <SelectItem value="Normal">Normal</SelectItem>
@@ -239,7 +239,7 @@ const SaleEditDialog = ({
                       value={editFormData.request_number}
                       onChange={(e) => update('request_number', e.target.value)}
                       placeholder="Numero de requisicao"
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
 
@@ -252,7 +252,7 @@ const SaleEditDialog = ({
                           value={editFormData.current_monthly_fee}
                           onChange={(e) => update('current_monthly_fee', e.target.value)}
                           placeholder="Ex: 45.00"
-                          className="glass-input"
+                          className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                         />
                       </FieldGroup>
                       <FieldGroup label="Mensalidade Contratada (EUR)">
@@ -262,7 +262,7 @@ const SaleEditDialog = ({
                           value={editFormData.contracted_monthly_fee}
                           onChange={(e) => update('contracted_monthly_fee', e.target.value)}
                           placeholder="Ex: 35.00"
-                          className="glass-input"
+                          className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                         />
                       </FieldGroup>
                     </>
@@ -273,35 +273,35 @@ const SaleEditDialog = ({
                         step="0.01"
                         value={editFormData.monthly_value}
                         onChange={(e) => update('monthly_value', e.target.value)}
-                        className="glass-input"
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       />
                     </FieldGroup>
                   )}
 
                   <div className="col-span-2 pt-3">
-                    <Label className="text-dark-200 text-sm font-semibold block mb-3">Servicos Contratados</Label>
+                    <Label className="text-slate-400 text-sm font-semibold block mb-3">Servicos Contratados</Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="edit_has_tv" checked={editFormData.has_tv} onChange={(e) => update('has_tv', e.target.checked)} className="w-4 h-4" />
+                        <input type="checkbox" id="edit_has_tv" checked={editFormData.has_tv} onChange={(e) => update('has_tv', e.target.checked)} className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900" />
                         <Label htmlFor="edit_has_tv" className="cursor-pointer text-white font-normal">TV</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="edit_has_net" checked={editFormData.has_net} onChange={(e) => update('has_net', e.target.checked)} className="w-4 h-4" />
+                        <input type="checkbox" id="edit_has_net" checked={editFormData.has_net} onChange={(e) => update('has_net', e.target.checked)} className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900" />
                         <Label htmlFor="edit_has_net" className="cursor-pointer text-white font-normal">NET/Fibra</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="edit_has_lr" checked={editFormData.has_lr} onChange={(e) => update('has_lr', e.target.checked)} className="w-4 h-4" />
+                        <input type="checkbox" id="edit_has_lr" checked={editFormData.has_lr} onChange={(e) => update('has_lr', e.target.checked)} className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900" />
                         <Label htmlFor="edit_has_lr" className="cursor-pointer text-white font-normal">Linha Fixa/LR</Label>
                       </div>
                       <div>
-                        <Label htmlFor="edit_mobile_count" className="text-dark-200 text-sm">Moveis</Label>
+                        <Label htmlFor="edit_mobile_count" className="text-slate-400 text-sm">Moveis</Label>
                         <Input
                           id="edit_mobile_count"
                           type="number"
                           min="0"
                           value={editFormData.mobile_count}
                           onChange={(e) => update('mobile_count', parseInt(e.target.value) || 0)}
-                          className="mt-1 glass-input"
+                          className="mt-1 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                         />
                       </div>
                     </div>
@@ -312,19 +312,19 @@ const SaleEditDialog = ({
 
             {/* Solar fields */}
             {editFormData.scope === 'solar' && (
-              <FormSection icon={Zap} title="Detalhes Solar" gradient="from-yellow-600 to-yellow-700">
+              <FormSection icon={Zap} title="Detalhes Solar" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="CPE">
                     <Input
                       value={editFormData.cpe}
                       onChange={(e) => update('cpe', e.target.value.toUpperCase())}
                       placeholder="PT0002XXXXXXXXXXXX"
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
                   <FieldGroup label="Potencia">
                     <Select value={editFormData.power} onValueChange={(v) => update('power', v)}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                       </SelectContent>
@@ -336,11 +336,11 @@ const SaleEditDialog = ({
 
             {/* Energy fields */}
             {editFormData.scope === 'energia' && (
-              <FormSection icon={Zap} title="Detalhes Energia" gradient="from-yellow-600 to-yellow-700">
+              <FormSection icon={Zap} title="Detalhes Energia" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <FieldGroup label="Tipo de Venda Energia">
                     <Select value={editFormData.energy_sale_type} onValueChange={(v) => update('energy_sale_type', v)}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="eletricidade">Eletricidade</SelectItem>
                         <SelectItem value="gas">Gas</SelectItem>
@@ -351,7 +351,7 @@ const SaleEditDialog = ({
 
                   <FieldGroup label="Tipo de Entrada">
                     <Select value={editFormData.entry_type} onValueChange={(v) => update('entry_type', v)}>
-                      <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Alteração de comercializadora">Alteracao de comercializadora</SelectItem>
                         <SelectItem value="Alteração de comercializadora com alteração de titular">Alteracao de comercializadora com alteracao de titular</SelectItem>
@@ -367,12 +367,12 @@ const SaleEditDialog = ({
                           value={editFormData.cpe}
                           onChange={(e) => update('cpe', e.target.value.toUpperCase())}
                           placeholder="PT0002XXXXXXXXXXXX"
-                          className="glass-input"
+                          className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                         />
                       </FieldGroup>
                       <FieldGroup label="Potencia">
                         <Select value={editFormData.power} onValueChange={(v) => update('power', v)}>
-                          <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
                             {POWER_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                           </SelectContent>
@@ -388,12 +388,12 @@ const SaleEditDialog = ({
                           value={editFormData.cui}
                           onChange={(e) => update('cui', e.target.value.toUpperCase())}
                           placeholder="PT16XXXXXXXXXXXXXX"
-                          className="glass-input"
+                          className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                         />
                       </FieldGroup>
                       <FieldGroup label="Escalao">
                         <Select value={editFormData.tier} onValueChange={(v) => update('tier', v)}>
-                          <SelectTrigger className="glass-input"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Escalão 1">Escalao 1</SelectItem>
                             <SelectItem value="Escalão 2">Escalao 2</SelectItem>
@@ -407,35 +407,35 @@ const SaleEditDialog = ({
               </FormSection>
             )}
 
-            <FormSection icon={CreditCard} title="Serviços Adicionais" gradient="from-teal-600 to-teal-700">
+            <FormSection icon={CreditCard} title="Serviços Adicionais" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2 flex items-center gap-6">
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="edit_direct_debit" checked={editFormData.has_direct_debit} onChange={(e) => update('has_direct_debit', e.target.checked)} className="w-4 h-4" />
+                    <input type="checkbox" id="edit_direct_debit" checked={editFormData.has_direct_debit} onChange={(e) => update('has_direct_debit', e.target.checked)} className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900" />
                     <Label htmlFor="edit_direct_debit" className="cursor-pointer text-white font-normal">Debito Direto (DD)</Label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input type="checkbox" id="edit_electronic_invoice" checked={editFormData.has_electronic_invoice} onChange={(e) => update('has_electronic_invoice', e.target.checked)} className="w-4 h-4" />
+                    <input type="checkbox" id="edit_electronic_invoice" checked={editFormData.has_electronic_invoice} onChange={(e) => update('has_electronic_invoice', e.target.checked)} className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900" />
                     <Label htmlFor="edit_electronic_invoice" className="cursor-pointer text-white font-normal">Fatura Eletronica (FE)</Label>
                   </div>
                 </div>
               </div>
             </FormSection>
 
-            <FormSection icon={FileText} title="Observações" gradient="from-indigo-600 to-indigo-700">
+            <FormSection icon={FileText} title="Observações" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-2 gap-6">
                 <FieldGroup label="Observacoes" colSpan={2}>
                   <Textarea
                     value={editFormData.observations}
                     onChange={(e) => update('observations', e.target.value)}
                     rows={3}
-                    className="glass-input"
+                    className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                   />
                 </FieldGroup>
               </div>
             </FormSection>
 
-            <FormSection icon={CreditCard} title="Pagamento" gradient="from-emerald-600 to-emerald-700">
+            <FormSection icon={CreditCard} title="Pagamento" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2 flex flex-col gap-2">
                   <div className="flex items-center gap-2">
@@ -445,17 +445,17 @@ const SaleEditDialog = ({
                       checked={editFormData.paid_to_operator}
                       onChange={(e) => update('paid_to_operator', e.target.checked)}
                       disabled={editFormData.status !== 'Ativo'}
-                      className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                     />
                     <Label
                       htmlFor="edit_paid_to_operator"
-                      className={editFormData.status !== 'Ativo' ? "text-dark-400 font-normal" : "text-white font-normal"}
+                      className={editFormData.status !== 'Ativo' ? "text-slate-500 font-normal" : "text-white font-normal"}
                     >
                       Paga pelo Operador
                     </Label>
                   </div>
                   {editFormData.status !== 'Ativo' && (
-                    <p className="text-xs text-dark-400">Apenas disponivel para vendas com estado "Ativo"</p>
+                    <p className="text-xs text-slate-500">Apenas disponivel para vendas com estado "Ativo"</p>
                   )}
                 </div>
 
@@ -465,17 +465,17 @@ const SaleEditDialog = ({
                       type="date"
                       value={editFormData.payment_date}
                       onChange={(e) => update('payment_date', e.target.value)}
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
                 )}
               </div>
             </FormSection>
 
-            <FormSection icon={DollarSign} title="Comissão" gradient="from-amber-600 to-amber-700">
+            <FormSection icon={DollarSign} title="Comissão" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2">
-                  <Label className="text-dark-200 text-sm">
+                  <Label className="text-slate-400 text-sm">
                     Comissao Manual (EUR)
                     {!canEditCommission && <span className="text-red-400 ml-1">*Apenas Administradores</span>}
                   </Label>
@@ -486,19 +486,19 @@ const SaleEditDialog = ({
                     onChange={(e) => update('manual_commission', e.target.value)}
                     placeholder={hasAutomaticCommission ? "Deixar vazio para calculo automatico" : "Definir comissao"}
                     disabled={!canEditCommission}
-                    className={canEditCommission ? "glass-input" : "opacity-60 cursor-not-allowed"}
+                    className={canEditCommission ? "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white" : "bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed"}
                   />
                   {hasAutomaticCommission && commissionChanged && editFormData.manual_commission && (
-                    <div className="mt-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                    <div className="mt-2 bg-cyber-500/10 border border-cyber-500/20 rounded-xl p-3">
                       <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-amber-400 text-sm">
+                        <AlertTriangle className="h-4 w-4 text-cyber-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-cyber-400 text-sm">
                           <strong>Atencao:</strong> Esta operadora tem comissao automatica. Ao definir um valor manual, esta a sobrescrever o calculo automatico. Deixe o campo vazio para manter o calculo automatico.
                         </p>
                       </div>
                     </div>
                   )}
-                  <p className="text-xs mt-1 text-dark-400">
+                  <p className="text-xs mt-1 text-slate-500">
                     {hasAutomaticCommission
                       ? 'Operadora com calculo automatico de comissao'
                       : saleOperator?.commission_mode === 'manual'
@@ -513,12 +513,12 @@ const SaleEditDialog = ({
           </div>
 
           {/* Actions */}
-          <div className="sticky bottom-0 glass-ultra border-t border-white/10 px-8 py-4">
+          <div className="sticky bottom-0 bg-dark-850 border-t border-dark-700 px-8 py-4">
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-white/20 text-white hover:bg-white/10">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800">
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-gold-400 hover:bg-gold-500 text-dark-900 font-semibold">
+              <Button type="submit" className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white font-semibold hover:shadow-lg hover:shadow-cyber-500/25">
                 Guardar Alteracoes
               </Button>
             </div>

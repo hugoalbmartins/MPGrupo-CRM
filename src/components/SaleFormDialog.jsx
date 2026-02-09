@@ -10,7 +10,7 @@ import EnergyPointsManager from './EnergyPointsManager';
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
-const FormSection = ({ icon: Icon, title, children, gradient = "from-dark-600 to-dark-700" }) => (
+const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 to-cyber-600" }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -57,41 +57,41 @@ const SaleFormDialog = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-          className="relative w-full max-w-5xl max-h-[95vh] overflow-hidden glass-ultra rounded-2xl shadow-2xl flex flex-col"
+          className="relative w-full max-w-5xl max-h-[95vh] overflow-hidden bg-dark-850 border border-cyber-500/10 rounded-2xl shadow-2xl flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="sticky top-0 z-10 glass-ultra border-b border-white/10 px-8 py-6">
+          <div className="sticky top-0 z-10 bg-dark-850 border-b border-dark-700 px-8 py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-gradient-gold mb-1">Nova Venda</h2>
-                <p className="text-sm text-dark-200">Preencha os dados da nova venda no sistema</p>
+                <h2 className="text-3xl font-bold text-white mb-1">Nova Venda</h2>
+                <p className="text-sm text-slate-400">Preencha os dados da nova venda no sistema</p>
               </div>
               <button
                 onClick={onClose}
                 className="w-10 h-10 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
               >
-                <X className="w-5 h-5 text-red-600" />
+                <X className="w-5 h-5 text-red-400" />
               </button>
             </div>
           </div>
 
           <div className="overflow-y-auto flex-1 px-8 py-6 scrollbar-modern">
             <form onSubmit={onSubmit} className="space-y-8">
-              <FormSection icon={Clock} title="Informações Gerais" gradient="from-blue-600 to-blue-700">
+              <FormSection icon={Clock} title="Informações Gerais" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Data da Venda *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Data da Venda *</Label>
                     <Input
                       type="date"
                       value={formData.date}
                       max={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Parceiro *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Parceiro *</Label>
                     <Select
                       value={formData.partner_id}
                       onValueChange={(v) => {
@@ -102,12 +102,12 @@ const SaleFormDialog = ({
                       }}
                       disabled={user?.role === 'partner'}
                     >
-                      <SelectTrigger className="glass-input">
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                         <SelectValue placeholder="Selecione o parceiro..." />
                       </SelectTrigger>
                       <SelectContent>
                         {user?.role === 'admin' && user?.is_commissioned && (
-                          <SelectItem value="__admin__">📊 Venda Própria (Admin Comissionado)</SelectItem>
+                          <SelectItem value="__admin__">Venda Própria (Admin Comissionado)</SelectItem>
                         )}
                         {partners.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
@@ -115,29 +115,29 @@ const SaleFormDialog = ({
                       </SelectContent>
                     </Select>
                     {formData.partner_id === '__admin__' && (
-                      <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
-                        ℹ️ Esta venda será registada no seu nome com valores REV
+                      <p className="text-xs text-cyber-400 mt-2 flex items-center gap-1">
+                        Esta venda será registada no seu nome com valores REV
                       </p>
                     )}
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Âmbito *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Âmbito *</Label>
                     <Select
                       value={formData.scope}
                       onValueChange={(v) => setFormData({...formData, scope: v, operator_id: "", service_type: "", cpe: "", cui: ""})}
                     >
-                      <SelectTrigger className="glass-input">
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="telecomunicacoes">📡 Telecomunicações</SelectItem>
-                        <SelectItem value="energia">⚡ Energia</SelectItem>
-                        <SelectItem value="solar">☀️ Solar</SelectItem>
+                        <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
+                        <SelectItem value="energia">Energia</SelectItem>
+                        <SelectItem value="solar">Solar</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Cliente *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Cliente *</Label>
                     <Select
                       value={formData.client_type}
                       onValueChange={(v) => {
@@ -147,24 +147,24 @@ const SaleFormDialog = ({
                         }
                       }}
                     >
-                      <SelectTrigger className="glass-input">
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="particular">👤 Particular</SelectItem>
-                        <SelectItem value="empresarial">🏢 Empresarial</SelectItem>
+                        <SelectItem value="particular">Particular</SelectItem>
+                        <SelectItem value="empresarial">Empresarial</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </FormSection>
 
-              <div className="border-t border-white/10 my-6" />
+              <div className="border-t border-dark-700 my-6" />
 
-              <FormSection icon={Building2} title="Operadora" gradient="from-purple-600 to-purple-700">
+              <FormSection icon={Building2} title="Operadora" gradient="from-cyber-500 to-cyber-600">
                 <div className={formData.scope === 'energia' ? 'grid grid-cols-2 gap-6' : ''}>
                   <div className={formData.scope === 'energia' ? '' : 'col-span-full'}>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Operadora *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Operadora *</Label>
                     <Select
                       value={formData.operator_id}
                       onValueChange={(v) => {
@@ -194,7 +194,7 @@ const SaleFormDialog = ({
                         fetchOperatorCommissions(v);
                       }}
                     >
-                      <SelectTrigger className="glass-input">
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                         <SelectValue placeholder="Selecione a operadora..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -202,9 +202,9 @@ const SaleFormDialog = ({
                           <SelectItem key={op.id} value={op.id}>
                             {op.name}
                             {op.energy_type && ` (${
-                              op.energy_type === 'eletricidade' ? '⚡ Eletricidade' :
-                              op.energy_type === 'gas' ? '🔥 Gás' :
-                              '⚡🔥 Dual'
+                              op.energy_type === 'eletricidade' ? 'Eletricidade' :
+                              op.energy_type === 'gas' ? 'Gás' :
+                              'Dual'
                             })`}
                           </SelectItem>
                         ))}
@@ -216,14 +216,14 @@ const SaleFormDialog = ({
                 {formData.scope === 'energia' && formData.operator_id && operatorEnergyType === 'dual' && (
                   <>
                     {operatorCommissions.length === 0 ? (
-                      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                        <p className="text-red-600 font-semibold">⚠️ Operadora sem comissões configuradas</p>
-                        <p className="text-sm text-red-600/80 mt-1">
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                        <p className="text-red-400 font-semibold">Operadora sem comissões configuradas</p>
+                        <p className="text-sm text-red-400/80 mt-1">
                           Não é possível registar vendas para esta operadora. Contacte o administrador.
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5">
+                      <div className="bg-dark-900 border border-dark-700 rounded-xl p-5">
                         <Label className="text-base font-bold mb-3 block text-white">
                           O que o cliente pretende contratar? *
                         </Label>
@@ -231,7 +231,7 @@ const SaleFormDialog = ({
                           value={formData.energy_sale_type}
                           onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: ''})}
                         >
-                          <SelectTrigger className="glass-input">
+                          <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                             <SelectValue placeholder="Selecione o tipo de adesão..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -245,20 +245,20 @@ const SaleFormDialog = ({
                               return (
                                 <>
                                   {hasEletricidade && (
-                                    <SelectItem value="eletricidade">⚡ Apenas Eletricidade</SelectItem>
+                                    <SelectItem value="eletricidade">Apenas Eletricidade</SelectItem>
                                   )}
                                   {hasGas && (
-                                    <SelectItem value="gas">🔥 Apenas Gás</SelectItem>
+                                    <SelectItem value="gas">Apenas Gás</SelectItem>
                                   )}
                                   {hasEletricidade && hasGas && (
-                                    <SelectItem value="dual">⚡🔥 Eletricidade + Gás (Dual)</SelectItem>
+                                    <SelectItem value="dual">Eletricidade + Gás (Dual)</SelectItem>
                                   )}
                                 </>
                               );
                             })()}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs mt-2 text-dark-400">
+                        <p className="text-xs mt-2 text-slate-500">
                           Selecione se o cliente está a aderir apenas a eletricidade, apenas a gás, ou a ambos os serviços.
                         </p>
                       </div>
@@ -267,126 +267,126 @@ const SaleFormDialog = ({
                 )}
               </FormSection>
 
-              <div className="border-t border-white/10 my-6" />
+              <div className="border-t border-dark-700 my-6" />
 
-              <FormSection icon={User} title="Dados do Cliente" gradient="from-green-600 to-green-700">
+              <FormSection icon={User} title="Dados do Cliente" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Nome Completo *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Nome Completo *</Label>
                     <Input
                       value={formData.client_name}
                       onChange={(e) => setFormData({...formData, client_name: e.target.value})}
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="Nome completo do cliente"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">NIF *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">NIF *</Label>
                     <Input
                       value={formData.client_nif}
                       onChange={(e) => setFormData({...formData, client_nif: e.target.value})}
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="000000000"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Contacto *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Contacto *</Label>
                     <Input
                       value={formData.client_contact}
                       onChange={(e) => setFormData({...formData, client_contact: e.target.value})}
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="900000000"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Email</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Email</Label>
                     <Input
                       type="email"
                       value={formData.client_email}
                       onChange={(e) => setFormData({...formData, client_email: e.target.value})}
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="cliente@exemplo.com"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">IBAN</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">IBAN</Label>
                     <Input
                       value={formData.client_iban}
                       onChange={(e) => setFormData({...formData, client_iban: e.target.value})}
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="PT50..."
                     />
                   </div>
                 </div>
               </FormSection>
 
-              <div className="border-t border-white/10 my-6" />
+              <div className="border-t border-dark-700 my-6" />
 
-              <FormSection icon={MapPin} title="Morada" gradient="from-orange-600 to-orange-700">
+              <FormSection icon={MapPin} title="Morada" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="col-span-2">
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Morada Completa *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Morada Completa *</Label>
                     <Input
                       value={formData.street}
                       onChange={(e) => setFormData({...formData, street: e.target.value})}
                       placeholder="Rua, Avenida, número, andar, etc."
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Código Postal *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Código Postal *</Label>
                     <Input
                       value={formData.postal_code}
                       onChange={(e) => setFormData({...formData, postal_code: e.target.value})}
                       placeholder="0000-000"
                       pattern="\d{4}-\d{3}"
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Localidade *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Localidade *</Label>
                     <Input
                       value={formData.locality}
                       onChange={(e) => setFormData({...formData, locality: e.target.value})}
                       placeholder="Ex: Lisboa, Porto, etc."
                       required
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Morada de Instalação/Fornecimento</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Morada de Instalação/Fornecimento</Label>
                     <Input
                       value={formData.installation_address}
                       onChange={(e) => setFormData({...formData, installation_address: e.target.value})}
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="Se diferente da morada do cliente"
                     />
-                    <p className="text-xs mt-1 text-dark-400">Apenas preencher se for diferente da morada principal</p>
+                    <p className="text-xs mt-1 text-slate-500">Apenas preencher se for diferente da morada principal</p>
                   </div>
                 </div>
               </FormSection>
 
-              <div className="border-t border-white/10 my-6" />
+              <div className="border-t border-dark-700 my-6" />
 
               {formData.scope === 'telecomunicacoes' && formData.operator_id && (
                 <>
                   {operatorCommissions.length === 0 ? (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                      <p className="text-red-600 font-semibold">⚠️ Operadora sem comissões configuradas</p>
-                      <p className="text-sm text-red-600/80 mt-1">
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                      <p className="text-red-400 font-semibold">Operadora sem comissões configuradas</p>
+                      <p className="text-sm text-red-400/80 mt-1">
                         Não é possível registar vendas para esta operadora. Contacte o administrador.
                       </p>
                     </div>
                   ) : (
-                    <FormSection icon={TrendingUp} title="Detalhes da Venda - Telecomunicações" gradient="from-cyan-600 to-cyan-700">
+                    <FormSection icon={TrendingUp} title="Detalhes da Venda - Telecomunicações" gradient="from-cyber-500 to-cyber-600">
                       <div className="grid grid-cols-2 gap-6">
                         <div>
-                          <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Serviço *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Serviço *</Label>
                           <Select
                             value={formData.service_type}
                             onValueChange={(v) => {
@@ -401,7 +401,7 @@ const SaleFormDialog = ({
                             }}
                             disabled={availableServiceTypes.length === 0}
                           >
-                            <SelectTrigger className="glass-input">
+                            <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                               <SelectValue placeholder={availableServiceTypes.length === 0 ? "Sem tipos disponíveis" : "Selecione..."} />
                             </SelectTrigger>
                             <SelectContent>
@@ -416,17 +416,17 @@ const SaleFormDialog = ({
                             </SelectContent>
                           </Select>
                           {availableServiceTypes.length === 0 && (
-                            <p className="text-xs text-red-600 mt-1">Nenhum tipo de serviço com comissão configurada</p>
+                            <p className="text-xs text-red-400 mt-1">Nenhum tipo de serviço com comissão configurada</p>
                           )}
                         </div>
                         {availableActivationTypes.length > 0 && (
                           <div>
-                            <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Ativação *</Label>
+                            <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Ativação *</Label>
                             <Select
                               value={formData.activation_type}
                               onValueChange={(v) => setFormData({...formData, activation_type: v})}
                             >
-                              <SelectTrigger className="glass-input">
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
@@ -440,13 +440,13 @@ const SaleFormDialog = ({
                       </div>
 
                       {(formData.service_type === 'REFID' || formData.service_type === 'Refid') ? (
-                        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
+                        <div className="bg-cyber-500/10 border border-cyber-500/20 rounded-xl p-5">
                           <h4 className="font-bold mb-4 text-white">
                             Dados REFID - Downsell/Upsell
                           </h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label className="text-sm font-semibold mb-2 text-dark-200">Mensalidade Atual (€) *</Label>
+                              <Label className="text-sm font-semibold mb-2 text-slate-400">Mensalidade Atual (€) *</Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -454,12 +454,12 @@ const SaleFormDialog = ({
                                 onChange={(e) => setFormData({...formData, current_monthly_fee: e.target.value})}
                                 required
                                 placeholder="Ex: 45.00"
-                                className="glass-input"
+                                className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                               />
-                              <p className="text-xs mt-1 text-dark-400">Valor que o cliente paga atualmente</p>
+                              <p className="text-xs mt-1 text-slate-500">Valor que o cliente paga atualmente</p>
                             </div>
                             <div>
-                              <Label className="text-sm font-semibold mb-2 text-dark-200">Mensalidade Contratada (€) *</Label>
+                              <Label className="text-sm font-semibold mb-2 text-slate-400">Mensalidade Contratada (€) *</Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -467,20 +467,20 @@ const SaleFormDialog = ({
                                 onChange={(e) => setFormData({...formData, contracted_monthly_fee: e.target.value})}
                                 required
                                 placeholder="Ex: 35.00"
-                                className="glass-input"
+                                className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                               />
-                              <p className="text-xs mt-1 text-dark-400">Novo valor contratado</p>
+                              <p className="text-xs mt-1 text-slate-500">Novo valor contratado</p>
                             </div>
                           </div>
                           {formData.current_monthly_fee && formData.contracted_monthly_fee && (
-                            <div className="mt-4 p-4 glass-ultra rounded-lg border border-white/20">
+                            <div className="mt-4 p-4 bg-dark-900 border border-dark-700 rounded-lg">
                               <p className="text-sm font-semibold">
                                 {parseFloat(formData.current_monthly_fee) > parseFloat(formData.contracted_monthly_fee) ? (
-                                  <span className="text-orange-600">📉 Downsell: Cliente reduz mensalidade de €{formData.current_monthly_fee} para €{formData.contracted_monthly_fee}</span>
+                                  <span className="text-orange-400">Downsell: Cliente reduz mensalidade de €{formData.current_monthly_fee} para €{formData.contracted_monthly_fee}</span>
                                 ) : parseFloat(formData.current_monthly_fee) < parseFloat(formData.contracted_monthly_fee) ? (
-                                  <span className="text-green-600">📈 Upsell: Cliente aumenta mensalidade de €{formData.current_monthly_fee} para €{formData.contracted_monthly_fee}</span>
+                                  <span className="text-green-400">Upsell: Cliente aumenta mensalidade de €{formData.current_monthly_fee} para €{formData.contracted_monthly_fee}</span>
                                 ) : (
-                                  <span className="text-dark-200">➖ Mensalidades iguais</span>
+                                  <span className="text-slate-300">Mensalidades iguais</span>
                                 )}
                               </p>
                             </div>
@@ -488,20 +488,20 @@ const SaleFormDialog = ({
                         </div>
                       ) : (
                         <div>
-                          <Label className="text-sm font-semibold mb-2 text-dark-200">Mensalidade (€) *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-slate-400">Mensalidade (€) *</Label>
                           <Input
                             type="number"
                             step="0.01"
                             value={formData.monthly_value}
                             onChange={(e) => setFormData({...formData, monthly_value: e.target.value})}
                             required
-                            className="glass-input"
+                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                             placeholder="Ex: 29.99"
                           />
                         </div>
                       )}
 
-                      <div className="border-t border-white/10 pt-4 mt-4">
+                      <div className="border-t border-dark-700 pt-4 mt-4">
                         <Label className="text-base font-bold mb-4 block text-white">Serviços Contratados</Label>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="flex items-center space-x-3">
@@ -510,7 +510,7 @@ const SaleFormDialog = ({
                               id="has_tv"
                               checked={formData.has_tv}
                               onChange={(e) => setFormData({...formData, has_tv: e.target.checked})}
-                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                             />
                             <Label htmlFor="has_tv" className="cursor-pointer font-medium text-white">TV</Label>
                           </div>
@@ -520,7 +520,7 @@ const SaleFormDialog = ({
                               id="has_net"
                               checked={formData.has_net}
                               onChange={(e) => setFormData({...formData, has_net: e.target.checked})}
-                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                             />
                             <Label htmlFor="has_net" className="cursor-pointer font-medium text-white">NET/Fibra</Label>
                           </div>
@@ -530,19 +530,19 @@ const SaleFormDialog = ({
                               id="has_lr"
                               checked={formData.has_lr}
                               onChange={(e) => setFormData({...formData, has_lr: e.target.checked})}
-                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                             />
                             <Label htmlFor="has_lr" className="cursor-pointer font-medium text-white">Linha Fixa/LR</Label>
                           </div>
                           <div>
-                            <Label htmlFor="mobile_count" className="text-sm font-semibold mb-2 text-dark-200">Móveis</Label>
+                            <Label htmlFor="mobile_count" className="text-sm font-semibold mb-2 text-slate-400">Móveis</Label>
                             <Input
                               id="mobile_count"
                               type="number"
                               min="0"
                               value={formData.mobile_count}
                               onChange={(e) => setFormData({...formData, mobile_count: parseInt(e.target.value) || 0})}
-                              className="glass-input"
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                             />
                           </div>
                         </div>
@@ -553,25 +553,25 @@ const SaleFormDialog = ({
               )}
 
               {formData.scope === 'solar' && (
-                <FormSection icon={Zap} title="Detalhes Solar" gradient="from-yellow-500 to-yellow-600">
+                <FormSection icon={Zap} title="Detalhes Solar" gradient="from-cyber-500 to-cyber-600">
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <Label className="text-sm font-semibold mb-2 text-dark-200">CPE * (PT0002...)</Label>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">CPE * (PT0002...)</Label>
                       <Input
                         value={formData.cpe}
                         onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})}
                         placeholder="PT0002XXXXXXXXXXXX"
                         required
-                        className="glass-input"
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       />
                     </div>
                     <div>
-                      <Label className="text-sm font-semibold mb-2 text-dark-200">Potência *</Label>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">Potência *</Label>
                       <Select
                         value={formData.power}
                         onValueChange={(v) => setFormData({...formData, power: v})}
                       >
-                        <SelectTrigger className="glass-input">
+                        <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -584,7 +584,7 @@ const SaleFormDialog = ({
               )}
 
               {formData.scope === 'energia' && formData.operator_id && (
-                <FormSection icon={Zap} title="Detalhes Energia" gradient="from-yellow-500 to-yellow-600">
+                <FormSection icon={Zap} title="Detalhes Energia" gradient="from-cyber-500 to-cyber-600">
                   {(() => {
                     const saleType = operatorEnergyType === 'dual' ? formData.energy_sale_type : operatorEnergyType;
 
@@ -602,12 +602,12 @@ const SaleFormDialog = ({
                         />
 
                         <div className="mt-4">
-                          <Label className="text-sm font-semibold mb-2 text-dark-200">Tipo de Entrada *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Entrada *</Label>
                           <Select
                             value={formData.entry_type}
                             onValueChange={(v) => setFormData({...formData, entry_type: v})}
                           >
-                            <SelectTrigger className="glass-input">
+                            <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                               <SelectValue placeholder="Selecione..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -624,9 +624,9 @@ const SaleFormDialog = ({
               )}
 
               {currentOperator && (currentOperator.pays_direct_debit || currentOperator.pays_electronic_invoice) && (
-                <div className="border-t border-white/10 pt-6">
-                  <FormSection icon={CreditCard} title="Adesões do Cliente" gradient="from-indigo-600 to-indigo-700">
-                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5 space-y-3">
+                <div className="border-t border-dark-700 pt-6">
+                  <FormSection icon={CreditCard} title="Adesões do Cliente" gradient="from-cyber-500 to-cyber-600">
+                    <div className="bg-dark-900 border border-dark-700 rounded-xl p-5 space-y-3">
                       {currentOperator.pays_direct_debit && (
                         <div className="flex items-center space-x-3">
                           <input
@@ -634,7 +634,7 @@ const SaleFormDialog = ({
                             id="has_direct_debit"
                             checked={formData.has_direct_debit}
                             onChange={(e) => setFormData({...formData, has_direct_debit: e.target.checked})}
-                            className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                           />
                           <Label htmlFor="has_direct_debit" className="cursor-pointer font-medium text-white">
                             Cliente aderiu a Débito Direto (DD)
@@ -648,54 +648,54 @@ const SaleFormDialog = ({
                             id="has_electronic_invoice"
                             checked={formData.has_electronic_invoice}
                             onChange={(e) => setFormData({...formData, has_electronic_invoice: e.target.checked})}
-                            className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                           />
                           <Label htmlFor="has_electronic_invoice" className="cursor-pointer font-medium text-white">
                             Cliente aderiu a Fatura Eletrónica (FE)
                           </Label>
                         </div>
                       )}
-                      <p className="text-xs mt-3 text-dark-400">
-                        ℹ️ Valores adicionais serão somados à comissão conforme configuração da operadora
+                      <p className="text-xs mt-3 text-slate-500">
+                        Valores adicionais serão somados à comissão conforme configuração da operadora
                       </p>
                     </div>
                   </FormSection>
                 </div>
               )}
 
-              <div className="border-t border-white/10 my-6" />
+              <div className="border-t border-dark-700 my-6" />
 
-              <FormSection icon={FileText} title="Informações Adicionais" gradient="from-gray-600 to-gray-700">
+              <FormSection icon={FileText} title="Informações Adicionais" gradient="from-cyber-500 to-cyber-600">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-5 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                  <div className="flex items-center space-x-3 p-5 bg-dark-900 border border-dark-700 rounded-xl">
                     <input
                       type="checkbox"
                       id="is_proposal"
                       checked={formData.is_proposal}
                       onChange={(e) => setFormData({...formData, is_proposal: e.target.checked})}
-                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                     />
                     <Label htmlFor="is_proposal" className="cursor-pointer font-medium text-white">
                       Esta venda é uma proposta?
                     </Label>
                   </div>
-                  <p className="text-xs text-dark-400">
-                    ℹ️ Propostas ficam no estado "Em proposta" e aparecem apenas no separador Propostas
+                  <p className="text-xs text-slate-500">
+                    Propostas ficam no estado "Em proposta" e aparecem apenas no separador Propostas
                   </p>
 
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">Observações</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Observações</Label>
                     <Textarea
                       value={formData.observations}
                       onChange={(e) => setFormData({...formData, observations: e.target.value})}
                       rows={4}
-                      className="glass-input"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="Notas adicionais sobre esta venda..."
                     />
                   </div>
 
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-dark-200">
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">
                       Documentos {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
                         const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
@@ -713,11 +713,11 @@ const SaleFormDialog = ({
                           const selectedPartner = partners.find(p => p.id === formData.partner_id);
                           return selectedPartner && selectedPartner.partner_type === 'D2D';
                         })()}
-                        className="block w-full text-sm text-dark-200 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-500/10 file:text-blue-700 hover:file:bg-blue-500/20 transition-colors cursor-pointer"
+                        className="block w-full text-sm text-slate-300 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20 transition-colors cursor-pointer"
                       />
                       {uploadFiles.length > 0 && (
-                        <p className="text-sm mt-3 flex items-center gap-2 text-dark-200">
-                          <Upload className="w-4 h-4 text-blue-600" />
+                        <p className="text-sm mt-3 flex items-center gap-2 text-slate-300">
+                          <Upload className="w-4 h-4 text-cyber-400" />
                           {uploadFiles.length} ficheiro(s) selecionado(s)
                         </p>
                       )}
@@ -725,8 +725,8 @@ const SaleFormDialog = ({
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
                         const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
                         return isD2D && (
-                          <p className="text-xs mt-2 text-orange-600 font-medium">
-                            ⚠️ Obrigatório para parceiros D2D - Aceita fotos da câmara
+                          <p className="text-xs mt-2 text-orange-400 font-medium">
+                            Obrigatório para parceiros D2D - Aceita fotos da câmara
                           </p>
                         );
                       })()}
@@ -737,13 +737,13 @@ const SaleFormDialog = ({
             </form>
           </div>
 
-          <div className="sticky bottom-0 z-10 glass-ultra border-t border-white/10 px-8 py-6">
+          <div className="sticky bottom-0 z-10 bg-dark-850 border-t border-dark-700 px-8 py-6">
             <div className="flex justify-end gap-4">
               <Button
                 type="button"
                 onClick={onClose}
                 variant="outline"
-                className="px-6 py-3 rounded-xl font-semibold"
+                className="px-6 py-3 rounded-xl font-semibold bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
               >
                 Cancelar
               </Button>
@@ -751,7 +751,7 @@ const SaleFormDialog = ({
                 type="submit"
                 onClick={onSubmit}
                 disabled={formData.operator_id && operatorCommissions.length === 0}
-                className="btn-gold px-8 py-3 rounded-xl font-bold shadow-gold-glow"
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Criar Venda

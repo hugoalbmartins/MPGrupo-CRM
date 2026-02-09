@@ -151,33 +151,33 @@ const Sales = ({ user }) => {
     }
 
     if (operatorCommissions.length === 0) {
-      toast.error("Não é possível criar venda: operadora sem comissões configuradas!");
+      toast.error("Nao e possivel criar venda: operadora sem comissoes configuradas!");
       return;
     }
 
     if (formData.scope === 'telecomunicacoes') {
       if (availableServiceTypes.length === 0) {
-        toast.error("Operadora não tem tipos de serviço com comissões configuradas!");
+        toast.error("Operadora nao tem tipos de servico com comissoes configuradas!");
         return;
       }
       if (!availableServiceTypes.includes(formData.service_type)) {
-        toast.error("Tipo de serviço selecionado não tem comissão configurada!");
+        toast.error("Tipo de servico selecionado nao tem comissao configurada!");
         return;
       }
       if (availableActivationTypes.length > 0 && !formData.activation_type) {
-        toast.error("Selecione o tipo de ativação!");
+        toast.error("Selecione o tipo de ativacao!");
         return;
       }
     }
 
     if (!formData.street || !formData.postal_code || !formData.locality) {
-      toast.error("Morada, código postal e localidade são obrigatórios!");
+      toast.error("Morada, codigo postal e localidade sao obrigatorios!");
       return;
     }
 
     const postalCodeRegex = /^\d{4}-\d{3}$/;
     if (!postalCodeRegex.test(formData.postal_code)) {
-      toast.error("Código postal inválido! Use o formato: 0000-000");
+      toast.error("Codigo postal invalido! Use o formato: 0000-000");
       return;
     }
 
@@ -187,7 +187,7 @@ const Sales = ({ user }) => {
       const saleType = energyType === 'dual' ? formData.energy_sale_type : energyType;
 
       if (energyType === 'dual' && !formData.energy_sale_type) {
-        toast.error("Selecione o tipo de adesão (Eletricidade, Gás ou Ambos)!");
+        toast.error("Selecione o tipo de adesao (Eletricidade, Gas ou Ambos)!");
         return;
       }
 
@@ -199,17 +199,17 @@ const Sales = ({ user }) => {
       );
 
       if (saleType === 'eletricidade' && !hasEletricidadeCommission) {
-        toast.error("Não há comissões configuradas para vendas de eletricidade nesta operadora!");
+        toast.error("Nao ha comissoes configuradas para vendas de eletricidade nesta operadora!");
         return;
       }
 
       if (saleType === 'gas' && !hasGasCommission) {
-        toast.error("Não há comissões configuradas para vendas de gás nesta operadora!");
+        toast.error("Nao ha comissoes configuradas para vendas de gas nesta operadora!");
         return;
       }
 
       if (saleType === 'dual' && (!hasEletricidadeCommission || !hasGasCommission)) {
-        toast.error("Não há comissões configuradas para vendas dual (eletricidade + gás) nesta operadora!");
+        toast.error("Nao ha comissoes configuradas para vendas dual (eletricidade + gas) nesta operadora!");
         return;
       }
 
@@ -223,7 +223,7 @@ const Sales = ({ user }) => {
 
         if (saleType === 'eletricidade' || saleType === 'dual') {
           if (!point.point_code || !point.power_kva) {
-            toast.error(`Ponto ${i + 1}: CPE e Potência são obrigatórios!`);
+            toast.error(`Ponto ${i + 1}: CPE e Potencia sao obrigatorios!`);
             return;
           }
         }
@@ -231,14 +231,14 @@ const Sales = ({ user }) => {
         if (saleType === 'gas' || saleType === 'dual') {
           const cuiField = saleType === 'dual' ? 'cui_code' : 'point_code';
           if (!point[cuiField] || !point.tier) {
-            toast.error(`Ponto ${i + 1}: CUI e Escalão são obrigatórios!`);
+            toast.error(`Ponto ${i + 1}: CUI e Escalao sao obrigatorios!`);
             return;
           }
         }
       }
 
       if (!formData.entry_type) {
-        toast.error("Tipo de Entrada é obrigatório!");
+        toast.error("Tipo de Entrada e obrigatorio!");
         return;
       }
     }
@@ -313,7 +313,7 @@ const Sales = ({ user }) => {
       const errorMessage = error.message || "Erro ao criar venda";
 
       if (errorMessage.includes('REQ_DUPLICATE')) {
-        toast.error("Número de requisição já existe no sistema");
+        toast.error("Numero de requisicao ja existe no sistema");
       } else {
         toast.error(errorMessage);
       }
@@ -532,25 +532,25 @@ const Sales = ({ user }) => {
         const baseData = {
           'Data': new Date(sale.date).toLocaleDateString('pt-PT'),
           'ID Parceiro': partner?.code || partner?.name || sale.partner_id || '',
-          'Âmbito': sale.scope,
+          'Ambito': sale.scope,
           'Tipo Cliente': sale.client_type,
           'Nome Cliente': sale.client_name,
           'NIF': sale.client_nif,
           'Contacto': sale.client_contact,
           'Email': sale.client_email || '',
           'IBAN': sale.client_iban || '',
-          'Débito Direto': sale.has_direct_debit ? 'Sim' : 'Não',
-          'Fatura Eletrónica': sale.has_electronic_invoice ? 'Sim' : 'Não',
+          'Debito Direto': sale.has_direct_debit ? 'Sim' : 'Nao',
+          'Fatura Eletronica': sale.has_electronic_invoice ? 'Sim' : 'Nao',
           'Morada': sale.street || '',
-          'Código Postal': sale.postal_code || '',
+          'Codigo Postal': sale.postal_code || '',
           'Localidade': sale.locality || '',
-          'Morada Instalação': sale.installation_address || '',
+          'Morada Instalacao': sale.installation_address || '',
           'ID Operadora': operator?.name || sale.operator_id || '',
-          'Tipo Serviço': sale.service_type || '',
-          'Tipo Ativação': sale.activation_type || '',
+          'Tipo Servico': sale.service_type || '',
+          'Tipo Ativacao': sale.activation_type || '',
           'Valor Mensal': sale.monthly_value || '',
           'Tipo Venda Energia': sale.energy_sale_type || '',
-          'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Não',
+          'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Nao',
           'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : ''
         };
 
@@ -566,17 +566,17 @@ const Sales = ({ user }) => {
                   'Ponto': `${i + 1}/${points.length}`,
                   'Tipo Ponto': point.point_type.toUpperCase(),
                   'CPE': point.point_type === 'cpe' ? point.point_code : '',
-                  'Potência': point.power_kva || '',
+                  'Potencia': point.power_kva || '',
                   'CUI': point.point_type === 'cui' ? point.point_code : '',
-                  'Escalão': point.tier || '',
-                  'Estado Ativação': point.activation_status,
-                  'Data Ativação': point.activation_date ? new Date(point.activation_date).toLocaleDateString('pt-PT') : '',
-                  'Pago Operador Ponto': point.operator_paid ? 'Sim' : 'Não',
+                  'Escalao': point.tier || '',
+                  'Estado Ativacao': point.activation_status,
+                  'Data Ativacao': point.activation_date ? new Date(point.activation_date).toLocaleDateString('pt-PT') : '',
+                  'Pago Operador Ponto': point.operator_paid ? 'Sim' : 'Nao',
                   'Tipo Entrada': sale.entry_type || '',
                   'Status': sale.status,
-                  'Nº Requisição': sale.request_number || '',
-                  'Comissão': `€${commission.toFixed(2)}`,
-                  'Observações': sale.observations || ''
+                  'Nr Requisicao': sale.request_number || '',
+                  'Comissao': `EUR${commission.toFixed(2)}`,
+                  'Observacoes': sale.observations || ''
                 });
               }
             } else {
@@ -584,14 +584,14 @@ const Sales = ({ user }) => {
               excelData.push({
                 ...baseData,
                 'CPE': sale.cpe || '',
-                'Potência': sale.power || '',
+                'Potencia': sale.power || '',
                 'CUI': showCUI ? (sale.cui || '') : '',
-                'Escalão': showCUI ? (sale.tier || '') : '',
+                'Escalao': showCUI ? (sale.tier || '') : '',
                 'Tipo Entrada': sale.entry_type || '',
                 'Status': sale.status,
-                'Nº Requisição': sale.request_number || '',
-                'Comissão': `€${commission.toFixed(2)}`,
-                'Observações': sale.observations || ''
+                'Nr Requisicao': sale.request_number || '',
+                'Comissao': `EUR${commission.toFixed(2)}`,
+                'Observacoes': sale.observations || ''
               });
             }
           } catch (error) {
@@ -600,28 +600,28 @@ const Sales = ({ user }) => {
             excelData.push({
               ...baseData,
               'CPE': sale.cpe || '',
-              'Potência': sale.power || '',
+              'Potencia': sale.power || '',
               'CUI': showCUI ? (sale.cui || '') : '',
-              'Escalão': showCUI ? (sale.tier || '') : '',
+              'Escalao': showCUI ? (sale.tier || '') : '',
               'Tipo Entrada': sale.entry_type || '',
               'Status': sale.status,
-              'Nº Requisição': sale.request_number || '',
-              'Comissão': `€${commission.toFixed(2)}`,
-              'Observações': sale.observations || ''
+              'Nr Requisicao': sale.request_number || '',
+              'Comissao': `EUR${commission.toFixed(2)}`,
+              'Observacoes': sale.observations || ''
             });
           }
         } else {
           excelData.push({
             ...baseData,
             'CPE': sale.cpe || '',
-            'Potência': sale.power || '',
+            'Potencia': sale.power || '',
             'CUI': sale.cui || '',
-            'Escalão': sale.tier || '',
+            'Escalao': sale.tier || '',
             'Tipo Entrada': sale.entry_type || '',
             'Status': sale.status,
-            'Nº Requisição': sale.request_number || '',
-            'Comissão': `€${commission.toFixed(2)}`,
-            'Observações': sale.observations || ''
+            'Nr Requisicao': sale.request_number || '',
+            'Comissao': `EUR${commission.toFixed(2)}`,
+            'Observacoes': sale.observations || ''
           });
         }
       }
@@ -645,7 +645,7 @@ const Sales = ({ user }) => {
   const handleRecalculateCommissions = async () => {
     try {
       setLoading(true);
-      toast.info('Recalculando comissões...');
+      toast.info('Recalculando comissoes...');
 
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recalculate-commissions`;
       const { data: { session } } = await supabase.auth.getSession();
@@ -672,14 +672,14 @@ const Sales = ({ user }) => {
         throw new Error(result.error || 'Unknown error');
       }
 
-      toast.success(`Comissões recalculadas! ${result.success_count} atualizadas, ${result.skipped} ignoradas, ${result.failed} falharam`);
+      toast.success(`Comissoes recalculadas! ${result.success_count} atualizadas, ${result.skipped} ignoradas, ${result.failed} falharam`);
 
       setRecalcDialogOpen(false);
       setRecalcStartDate("");
       await fetchData();
     } catch (error) {
-      console.error('Erro ao recalcular comissões:', error);
-      toast.error('Erro ao recalcular comissões');
+      console.error('Erro ao recalcular comissoes:', error);
+      toast.error('Erro ao recalcular comissoes');
     } finally {
       setLoading(false);
     }
@@ -738,7 +738,7 @@ const Sales = ({ user }) => {
         today.setHours(0, 0, 0, 0);
 
         if (selectedDate > today) {
-          toast.error("Data de venda não pode ser futura");
+          toast.error("Data de venda nao pode ser futura");
           return;
         }
       }
@@ -809,7 +809,7 @@ const Sales = ({ user }) => {
   };
 
   const handleDeleteSale = async (sale) => {
-    if (!window.confirm(`Tem a certeza que deseja apagar a venda ${sale.sale_code}?\n\nEsta ação é irreversível e irá remover todos os dados associados à venda.`)) {
+    if (!window.confirm(`Tem a certeza que deseja apagar a venda ${sale.sale_code}?\n\nEsta acao e irreversivel e ira remover todos os dados associados a venda.`)) {
       return;
     }
 
@@ -825,24 +825,24 @@ const Sales = ({ user }) => {
 
   const getStatusBadge = (status) => {
     const statusColors = {
-      'Para registo': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-      'Pendente': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-      'Concluido': 'bg-green-500/10 text-green-400 border-green-500/20',
-      'Ativo': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      'Cancelado': 'bg-red-500/10 text-red-400 border-red-500/20',
-      'Em proposta': 'bg-dark-700 text-dark-300 border-dark-600',
+      'Para registo': 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+      'Pendente': 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+      'Concluido': 'bg-green-500/10 text-green-400 border border-green-500/20',
+      'Ativo': 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',
+      'Cancelado': 'bg-red-500/10 text-red-400 border border-red-500/20',
+      'Em proposta': 'bg-slate-700/40 text-slate-300 border border-slate-600/30',
     };
-    return statusColors[status] || 'bg-dark-700 text-dark-300 border-dark-600';
+    return statusColors[status] || 'bg-slate-700/40 text-slate-300 border border-slate-600/30';
   };
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6 animate-fade-in">
+      <div className="space-y-6 p-6 animate-fade-in" style={{ backgroundColor: '#080c14', minHeight: '100vh' }}>
         <div className="flex items-center justify-between">
-          <div className="h-10 w-48 bg-dark-700 rounded animate-pulse" />
+          <div className="h-10 w-48 rounded animate-pulse" style={{ backgroundColor: '#111d2e' }} />
           <div className="flex gap-3">
-            <div className="h-10 w-32 bg-dark-700 rounded animate-pulse" />
-            <div className="h-10 w-32 bg-dark-700 rounded animate-pulse" />
+            <div className="h-10 w-32 rounded animate-pulse" style={{ backgroundColor: '#111d2e' }} />
+            <div className="h-10 w-32 rounded animate-pulse" style={{ backgroundColor: '#111d2e' }} />
           </div>
         </div>
         <TableSkeleton rows={10} columns={8} />
@@ -862,64 +862,72 @@ const Sales = ({ user }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.03, duration: 0.3 }}
       >
-        <Card className="glass-ultra p-5 spring-transition hover:border-gold-400/20">
+        <Card
+          className="p-5 spring-transition border"
+          style={{
+            backgroundColor: '#111d2e',
+            borderColor: 'rgba(255,255,255,0.06)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.3)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+        >
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="font-bold text-lg text-white">{sale.sale_code}</span>
-                <span className="text-sm text-dark-400">{new Date(sale.date).toLocaleDateString('pt-PT')}</span>
+                <span className="text-sm text-slate-500">{new Date(sale.date).toLocaleDateString('pt-PT')}</span>
               </div>
               <Badge className={getStatusBadge(sale.status)}>{sale.status}</Badge>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 text-sm">
               <div>
-                <span className="text-dark-400 text-xs uppercase tracking-wide">Cliente</span>
+                <span className="text-slate-500 text-xs uppercase tracking-wide">Cliente</span>
                 <p className="text-white font-semibold truncate">{sale.client_name || '-'}</p>
               </div>
               <div>
-                <span className="text-dark-400 text-xs uppercase tracking-wide">Parceiro</span>
-                <p className="text-dark-200 truncate">{partner?.name || '-'}</p>
+                <span className="text-slate-500 text-xs uppercase tracking-wide">Parceiro</span>
+                <p className="text-slate-300 truncate">{partner?.name || '-'}</p>
               </div>
               <div>
-                <span className="text-dark-400 text-xs uppercase tracking-wide">Operadora</span>
-                <p className="text-dark-200 truncate">{operator?.name || '-'}</p>
+                <span className="text-slate-500 text-xs uppercase tracking-wide">Operadora</span>
+                <p className="text-slate-300 truncate">{operator?.name || '-'}</p>
               </div>
               <div>
-                <span className="text-dark-400 text-xs uppercase tracking-wide">Ambito</span>
-                <p className="text-dark-200 capitalize">{sale.scope || '-'}</p>
+                <span className="text-slate-500 text-xs uppercase tracking-wide">Ambito</span>
+                <p className="text-slate-300 capitalize">{sale.scope || '-'}</p>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+            <div className="flex items-center justify-between pt-2" style={{ borderTopWidth: '1px', borderTopColor: 'rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-4">
                 {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
-                  <span className="font-bold text-green-400 text-sm">
-                    {commission ? `€${parseFloat(commission).toFixed(2)}` : '-'}
+                  <span className="font-bold text-cyan-400 text-sm">
+                    {commission ? `\u20AC${parseFloat(commission).toFixed(2)}` : '-'}
                   </span>
                 )}
                 {sale.service_type && (
-                  <span className="text-xs text-dark-400 bg-dark-700/50 px-2 py-0.5 rounded">{sale.service_type}</span>
+                  <span className="text-xs text-slate-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>{sale.service_type}</span>
                 )}
                 {sale.activation_type && (
-                  <span className="text-xs text-dark-400 bg-dark-700/50 px-2 py-0.5 rounded">{sale.activation_type}</span>
+                  <span className="text-xs text-slate-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>{sale.activation_type}</span>
                 )}
               </div>
               <div className="flex gap-2">
                 {(user?.role === 'admin' || user?.role === 'bo') ? (
-                  <Button onClick={() => openEditDialog(sale)} size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10">
+                  <Button onClick={() => openEditDialog(sale)} size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10">
                     Editar
                   </Button>
                 ) : (
                   <Button
                     onClick={() => { setSelectedSaleId(sale.id); setDetailDialogOpen(true); }}
-                    size="sm" variant="ghost" className="text-blue-400 hover:bg-blue-500/10"
+                    size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10"
                   >
                     Ver
                   </Button>
                 )}
                 {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
-                  <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-dark-300 hover:bg-dark-700">
+                  <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700/40">
                     Notas ({sale.notes?.length || 0})
                   </Button>
                 )}
@@ -937,7 +945,7 @@ const Sales = ({ user }) => {
   };
 
   return (
-    <div className="space-y-6 p-6 animate-fade-in">
+    <div className="space-y-6 p-6 animate-fade-in" style={{ backgroundColor: '#080c14', minHeight: '100vh' }}>
       {/* Header with Title and Actions */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -947,47 +955,62 @@ const Sales = ({ user }) => {
       >
         <div>
           <h1 className="text-4xl font-bold text-white mb-2">Vendas</h1>
-          <p className="text-sm text-dark-400">
+          <p className="text-sm text-slate-500">
             Gerencie as vendas e acompanhe o desempenho
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-green-500 text-green-400 hover:bg-green-500/10 spring-transition">
+              <Button
+                variant="outline"
+                className="spring-transition border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/60"
+                style={{ backgroundColor: 'transparent' }}
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Exportar Excel
               </Button>
             </DialogTrigger>
-            <DialogContent className="glass-ultra">
+            <DialogContent style={{ backgroundColor: '#111d2e', borderColor: 'rgba(255,255,255,0.06)' }}>
               <DialogHeader>
                 <DialogTitle className="text-white">Exportar Vendas para Excel</DialogTitle>
-                <DialogDescription>Selecione o formato de exportação</DialogDescription>
+                <DialogDescription className="text-slate-400">Selecione o formato de exportacao</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <Label>Data Início (opcional)</Label>
+                  <Label className="text-slate-400">Data Inicio (opcional)</Label>
                   <Input
                     type="date"
                     value={exportStartDate}
                     onChange={(e) => setExportStartDate(e.target.value)}
-                    className="glass-input"
+                    className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                    style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
                   />
                 </div>
                 <div>
-                  <Label>Data Fim (opcional)</Label>
+                  <Label className="text-slate-400">Data Fim (opcional)</Label>
                   <Input
                     type="date"
                     value={exportEndDate}
                     onChange={(e) => setExportEndDate(e.target.value)}
-                    className="glass-input"
+                    className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                    style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
                   />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button variant="outline" onClick={() => setExportDialogOpen(false)} className="btn-secondary">
+                  <Button
+                    variant="outline"
+                    onClick={() => setExportDialogOpen(false)}
+                    className="text-slate-300 hover:text-white"
+                    style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
+                  >
                     Cancelar
                   </Button>
-                  <Button onClick={handleExportExcel} className="btn-primary">
+                  <Button
+                    onClick={handleExportExcel}
+                    className="text-white font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Exportar
                   </Button>
@@ -999,7 +1022,8 @@ const Sales = ({ user }) => {
             <>
               <Button
                 variant="outline"
-                className="border-blue-500 text-blue-600 hover:bg-blue-50 spring-transition"
+                className="spring-transition text-cyan-400 hover:bg-cyan-500/10"
+                style={{ backgroundColor: 'transparent', borderColor: 'rgba(6,182,212,0.4)' }}
                 onClick={() => setImportDialogOpen(true)}
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -1007,12 +1031,13 @@ const Sales = ({ user }) => {
               </Button>
               <Button
                 variant="outline"
-                className="border-purple-500 text-purple-600 hover:bg-purple-50 spring-transition"
+                className="spring-transition text-purple-400 hover:bg-purple-500/10"
+                style={{ backgroundColor: 'transparent', borderColor: 'rgba(168,85,247,0.4)' }}
                 onClick={() => setRecalcDialogOpen(true)}
                 disabled={loading}
               >
                 <ArrowUpDown className="w-4 h-4 mr-2" />
-                Recalcular Comissões
+                Recalcular Comissoes
               </Button>
             </>
           )}
@@ -1021,7 +1046,12 @@ const Sales = ({ user }) => {
               resetForm();
               setDialogOpen(true);
             }}
-            className="btn-gold shadow-gold-glow spring-transition"
+            className="text-white font-semibold spring-transition shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #06b6d4, #0891b2)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.3)',
+              border: 'none'
+            }}
           >
             <Plus className="w-4 h-4 mr-2" />
             Nova Venda
@@ -1054,7 +1084,8 @@ const Sales = ({ user }) => {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2, duration: 0.3 }}
-        className="flex gap-2 p-1 glass-ultra rounded-lg w-fit"
+        className="flex gap-2 p-1 rounded-lg w-fit"
+        style={{ backgroundColor: 'rgba(17,29,46,0.6)', border: '1px solid rgba(255,255,255,0.06)' }}
       >
         <Button
           onClick={() => {
@@ -1063,7 +1094,8 @@ const Sales = ({ user }) => {
           }}
           variant={viewMode === "sales" ? "default" : "ghost"}
           size="sm"
-          className={viewMode === "sales" ? "bg-gradient-to-r from-navy-900 to-navy-800 text-white hover:from-navy-800 hover:to-navy-700" : ""}
+          className={viewMode === "sales" ? "text-white" : "text-slate-400 hover:text-white"}
+          style={viewMode === "sales" ? { background: 'linear-gradient(135deg, #06b6d4, #0891b2)' } : {}}
         >
           Vendas
         </Button>
@@ -1074,7 +1106,8 @@ const Sales = ({ user }) => {
           }}
           variant={viewMode === "proposals" ? "default" : "ghost"}
           size="sm"
-          className={viewMode === "proposals" ? "bg-gradient-to-r from-navy-900 to-navy-800 text-white hover:from-navy-800 hover:to-navy-700" : ""}
+          className={viewMode === "proposals" ? "text-white" : "text-slate-400 hover:text-white"}
+          style={viewMode === "proposals" ? { background: 'linear-gradient(135deg, #06b6d4, #0891b2)' } : {}}
         >
           Propostas
         </Button>
@@ -1088,21 +1121,51 @@ const Sales = ({ user }) => {
           transition={{ delay: 0.3, duration: 0.3 }}
           className="flex flex-wrap gap-2"
         >
-          <Button onClick={() => setSelectedStatus("")} variant={selectedStatus === "" ? "default" : "outline"} size="sm" className="spring-transition">Todas</Button>
-          <Button onClick={() => setSelectedStatus("Para registo")} variant={selectedStatus === "Para registo" ? "default" : "outline"} size="sm" className="spring-transition">Para registo</Button>
-          <Button onClick={() => setSelectedStatus("Pendente")} variant={selectedStatus === "Pendente" ? "default" : "outline"} size="sm" className="spring-transition">Pendente</Button>
-          <Button onClick={() => setSelectedStatus("Concluido")} variant={selectedStatus === "Concluido" ? "default" : "outline"} size="sm" className="spring-transition">Concluído</Button>
-          <Button onClick={() => setSelectedStatus("Ativo")} variant={selectedStatus === "Ativo" ? "default" : "outline"} size="sm" className="spring-transition">Ativo</Button>
-          <Button onClick={() => setSelectedStatus("Cancelado")} variant={selectedStatus === "Cancelado" ? "default" : "outline"} size="sm" className="spring-transition">Cancelado</Button>
+          {[
+            { label: "Todas", value: "" },
+            { label: "Para registo", value: "Para registo" },
+            { label: "Pendente", value: "Pendente" },
+            { label: "Concluido", value: "Concluido" },
+            { label: "Ativo", value: "Ativo" },
+            { label: "Cancelado", value: "Cancelado" },
+          ].map((statusBtn) => (
+            <Button
+              key={statusBtn.value}
+              onClick={() => setSelectedStatus(statusBtn.value)}
+              variant={selectedStatus === statusBtn.value ? "default" : "outline"}
+              size="sm"
+              className={
+                selectedStatus === statusBtn.value
+                  ? "text-white spring-transition"
+                  : "text-slate-400 hover:text-white spring-transition"
+              }
+              style={
+                selectedStatus === statusBtn.value
+                  ? { background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }
+                  : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
+              }
+            >
+              {statusBtn.label}
+            </Button>
+          ))}
 
           <Button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             variant={showAdvancedFilters ? "default" : "outline"}
             size="sm"
-            className="ml-auto gap-2 spring-transition"
+            className={
+              showAdvancedFilters
+                ? "ml-auto gap-2 spring-transition text-white"
+                : "ml-auto gap-2 spring-transition text-slate-400 hover:text-white"
+            }
+            style={
+              showAdvancedFilters
+                ? { background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }
+                : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
+            }
           >
             <Filter className="w-4 h-4" />
-            Filtros Avançados
+            Filtros Avancados
           </Button>
         </motion.div>
       )}
@@ -1118,10 +1181,19 @@ const Sales = ({ user }) => {
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             variant={showAdvancedFilters ? "default" : "outline"}
             size="sm"
-            className="gap-2 spring-transition"
+            className={
+              showAdvancedFilters
+                ? "gap-2 spring-transition text-white"
+                : "gap-2 spring-transition text-slate-400 hover:text-white"
+            }
+            style={
+              showAdvancedFilters
+                ? { background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }
+                : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
+            }
           >
             <Filter className="w-4 h-4" />
-            Filtros Avançados
+            Filtros Avancados
           </Button>
         </motion.div>
       )}
@@ -1133,10 +1205,11 @@ const Sales = ({ user }) => {
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.3 }}
-          className="glass-ultra p-6 space-y-4"
+          className="glass-ultra p-6 space-y-4 rounded-xl"
+          style={{ backgroundColor: 'rgba(17,29,46,0.6)', border: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)' }}
         >
           <div className="flex justify-between items-center">
-            <h3 className="font-semibold text-lg text-white">Filtros Avançados</h3>
+            <h3 className="font-semibold text-lg text-white">Filtros Avancados</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -1157,26 +1230,30 @@ const Sales = ({ user }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <Label>Pesquisar</Label>
+              <Label className="text-slate-400">Pesquisar</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input
-                  placeholder="Código, Cliente, NIF, Contacto..."
+                  placeholder="Codigo, Cliente, NIF, Contacto..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 glass-input"
+                  className="pl-10 focus:ring-cyan-500/20 focus:border-cyan-500 text-white placeholder:text-slate-600"
+                  style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
                 />
               </div>
             </div>
 
             {user?.role === 'admin' || user?.role === 'bo' ? (
               <div>
-                <Label>Parceiro</Label>
+                <Label className="text-slate-400">Parceiro</Label>
                 <Select value={selectedPartner} onValueChange={setSelectedPartner}>
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger
+                    className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                    style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+                  >
                     <SelectValue placeholder="Todos os parceiros" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
                     <SelectItem value="all">Todos</SelectItem>
                     {partners.map(p => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
@@ -1187,12 +1264,15 @@ const Sales = ({ user }) => {
             ) : null}
 
             <div>
-              <Label>Operadora</Label>
+              <Label className="text-slate-400">Operadora</Label>
               <Select value={selectedOperator} onValueChange={setSelectedOperator}>
-                <SelectTrigger className="glass-input">
+                <SelectTrigger
+                  className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                  style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+                >
                   <SelectValue placeholder="Todas as operadoras" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
                   <SelectItem value="all">Todas</SelectItem>
                   {operators.map(o => (
                     <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
@@ -1202,14 +1282,17 @@ const Sales = ({ user }) => {
             </div>
 
             <div>
-              <Label>Âmbito</Label>
+              <Label className="text-slate-400">Ambito</Label>
               <Select value={selectedScope} onValueChange={setSelectedScope}>
-                <SelectTrigger className="glass-input">
-                  <SelectValue placeholder="Todos os âmbitos" />
+                <SelectTrigger
+                  className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                  style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+                >
+                  <SelectValue placeholder="Todos os ambitos" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
+                  <SelectItem value="telecomunicacoes">Telecomunicacoes</SelectItem>
                   <SelectItem value="energia">Energia</SelectItem>
                   <SelectItem value="solar">Solar</SelectItem>
                 </SelectContent>
@@ -1217,27 +1300,29 @@ const Sales = ({ user }) => {
             </div>
 
             <div>
-              <Label>Data de Início</Label>
+              <Label className="text-slate-400">Data de Inicio</Label>
               <Input
                 type="date"
                 value={filterStartDate}
                 onChange={(e) => setFilterStartDate(e.target.value)}
-                className="glass-input"
+                className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
               />
             </div>
 
             <div>
-              <Label>Data de Fim</Label>
+              <Label className="text-slate-400">Data de Fim</Label>
               <Input
                 type="date"
                 value={filterEndDate}
                 onChange={(e) => setFilterEndDate(e.target.value)}
-                className="glass-input"
+                className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
               />
             </div>
           </div>
 
-          <div className="text-sm pt-2 border-t border-white/10 text-dark-400">
+          <div className="text-sm pt-2 text-slate-500" style={{ borderTopWidth: '1px', borderTopColor: 'rgba(255,255,255,0.06)' }}>
             {filteredSales.length} venda(s) encontrada(s) {filteredSales.length !== sales.length && `de ${sales.length} total`}
           </div>
         </motion.div>
@@ -1245,16 +1330,19 @@ const Sales = ({ user }) => {
 
       {/* Sort Controls */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-dark-400">
+        <div className="text-sm text-slate-500">
           {filteredSales.length} venda(s)
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-dark-400">Ordenar por:</span>
+          <span className="text-xs text-slate-500">Ordenar por:</span>
           <Select value={sortField} onValueChange={(v) => { setSortField(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectTrigger
+              className="w-[160px] h-8 text-xs text-white focus:ring-cyan-500/20 focus:border-cyan-500"
+              style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+            >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
               <SelectItem value="date">Data</SelectItem>
               <SelectItem value="client_name">Cliente</SelectItem>
               <SelectItem value="partner_name">Parceiro</SelectItem>
@@ -1267,10 +1355,10 @@ const Sales = ({ user }) => {
             variant="ghost"
             size="sm"
             onClick={() => { setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc'); setCurrentPage(1); }}
-            className="h-8 px-2 text-dark-300 hover:text-white"
+            className="h-8 px-2 text-slate-400 hover:text-cyan-400"
             title={sortDirection === 'asc' ? 'Ascendente' : 'Descendente'}
           >
-            <ArrowUpDown className="w-4 h-4" />
+            <ArrowUpDown className="w-4 h-4" style={{ color: '#06b6d4' }} />
             <span className="text-xs ml-1">{sortDirection === 'asc' ? 'A-Z' : 'Z-A'}</span>
           </Button>
         </div>
@@ -1283,8 +1371,8 @@ const Sales = ({ user }) => {
         transition={{ delay: 0.4, duration: 0.4 }}
       >
         {paginatedSales.length === 0 ? (
-          <div className="glass-ultra p-12 text-center">
-            <p className="text-sm font-medium text-dark-300">Nenhuma venda encontrada</p>
+          <div className="p-12 text-center rounded-xl" style={{ backgroundColor: '#111d2e', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-sm font-medium text-slate-400">Nenhuma venda encontrada</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1294,8 +1382,11 @@ const Sales = ({ user }) => {
 
         {/* Pagination */}
         {filteredSales.length > 0 && (
-          <div className="mt-6 glass-ultra p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-dark-400">
+          <div
+            className="mt-6 p-4 flex flex-col md:flex-row items-center justify-between gap-4 rounded-xl"
+            style={{ backgroundColor: '#111d2e', border: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="text-sm text-slate-500">
               A mostrar {startIndex + 1} a {Math.min(endIndex, sortedSales.length)} de {sortedSales.length} vendas
             </div>
             <div className="flex items-center gap-2">
@@ -1304,7 +1395,8 @@ const Sales = ({ user }) => {
                 size="sm"
                 onClick={goToFirstPage}
                 disabled={currentPage === 1}
-                className="spring-transition"
+                className="spring-transition text-slate-400 hover:text-white disabled:opacity-30"
+                style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
               >
                 Primeira
               </Button>
@@ -1313,7 +1405,8 @@ const Sales = ({ user }) => {
                 size="sm"
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className="spring-transition"
+                className="spring-transition text-slate-400 hover:text-white disabled:opacity-30"
+                style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
               >
                 Anterior
               </Button>
@@ -1331,13 +1424,22 @@ const Sales = ({ user }) => {
                         variant={currentPage === pageNum ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={currentPage === pageNum ? "bg-gradient-to-r from-navy-900 to-navy-800 text-white hover:from-navy-800 hover:to-navy-700" : "spring-transition"}
+                        className={
+                          currentPage === pageNum
+                            ? "text-white spring-transition"
+                            : "spring-transition text-slate-400 hover:text-white"
+                        }
+                        style={
+                          currentPage === pageNum
+                            ? { background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }
+                            : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
+                        }
                       >
                         {pageNum}
                       </Button>
                     );
                   } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
-                    return <span key={pageNum} className="px-2">...</span>;
+                    return <span key={pageNum} className="px-2 text-slate-500">...</span>;
                   }
                   return null;
                 })}
@@ -1347,18 +1449,20 @@ const Sales = ({ user }) => {
                 size="sm"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="spring-transition"
+                className="spring-transition text-slate-400 hover:text-white disabled:opacity-30"
+                style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
               >
-                Próxima
+                Proxima
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={goToLastPage}
                 disabled={currentPage === totalPages}
-                className="spring-transition"
+                className="spring-transition text-slate-400 hover:text-white disabled:opacity-30"
+                style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
               >
-                Última
+                Ultima
               </Button>
             </div>
           </div>
@@ -1389,34 +1493,43 @@ const Sales = ({ user }) => {
       {/* Validation Warnings Dialog */}
       {validationWarnings.length > 0 && (
         <Dialog open={true} onOpenChange={() => handleCancelWarnings()}>
-          <DialogContent className="glass-ultra">
+          <DialogContent style={{ backgroundColor: '#111d2e', borderColor: 'rgba(255,255,255,0.06)' }}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-white">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                Aviso de Validação
+                <AlertTriangle className="w-5 h-5 text-cyan-400" />
+                Aviso de Validacao
               </DialogTitle>
-              <DialogDescription>Os seguintes avisos foram detectados</DialogDescription>
+              <DialogDescription className="text-slate-400">Os seguintes avisos foram detectados</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <Alert className="bg-amber-500/10 border border-amber-500/20">
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
-                <AlertDescription>
-                  <p className="font-semibold mb-2">Foram detetados os seguintes avisos:</p>
+              <Alert className="bg-cyan-500/10 border border-cyan-500/20">
+                <AlertTriangle className="w-4 h-4 text-cyan-400" />
+                <AlertDescription className="text-slate-300">
+                  <p className="font-semibold mb-2 text-white">Foram detetados os seguintes avisos:</p>
                   <ul className="list-disc list-inside space-y-1">
                     {validationWarnings.map((warning, index) => (
-                      <li key={index} className="text-sm">{warning}</li>
+                      <li key={index} className="text-sm text-slate-300">{warning}</li>
                     ))}
                   </ul>
-                  <p className="mt-3 text-sm">
-                    Pode corrigir os dados ou continuar mesmo assim. A venda será criada de qualquer forma.
+                  <p className="mt-3 text-sm text-slate-400">
+                    Pode corrigir os dados ou continuar mesmo assim. A venda sera criada de qualquer forma.
                   </p>
                 </AlertDescription>
               </Alert>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={handleCancelWarnings} className="btn-secondary">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelWarnings}
+                  className="text-slate-300 hover:text-white"
+                  style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
+                >
                   Voltar e Corrigir
                 </Button>
-                <Button onClick={handleContinueWithWarnings} className="bg-amber-500 hover:bg-amber-600">
+                <Button
+                  onClick={handleContinueWithWarnings}
+                  className="text-white font-semibold"
+                  style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }}
+                >
                   Continuar Mesmo Assim
                 </Button>
               </div>
@@ -1427,27 +1540,31 @@ const Sales = ({ user }) => {
 
       {/* Notes Dialog */}
       <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
-        <DialogContent className="glass-ultra max-w-2xl">
+        <DialogContent className="max-w-2xl" style={{ backgroundColor: '#111d2e', borderColor: 'rgba(255,255,255,0.06)' }}>
           <DialogHeader>
             <DialogTitle className="text-white">Notas - {selectedSaleForNotes?.sale_code}</DialogTitle>
-            <DialogDescription>Visualize e adicione notas a esta venda</DialogDescription>
+            <DialogDescription className="text-slate-400">Visualize e adicione notas a esta venda</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label>Adicionar Nota</Label>
+              <Label className="text-slate-400">Adicionar Nota</Label>
               <Textarea
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Escreva uma nota..."
                 rows={3}
-                className="glass-input"
+                className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white placeholder:text-slate-600"
+                style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
               />
 
               <div className="flex items-center gap-2">
                 <Label htmlFor="note-attachments" className="cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-dark-700/50 hover:bg-dark-600/50 rounded-lg border border-white/10 transition-colors">
-                    <Paperclip className="w-4 h-4 text-dark-300" />
-                    <span className="text-sm text-dark-200">Anexar Documentos</span>
+                  <div
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors hover:opacity-80"
+                    style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <Paperclip className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-300">Anexar Documentos</span>
                   </div>
                 </Label>
                 <input
@@ -1458,36 +1575,44 @@ const Sales = ({ user }) => {
                   className="hidden"
                 />
                 {noteAttachments.length > 0 && (
-                  <span className="text-sm text-dark-300">
+                  <span className="text-sm text-slate-400">
                     {noteAttachments.length} ficheiro(s) selecionado(s)
                   </span>
                 )}
               </div>
 
-              <Button onClick={handleAddNote} size="sm" className="btn-primary">
+              <Button
+                onClick={handleAddNote}
+                size="sm"
+                className="text-white font-semibold"
+                style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }}
+              >
                 Adicionar Nota
               </Button>
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-semibold text-white">Histórico de Notas (últimas 3):</h3>
+              <h3 className="font-semibold text-white">Historico de Notas (ultimas 3):</h3>
               {(!selectedSaleForNotes?.notes || selectedSaleForNotes.notes.length === 0) ? (
-                <p className="text-dark-400 text-sm py-4 text-center">Nenhuma nota ainda</p>
+                <p className="text-slate-500 text-sm py-4 text-center">Nenhuma nota ainda</p>
               ) : (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto border border-white/10 rounded-lg p-2">
+                <div
+                  className="space-y-2 max-h-[300px] overflow-y-auto rounded-lg p-2"
+                  style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                >
                   {selectedSaleForNotes.notes.slice(0, 3).map((note) => (
-                    <div key={note.id} className="p-3 bg-dark-700/50 rounded-lg">
+                    <div key={note.id} className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(17,29,46,0.7)' }}>
                       <div className="flex justify-between items-start mb-2">
                         <span className="font-medium text-sm text-white">{note.author}</span>
-                        <span className="text-xs text-dark-400">
+                        <span className="text-xs text-slate-500">
                           {new Date(note.created_at).toLocaleString('pt-PT')}
                         </span>
                       </div>
-                      <p className="text-sm text-dark-200">{note.content}</p>
+                      <p className="text-sm text-slate-300">{note.content}</p>
                       {note.attachments && note.attachments.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {note.attachments.map((attachment) => (
-                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-blue-600">
+                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-cyan-400">
                               <Paperclip className="w-3 h-3" />
                               <button
                                 onClick={async () => {
@@ -1504,13 +1629,13 @@ const Sales = ({ user }) => {
                                     a.click();
                                     document.body.removeChild(a);
                                     URL.revokeObjectURL(url);
-                                    toast.success("Download concluído!");
+                                    toast.success("Download concluido!");
                                   } catch (error) {
                                     console.error('Error downloading:', error);
                                     toast.error("Erro ao descarregar ficheiro");
                                   }
                                 }}
-                                className="hover:underline"
+                                className="hover:underline text-cyan-400"
                               >
                                 {attachment.filename}
                               </button>
@@ -1521,7 +1646,7 @@ const Sales = ({ user }) => {
                     </div>
                   ))}
                   {selectedSaleForNotes.notes.length > 3 && (
-                    <p className="text-xs text-dark-400 text-center py-2">
+                    <p className="text-xs text-slate-500 text-center py-2">
                       + {selectedSaleForNotes.notes.length - 3} nota(s) mais antiga(s)
                     </p>
                   )}
@@ -1537,48 +1662,55 @@ const Sales = ({ user }) => {
         onImportComplete={fetchData}
       />
 
-      {/* Recalculate Commissions Dialog (lines 1997-2044) */}
+      {/* Recalculate Commissions Dialog */}
       <Dialog open={recalcDialogOpen} onOpenChange={setRecalcDialogOpen}>
-        <DialogContent className="glass-ultra">
+        <DialogContent style={{ backgroundColor: '#111d2e', borderColor: 'rgba(255,255,255,0.06)' }}>
           <DialogHeader>
-            <DialogTitle className="text-white">Recalcular Comissões</DialogTitle>
-            <DialogDescription>
-              Escolha a data a partir da qual as comissões devem ser recalculadas. Vendas anteriores a esta data não serão afetadas.
+            <DialogTitle className="text-white">Recalcular Comissoes</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Escolha a data a partir da qual as comissoes devem ser recalculadas. Vendas anteriores a esta data nao serao afetadas.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Data de Início (opcional)</Label>
+              <Label className="text-slate-400">Data de Inicio (opcional)</Label>
               <Input
                 type="date"
                 value={recalcStartDate}
                 onChange={(e) => setRecalcStartDate(e.target.value)}
                 placeholder="Deixe vazio para recalcular todas"
-                className="glass-input"
+                className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
               />
-              <p className="text-xs text-dark-400 mt-1">
-                Se deixar vazio, todas as comissões serão recalculadas desde sempre.
-                Se selecionar uma data (ex: 01/01/2024), apenas vendas a partir desta data serão recalculadas.
+              <p className="text-xs text-slate-500 mt-1">
+                Se deixar vazio, todas as comissoes serao recalculadas desde sempre.
+                Se selecionar uma data (ex: 01/01/2024), apenas vendas a partir desta data serao recalculadas.
               </p>
             </div>
-            <Alert className="bg-amber-500/10 border border-amber-500/20">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <AlertDescription>
-                Esta operação pode demorar alguns minutos dependendo do número de vendas.
-                As comissões serão recalculadas com base nas configurações atuais.
+            <Alert className="bg-cyan-500/10 border border-cyan-500/20">
+              <AlertTriangle className="w-4 h-4 text-cyan-400" />
+              <AlertDescription className="text-slate-300">
+                Esta operacao pode demorar alguns minutos dependendo do numero de vendas.
+                As comissoes serao recalculadas com base nas configuracoes atuais.
               </AlertDescription>
             </Alert>
             <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => {
-                setRecalcDialogOpen(false);
-                setRecalcStartDate("");
-              }} className="btn-secondary">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setRecalcDialogOpen(false);
+                  setRecalcStartDate("");
+                }}
+                className="text-slate-300 hover:text-white"
+                style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
+              >
                 Cancelar
               </Button>
               <Button
                 onClick={handleRecalculateCommissions}
                 disabled={loading}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="text-white font-semibold"
+                style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', border: 'none' }}
               >
                 <ArrowUpDown className="w-4 h-4 mr-2" />
                 <span className="text-white">{loading ? "A recalcular..." : "Recalcular"}</span>

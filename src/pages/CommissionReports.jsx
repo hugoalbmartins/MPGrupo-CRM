@@ -103,7 +103,7 @@ const CommissionReports = ({ user }) => {
           available.push(month);
         }
       } catch (error) {
-        console.error(`Erro ao verificar mês ${month}:`, error);
+        console.error(`Erro ao verificar mes ${month}:`, error);
       }
     }
 
@@ -119,7 +119,7 @@ const CommissionReports = ({ user }) => {
   };
 
   const handleValidatePayment = async (reportId) => {
-    if (!window.confirm("Confirma que este auto foi pago? Esta ação não pode ser revertida e o auto ficará bloqueado.")) {
+    if (!window.confirm("Confirma que este auto foi pago? Esta acao nao pode ser revertida e o auto ficara bloqueado.")) {
       return;
     }
 
@@ -131,7 +131,7 @@ const CommissionReports = ({ user }) => {
 
   const handleDeleteReport = async (reportId, isPaidValidated) => {
     if (isPaidValidated) {
-      toast.error("Não é possível eliminar um auto validado como pago");
+      toast.error("Nao e possivel eliminar um auto validado como pago");
       return;
     }
 
@@ -185,7 +185,7 @@ const CommissionReports = ({ user }) => {
     setLoading(true);
     try {
       if (!selectedMonth) {
-        toast.error("Por favor, selecione um mês disponível");
+        toast.error("Por favor, selecione um mes disponivel");
         setLoading(false);
         return;
       }
@@ -193,7 +193,7 @@ const CommissionReports = ({ user }) => {
       const isAvailable = await commissionReportsService.isMonthAvailableForEmission(selectedMonth, selectedYear);
       if (!isAvailable) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
-        toast.error(`O mês de ${monthName}/${selectedYear} ainda não está disponível para emissão. Autos só podem ser emitidos após o dia 22 do mês seguinte.`);
+        toast.error(`O mes de ${monthName}/${selectedYear} ainda nao esta disponivel para emissao. Autos so podem ser emitidos apos o dia 22 do mes seguinte.`);
         setLoading(false);
         return;
       }
@@ -205,7 +205,7 @@ const CommissionReports = ({ user }) => {
 
       const partner = partners.find(p => p.id === partnerId);
       if (!partner) {
-        toast.error("Parceiro não encontrado");
+        toast.error("Parceiro nao encontrado");
         setLoading(false);
         return;
       }
@@ -219,9 +219,9 @@ const CommissionReports = ({ user }) => {
       if (finalSales.length === 0) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
         if (settledSaleIds.length > 0) {
-          toast.error(`Todas as vendas de ${monthName}/${selectedYear} para ${partner.name} já foram liquidadas em auto anterior.`);
+          toast.error(`Todas as vendas de ${monthName}/${selectedYear} para ${partner.name} ja foram liquidadas em auto anterior.`);
         } else {
-          toast.error(`Não existem vendas pagas para ${partner.name} no mês de ${monthName}/${selectedYear}`);
+          toast.error(`Nao existem vendas pagas para ${partner.name} no mes de ${monthName}/${selectedYear}`);
         }
         setLoading(false);
         return;
@@ -229,7 +229,7 @@ const CommissionReports = ({ user }) => {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error("Sessão expirada. Por favor, faça login novamente.");
+        toast.error("Sessao expirada. Por favor, faca login novamente.");
         setLoading(false);
         return;
       }
@@ -276,9 +276,9 @@ const CommissionReports = ({ user }) => {
             <td>${sale.cui || '-'}</td>
             <td>${sale.request_number || '-'}</td>
             <td>${sale.activation_date ? new Date(sale.activation_date).toLocaleDateString('pt-PT') : '-'}</td>
-            <td>${sale.has_direct_debit ? 'Sim' : 'Não'}</td>
-            <td>${sale.has_electronic_invoice ? 'Sim' : 'Não'}</td>
-            <td style="text-align: right">€${totalComm.toFixed(2)}</td>
+            <td>${sale.has_direct_debit ? 'Sim' : 'Nao'}</td>
+            <td>${sale.has_electronic_invoice ? 'Sim' : 'Nao'}</td>
+            <td style="text-align: right">\u20AC${totalComm.toFixed(2)}</td>
           </tr>
         `;
       }).join('');
@@ -288,7 +288,7 @@ const CommissionReports = ({ user }) => {
         <html>
         <head>
           <meta charset="UTF-8">
-          <title>Auto de Comissões - ${partner.name} - ${monthName}/${selectedYear}</title>
+          <title>Auto de Comissoes - ${partner.name} - ${monthName}/${selectedYear}</title>
           <style>
             @media print {
               @page {
@@ -403,7 +403,7 @@ const CommissionReports = ({ user }) => {
           </div>
 
           <div class="title">
-            AUTO DE COMISSÕES - ${partner.name} - ${monthName}/${selectedYear}
+            AUTO DE COMISSOES - ${partner.name} - ${monthName}/${selectedYear}
           </div>
 
           <table>
@@ -415,23 +415,23 @@ const CommissionReports = ({ user }) => {
                 <th>CPE</th>
                 <th>CUI</th>
                 <th>REQ</th>
-                <th>Data Ativação</th>
+                <th>Data Ativacao</th>
                 <th>DD</th>
                 <th>FE</th>
-                <th style="text-align: right">Valor (€)</th>
+                <th style="text-align: right">Valor (\u20AC)</th>
               </tr>
             </thead>
             <tbody>
               ${salesRows}
               <tr class="total-row">
                 <td colspan="9" style="text-align: right">TOTAL:</td>
-                <td style="text-align: right">€${total.toFixed(2)}</td>
+                <td style="text-align: right">\u20AC${total.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
 
           <div class="footer">
-            Documento gerado em ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT')}
+            Documento gerado em ${new Date().toLocaleDateString('pt-PT')} as ${new Date().toLocaleTimeString('pt-PT')}
           </div>
 
           <div class="no-print" style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
@@ -474,7 +474,7 @@ const CommissionReports = ({ user }) => {
                 console.error('Libraries failed to load after ' + maxAttempts + ' attempts');
                 if (btn) {
                   btn.disabled = false;
-                  btn.textContent = 'Tentar Registar (bibliotecas não carregadas)';
+                  btn.textContent = 'Tentar Registar (bibliotecas nao carregadas)';
                   btn.style.opacity = '1';
                   btn.style.backgroundColor = '#f59e0b';
                 }
@@ -496,7 +496,7 @@ const CommissionReports = ({ user }) => {
               const btn = document.getElementById('approveBtn');
 
               if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
-                alert('Bibliotecas não carregadas. A funcionalidade pode não funcionar corretamente. Deseja continuar mesmo assim?');
+                alert('Bibliotecas nao carregadas. A funcionalidade pode nao funcionar corretamente. Deseja continuar mesmo assim?');
                 if (!confirm('Continuar sem bibliotecas carregadas?')) {
                   return;
                 }
@@ -539,7 +539,7 @@ const CommissionReports = ({ user }) => {
 
                 const data = window.reportData;
 
-                btn.textContent = 'Verificando versão...';
+                btn.textContent = 'Verificando versao...';
 
                 const versionResponse = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&select=version&order=version.desc&limit=1\`, {
                   headers: {
@@ -551,7 +551,7 @@ const CommissionReports = ({ user }) => {
                 const versionData = await versionResponse.json();
                 const version = versionData.length > 0 ? versionData[0].version + 1 : 1;
 
-                const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                const monthNames = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 const monthName = monthNames[data.month - 1];
                 const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_\${monthName}_\${data.year}_V\${version}.pdf\`;
                 const filePath = \`\${data.partnerId}/\${data.year}/\${fileName}\`;
@@ -617,7 +617,7 @@ const CommissionReports = ({ user }) => {
                   result = { success: true };
                 }
 
-                btn.textContent = 'Concluído!';
+                btn.textContent = 'Concluido!';
                 btn.style.backgroundColor = '#10b981';
                 btn.style.opacity = '1';
 
@@ -656,9 +656,9 @@ const CommissionReports = ({ user }) => {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
 
-      toast.success(`Auto de comissões de ${partner.name} aberto em nova janela`);
+      toast.success(`Auto de comissoes de ${partner.name} aberto em nova janela`);
     } catch (error) {
-      toast.error("Erro ao gerar auto para impressão");
+      toast.error("Erro ao gerar auto para impressao");
       console.error(error);
     } finally {
       setLoading(false);
@@ -677,7 +677,7 @@ const CommissionReports = ({ user }) => {
 
       if (finalSales.length === 0) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
-        toast.error(`Não existem vendas pagas para o mês de ${monthName}/${selectedYear}`);
+        toast.error(`Nao existem vendas pagas para o mes de ${monthName}/${selectedYear}`);
         setLoading(false);
         return;
       }
@@ -690,9 +690,9 @@ const CommissionReports = ({ user }) => {
         await generateAllPartnersReport(finalSales, XLSX);
       }
 
-      toast.success("Auto de comissões gerado com sucesso!");
+      toast.success("Auto de comissoes gerado com sucesso!");
     } catch (error) {
-      toast.error("Erro ao gerar auto de comissões");
+      toast.error("Erro ao gerar auto de comissoes");
       console.error('Erro:', error);
     } finally {
       setLoading(false);
@@ -741,7 +741,7 @@ const CommissionReports = ({ user }) => {
 
   const handleBulkPrintCommissionReports = async () => {
     if (!selectedMonth) {
-      toast.error("Por favor, selecione um mês");
+      toast.error("Por favor, selecione um mes");
       return;
     }
 
@@ -750,7 +750,7 @@ const CommissionReports = ({ user }) => {
       const isAvailable = await commissionReportsService.isMonthAvailableForEmission(selectedMonth, selectedYear);
       if (!isAvailable) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
-        toast.error(`O mês de ${monthName}/${selectedYear} ainda não está disponível para emissão. Autos só podem ser emitidos após o dia 22 do mês seguinte.`);
+        toast.error(`O mes de ${monthName}/${selectedYear} ainda nao esta disponivel para emissao. Autos so podem ser emitidos apos o dia 22 do mes seguinte.`);
         setLoading(false);
         return;
       }
@@ -759,13 +759,13 @@ const CommissionReports = ({ user }) => {
 
       if (!partnersWithSales || partnersWithSales.length === 0) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
-        toast.error(`Não existem parceiros com vendas elegíveis para emissão no mês de ${monthName}/${selectedYear}`);
+        toast.error(`Nao existem parceiros com vendas elegiveis para emissao no mes de ${monthName}/${selectedYear}`);
         setLoading(false);
         return;
       }
 
       const monthName = months.find(m => m.value === selectedMonth)?.label;
-      const confirmMsg = `Será aberta uma janela individual para cada um dos ${partnersWithSales.length} parceiro(s) com vendas em ${monthName}/${selectedYear}:\n\n${partnersWithSales.map(p => `• ${p.partner_name} (${p.sales_count} venda(s), €${parseFloat(p.total_commission).toFixed(2)})`).join('\n')}\n\nDeseja continuar?`;
+      const confirmMsg = `Sera aberta uma janela individual para cada um dos ${partnersWithSales.length} parceiro(s) com vendas em ${monthName}/${selectedYear}:\n\n${partnersWithSales.map(p => `\u2022 ${p.partner_name} (${p.sales_count} venda(s), \u20AC${parseFloat(p.total_commission).toFixed(2)})`).join('\n')}\n\nDeseja continuar?`;
 
       if (!window.confirm(confirmMsg)) {
         setLoading(false);
@@ -806,11 +806,11 @@ const CommissionReports = ({ user }) => {
     data.push([]);
 
     const monthName = months.find(m => m.value === selectedMonth)?.label;
-    data.push([`AUTO DE COMISSÕES - ${partner.name} - ${monthName}/${selectedYear}`]);
+    data.push([`AUTO DE COMISSOES - ${partner.name} - ${monthName}/${selectedYear}`]);
     data.push([]);
     data.push([]);
 
-    data.push(['Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativação', 'Valor (€)']);
+    data.push(['Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativacao', 'Valor (\u20AC)']);
 
     const headerRow = data.length - 1;
 
@@ -943,7 +943,7 @@ const CommissionReports = ({ user }) => {
   if (user?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center h-64 animate-fade-in">
-        <p className="text-dark-400">Acesso negado. Apenas administradores podem aceder a esta página.</p>
+        <p className="text-slate-400">Acesso negado. Apenas administradores podem aceder a esta pagina.</p>
       </div>
     );
   }
@@ -954,7 +954,7 @@ const CommissionReports = ({ user }) => {
         <div className="h-10 bg-dark-700 rounded-lg w-1/3 animate-pulse"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2].map(i => (
-            <div key={i} className="glass-ultra p-6 h-96 animate-pulse">
+            <div key={i} className="bg-dark-850 border border-white/[0.06] p-6 h-96 animate-pulse rounded-lg">
               <div className="h-6 bg-dark-700 rounded w-1/2 mb-4"></div>
               <div className="space-y-3">
                 <div className="h-4 bg-dark-700 rounded w-full"></div>
@@ -972,27 +972,27 @@ const CommissionReports = ({ user }) => {
     <div className="space-y-6 p-6 animate-fade-in">
       <div className="flex justify-between items-center animate-slide-up">
         <div>
-          <h1 className="text-2xl font-bold text-white">Autos de Comissões</h1>
-          <p className="font-medium mt-1 text-dark-400">Gere autos de comissões para parceiros (apenas vendas pagas)</p>
+          <h1 className="text-2xl font-bold text-white">Autos de Comissoes</h1>
+          <p className="font-medium mt-1 text-slate-400">Gere autos de comissoes para parceiros (apenas vendas pagas)</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="glass-ultra border-0 hover:scale-[1.01] transition-transform duration-200">
+        <Card className="bg-dark-850 border border-white/[0.06] hover:scale-[1.01] transition-transform duration-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
-              <FileDown className="w-5 h-5 text-blue-400" />
+              <FileDown className="w-5 h-5 text-cyber-400" />
               Auto Individual
             </CardTitle>
-            <CardDescription className="text-dark-400">
-              Gere auto de comissões para um parceiro específico
+            <CardDescription className="text-slate-400">
+              Gere auto de comissoes para um parceiro especifico
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-dark-200">Selecionar Parceiro</Label>
+              <Label className="text-slate-300">Selecionar Parceiro</Label>
               <Select value={selectedPartner} onValueChange={setSelectedPartner}>
-                <SelectTrigger className="glass-input">
+                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
                   <SelectValue placeholder="Escolha um parceiro..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -1006,16 +1006,16 @@ const CommissionReports = ({ user }) => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-dark-200">
-                  Mês {checkingAvailability && <span className="text-xs text-dark-400">(verificando...)</span>}
+                <Label className="text-slate-300">
+                  Mes {checkingAvailability && <span className="text-xs text-slate-500">(verificando...)</span>}
                 </Label>
                 <Select
                   value={selectedMonth?.toString() || ""}
                   onValueChange={(v) => setSelectedMonth(parseInt(v))}
                   disabled={checkingAvailability || availableMonths.length === 0}
                 >
-                  <SelectTrigger className="glass-input">
-                    <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mês disponível" : "Selecione..."} />
+                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
+                    <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mes disponivel" : "Selecione..."} />
                   </SelectTrigger>
                   <SelectContent>
                     {months
@@ -1028,13 +1028,13 @@ const CommissionReports = ({ user }) => {
                   </SelectContent>
                 </Select>
                 {availableMonths.length === 0 && !checkingAvailability && (
-                  <p className="text-xs text-gold-400 mt-1">Autos só podem ser emitidos após o dia 22 do mês seguinte</p>
+                  <p className="text-xs text-cyber-400 mt-1">Autos so podem ser emitidos apos o dia 22 do mes seguinte</p>
                 )}
               </div>
               <div>
-                <Label className="text-dark-200">Ano</Label>
+                <Label className="text-slate-300">Ano</Label>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1052,15 +1052,15 @@ const CommissionReports = ({ user }) => {
                 <Button
                   onClick={() => printCommissionReport(selectedPartner)}
                   disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
-                  className="flex-1 btn-gold"
+                  className="flex-1 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
                 >
                   {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Pré-visualizar
+                  Pre-visualizar
                 </Button>
                 <Button
                   onClick={() => generateCommissionReport(selectedPartner)}
                   disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
-                  className="flex-1 btn-gold"
+                  className="flex-1 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Excel
@@ -1069,41 +1069,41 @@ const CommissionReports = ({ user }) => {
               <Button
                 onClick={handleBulkPrintCommissionReports}
                 disabled={!selectedMonth || loading || checkingAvailability}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                className="w-full bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
               >
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
                 Emitir PDFs para Todos os Parceiros
               </Button>
-              <p className="text-xs text-dark-400 text-center">
-                Abre janela individual para cada parceiro com vendas no mês
+              <p className="text-xs text-slate-500 text-center">
+                Abre janela individual para cada parceiro com vendas no mes
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="glass-ultra border-0 hover:scale-[1.01] transition-transform duration-200">
+        <Card className="bg-dark-850 border border-white/[0.06] hover:scale-[1.01] transition-transform duration-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
-              <FileDown className="w-5 h-5 text-green-400" />
+              <FileDown className="w-5 h-5 text-neon-400" />
               Autos de Todos os Parceiros
             </CardTitle>
-            <CardDescription className="text-dark-400">
-              Gere autos de comissões para todos os parceiros (um ficheiro com múltiplas abas)
+            <CardDescription className="text-slate-400">
+              Gere autos de comissoes para todos os parceiros (um ficheiro com multiplas abas)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-dark-200">
-                  Mês {checkingAvailability && <span className="text-xs text-dark-400">(verificando...)</span>}
+                <Label className="text-slate-300">
+                  Mes {checkingAvailability && <span className="text-xs text-slate-500">(verificando...)</span>}
                 </Label>
                 <Select
                   value={selectedMonth?.toString() || ""}
                   onValueChange={(v) => setSelectedMonth(parseInt(v))}
                   disabled={checkingAvailability || availableMonths.length === 0}
                 >
-                  <SelectTrigger className="glass-input">
-                    <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mês disponível" : "Selecione..."} />
+                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
+                    <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mes disponivel" : "Selecione..."} />
                   </SelectTrigger>
                   <SelectContent>
                     {months
@@ -1116,13 +1116,13 @@ const CommissionReports = ({ user }) => {
                   </SelectContent>
                 </Select>
                 {availableMonths.length === 0 && !checkingAvailability && (
-                  <p className="text-xs text-gold-400 mt-1">Autos só podem ser emitidos após o dia 22 do mês seguinte</p>
+                  <p className="text-xs text-cyber-400 mt-1">Autos so podem ser emitidos apos o dia 22 do mes seguinte</p>
                 )}
               </div>
               <div>
-                <Label className="text-dark-200">Ano</Label>
+                <Label className="text-slate-300">Ano</Label>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="glass-input">
+                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1135,15 +1135,15 @@ const CommissionReports = ({ user }) => {
                 </Select>
               </div>
             </div>
-            <div className="bg-blue-500/10 border border-dark-600 rounded-lg p-4">
-              <p className="text-sm text-blue-400">
-                Será criado um ficheiro Excel com uma aba para cada parceiro que tenha vendas pagas no período selecionado.
+            <div className="bg-cyber-500/10 border border-cyber-500/20 rounded-lg p-4">
+              <p className="text-sm text-cyber-400">
+                Sera criado um ficheiro Excel com uma aba para cada parceiro que tenha vendas pagas no periodo selecionado.
               </p>
             </div>
             <Button
               onClick={() => generateCommissionReport(null)}
               disabled={!selectedMonth || loading || checkingAvailability}
-              className="w-full btn-gold"
+              className="w-full bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
             >
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
               Gerar Todos os Autos
@@ -1152,17 +1152,17 @@ const CommissionReports = ({ user }) => {
         </Card>
       </div>
 
-      <Card className="glass-ultra border-0">
+      <Card className="bg-dark-850 border border-white/[0.06]">
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center gap-2 text-white">
-              <FileText className="w-5 h-5 text-blue-400" />
+              <FileText className="w-5 h-5 text-cyber-400" />
               Autos Emitidos
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-dark-400" />
+              <Calendar className="w-4 h-4 text-slate-500" />
               <Select value={filterMonth?.toString() || "all"} onValueChange={(v) => setFilterMonth(v === "all" ? null : parseInt(v))}>
-                <SelectTrigger className="w-32 glass-input">
+                <SelectTrigger className="w-32 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1175,7 +1175,7 @@ const CommissionReports = ({ user }) => {
                 </SelectContent>
               </Select>
               <Select value={filterYear.toString()} onValueChange={(v) => setFilterYear(parseInt(v))}>
-                <SelectTrigger className="w-28 glass-input">
+                <SelectTrigger className="w-28 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1188,15 +1188,15 @@ const CommissionReports = ({ user }) => {
               </Select>
             </div>
           </div>
-          <CardDescription className="text-dark-400">
+          <CardDescription className="text-slate-400">
             Lista de todos os autos registrados no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
           {emittedReports.length === 0 ? (
-            <div className="text-center py-8 text-dark-400">
-              <FileText className="w-12 h-12 text-dark-500 mx-auto mb-3" />
-              <p>Nenhum auto emitido para o período selecionado</p>
+            <div className="text-center py-8 text-slate-400">
+              <FileText className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+              <p>Nenhum auto emitido para o periodo selecionado</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1206,7 +1206,7 @@ const CommissionReports = ({ user }) => {
                   className={`flex items-center justify-between p-4 rounded-lg transition-all duration-200 ${
                     report.paid_validated_at
                       ? 'bg-green-500/10 border-2 border-green-500/20'
-                      : 'bg-dark-800 border border-dark-600 hover:shadow-md'
+                      : 'bg-dark-900 border border-dark-700 hover:border-cyber-500/30 hover:shadow-md'
                   }`}
                 >
                   <div className="flex-1">
@@ -1215,19 +1215,19 @@ const CommissionReports = ({ user }) => {
                         {report.partner?.name || 'Parceiro Desconhecido'}
                       </span>
                       {report.paid_validated_at && (
-                        <Badge className="bg-green-500/10 text-green-400">
+                        <Badge className="bg-green-500/10 text-green-400 border-green-500/20">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Pago
                         </Badge>
                       )}
                     </div>
-                    <div className="text-sm text-dark-400 mt-1">
-                      {months.find(m => m.value === report.month)?.label} {report.year} - Versão {report.version}
+                    <div className="text-sm text-slate-400 mt-1">
+                      {months.find(m => m.value === report.month)?.label} {report.year} - Versao {report.version}
                     </div>
-                    <div className="text-xs text-dark-400 mt-1">
+                    <div className="text-xs text-slate-500 mt-1">
                       Emitido em {new Date(report.created_at).toLocaleDateString('pt-PT')} por {report.creator?.name || 'Sistema'}
                       {report.emailed_at && (
-                        <span className="ml-2 text-green-400">• Email enviado</span>
+                        <span className="ml-2 text-green-400">-- Email enviado</span>
                       )}
                     </div>
                     {report.paid_validated_at && (
@@ -1242,7 +1242,7 @@ const CommissionReports = ({ user }) => {
                       variant="outline"
                       onClick={() => handleDownloadReport(report)}
                       title="Download PDF"
-                      className="border-dark-600 text-dark-200"
+                      className="bg-dark-900 border-dark-700 text-slate-300 hover:border-cyber-500/30 hover:text-cyber-400"
                     >
                       <Download className="w-4 h-4" />
                     </Button>
@@ -1251,7 +1251,7 @@ const CommissionReports = ({ user }) => {
                         size="sm"
                         onClick={() => handleValidatePayment(report.id)}
                         title="Validar como Pago"
-                        className="btn-gold"
+                        className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
                       >
                         <CheckCircle className="w-4 h-4" />
                       </Button>
@@ -1260,7 +1260,7 @@ const CommissionReports = ({ user }) => {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleDeleteReport(report.id, report.paid_validated_at)}
-                      title={report.paid_validated_at ? "Não é possível eliminar auto validado" : "Eliminar"}
+                      title={report.paid_validated_at ? "Nao e possivel eliminar auto validado" : "Eliminar"}
                       disabled={report.paid_validated_at}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1273,25 +1273,25 @@ const CommissionReports = ({ user }) => {
         </CardContent>
       </Card>
 
-      <Card className="glass-ultra border-0">
+      <Card className="bg-dark-850 border border-white/[0.06]">
         <CardHeader>
-          <CardTitle className="text-white">Informações Importantes</CardTitle>
+          <CardTitle className="text-white">Informacoes Importantes</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-dark-400">
-          <p><strong className="text-white">Regras de Emissão:</strong></p>
-          <p>• Autos só podem ser emitidos após o dia 22 do mês seguinte (ex: auto de Novembro só após 22 de Dezembro)</p>
-          <p>• Apenas vendas com data de ativação no período selecionado e pagas pelo operador são incluídas</p>
-          <p>• Vendas já incluídas em autos validados como pagos não serão duplicadas em novos autos do mesmo mês</p>
+        <CardContent className="space-y-2 text-sm text-slate-400">
+          <p><strong className="text-white">Regras de Emissao:</strong></p>
+          <p>-- Autos so podem ser emitidos apos o dia 22 do mes seguinte (ex: auto de Novembro so apos 22 de Dezembro)</p>
+          <p>-- Apenas vendas com data de ativacao no periodo selecionado e pagas pelo operador sao incluidas</p>
+          <p>-- Vendas ja incluidas em autos validados como pagos nao serao duplicadas em novos autos do mesmo mes</p>
 
           <p className="pt-2"><strong className="text-white">Processo:</strong></p>
-          <p>• Selecione o mês e ano disponíveis para gerar o auto</p>
-          <p>• Clique em "Pré-visualizar" para rever o auto antes de aprovar</p>
-          <p>• No popup, clique em "Aprovar e Registrar Auto" para registar e enviar email ao parceiro</p>
+          <p>-- Selecione o mes e ano disponiveis para gerar o auto</p>
+          <p>-- Clique em "Pre-visualizar" para rever o auto antes de aprovar</p>
+          <p>-- No popup, clique em "Aprovar e Registrar Auto" para registar e enviar email ao parceiro</p>
 
-          <p className="pt-2"><strong className="text-white">Validação de Pagamento:</strong></p>
-          <p>• Após receber o pagamento do parceiro, valide o auto clicando no botão verde</p>
-          <p>• Autos validados ficam bloqueados e não podem ser eliminados ou editados</p>
-          <p>• A listagem filtra automaticamente pelo último mês emitido</p>
+          <p className="pt-2"><strong className="text-white">Validacao de Pagamento:</strong></p>
+          <p>-- Apos receber o pagamento do parceiro, valide o auto clicando no botao verde</p>
+          <p>-- Autos validados ficam bloqueados e nao podem ser eliminados ou editados</p>
+          <p>-- A listagem filtra automaticamente pelo ultimo mes emitido</p>
         </CardContent>
       </Card>
     </div>
