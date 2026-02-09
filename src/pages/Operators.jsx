@@ -418,13 +418,13 @@ const Operators = ({ user }) => {
                     <FormSection icon={Building2} title="Informações Gerais" gradient="from-blue-600 to-blue-700">
                       <div className="grid grid-cols-1 gap-6">
                         <div>
-                          <Label className="text-sm font-semibold mb-2 text-dark-200">Nome *</Label>
-                          <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="glass-input" />
+                          <Label className="text-sm font-semibold mb-2 text-white">Nome *</Label>
+                          <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl" />
                         </div>
                         <div>
-                          <Label className="text-sm font-semibold mb-2 text-dark-200">Âmbito *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-white">Âmbito *</Label>
                           <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: '', allowed_energy_types: v === 'energia' ? ['eletricidade', 'gas'] : []})}>
-                            <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
                               <SelectItem value="energia">Energia</SelectItem>
@@ -439,7 +439,7 @@ const Operators = ({ user }) => {
                       <FormSection icon={Settings} title="Tipos de Ativação" gradient="from-purple-600 to-purple-700">
                         <div className="grid grid-cols-1 gap-6">
                           <div>
-                            <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Ativação Permitidos *</Label>
+                            <Label className="text-sm font-semibold mb-2 text-white">Tipos de Ativação Permitidos *</Label>
                             <div className="mt-2 space-y-2">
                               {['M2', 'M3', 'M4'].map(type => (
                                 <div key={type} className="flex items-center gap-2">
@@ -454,7 +454,7 @@ const Operators = ({ user }) => {
                                 </div>
                               ))}
                             </div>
-                            <p className="text-xs text-dark-400 mt-1">Selecione os tipos de ativação permitidos (M2, M3, M4)</p>
+                            <p className="text-xs text-white/60 mt-1">Selecione os tipos de ativação permitidos (M2, M3, M4)</p>
                           </div>
                         </div>
                       </FormSection>
@@ -463,7 +463,7 @@ const Operators = ({ user }) => {
                     <FormSection icon={Building2} title="Tipos de Cliente" gradient="from-green-600 to-green-700">
                       <div className="grid grid-cols-1 gap-6">
                         <div>
-                          <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Cliente Permitidos *</Label>
+                          <Label className="text-sm font-semibold mb-2 text-white">Tipos de Cliente Permitidos *</Label>
                           <div className="mt-2 space-y-2">
                             {['particular', 'empresarial'].map(type => (
                               <div key={type} className="flex items-center gap-2">
@@ -478,7 +478,7 @@ const Operators = ({ user }) => {
                               </div>
                             ))}
                           </div>
-                          <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo</p>
+                          <p className="text-xs text-white/60 mt-1">Selecione pelo menos um tipo</p>
                         </div>
                       </div>
                     </FormSection>
@@ -487,7 +487,7 @@ const Operators = ({ user }) => {
                       <FormSection icon={Zap} title="Tipos de Energia" gradient="from-yellow-600 to-yellow-700">
                         <div className="grid grid-cols-1 gap-6">
                           <div>
-                            <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Energia Permitidos *</Label>
+                            <Label className="text-sm font-semibold mb-2 text-white">Tipos de Energia Permitidos *</Label>
                             <div className="mt-2 space-y-2">
                               {['eletricidade', 'gas'].map(type => (
                                 <div key={type} className="flex items-center gap-2">
@@ -502,7 +502,7 @@ const Operators = ({ user }) => {
                                 </div>
                               ))}
                             </div>
-                            <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo. As comissões serão configuradas separadamente para cada tipo.</p>
+                            <p className="text-xs text-white/60 mt-1">Selecione pelo menos um tipo. As comissões serão configuradas separadamente para cada tipo.</p>
                           </div>
                         </div>
                       </FormSection>
@@ -512,15 +512,15 @@ const Operators = ({ user }) => {
                       <FormSection icon={DollarSign} title="Modo de Comissão" gradient="from-amber-600 to-amber-700">
                         <div className="grid grid-cols-1 gap-6">
                           <div>
-                            <Label className="text-sm font-semibold mb-2 text-dark-200">Modo de Comissão *</Label>
+                            <Label className="text-sm font-semibold mb-2 text-white">Modo de Comissão *</Label>
                             <Select value={formData.commission_mode} onValueChange={(v) => setFormData({...formData, commission_mode: v})}>
-                              <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                              <SelectTrigger className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="tier">Por Patamares</SelectItem>
                                 <SelectItem value="manual">Definida ao Contrato</SelectItem>
                               </SelectContent>
                             </Select>
-                            <p className="text-xs text-dark-400 mt-1">
+                            <p className="text-xs text-white/60 mt-1">
                               {formData.commission_mode === 'tier'
                                 ? 'Comissões calculadas automaticamente por patamares'
                                 : 'Comissão definida manualmente na edição de cada venda'}
@@ -558,7 +558,7 @@ const Operators = ({ user }) => {
                             </Label>
                           </div>
                         </div>
-                        <p className="text-xs text-dark-400">
+                        <p className="text-xs text-white/60">
                           Os valores para estes serviços são definidos na configuração de patamares
                         </p>
                       </div>
