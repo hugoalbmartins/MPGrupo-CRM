@@ -399,6 +399,8 @@ export const salesService = {
     if (!oldSale) throw new Error('Sale not found');
 
     const PROTECTED_ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
+    const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint'];
+    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
@@ -406,14 +408,18 @@ export const salesService = {
         return;
       }
 
+      const value = updateData[key];
+
       if (key === 'partner_id') {
-        updates[key] = updateData[key] === null || updateData[key] === '' || updateData[key] === 'admin_commissioned' ? null : updateData[key];
-      } else if (updateData[key] !== null && updateData[key] !== undefined && updateData[key] !== '') {
-        if (key === 'manual_commission') {
-          updates[key] = parseFloat(updateData[key]) || null;
-        } else {
-          updates[key] = updateData[key];
-        }
+        updates[key] = value === null || value === '' || value === 'admin_commissioned' ? null : value;
+      } else if (BOOLEAN_FIELDS.includes(key)) {
+        updates[key] = Boolean(value);
+      } else if (key === 'manual_commission') {
+        updates[key] = value === '' || value === null || value === undefined ? null : parseFloat(value);
+      } else if (OPTIONAL_FIELDS_WITH_CONSTRAINTS.includes(key)) {
+        updates[key] = value === '' || value === null || value === undefined ? null : value;
+      } else if (value !== null && value !== undefined && value !== '') {
+        updates[key] = value;
       }
     });
 
