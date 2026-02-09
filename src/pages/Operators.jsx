@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,24 @@ import { useOperators, useCreateOperator, useUpdateOperator, useDeleteOperator }
 import { operatorsService } from "../services/operatorsService";
 import CommissionWizard from "../components/CommissionWizard";
 import { supabase } from "../lib/supabase";
+
+const FormSection = ({ icon: Icon, title, children, gradient = "from-dark-600 to-dark-700" }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="space-y-4"
+  >
+    <div className="flex items-center gap-3 mb-4">
+      <div className={`w-10 h-10 bg-gradient-to-r ${gradient} rounded-lg flex items-center justify-center shadow-lg`}>
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <h3 className="text-lg font-bold text-white">{title}</h3>
+    </div>
+    <div className="space-y-4 pl-13">
+      {children}
+    </div>
+  </motion.div>
+);
 
 const Operators = ({ user }) => {
   const [operators, setOperators] = useState([]);
@@ -385,140 +404,177 @@ const Operators = ({ user }) => {
             <DialogTrigger asChild>
               <Button onClick={resetForm} className="btn-gold"><Plus className="w-4 h-4 mr-2" />Nova Operadora</Button>
             </DialogTrigger>
-            <DialogContent className="glass-ultra">
-              <DialogHeader><DialogTitle className="text-2xl text-white">Nova Operadora</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                <div>
-                  <Label className="text-dark-200">Nome *</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="glass-input" />
-                </div>
-                <div>
-                  <Label className="text-dark-200">Âmbito *</Label>
-                  <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: '', allowed_energy_types: v === 'energia' ? ['eletricidade', 'gas'] : []})}>
-                    <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
-                      <SelectItem value="energia">Energia</SelectItem>
-                      <SelectItem value="solar">Solar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {formData.scope === 'telecomunicacoes' && (
-                  <>
-                    <div>
-                      <Label className="text-dark-200">Tipos de Ativação Permitidos *</Label>
-                      <div className="mt-2 space-y-2">
-                        {['M2', 'M3', 'M4'].map(type => (
-                          <div key={type} className="flex items-center gap-2">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden glass-ultra border-white/10 flex flex-col p-0">
+              <div className="sticky top-0 z-10 glass-ultra border-b border-white/10 px-8 py-6">
+                <DialogHeader>
+                  <DialogTitle className="text-3xl font-bold text-gradient-gold">Nova Operadora</DialogTitle>
+                  <p className="text-sm text-dark-200 mt-1">Preencha os dados da nova operadora no sistema</p>
+                </DialogHeader>
+              </div>
+
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+                <div className="overflow-y-auto flex-1 px-8 py-6 scrollbar-modern">
+                  <div className="space-y-8">
+                    <FormSection icon={Building2} title="Informações Gerais" gradient="from-blue-600 to-blue-700">
+                      <div className="grid grid-cols-1 gap-6">
+                        <div>
+                          <Label className="text-sm font-semibold mb-2 text-dark-200">Nome *</Label>
+                          <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="glass-input" />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-semibold mb-2 text-dark-200">Âmbito *</Label>
+                          <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: '', allowed_energy_types: v === 'energia' ? ['eletricidade', 'gas'] : []})}>
+                            <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
+                              <SelectItem value="energia">Energia</SelectItem>
+                              <SelectItem value="solar">Solar</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </FormSection>
+
+                    {formData.scope === 'telecomunicacoes' && (
+                      <FormSection icon={Settings} title="Tipos de Ativação" gradient="from-purple-600 to-purple-700">
+                        <div className="grid grid-cols-1 gap-6">
+                          <div>
+                            <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Ativação Permitidos *</Label>
+                            <div className="mt-2 space-y-2">
+                              {['M2', 'M3', 'M4'].map(type => (
+                                <div key={type} className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`activation-${type}`}
+                                    checked={formData.activation_types.includes(type)}
+                                    onChange={() => toggleActivationType(type)}
+                                    className="w-4 h-4"
+                                  />
+                                  <Label htmlFor={`activation-${type}`} className="cursor-pointer font-normal text-white">{type}</Label>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-dark-400 mt-1">Selecione os tipos de ativação permitidos (M2, M3, M4)</p>
+                          </div>
+                        </div>
+                      </FormSection>
+                    )}
+
+                    <FormSection icon={Building2} title="Tipos de Cliente" gradient="from-green-600 to-green-700">
+                      <div className="grid grid-cols-1 gap-6">
+                        <div>
+                          <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Cliente Permitidos *</Label>
+                          <div className="mt-2 space-y-2">
+                            {['particular', 'empresarial'].map(type => (
+                              <div key={type} className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`client-${type}`}
+                                  checked={formData.allowed_client_types.includes(type)}
+                                  onChange={() => toggleClientType(type)}
+                                  className="w-4 h-4"
+                                />
+                                <Label htmlFor={`client-${type}`} className="cursor-pointer font-normal capitalize text-white">{type}</Label>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo</p>
+                        </div>
+                      </div>
+                    </FormSection>
+
+                    {formData.scope === 'energia' && (
+                      <FormSection icon={Zap} title="Tipos de Energia" gradient="from-yellow-600 to-yellow-700">
+                        <div className="grid grid-cols-1 gap-6">
+                          <div>
+                            <Label className="text-sm font-semibold mb-2 text-dark-200">Tipos de Energia Permitidos *</Label>
+                            <div className="mt-2 space-y-2">
+                              {['eletricidade', 'gas'].map(type => (
+                                <div key={type} className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`energy-${type}`}
+                                    checked={formData.allowed_energy_types.includes(type)}
+                                    onChange={() => toggleEnergyType(type)}
+                                    className="w-4 h-4"
+                                  />
+                                  <Label htmlFor={`energy-${type}`} className="cursor-pointer font-normal capitalize text-white">{type}</Label>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo. As comissões serão configuradas separadamente para cada tipo.</p>
+                          </div>
+                        </div>
+                      </FormSection>
+                    )}
+
+                    {formData.scope === 'solar' && (
+                      <FormSection icon={DollarSign} title="Modo de Comissão" gradient="from-amber-600 to-amber-700">
+                        <div className="grid grid-cols-1 gap-6">
+                          <div>
+                            <Label className="text-sm font-semibold mb-2 text-dark-200">Modo de Comissão *</Label>
+                            <Select value={formData.commission_mode} onValueChange={(v) => setFormData({...formData, commission_mode: v})}>
+                              <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="tier">Por Patamares</SelectItem>
+                                <SelectItem value="manual">Definida ao Contrato</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-dark-400 mt-1">
+                              {formData.commission_mode === 'tier'
+                                ? 'Comissões calculadas automaticamente por patamares'
+                                : 'Comissão definida manualmente na edição de cada venda'}
+                            </p>
+                          </div>
+                        </div>
+                      </FormSection>
+                    )}
+
+                    <FormSection icon={CreditCard} title="Serviços Adicionais" gradient="from-teal-600 to-teal-700">
+                      <div className="grid grid-cols-1 gap-6">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
                             <input
                               type="checkbox"
-                              id={`activation-${type}`}
-                              checked={formData.activation_types.includes(type)}
-                              onChange={() => toggleActivationType(type)}
+                              id="pays_direct_debit"
+                              checked={formData.pays_direct_debit}
+                              onChange={(e) => setFormData({...formData, pays_direct_debit: e.target.checked})}
                               className="w-4 h-4"
                             />
-                            <Label htmlFor={`activation-${type}`} className="cursor-pointer font-normal text-dark-300">{type}</Label>
+                            <Label htmlFor="pays_direct_debit" className="cursor-pointer font-normal text-white">
+                              Paga adesão a Débito Direto
+                            </Label>
                           </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-dark-400 mt-1">Selecione os tipos de ativação permitidos (M2, M3, M4)</p>
-                    </div>
-                  </>
-                )}
-                <div>
-                  <Label className="text-dark-200">Tipos de Cliente Permitidos *</Label>
-                  <div className="mt-2 space-y-2">
-                    {['particular', 'empresarial'].map(type => (
-                      <div key={type} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={`client-${type}`}
-                          checked={formData.allowed_client_types.includes(type)}
-                          onChange={() => toggleClientType(type)}
-                          className="w-4 h-4"
-                        />
-                        <Label htmlFor={`client-${type}`} className="cursor-pointer font-normal capitalize text-dark-300">{type}</Label>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo</p>
-                </div>
-                {formData.scope === 'energia' && (
-                  <>
-                    <div>
-                      <Label className="text-dark-200">Tipos de Energia Permitidos *</Label>
-                      <div className="mt-2 space-y-2">
-                        {['eletricidade', 'gas'].map(type => (
-                          <div key={type} className="flex items-center gap-2">
+                          <div className="flex items-center space-x-2">
                             <input
                               type="checkbox"
-                              id={`energy-${type}`}
-                              checked={formData.allowed_energy_types.includes(type)}
-                              onChange={() => toggleEnergyType(type)}
+                              id="pays_electronic_invoice"
+                              checked={formData.pays_electronic_invoice}
+                              onChange={(e) => setFormData({...formData, pays_electronic_invoice: e.target.checked})}
                               className="w-4 h-4"
                             />
-                            <Label htmlFor={`energy-${type}`} className="cursor-pointer font-normal capitalize text-dark-300">{type}</Label>
+                            <Label htmlFor="pays_electronic_invoice" className="cursor-pointer font-normal text-white">
+                              Paga adesão a Fatura Eletrónica
+                            </Label>
                           </div>
-                        ))}
+                        </div>
+                        <p className="text-xs text-dark-400">
+                          Os valores para estes serviços são definidos na configuração de patamares
+                        </p>
                       </div>
-                      <p className="text-xs text-dark-400 mt-1">Selecione pelo menos um tipo. As comissões serão configuradas separadamente para cada tipo.</p>
-                    </div>
-                  </>
-                )}
-                {formData.scope === 'solar' && (
-                  <div>
-                    <Label className="text-dark-200">Modo de Comissão *</Label>
-                    <Select value={formData.commission_mode} onValueChange={(v) => setFormData({...formData, commission_mode: v})}>
-                      <SelectTrigger className="glass-input"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tier">Por Patamares</SelectItem>
-                        <SelectItem value="manual">Definida ao Contrato</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-dark-400 mt-1">
-                      {formData.commission_mode === 'tier'
-                        ? 'Comissões calculadas automaticamente por patamares'
-                        : 'Comissão definida manualmente na edição de cada venda'}
-                    </p>
+                    </FormSection>
                   </div>
-                )}
-
-                <div className="border-t border-dark-600 pt-4 mt-4">
-                  <Label className="text-base font-semibold mb-3 block text-dark-200">Serviços Adicionais</Label>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="pays_direct_debit"
-                        checked={formData.pays_direct_debit}
-                        onChange={(e) => setFormData({...formData, pays_direct_debit: e.target.checked})}
-                        className="w-4 h-4"
-                      />
-                      <Label htmlFor="pays_direct_debit" className="cursor-pointer font-normal text-dark-300">
-                        Paga adesão a Débito Direto
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="pays_electronic_invoice"
-                        checked={formData.pays_electronic_invoice}
-                        onChange={(e) => setFormData({...formData, pays_electronic_invoice: e.target.checked})}
-                        className="w-4 h-4"
-                      />
-                      <Label htmlFor="pays_electronic_invoice" className="cursor-pointer font-normal text-dark-300">
-                        Paga adesão a Fatura Eletrónica
-                      </Label>
-                    </div>
-                  </div>
-                  <p className="text-xs text-dark-400 mt-2">
-                    Os valores para estes serviços são definidos na configuração de patamares
-                  </p>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" onClick={() => setDialogOpen(false)} variant="outline">Cancelar</Button>
-                  <Button type="submit" className="btn-gold">Criar</Button>
+                <div className="sticky bottom-0 glass-ultra border-t border-white/10 px-8 py-4">
+                  <div className="flex justify-end gap-3">
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="border-white/20 text-white hover:bg-white/10">
+                      Cancelar
+                    </Button>
+                    <Button type="submit" className="bg-gold-400 hover:bg-gold-500 text-dark-900 font-semibold">
+                      Criar Operadora
+                    </Button>
+                  </div>
                 </div>
               </form>
             </DialogContent>
