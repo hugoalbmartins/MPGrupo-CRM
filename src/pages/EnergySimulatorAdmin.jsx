@@ -994,9 +994,9 @@ const EnergySimulatorAdmin = () => {
                       </div>
 
                       {ESCALOES_GAS.map((escalao) => (
-                        <Card key={escalao} className="bg-dark-700/50 border-white/10">
+                        <Card key={escalao.value} className="bg-dark-700/50 border-white/10">
                           <CardHeader>
-                            <CardTitle className="text-white text-base">{escalao}</CardTitle>
+                            <CardTitle className="text-white text-base">{escalao.label}</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1005,8 +1005,8 @@ const EnergySimulatorAdmin = () => {
                                 <Input
                                   type="number"
                                   step="0.0001"
-                                  value={editingTariffs.tarifas?.gas?.[escalao]?.energia || 0}
-                                  onChange={(e) => updateTariff('gas', `${escalao}.energia`, e.target.value)}
+                                  value={editingTariffs.tarifas?.gas?.[escalao.value]?.energia || 0}
+                                  onChange={(e) => updateTariff('gas', `${escalao.value}.energia`, e.target.value)}
                                   className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
                                   placeholder="€/kWh"
                                 />
@@ -1016,8 +1016,8 @@ const EnergySimulatorAdmin = () => {
                                 <Input
                                   type="number"
                                   step="0.01"
-                                  value={editingTariffs.tarifas?.gas?.[escalao]?.termo_fixo || 0}
-                                  onChange={(e) => updateTariff('gas', `${escalao}.termo_fixo`, e.target.value)}
+                                  value={editingTariffs.tarifas?.gas?.[escalao.value]?.termo_fixo || 0}
+                                  onChange={(e) => updateTariff('gas', `${escalao.value}.termo_fixo`, e.target.value)}
                                   className="bg-white text-dark-900 border-dark-600 focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20 rounded-xl"
                                   placeholder="€/dia"
                                 />
