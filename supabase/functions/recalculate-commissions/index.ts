@@ -45,7 +45,7 @@ async function calculateCommission(
   let revLevel: number | null = null;
 
   if (saleData.isAdminSale && saleData.isCommissioned) {
-    partnerType = "REV";
+    partnerType = "Rev+";
     revLevel = 1;
   } else if (saleData.partner_id) {
     const { data: partner } = await supabase
