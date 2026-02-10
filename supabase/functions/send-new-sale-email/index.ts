@@ -177,41 +177,43 @@ async function sendViaSMTP(
   const buffer = new Uint8Array(8192);
 
   try {
-    const readResponse = async () => {
+    const readResponse = async (command: string) => {
       const bytesRead = await conn.read(buffer);
       if (bytesRead) {
-        return decoder.decode(buffer.subarray(0, bytesRead));
+        const resp = decoder.decode(buffer.subarray(0, bytesRead));
+        console.log(`SMTP [${command}]: ${resp.trim()}`);
+        if (resp.startsWith("4") || resp.startsWith("5")) {
+          throw new Error(`SMTP error on ${command}: ${resp.trim()}`);
+        }
+        return resp;
       }
       return "";
     };
 
-    await readResponse();
+    await readResponse("CONNECT");
     await conn.write(encoder.encode(`EHLO ${host}\r\n`));
-    await readResponse();
+    await readResponse("EHLO");
 
     const credentials = btoa(`\0${user}\0${pass}`);
     await conn.write(encoder.encode(`AUTH PLAIN ${credentials}\r\n`));
-    const authResp = await readResponse();
-    if (authResp.startsWith("5")) {
-      throw new Error(`SMTP Auth Error: ${authResp}`);
-    }
+    await readResponse("AUTH");
 
     await conn.write(encoder.encode(`MAIL FROM:<${fromEmail}>\r\n`));
-    await readResponse();
+    await readResponse("MAIL FROM");
 
     for (const recipient of allRecipients) {
       await conn.write(encoder.encode(`RCPT TO:<${recipient}>\r\n`));
-      await readResponse();
+      await readResponse(`RCPT TO:${recipient}`);
     }
 
     await conn.write(encoder.encode(`DATA\r\n`));
-    await readResponse();
+    await readResponse("DATA");
 
     await conn.write(encoder.encode(`${emailBody}\r\n.\r\n`));
-    await readResponse();
+    await readResponse("DATA END");
 
     await conn.write(encoder.encode(`QUIT\r\n`));
-    await readResponse();
+    try { await readResponse("QUIT"); } catch (_e) { /* ignore quit errors */ }
   } finally {
     try {
       conn.close();

@@ -74,44 +74,45 @@ function App() {
   useEffect(() => {
     if (!user || mustChangePassword) return;
 
+    (async () => {
+      await notificationService.requestPermission();
+      await notificationService.subscribeToPush();
+    })();
+
+    const alertTypeConfig = {
+      new_sale: { title: 'Nova Venda Registada', icon: '📋', toastType: 'info' },
+      status_change: { title: 'Estado Alterado', icon: '🔄', toastType: 'info' },
+      note_added: { title: 'Nova Nota', icon: '💬', toastType: 'info' },
+      sale_edit: { title: 'Venda Editada', icon: '✏️', toastType: 'warning' },
+      proposal_reminder: { title: 'Propostas Pendentes', icon: '⏰', toastType: 'warning' },
+      operator_validation: { title: 'Validacao de Operadora', icon: '✅', toastType: 'info' },
+    };
+
     const channel = supabase
       .channel('app-alerts-push')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, (payload) => {
         const alert = payload.new;
         if (!alert || !alert.user_ids?.includes(user.id)) return;
 
-        const type = alert.type;
-        if (type === 'new_sale') {
-          notificationService.showNotification('Nova Venda Registada', {
-            body: alert.message,
-            tag: `new-sale-${alert.sale_code}`,
-            data: { url: '/sales' }
-          });
-        } else if (type === 'status_change') {
-          notificationService.showNotification('Estado Alterado', {
-            body: alert.message,
-            tag: `status-${alert.sale_code}`,
-            data: { url: '/alerts' }
-          });
-        } else if (type === 'note_added') {
-          notificationService.showNotification('Nova Nota', {
-            body: alert.message,
-            tag: `note-${alert.sale_code}`,
-            data: { url: '/alerts' }
-          });
-        } else if (type === 'sale_edit') {
-          notificationService.showNotification('Venda Editada', {
-            body: alert.message,
-            tag: `edit-${alert.sale_code}`,
-            data: { url: '/sales' }
-          });
-        } else if (type === 'proposal_reminder') {
-          notificationService.showNotification('Propostas Pendentes', {
-            body: alert.message,
-            tag: 'proposal-reminder',
-            data: { url: '/sales' }
-          });
-        }
+        const config = alertTypeConfig[alert.type] || { title: 'Nova Notificacao', toastType: 'info' };
+
+        toast[config.toastType](config.title, {
+          description: alert.message,
+          duration: 8000,
+          action: alert.sale_code ? {
+            label: 'Ver',
+            onClick: () => window.location.href = alert.type === 'new_sale' || alert.type === 'sale_edit' ? '/sales' : '/alerts',
+          } : undefined,
+        });
+
+        notificationService.showNotification(config.title, {
+          body: alert.message,
+          tag: `${alert.type}-${alert.sale_code || alert.id}`,
+          data: { url: alert.type === 'new_sale' || alert.type === 'sale_edit' ? '/sales' : '/alerts' }
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['alerts'] });
+        queryClient.invalidateQueries({ queryKey: ['unreadAlertsCount'] });
       })
       .subscribe();
 

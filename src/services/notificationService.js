@@ -1,6 +1,19 @@
 import { supabase } from '../lib/supabase';
 
+const VAPID_PUBLIC_KEY = 'BJEE_mv62Tnt5wGmJHwMCrjHii0ocGmAjFZKJ87to6AG1YdQ8hVNIILMKdMzyajjcdey2tc5BGmIGMLbdXXZ0b0';
+
 let swRegistration = null;
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 export const notificationService = {
   async registerServiceWorker() {
@@ -21,13 +34,48 @@ export const notificationService = {
     if (Notification.permission === 'granted') return 'granted';
     if (Notification.permission === 'denied') return 'denied';
 
-    const result = await Notification.requestPermission();
-    return result;
+    try {
+      const result = await Notification.requestPermission();
+      return result;
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      return 'denied';
+    }
   },
 
   getPermissionStatus() {
     if (!('Notification' in window)) return 'unsupported';
     return Notification.permission;
+  },
+
+  async subscribeToPush() {
+    try {
+      if (!('PushManager' in window)) return null;
+
+      const permission = this.getPermissionStatus();
+      if (permission !== 'granted') return null;
+
+      if (!swRegistration) {
+        swRegistration = await navigator.serviceWorker.ready;
+      }
+
+      const existingSub = await swRegistration.pushManager.getSubscription();
+      if (existingSub) {
+        await this.savePushSubscription(existingSub);
+        return existingSub;
+      }
+
+      const subscription = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+
+      await this.savePushSubscription(subscription);
+      return subscription;
+    } catch (error) {
+      console.error('Push subscription failed:', error);
+      return null;
+    }
   },
 
   showNotification(title, options = {}) {
@@ -50,68 +98,52 @@ export const notificationService = {
     }
   },
 
-  showNewSaleNotification(saleCode, customerName, operatorName) {
-    this.showNotification(`Nova Venda - ${operatorName}`, {
-      body: `${customerName} - ${saleCode}`,
-      tag: `new-sale-${saleCode}`,
-      data: { url: '/sales' }
-    });
-  },
-
-  showSaleEditNotification(saleCode, changedFields) {
-    this.showNotification(`Venda Editada - ${saleCode}`, {
-      body: `Campos alterados: ${changedFields}`,
-      tag: `edit-${saleCode}`,
-      data: { url: '/sales' }
-    });
-  },
-
-  showNoteNotification(saleCode, notePreview) {
-    this.showNotification(`Nova Nota - ${saleCode}`, {
-      body: notePreview,
-      tag: `note-${saleCode}`,
-      data: { url: '/alerts' }
-    });
-  },
-
-  showProposalReminderNotification(count) {
-    this.showNotification('Propostas Pendentes', {
-      body: `Tem ${count} proposta(s) pendente(s) ha mais de 7 dias.`,
-      tag: 'proposal-reminder',
-      data: { url: '/sales' }
-    });
-  },
-
   async savePushSubscription(subscription) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const sub = subscription.toJSON();
-    const { error } = await supabase
-      .from('push_subscriptions')
-      .upsert({
-        user_id: user.id,
-        endpoint: sub.endpoint,
-        p256dh: sub.keys?.p256dh || '',
-        auth_key: sub.keys?.auth || '',
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,endpoint'
-      });
+      const sub = subscription.toJSON();
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .upsert({
+          user_id: user.id,
+          endpoint: sub.endpoint,
+          p256dh: sub.keys?.p256dh || '',
+          auth_key: sub.keys?.auth || '',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,endpoint'
+        });
 
-    if (error) console.error('Error saving push subscription:', error);
+      if (error) console.error('Error saving push subscription:', error);
+    } catch (error) {
+      console.error('Error saving push subscription:', error);
+    }
   },
 
   async removePushSubscription() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { error } = await supabase
-      .from('push_subscriptions')
-      .delete()
-      .eq('user_id', user.id);
+      const existingSub = swRegistration
+        ? await swRegistration.pushManager.getSubscription()
+        : null;
 
-    if (error) console.error('Error removing push subscription:', error);
+      if (existingSub) {
+        await existingSub.unsubscribe();
+      }
+
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) console.error('Error removing push subscription:', error);
+    } catch (error) {
+      console.error('Error removing push subscription:', error);
+    }
   },
 
   isPWAInstalled() {
