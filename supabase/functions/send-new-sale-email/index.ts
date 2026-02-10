@@ -103,6 +103,21 @@ function encodeBase64(data: Uint8Array): string {
   return btoa(binary);
 }
 
+function wrapBase64(base64: string, lineLength = 76): string {
+  const lines: string[] = [];
+  for (let i = 0; i < base64.length; i += lineLength) {
+    lines.push(base64.substring(i, i + lineLength));
+  }
+  return lines.join("\r\n");
+}
+
+function textToBase64Wrapped(text: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(text);
+  const base64 = encodeBase64(bytes);
+  return wrapBase64(base64);
+}
+
 function buildMimeEmail(
   fromEmail: string,
   fromName: string,
@@ -132,14 +147,16 @@ function buildMimeEmail(
     `Content-Type: multipart/mixed; boundary="${boundary}"`
   );
 
+  const htmlBase64 = textToBase64Wrapped(html);
+
   const parts = [
     headers.join("\r\n"),
     "",
     `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: 8bit`,
+    `Content-Transfer-Encoding: base64`,
     "",
-    html,
+    htmlBase64,
   ];
 
   for (const att of attachmentParts) {
@@ -149,7 +166,7 @@ function buildMimeEmail(
       `Content-Disposition: attachment; filename="${att.filename}"`,
       `Content-Transfer-Encoding: base64`,
       "",
-      att.contentBase64
+      wrapBase64(att.contentBase64)
     );
   }
 

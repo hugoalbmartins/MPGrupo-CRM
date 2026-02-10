@@ -74,6 +74,21 @@ interface SMTPConfig {
   smtpPass?: string;
 }
 
+function encodeBase64Wrapped(text: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(text);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  const lines: string[] = [];
+  for (let i = 0; i < base64.length; i += 76) {
+    lines.push(base64.substring(i, i + 76));
+  }
+  return lines.join("\r\n");
+}
+
 export async function sendEmailSMTP(to: string, subject: string, html: string, config?: SMTPConfig) {
   const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
   const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
@@ -89,6 +104,7 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
   console.log(`Preparing email to ${to} from ${fromEmail}`);
 
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
+  const htmlBase64 = encodeBase64Wrapped(html);
 
   const emailBody = [
     `From: ${fromName} <${fromEmail}>`,
@@ -98,9 +114,9 @@ export async function sendEmailSMTP(to: string, subject: string, html: string, c
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,
     `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: 8bit`,
+    `Content-Transfer-Encoding: base64`,
     ``,
-    html
+    htmlBase64
   ].join("\r\n");
 
   try {
