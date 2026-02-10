@@ -218,17 +218,12 @@ export const operatorsService = {
       };
     });
 
-    console.log('Inserting configs:', configsToInsert);
-
     const { data, error } = await supabase
       .from('commission_configurations')
       .insert(configsToInsert)
       .select();
 
-    if (error) {
-      console.error('Supabase request failed', error);
-      throw error;
-    }
+    if (error) throw error;
     return data;
   }
 };
