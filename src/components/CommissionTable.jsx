@@ -394,11 +394,12 @@ const CommissionTable = ({
             {(newConfig.service_type === 'NI' || newConfig.service_type === 'MC') && (
               <div>
                 <Label className="text-xs font-semibold text-white">Ativacao</Label>
-                <Select value={newConfig.activation_type || 'M2'} onValueChange={(v) => setNewConfig({...newConfig, activation_type: v})}>
+                <Select value={newConfig.activation_type || 'all'} onValueChange={(v) => setNewConfig({...newConfig, activation_type: v})}>
                   <SelectTrigger className="h-9 text-xs bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">Todos (M2/M3/M4)</SelectItem>
                     <SelectItem value="M2">M2</SelectItem>
                     <SelectItem value="M3">M3</SelectItem>
                     <SelectItem value="M4">M4</SelectItem>

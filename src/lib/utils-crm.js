@@ -132,7 +132,7 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   return `${namePrefix}${sequence}${month}${year}`;
 }
 
-async function calculateSingleEnergyCommission(operator, saleData, supabase, energyType, clientType, partnerType, includeBonuses = true, d2dLevel = null) {
+async function calculateSingleEnergyCommission(operator, saleData, supabase, energyType, clientType, partnerType, includeBonuses = true, d2dLevel = null, revLevel = null) {
   let query = supabase
     .from('commission_configurations')
     .select('*')
@@ -142,6 +142,10 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
 
   if (partnerType === 'D2D' && d2dLevel) {
     query = query.eq('d2d_level', d2dLevel);
+  }
+
+  if ((partnerType === 'REV' || partnerType === 'Rev+') && revLevel) {
+    query = query.eq('rev_level', revLevel);
   }
 
   query = query.order('min_sales', { ascending: false });
@@ -236,12 +240,14 @@ export async function calculateCommission(operator, saleData, supabase) {
 
   let partnerType = 'D2D';
   let d2dLevel = null;
+  let revLevel = null;
   if (saleData.isAdminSale && saleData.isCommissioned) {
     partnerType = 'REV';
+    revLevel = 1;
   } else if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from('partners')
-      .select('partner_type')
+      .select('partner_type, rev_level')
       .eq('id', saleData.partner_id)
       .maybeSingle();
 
@@ -260,6 +266,8 @@ export async function calculateCommission(operator, saleData, supabase) {
         console.warn(`D2D partner ${saleData.partner_id} has no level for operator ${operator.id}`);
         return 0.0;
       }
+    } else if (partnerType === 'REV' || partnerType === 'Rev+') {
+      revLevel = partner?.rev_level || 1;
     }
   }
 
@@ -272,7 +280,8 @@ export async function calculateCommission(operator, saleData, supabase) {
       clientType,
       partnerType,
       false,
-      d2dLevel
+      d2dLevel,
+      revLevel
     );
 
     const gasResult = await calculateSingleEnergyCommission(
@@ -283,7 +292,8 @@ export async function calculateCommission(operator, saleData, supabase) {
       clientType,
       partnerType,
       false,
-      d2dLevel
+      d2dLevel,
+      revLevel
     );
 
     let bonuses = 0;
@@ -329,6 +339,10 @@ export async function calculateCommission(operator, saleData, supabase) {
     query = query.eq('d2d_level', d2dLevel);
   }
 
+  if ((partnerType === 'REV' || partnerType === 'Rev+') && revLevel) {
+    query = query.eq('rev_level', revLevel);
+  }
+
   if (activationType && !refidOperationType) {
     query = query.eq('activation_type', activationType);
   }
@@ -361,8 +375,17 @@ export async function calculateCommission(operator, saleData, supabase) {
     });
   }
 
+  if (saleData.activation_type && commissionConfigs.length > 0) {
+    commissionConfigs = commissionConfigs.filter(config => {
+      if (!config.activation_type || config.activation_type === 'all') {
+        return true;
+      }
+      return config.activation_type === saleData.activation_type;
+    });
+  }
+
   if (commissionConfigs.length === 0) {
-    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}, refid_type: ${refidOperationType}`);
+    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}, activation_type: ${saleData.activation_type}, refid_type: ${refidOperationType}`);
     return 0.0;
   }
 
@@ -390,6 +413,14 @@ export async function calculateCommission(operator, saleData, supabase) {
       countQuery = countQuery.eq('scope', 'energia');
     } else if (scope === 'telecomunicacoes') {
       countQuery = countQuery.eq('scope', 'telecomunicacoes');
+
+      if (saleData.activation_type && (saleData.activation_type === 'M2' || saleData.activation_type === 'M3' || saleData.activation_type === 'M4')) {
+        countQuery = countQuery.eq('activation_type', saleData.activation_type);
+      }
+
+      if (serviceType) {
+        countQuery = countQuery.eq('service_type', serviceType);
+      }
     }
 
     const { count } = await countQuery;

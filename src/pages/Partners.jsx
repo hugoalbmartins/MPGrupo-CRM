@@ -29,6 +29,7 @@ const Partners = ({ user }) => {
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [formData, setFormData] = useState({
     partner_type: "D2D",
+    rev_level: 1,
     name: "",
     email: "",
     communication_emails: [""],
@@ -126,6 +127,7 @@ const Partners = ({ user }) => {
     setEditingPartner(partner);
     setFormData({
       partner_type: partner.partner_type,
+      rev_level: partner.rev_level || 1,
       name: partner.name,
       email: partner.email,
       communication_emails: partner.communication_emails.length > 0 ? partner.communication_emails : [""],
@@ -389,6 +391,21 @@ const Partners = ({ user }) => {
                       </SelectContent>
                     </Select>
                   </div>
+                  {(formData.partner_type === 'REV' || formData.partner_type === 'Rev+') && (
+                    <div>
+                      <Label className="text-slate-400">Nível REV *</Label>
+                      <Select value={String(formData.rev_level || 1)} onValueChange={(v) => setFormData({...formData, rev_level: parseInt(v)})}>
+                        <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Nível 1</SelectItem>
+                          <SelectItem value="2">Nível 2</SelectItem>
+                          <SelectItem value="3">Nível 3</SelectItem>
+                          <SelectItem value="4">Nível 4</SelectItem>
+                          <SelectItem value="5">Nível 5</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div>
                     <Label className="text-slate-400">Nome *</Label>
                     <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />

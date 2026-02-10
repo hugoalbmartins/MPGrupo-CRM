@@ -228,8 +228,9 @@ const SaleEditDialog = ({
                     <Select value={editFormData.activation_type} onValueChange={(v) => update('activation_type', v)}>
                       <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Fast">Fast</SelectItem>
-                        <SelectItem value="Normal">Normal</SelectItem>
+                        <SelectItem value="M2">M2</SelectItem>
+                        <SelectItem value="M3">M3</SelectItem>
+                        <SelectItem value="M4">M4</SelectItem>
                       </SelectContent>
                     </Select>
                   </FieldGroup>
