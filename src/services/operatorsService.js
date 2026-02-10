@@ -212,6 +212,7 @@ export const operatorsService = {
         refid_operation_type: hasRefid ? (config.refid_operation_type || 'both') : null,
         activation_type: hasNIorMC ? (config.activation_type || null) : null,
         d2d_level: config.partner_type === 'D2D' ? (config.d2d_level || 'Nv1') : null,
+        rev_level: (config.partner_type === 'REV' || config.partner_type === 'Rev+') ? (config.rev_level || 1) : null,
         created_by: user?.id,
         updated_by: user?.id
       };
