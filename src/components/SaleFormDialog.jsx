@@ -106,19 +106,13 @@ const SaleFormDialog = ({
                         <SelectValue placeholder="Selecione o parceiro..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {user?.role === 'admin' && user?.is_commissioned && (
-                          <SelectItem value="__admin__">Venda Própria (Admin Comissionado)</SelectItem>
-                        )}
                         {partners.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}{p.is_admin ? ' (Admin)' : ''}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {formData.partner_id === '__admin__' && (
-                      <p className="text-xs text-cyber-400 mt-2 flex items-center gap-1">
-                        Esta venda será registada no seu nome com valores REV
-                      </p>
-                    )}
                   </div>
                   <div>
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Âmbito *</Label>

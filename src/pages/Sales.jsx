@@ -136,6 +136,8 @@ const Sales = ({ user }) => {
 
       if (user?.role === 'partner' && partnersData.length > 0) {
         setFormData(prev => ({ ...prev, partner_id: partnersData[0].id }));
+      } else if (user?.role === 'admin' && user?.is_commissioned && user?.partner_id) {
+        setFormData(prev => ({ ...prev, partner_id: user.partner_id }));
       }
     } catch (error) {
       toast.error("Erro ao carregar dados");
@@ -333,9 +335,16 @@ const Sales = ({ user }) => {
   };
 
   const resetForm = () => {
+    let defaultPartnerId = "";
+    if (user?.role === 'partner' && partners.length > 0) {
+      defaultPartnerId = partners[0].id;
+    } else if (user?.role === 'admin' && user?.is_commissioned && user?.partner_id) {
+      defaultPartnerId = user.partner_id;
+    }
+
     setFormData({
       date: new Date().toISOString().split('T')[0],
-      partner_id: user?.role === 'partner' && partners.length > 0 ? partners[0].id : "",
+      partner_id: defaultPartnerId,
       scope: "telecomunicacoes",
       client_type: "particular",
       client_name: "",

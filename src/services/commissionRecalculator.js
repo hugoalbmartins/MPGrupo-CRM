@@ -77,9 +77,7 @@ export const recalculateSaleCommission = async (saleId) => {
 
     const saleData = {
       ...sale,
-      energy_sale_type: energySaleType,
-      isAdminSale: !sale.partner_id,
-      isCommissioned: true
+      energy_sale_type: energySaleType
     };
 
     const newCommission = await calculateCommission(operator, saleData, supabase);

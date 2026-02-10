@@ -122,14 +122,15 @@ const SaleEditDialog = ({
                   <FieldGroup label="Parceiro *">
                     <Select
                       value={editFormData.partner_id || ""}
-                      onValueChange={(v) => update('partner_id', v === "admin_commissioned" ? null : v)}
+                      onValueChange={(v) => update('partner_id', v)}
                     >
                       <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
-                        {user?.is_commissioned && (
-                          <SelectItem value="admin_commissioned">Venda Propria (Admin Comissionado)</SelectItem>
-                        )}
-                        {partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        {partners.map(p => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}{p.is_admin ? ' (Admin)' : ''}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FieldGroup>

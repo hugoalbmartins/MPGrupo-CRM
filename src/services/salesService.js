@@ -259,15 +259,7 @@ export const salesService = {
 
     if (!currentUser) throw new Error('User not found');
 
-    const isAdminSale = saleData.partner_id === '__admin__';
-    if (isAdminSale && currentUser.role !== 'admin') {
-      throw new Error('Only admins can create own sales');
-    }
-    if (isAdminSale && !currentUser.is_commissioned) {
-      throw new Error('Only commissioned admins can create own sales');
-    }
-
-    const actualPartnerId = isAdminSale ? null : (saleData.partner_id || null);
+    const actualPartnerId = saleData.partner_id || null;
 
     let saleCode;
     let retries = 0;
@@ -310,15 +302,11 @@ export const salesService = {
 
     const commission = await calculateCommission(operator, {
       ...saleData,
-      partner_id: actualPartnerId,
-      isAdminSale,
-      isCommissioned: currentUser.is_commissioned
+      partner_id: actualPartnerId
     }, supabase);
 
     let partnerName = 'Unknown';
-    if (isAdminSale) {
-      partnerName = currentUser.name + ' (Admin)';
-    } else if (actualPartnerId) {
+    if (actualPartnerId) {
       const { data: partner } = await supabase
         .from('partners')
         .select('name')

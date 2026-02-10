@@ -44,10 +44,7 @@ async function calculateCommission(
   let d2dLevel: string | null = null;
   let revLevel: number | null = null;
 
-  if (saleData.isAdminSale && saleData.isCommissioned) {
-    partnerType = "Rev+";
-    revLevel = 1;
-  } else if (saleData.partner_id) {
+  if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from("partners")
       .select("partner_type, rev_level")
