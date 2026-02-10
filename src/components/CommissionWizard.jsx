@@ -98,12 +98,14 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const handleSaveAll = async () => {
     try {
+      console.log('Saving configs:', configs);
       await operatorsService.saveCommissionConfigs(operator.id, configs);
       toast.success('Configuracoes guardadas!');
       onSave?.();
     } catch (error) {
       console.error('Error saving configs:', error);
-      toast.error('Erro ao guardar configuracoes');
+      console.error('Error details:', error?.message, error?.details, error?.hint);
+      toast.error(`Erro ao guardar: ${error?.message || 'Erro desconhecido'}`);
     }
   };
 
