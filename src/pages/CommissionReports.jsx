@@ -424,11 +424,24 @@ const CommissionReports = ({ user }) => {
             <tbody>
               ${salesRows}
               <tr class="total-row">
-                <td colspan="9" style="text-align: right">TOTAL:</td>
-                <td style="text-align: right">\u20AC${total.toFixed(2)}</td>
+                <td colspan="9" style="text-align: right; font-weight: bold;">TOTAL S/IVA:</td>
+                <td style="text-align: right; font-weight: bold;">\u20AC${total.toFixed(2)}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="9" style="text-align: right; font-weight: bold;">IVA 23%:</td>
+                <td style="text-align: right; font-weight: bold;">\u20AC${(total * 0.23).toFixed(2)}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="9" style="text-align: right; font-weight: bold; background-color: #d4edda !important;">TOTAL C/IVA:</td>
+                <td style="text-align: right; font-weight: bold; background-color: #d4edda !important;">\u20AC${(total * 1.23).toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
+
+          <div style="margin-top: 15px; padding: 12px; background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; font-size: 11px; color: #856404;">
+            <strong style="display: block; margin-bottom: 5px;">⚠️ ATENÇÃO - IVA:</strong>
+            <p style="margin: 0;">Caso seja isento de IVA, o parceiro deve desconsiderar o valor "TOTAL C/IVA" e emitir fatura apenas pelo valor indicado em "TOTAL S/IVA" (Total de Comissões sem IVA).</p>
+          </div>
 
           <div class="footer">
             Documento gerado em ${new Date().toLocaleDateString('pt-PT')} as ${new Date().toLocaleTimeString('pt-PT')}
@@ -832,9 +845,12 @@ const CommissionReports = ({ user }) => {
     });
 
     data.push([]);
-    data.push(['', '', '', '', '', 'Total:', total.toFixed(2)]);
-    data.push(['', '', '', '', '', 'IVA (23%):', (total * 0.23).toFixed(2)]);
-    data.push(['', '', '', '', '', 'Total c/ IVA:', (total * 1.23).toFixed(2)]);
+    data.push(['', '', '', '', '', 'TOTAL S/IVA:', total.toFixed(2)]);
+    data.push(['', '', '', '', '', 'IVA 23%:', (total * 0.23).toFixed(2)]);
+    data.push(['', '', '', '', '', 'TOTAL C/IVA:', (total * 1.23).toFixed(2)]);
+    data.push([]);
+    data.push(['ATENÇÃO - IVA: Caso seja isento de IVA, desconsidere o "TOTAL C/IVA" e emita fatura apenas pelo "TOTAL S/IVA".']);
+    data.push([]);
 
     const ws = XLSX.utils.aoa_to_sheet(data);
 

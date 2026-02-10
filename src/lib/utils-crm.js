@@ -172,12 +172,22 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
   let partnerSalesAtOperator = 0;
 
   if (searchPartnerId) {
+    const saleDateField = saleData.activation_date || saleData.paid_date || saleData.date;
+    const saleDate = new Date(saleDateField);
+    const saleMonth = saleDate.getMonth() + 1;
+    const saleYear = saleDate.getFullYear();
+
+    const startOfMonth = new Date(saleYear, saleMonth - 1, 1).toISOString().split('T')[0];
+    const endOfMonth = new Date(saleYear, saleMonth, 0).toISOString().split('T')[0];
+
     const countQuery = supabase
       .from('sales')
       .select('*', { count: 'exact', head: true })
       .eq('partner_id', searchPartnerId)
       .eq('operator_id', operator.id)
-      .eq('scope', 'energia');
+      .eq('scope', 'energia')
+      .gte('activation_date', startOfMonth)
+      .lte('activation_date', endOfMonth);
 
     const { count } = await countQuery;
     partnerSalesAtOperator = count || 0;
@@ -360,11 +370,21 @@ export async function calculateCommission(operator, saleData, supabase) {
   let partnerSalesAtOperator = 0;
 
   if (searchPartnerId) {
+    const saleDateField = saleData.activation_date || saleData.paid_date || saleData.date;
+    const saleDate = new Date(saleDateField);
+    const saleMonth = saleDate.getMonth() + 1;
+    const saleYear = saleDate.getFullYear();
+
+    const startOfMonth = new Date(saleYear, saleMonth - 1, 1).toISOString().split('T')[0];
+    const endOfMonth = new Date(saleYear, saleMonth, 0).toISOString().split('T')[0];
+
     let countQuery = supabase
       .from('sales')
       .select('*', { count: 'exact', head: true })
       .eq('partner_id', searchPartnerId)
-      .eq('operator_id', operator.id);
+      .eq('operator_id', operator.id)
+      .gte('activation_date', startOfMonth)
+      .lte('activation_date', endOfMonth);
 
     if (scope === 'energia' && serviceType) {
       countQuery = countQuery.eq('scope', 'energia');
