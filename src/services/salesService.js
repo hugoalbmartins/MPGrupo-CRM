@@ -626,5 +626,136 @@ export const salesService = {
     if (error) throw error;
 
     return { success: true };
+  },
+
+  async resendNewSaleEmail(saleId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!currentUser || !['admin', 'bo'].includes(currentUser.role)) {
+      throw new Error('Only administrators and backoffice can resend emails');
+    }
+
+    const { data: sale, error: saleError } = await supabase
+      .from('sales')
+      .select(`
+        *,
+        partner:partners!sales_partner_id_fkey(id, name, user_id),
+        operator:operators!sales_operator_id_fkey(id, name, notification_emails)
+      `)
+      .eq('id', saleId)
+      .maybeSingle();
+
+    if (saleError || !sale) throw new Error('Sale not found');
+
+    const { data: toRecipients } = await supabase
+      .from('users')
+      .select('email, name')
+      .in('role', ['admin', 'bo'])
+      .eq('email_alerts_enabled', true);
+
+    const { data: bccPartnerUsers } = await supabase
+      .from('users')
+      .select('email, name')
+      .or(`id.eq.${sale.partner.user_id},id.eq.${sale.created_by_user_id}`)
+      .eq('email_alerts_enabled', true);
+
+    const bccRecipients = [...(bccPartnerUsers || [])];
+
+    if (sale.operator?.notification_emails && Array.isArray(sale.operator.notification_emails)) {
+      sale.operator.notification_emails.forEach(email => {
+        if (email && email.trim()) {
+          bccRecipients.push({ email: email.trim(), name: sale.operator.name });
+        }
+      });
+    }
+
+    const { data: attachments } = await supabase
+      .from('sales')
+      .select('attachments')
+      .eq('id', saleId)
+      .maybeSingle();
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-new-sale-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        to_recipients: toRecipients || [],
+        bcc_recipients: bccRecipients || [],
+        sale_code: sale.sale_code,
+        customer_name: sale.client_name,
+        customer_nif: sale.client_nif || '',
+        operator_name: sale.operator?.name || 'N/A',
+        message: `Venda registada para ${sale.client_name}`,
+        attachments: attachments?.attachments || [],
+        sale_id: saleId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to resend email');
+    }
+
+    return await response.json();
+  },
+
+  async resendEditAlert(saleId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('role, name')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!currentUser || !['admin', 'bo'].includes(currentUser.role)) {
+      throw new Error('Only administrators and backoffice can resend alerts');
+    }
+
+    const { data: sale, error: saleError } = await supabase
+      .from('sales')
+      .select('sale_code, partner_id, created_by_user_id')
+      .eq('id', saleId)
+      .maybeSingle();
+
+    if (saleError || !sale) throw new Error('Sale not found');
+
+    const { data: recipients } = await supabase.rpc('get_alert_recipients', {
+      p_sale_id: saleId,
+      p_partner_id: sale.partner_id,
+      p_created_by_user_id: sale.created_by_user_id,
+    });
+
+    const userIds = recipients ? recipients.map(r => r.user_id) : [];
+
+    const { error: alertError } = await supabase
+      .from('alerts')
+      .insert({
+        type: 'sale_edit',
+        sale_id: saleId,
+        sale_code: sale.sale_code,
+        message: `Email de alerta reenviado manualmente por ${currentUser.name}`,
+        user_ids: userIds,
+        created_by: user.id,
+        created_by_name: currentUser.name,
+      });
+
+    if (alertError) throw alertError;
+
+    return { success: true, recipients_count: userIds.length };
   }
 };

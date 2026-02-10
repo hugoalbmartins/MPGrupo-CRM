@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload, Mail, MoreVertical } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -823,6 +824,26 @@ const Sales = ({ user }) => {
     }
   };
 
+  const handleResendNewSaleEmail = async (sale) => {
+    try {
+      const result = await salesService.resendNewSaleEmail(sale.id);
+      toast.success(`Email de nova venda reenviado com sucesso! (${result.to_count} destinatarios principais, ${result.bcc_count} em BCC)`);
+    } catch (error) {
+      toast.error(error.message || "Erro ao reenviar email de nova venda");
+      console.error('Erro ao reenviar email:', error);
+    }
+  };
+
+  const handleResendEditAlert = async (sale) => {
+    try {
+      const result = await salesService.resendEditAlert(sale.id);
+      toast.success(`Alerta de edicao reenviado com sucesso! (${result.recipients_count} destinatarios)`);
+    } catch (error) {
+      toast.error(error.message || "Erro ao reenviar alerta de edicao");
+      console.error('Erro ao reenviar alerta:', error);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusColors = {
       'Para registo': 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
@@ -913,7 +934,7 @@ const Sales = ({ user }) => {
                   <span className="text-xs text-slate-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>{sale.activation_type}</span>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {(user?.role === 'admin' || user?.role === 'bo') ? (
                   <Button onClick={() => openEditDialog(sale)} size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10">
                     Editar
@@ -931,10 +952,42 @@ const Sales = ({ user }) => {
                     Notas ({sale.notes?.length || 0})
                   </Button>
                 )}
-                {user?.role === 'admin' && (
-                  <Button onClick={() => handleDeleteSale(sale)} size="sm" variant="ghost" className="text-red-400 hover:bg-red-500/10">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                {(user?.role === 'admin' || user?.role === 'bo') && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700/40">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56" style={{ backgroundColor: '#111d2e', borderColor: 'rgba(255,255,255,0.1)' }}>
+                      <DropdownMenuItem
+                        onClick={() => handleResendNewSaleEmail(sale)}
+                        className="cursor-pointer text-slate-300 focus:bg-cyan-500/10 focus:text-cyan-400"
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Reenviar Email de Venda
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleResendEditAlert(sale)}
+                        className="cursor-pointer text-slate-300 focus:bg-cyan-500/10 focus:text-cyan-400"
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Reenviar Alerta de Edicao
+                      </DropdownMenuItem>
+                      {user?.role === 'admin' && (
+                        <>
+                          <DropdownMenuSeparator style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteSale(sale)}
+                            className="cursor-pointer text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Apagar Venda
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             </div>
