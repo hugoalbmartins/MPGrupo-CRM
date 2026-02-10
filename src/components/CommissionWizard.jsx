@@ -16,6 +16,10 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [activePartnerTab, setActivePartnerTab] = useState('D2D');
   const [activeD2DLevel, setActiveD2DLevel] = useState('Nv1');
   const [d2dLevels, setD2dLevels] = useState(['Nv1']);
+  const [activeREVLevel, setActiveREVLevel] = useState(1);
+  const [revLevels, setRevLevels] = useState([1]);
+  const [activeRevPlusLevel, setActiveRevPlusLevel] = useState(1);
+  const [revPlusLevels, setRevPlusLevels] = useState([1]);
 
   useEffect(() => {
     loadConfigs();
@@ -32,23 +36,44 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       const withDefaults = data.map(c => ({
         ...c,
         d2d_level: c.partner_type === 'D2D' ? (c.d2d_level || 'Nv1') : null,
+        rev_level: (c.partner_type === 'REV' || c.partner_type === 'Rev+') ? (c.rev_level || 1) : null,
       }));
       setConfigs(withDefaults);
 
-      const levels = new Set();
+      const d2dLevelsSet = new Set();
+      const revLevelsSet = new Set();
+      const revPlusLevelsSet = new Set();
+
       withDefaults.forEach(c => {
         if (c.partner_type === 'D2D' && c.d2d_level) {
-          levels.add(c.d2d_level);
+          d2dLevelsSet.add(c.d2d_level);
+        }
+        if (c.partner_type === 'REV' && c.rev_level) {
+          revLevelsSet.add(c.rev_level);
+        }
+        if (c.partner_type === 'Rev+' && c.rev_level) {
+          revPlusLevelsSet.add(c.rev_level);
         }
       });
-      if (levels.size === 0) levels.add('Nv1');
-      const sortedLevels = Array.from(levels).sort((a, b) => {
+
+      if (d2dLevelsSet.size === 0) d2dLevelsSet.add('Nv1');
+      const sortedD2DLevels = Array.from(d2dLevelsSet).sort((a, b) => {
         const numA = parseInt(a.replace(/\D/g, '')) || 0;
         const numB = parseInt(b.replace(/\D/g, '')) || 0;
         return numA - numB;
       });
-      setD2dLevels(sortedLevels);
-      setActiveD2DLevel(sortedLevels[0]);
+      setD2dLevels(sortedD2DLevels);
+      setActiveD2DLevel(sortedD2DLevels[0]);
+
+      if (revLevelsSet.size === 0) revLevelsSet.add(1);
+      const sortedREVLevels = Array.from(revLevelsSet).sort((a, b) => a - b);
+      setRevLevels(sortedREVLevels);
+      setActiveREVLevel(sortedREVLevels[0]);
+
+      if (revPlusLevelsSet.size === 0) revPlusLevelsSet.add(1);
+      const sortedRevPlusLevels = Array.from(revPlusLevelsSet).sort((a, b) => a - b);
+      setRevPlusLevels(sortedRevPlusLevels);
+      setActiveRevPlusLevel(sortedRevPlusLevels[0]);
     } catch (error) {
       console.error('Error loading configs:', error);
     } finally {
@@ -82,7 +107,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     }
   };
 
-  const addNewConfig = (partnerType, d2dLevel, newConfig) => {
+  const addNewConfig = (partnerType, d2dLevel, revLevel, newConfig) => {
     if (!newConfig.service_type && (!newConfig.service_types || newConfig.service_types.length === 0)) {
       toast.error('Selecione um tipo de servico');
       return false;
@@ -92,6 +117,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       ...newConfig,
       partner_type: partnerType,
       d2d_level: partnerType === 'D2D' ? d2dLevel : null,
+      rev_level: (partnerType === 'REV' || partnerType === 'Rev+') ? revLevel : null,
       service_types: newConfig.service_types?.length > 0 ? newConfig.service_types : [newConfig.service_type]
     };
 
@@ -142,6 +168,68 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     setD2dLevels(newLevels);
     if (activeD2DLevel === level) {
       setActiveD2DLevel(newLevels[0]);
+    }
+    toast.success(`Nivel ${level} removido`);
+  };
+
+  const addREVLevel = () => {
+    const nextLevel = Math.max(...revLevels) + 1;
+    if (nextLevel > 5) {
+      toast.error('Maximo de 5 niveis');
+      return;
+    }
+    if (revLevels.includes(nextLevel)) {
+      toast.error(`Nivel ${nextLevel} ja existe`);
+      return;
+    }
+    setRevLevels(prev => [...prev, nextLevel].sort((a, b) => a - b));
+    setActiveREVLevel(nextLevel);
+    toast.success(`Nivel ${nextLevel} adicionado`);
+  };
+
+  const removeREVLevel = (level) => {
+    if (revLevels.length <= 1) {
+      toast.error('Deve existir pelo menos um nivel');
+      return;
+    }
+    if (!window.confirm(`Remover Nivel ${level} e todas as suas configuracoes?`)) return;
+
+    setConfigs(prev => prev.filter(c => !(c.partner_type === 'REV' && c.rev_level === level)));
+    const newLevels = revLevels.filter(l => l !== level);
+    setRevLevels(newLevels);
+    if (activeREVLevel === level) {
+      setActiveREVLevel(newLevels[0]);
+    }
+    toast.success(`Nivel ${level} removido`);
+  };
+
+  const addRevPlusLevel = () => {
+    const nextLevel = Math.max(...revPlusLevels) + 1;
+    if (nextLevel > 5) {
+      toast.error('Maximo de 5 niveis');
+      return;
+    }
+    if (revPlusLevels.includes(nextLevel)) {
+      toast.error(`Nivel ${nextLevel} ja existe`);
+      return;
+    }
+    setRevPlusLevels(prev => [...prev, nextLevel].sort((a, b) => a - b));
+    setActiveRevPlusLevel(nextLevel);
+    toast.success(`Nivel ${nextLevel} adicionado`);
+  };
+
+  const removeRevPlusLevel = (level) => {
+    if (revPlusLevels.length <= 1) {
+      toast.error('Deve existir pelo menos um nivel');
+      return;
+    }
+    if (!window.confirm(`Remover Nivel ${level} e todas as suas configuracoes?`)) return;
+
+    setConfigs(prev => prev.filter(c => !(c.partner_type === 'Rev+' && c.rev_level === level)));
+    const newLevels = revPlusLevels.filter(l => l !== level);
+    setRevPlusLevels(newLevels);
+    if (activeRevPlusLevel === level) {
+      setActiveRevPlusLevel(newLevels[0]);
     }
     toast.success(`Nivel ${level} removido`);
   };
@@ -243,6 +331,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                             filteredConfigs={levelConfigs}
                             partnerType="D2D"
                             d2dLevel={level}
+                            revLevel={null}
                             isTelecom={isTelecom}
                             isEnergy={isEnergy}
                             getServiceTypes={getServiceTypes}
@@ -259,26 +348,151 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
               </div>
             </TabsContent>
 
-            {['REV', 'Rev+'].map((partnerType) => {
-              const ptConfigs = configs.filter(c => c.partner_type === partnerType);
-              return (
-                <TabsContent key={partnerType} value={partnerType} className="mt-4">
-                  <CommissionTable
-                    configs={configs}
-                    filteredConfigs={ptConfigs}
-                    partnerType={partnerType}
-                    d2dLevel={null}
-                    isTelecom={isTelecom}
-                    isEnergy={isEnergy}
-                    getServiceTypes={getServiceTypes}
-                    getClientTypes={getClientTypes}
-                    onAddConfig={addNewConfig}
-                    onUpdateConfig={updateConfig}
-                    onRemoveConfig={removeConfig}
-                  />
-                </TabsContent>
-              );
-            })}
+            <TabsContent value="REV" className="mt-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Tabs value={String(activeREVLevel)} onValueChange={(v) => setActiveREVLevel(parseInt(v))} className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <TabsList className="bg-dark-900 border border-dark-700 p-1">
+                        {revLevels.map((level) => (
+                          <TabsTrigger
+                            key={level}
+                            value={String(level)}
+                            className="data-[state=active]:bg-cyber-500/10 data-[state=active]:text-cyber-400 data-[state=active]:shadow-md transition-all duration-300 font-semibold text-sm px-4"
+                          >
+                            <Layers className="w-3.5 h-3.5 mr-1.5" />
+                            Nivel {level}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addREVLevel}
+                        className="border-dashed border-2 border-dark-700 hover:border-cyber-500 hover:bg-cyber-500/10 text-slate-300 font-semibold h-9"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Adicionar Nivel
+                      </Button>
+                    </div>
+
+                    {revLevels.map((level) => {
+                      const levelConfigs = configs.filter(c => c.partner_type === 'REV' && c.rev_level === level);
+                      return (
+                        <TabsContent key={level} value={String(level)} className="mt-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-slate-300">Nivel {level}</span>
+                              <span className="text-xs text-slate-500">({levelConfigs.length} regra{levelConfigs.length !== 1 ? 's' : ''})</span>
+                            </div>
+                            {revLevels.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeREVLevel(level)}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 text-xs"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Remover Nivel {level}
+                              </Button>
+                            )}
+                          </div>
+                          <CommissionTable
+                            configs={configs}
+                            filteredConfigs={levelConfigs}
+                            partnerType="REV"
+                            d2dLevel={null}
+                            revLevel={level}
+                            isTelecom={isTelecom}
+                            isEnergy={isEnergy}
+                            getServiceTypes={getServiceTypes}
+                            getClientTypes={getClientTypes}
+                            onAddConfig={addNewConfig}
+                            onUpdateConfig={updateConfig}
+                            onRemoveConfig={removeConfig}
+                          />
+                        </TabsContent>
+                      );
+                    })}
+                  </Tabs>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="Rev+" className="mt-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Tabs value={String(activeRevPlusLevel)} onValueChange={(v) => setActiveRevPlusLevel(parseInt(v))} className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <TabsList className="bg-dark-900 border border-dark-700 p-1">
+                        {revPlusLevels.map((level) => (
+                          <TabsTrigger
+                            key={level}
+                            value={String(level)}
+                            className="data-[state=active]:bg-cyber-500/10 data-[state=active]:text-cyber-400 data-[state=active]:shadow-md transition-all duration-300 font-semibold text-sm px-4"
+                          >
+                            <Layers className="w-3.5 h-3.5 mr-1.5" />
+                            Nivel {level}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addRevPlusLevel}
+                        className="border-dashed border-2 border-dark-700 hover:border-cyber-500 hover:bg-cyber-500/10 text-slate-300 font-semibold h-9"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Adicionar Nivel
+                      </Button>
+                    </div>
+
+                    {revPlusLevels.map((level) => {
+                      const levelConfigs = configs.filter(c => c.partner_type === 'Rev+' && c.rev_level === level);
+                      return (
+                        <TabsContent key={level} value={String(level)} className="mt-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-slate-300">Nivel {level}</span>
+                              <span className="text-xs text-slate-500">({levelConfigs.length} regra{levelConfigs.length !== 1 ? 's' : ''})</span>
+                            </div>
+                            {revPlusLevels.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeRevPlusLevel(level)}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 text-xs"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Remover Nivel {level}
+                              </Button>
+                            )}
+                          </div>
+                          <CommissionTable
+                            configs={configs}
+                            filteredConfigs={levelConfigs}
+                            partnerType="Rev+"
+                            d2dLevel={null}
+                            revLevel={level}
+                            isTelecom={isTelecom}
+                            isEnergy={isEnergy}
+                            getServiceTypes={getServiceTypes}
+                            getClientTypes={getClientTypes}
+                            onAddConfig={addNewConfig}
+                            onUpdateConfig={updateConfig}
+                            onRemoveConfig={removeConfig}
+                          />
+                        </TabsContent>
+                      );
+                    })}
+                  </Tabs>
+                </div>
+              </div>
+            </TabsContent>
           </Tabs>
         </div>
       </div>

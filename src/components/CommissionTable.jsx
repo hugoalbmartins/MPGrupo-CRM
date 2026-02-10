@@ -54,6 +54,7 @@ const CommissionTable = ({
   filteredConfigs,
   partnerType,
   d2dLevel,
+  revLevel,
   isTelecom,
   getServiceTypes,
   getClientTypes,
@@ -66,7 +67,7 @@ const CommissionTable = ({
   const [newConfig, setNewConfig] = useState(getEmptyConfig());
 
   const handleAdd = () => {
-    const success = onAddConfig(partnerType, d2dLevel, newConfig);
+    const success = onAddConfig(partnerType, d2dLevel, revLevel, newConfig);
     if (success) {
       setNewConfig(getEmptyConfig());
       setShowAddForm(false);
