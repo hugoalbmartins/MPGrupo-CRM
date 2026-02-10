@@ -8,6 +8,7 @@ import { notificationService } from "./services/notificationService";
 import { AlertCircle, Loader2 } from "lucide-react";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import Layout from "./components/Layout.jsx";
+import { AppPrompt } from "./components/AppPrompt.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Login from "./pages/Login.jsx";
 import "@/App.css";
@@ -388,6 +389,7 @@ function App() {
           </Layout>
         </BrowserRouter>
         <Toaster position="top-right" richColors />
+        <AppPrompt />
       </div>
     </QueryClientProvider>
   );

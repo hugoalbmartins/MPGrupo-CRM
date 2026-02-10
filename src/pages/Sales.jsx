@@ -30,6 +30,7 @@ const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9
 const Sales = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const todayDate = new Date().toISOString().split('T')[0];
   const [sales, setSales] = useState([]);
   const [partners, setPartners] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -1035,6 +1036,7 @@ const Sales = ({ user }) => {
                   <Input
                     type="date"
                     value={exportStartDate}
+                    max={todayDate}
                     onChange={(e) => setExportStartDate(e.target.value)}
                     className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
                     style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
@@ -1045,6 +1047,7 @@ const Sales = ({ user }) => {
                   <Input
                     type="date"
                     value={exportEndDate}
+                    max={todayDate}
                     onChange={(e) => setExportEndDate(e.target.value)}
                     className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
                     style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
@@ -1357,6 +1360,7 @@ const Sales = ({ user }) => {
               <Input
                 type="date"
                 value={filterStartDate}
+                max={todayDate}
                 onChange={(e) => setFilterStartDate(e.target.value)}
                 className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
                 style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
@@ -1368,6 +1372,7 @@ const Sales = ({ user }) => {
               <Input
                 type="date"
                 value={filterEndDate}
+                max={todayDate}
                 onChange={(e) => setFilterEndDate(e.target.value)}
                 className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
                 style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
@@ -1730,6 +1735,7 @@ const Sales = ({ user }) => {
               <Input
                 type="date"
                 value={recalcStartDate}
+                max={todayDate}
                 onChange={(e) => setRecalcStartDate(e.target.value)}
                 placeholder="Deixe vazio para recalcular todas"
                 className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"

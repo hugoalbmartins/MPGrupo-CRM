@@ -107,6 +107,11 @@ function buildEmailTemplate(payload: SaleEmailPayload): string {
 </html>`;
 }
 
+function getFirstFourNames(fullName: string): string {
+  const names = fullName.trim().split(/\s+/);
+  return names.slice(0, 4).join(' ');
+}
+
 function encodeBase64(data: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < data.length; i++) {
@@ -145,19 +150,12 @@ function buildMimeEmail(
   const headers = [
     `From: ${fromName} <${fromEmail}>`,
     `To: ${toAddresses.join(", ")}`,
-  ];
-
-  if (bccAddresses.length > 0) {
-    headers.push(`Bcc: ${bccAddresses.join(", ")}`);
-  }
-
-  headers.push(
     `Subject: ${subject}`,
     `Message-ID: ${messageId}`,
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/mixed; boundary="${boundary}"`
-  );
+  ];
 
   const htmlBase64 = textToBase64Wrapped(html);
 
@@ -327,7 +325,9 @@ Deno.serve(async (req: Request) => {
     const bccAddresses = (payload.bcc_recipients || []).map((r) => r.email);
     const allRecipients = [...new Set([...toAddresses, ...bccAddresses])];
 
-    const subject = `Nova venda da operadora (${payload.operator_name}) - ${payload.sale_code}`;
+    const customerNameShort = getFirstFourNames(payload.customer_name);
+    const nifPart = payload.customer_nif ? ` - NIF ${payload.customer_nif}` : '';
+    const subject = `${customerNameShort}${nifPart} - ${payload.operator_name}`;
 
     const emailBody = buildMimeEmail(
       fromEmail,
