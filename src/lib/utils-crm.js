@@ -263,8 +263,8 @@ export async function calculateCommission(operator, saleData, supabase) {
 
       d2dLevel = levelData?.d2d_level || null;
       if (!d2dLevel) {
-        console.warn(`D2D partner ${saleData.partner_id} has no level for operator ${operator.id}`);
-        return 0.0;
+        console.warn(`D2D partner ${saleData.partner_id} has no level for operator ${operator.id}, defaulting to Nv1`);
+        d2dLevel = 'Nv1';
       }
     } else if (partnerType === 'REV' || partnerType === 'Rev+') {
       revLevel = partner?.rev_level || 1;
@@ -341,10 +341,6 @@ export async function calculateCommission(operator, saleData, supabase) {
 
   if ((partnerType === 'REV' || partnerType === 'Rev+') && revLevel) {
     query = query.eq('rev_level', revLevel);
-  }
-
-  if (activationType && !refidOperationType) {
-    query = query.eq('activation_type', activationType);
   }
 
   if (refidOperationType) {

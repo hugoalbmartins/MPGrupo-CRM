@@ -20,6 +20,12 @@ interface CommissionConfig {
   activation_type: string | null;
   direct_debit_bonus: string;
   electronic_invoice_bonus: string;
+  d2d_level: string | null;
+  rev_level: number | null;
+  refid_operation_type: string | null;
+  tier_mode: string;
+  monthly_value_min: string;
+  monthly_value_max: string;
 }
 
 async function calculateCommission(
@@ -31,17 +37,20 @@ async function calculateCommission(
     return 0.0;
   }
 
-  const clientType = saleData.customer_type || saleData.client_type || "particular";
+  const clientType = saleData.client_type || "particular";
   const scope = saleData.scope;
 
   let partnerType = "D2D";
   let d2dLevel: string | null = null;
+  let revLevel: number | null = null;
+
   if (saleData.isAdminSale && saleData.isCommissioned) {
     partnerType = "REV";
+    revLevel = 1;
   } else if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from("partners")
-      .select("partner_type")
+      .select("partner_type, rev_level")
       .eq("id", saleData.partner_id)
       .maybeSingle();
 
@@ -57,9 +66,11 @@ async function calculateCommission(
 
       d2dLevel = levelData?.d2d_level || null;
       if (!d2dLevel) {
-        console.warn(`D2D partner ${saleData.partner_id} has no level for operator ${operator.id}`);
-        return 0.0;
+        console.warn(`D2D partner ${saleData.partner_id} has no level for operator ${operator.id}, defaulting to Nv1`);
+        d2dLevel = "Nv1";
       }
+    } else if (partnerType === "REV" || partnerType === "Rev+") {
+      revLevel = partner?.rev_level || 1;
     }
   }
 
@@ -72,7 +83,8 @@ async function calculateCommission(
       clientType,
       partnerType,
       false,
-      d2dLevel
+      d2dLevel,
+      revLevel
     );
 
     const gasResult = await calculateSingleEnergyCommission(
@@ -83,33 +95,30 @@ async function calculateCommission(
       clientType,
       partnerType,
       false,
-      d2dLevel
+      d2dLevel,
+      revLevel
     );
 
     let bonuses = 0;
     const config = electricityResult.config || gasResult.config;
     if (config) {
       if (saleData.has_direct_debit) {
-        bonuses += parseFloat(config.direct_debit_bonus || 0);
+        bonuses += parseFloat(config.direct_debit_bonus || "0");
       }
       if (saleData.has_electronic_invoice) {
-        bonuses += parseFloat(config.electronic_invoice_bonus || 0);
+        bonuses += parseFloat(config.electronic_invoice_bonus || "0");
       }
     }
 
     const totalCommission = electricityResult.base + gasResult.base + bonuses;
-    console.log(`Dual sale ${saleData.sale_code}: Electricity base=${electricityResult.base}, Gas base=${gasResult.base}, Bonuses=${bonuses} (DD+FE once), Total=${totalCommission}`);
     return totalCommission;
   }
 
-  let serviceType = null;
-  let activationType = null;
-  let refidOperationType = null;
+  let serviceType: string | null = null;
+  let refidOperationType: string | null = null;
 
   if (scope === "telecomunicacoes") {
     serviceType = saleData.service_type;
-    activationType = saleData.activation_type;
-
     if (serviceType === "REFID" || serviceType === "Refid") {
       refidOperationType = saleData.refid_type;
     }
@@ -128,13 +137,12 @@ async function calculateCommission(
     query = query.eq("d2d_level", d2dLevel);
   }
 
-  if (activationType && !refidOperationType) {
-    query = query.eq("activation_type", activationType);
+  if ((partnerType === "REV" || partnerType === "Rev+") && revLevel) {
+    query = query.eq("rev_level", revLevel);
   }
 
   if (refidOperationType) {
     query = query.eq("refid_operation_type", refidOperationType);
-    console.log(`Applying refid_operation_type filter: ${refidOperationType}`);
   }
 
   query = query.order("min_sales", { ascending: false });
@@ -150,18 +158,23 @@ async function calculateCommission(
 
   if (serviceType && commissionConfigs.length > 0) {
     commissionConfigs = commissionConfigs.filter((config: CommissionConfig) => {
-      if (config.service_type === serviceType) {
-        return true;
-      }
+      if (config.service_type === serviceType) return true;
       if (config.service_types && Array.isArray(config.service_types)) {
-        return config.service_types.includes(serviceType);
+        return config.service_types.includes(serviceType!);
       }
       return false;
     });
   }
 
+  if (saleData.activation_type && commissionConfigs.length > 0) {
+    commissionConfigs = commissionConfigs.filter((config: CommissionConfig) => {
+      if (!config.activation_type || config.activation_type === "all") return true;
+      return config.activation_type === saleData.activation_type;
+    });
+  }
+
   if (commissionConfigs.length === 0) {
-    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}, refid_type: ${refidOperationType}`);
+    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, d2d_level: ${d2dLevel}, rev_level: ${revLevel}, service_type: ${serviceType}, activation_type: ${saleData.activation_type}`);
     return 0.0;
   }
 
@@ -169,16 +182,35 @@ async function calculateCommission(
   let partnerSalesAtOperator = 0;
 
   if (searchPartnerId) {
+    const saleDateField = saleData.activation_date || saleData.paid_date || saleData.date;
+    let startOfMonth: string | null = null;
+    let endOfMonth: string | null = null;
+
+    if (saleDateField) {
+      const saleDate = new Date(saleDateField);
+      const saleMonth = saleDate.getMonth();
+      const saleYear = saleDate.getFullYear();
+      startOfMonth = new Date(saleYear, saleMonth, 1).toISOString().split("T")[0];
+      endOfMonth = new Date(saleYear, saleMonth + 1, 0).toISOString().split("T")[0];
+    }
+
     let countQuery = supabase
       .from("sales")
       .select("*", { count: "exact", head: true })
       .eq("partner_id", searchPartnerId)
       .eq("operator_id", operator.id);
 
-    if (scope === "energia" && serviceType) {
+    if (startOfMonth && endOfMonth) {
+      countQuery = countQuery.gte("activation_date", startOfMonth).lte("activation_date", endOfMonth);
+    }
+
+    if (scope === "energia") {
       countQuery = countQuery.eq("scope", "energia");
     } else if (scope === "telecomunicacoes") {
       countQuery = countQuery.eq("scope", "telecomunicacoes");
+      if (serviceType) {
+        countQuery = countQuery.eq("service_type", serviceType);
+      }
     }
 
     const { count } = await countQuery;
@@ -197,25 +229,23 @@ async function calculateCommission(
 
   if (applicableTier.commission_mode === "monthly_multiplier") {
     let monthlyValue = parseFloat(saleData.monthly_value || 0);
-
     if ((saleData.service_type === "REFID" || saleData.service_type === "Refid") && saleData.contracted_monthly_fee) {
       monthlyValue = parseFloat(saleData.contracted_monthly_fee);
     }
-
-    const multiplier = parseFloat(applicableTier.commission_value || 0);
+    const multiplier = parseFloat(applicableTier.commission_value || "0");
     baseCommission = monthlyValue * multiplier;
   } else if (applicableTier.commission_mode === "fixed_value") {
-    baseCommission = parseFloat(applicableTier.commission_value || 0);
+    baseCommission = parseFloat(applicableTier.commission_value || "0");
   } else {
-    baseCommission = parseFloat(applicableTier.commission_value || 0);
+    baseCommission = parseFloat(applicableTier.commission_value || "0");
   }
 
   let bonuses = 0;
   if (saleData.has_direct_debit) {
-    bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
+    bonuses += parseFloat(applicableTier.direct_debit_bonus || "0");
   }
   if (saleData.has_electronic_invoice) {
-    bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
+    bonuses += parseFloat(applicableTier.electronic_invoice_bonus || "0");
   }
 
   return baseCommission + bonuses;
@@ -229,7 +259,8 @@ async function calculateSingleEnergyCommission(
   clientType: string,
   partnerType: string,
   includeBonuses = true,
-  d2dLevel: string | null = null
+  d2dLevel: string | null = null,
+  revLevel: number | null = null
 ): Promise<{ base: number; bonuses: number; config: CommissionConfig | null }> {
   let query = supabase
     .from("commission_configurations")
@@ -242,6 +273,10 @@ async function calculateSingleEnergyCommission(
     query = query.eq("d2d_level", d2dLevel);
   }
 
+  if ((partnerType === "REV" || partnerType === "Rev+") && revLevel) {
+    query = query.eq("rev_level", revLevel);
+  }
+
   query = query.order("min_sales", { ascending: false });
 
   const { data: allCommissionConfigs, error } = await query;
@@ -252,9 +287,7 @@ async function calculateSingleEnergyCommission(
   }
 
   let commissionConfigs = allCommissionConfigs.filter((config: CommissionConfig) => {
-    if (config.service_type === energyType) {
-      return true;
-    }
+    if (config.service_type === energyType) return true;
     if (config.service_types && Array.isArray(config.service_types)) {
       return config.service_types.includes(energyType);
     }
@@ -270,12 +303,28 @@ async function calculateSingleEnergyCommission(
   let partnerSalesAtOperator = 0;
 
   if (searchPartnerId) {
-    const countQuery = supabase
+    const saleDateField = saleData.activation_date || saleData.paid_date || saleData.date;
+    let startOfMonth: string | null = null;
+    let endOfMonth: string | null = null;
+
+    if (saleDateField) {
+      const saleDate = new Date(saleDateField);
+      const saleMonth = saleDate.getMonth();
+      const saleYear = saleDate.getFullYear();
+      startOfMonth = new Date(saleYear, saleMonth, 1).toISOString().split("T")[0];
+      endOfMonth = new Date(saleYear, saleMonth + 1, 0).toISOString().split("T")[0];
+    }
+
+    let countQuery = supabase
       .from("sales")
       .select("*", { count: "exact", head: true })
       .eq("partner_id", searchPartnerId)
       .eq("operator_id", operator.id)
       .eq("scope", "energia");
+
+    if (startOfMonth && endOfMonth) {
+      countQuery = countQuery.gte("activation_date", startOfMonth).lte("activation_date", endOfMonth);
+    }
 
     const { count } = await countQuery;
     partnerSalesAtOperator = count || 0;
@@ -292,22 +341,22 @@ async function calculateSingleEnergyCommission(
   let baseCommission = 0;
 
   if (applicableTier.commission_mode === "fixed_value") {
-    baseCommission = parseFloat(applicableTier.commission_value || 0);
+    baseCommission = parseFloat(applicableTier.commission_value || "0");
   } else if (applicableTier.commission_mode === "monthly_multiplier") {
     const monthlyValue = parseFloat(saleData.monthly_value || 0);
-    const multiplier = parseFloat(applicableTier.commission_value || 0);
+    const multiplier = parseFloat(applicableTier.commission_value || "0");
     baseCommission = monthlyValue * multiplier;
   } else {
-    baseCommission = parseFloat(applicableTier.commission_value || 0);
+    baseCommission = parseFloat(applicableTier.commission_value || "0");
   }
 
   let bonuses = 0;
   if (includeBonuses) {
     if (saleData.has_direct_debit) {
-      bonuses += parseFloat(applicableTier.direct_debit_bonus || 0);
+      bonuses += parseFloat(applicableTier.direct_debit_bonus || "0");
     }
     if (saleData.has_electronic_invoice) {
-      bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
+      bonuses += parseFloat(applicableTier.electronic_invoice_bonus || "0");
     }
   }
 
@@ -328,7 +377,16 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    console.log("Iniciando recálculo de comissões...");
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+
+    const forceUpdate = body.force === true;
+
+    console.log(`Iniciando recalculo de comissoes... force=${forceUpdate}`);
 
     const { data: allSales, error: salesError } = await supabaseClient
       .from("sales")
@@ -349,12 +407,7 @@ Deno.serve(async (req: Request) => {
           failed: 0,
           skipped: 0,
         }),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -379,8 +432,7 @@ Deno.serve(async (req: Request) => {
 
     for (const sale of allSales) {
       try {
-        if (sale.manual_commission && parseFloat(sale.manual_commission) > 0) {
-          console.log(`Skipping sale ${sale.sale_code} - has manual commission`);
+        if (!forceUpdate && sale.manual_commission && parseFloat(sale.manual_commission) > 0) {
           skippedCount++;
           continue;
         }
@@ -392,8 +444,7 @@ Deno.serve(async (req: Request) => {
           continue;
         }
 
-        if (operator.commission_mode === "manual") {
-          console.log(`Skipping sale ${sale.sale_code} - operator has manual commission mode`);
+        if (!forceUpdate && operator.commission_mode === "manual") {
           skippedCount++;
           continue;
         }
@@ -405,7 +456,6 @@ Deno.serve(async (req: Request) => {
           } else {
             energySaleType = "eletricidade";
           }
-          console.log(`Inferring energy_sale_type for sale ${sale.sale_code}: ${energySaleType}`);
         }
 
         const saleData = {
@@ -418,7 +468,7 @@ Deno.serve(async (req: Request) => {
         const newCommission = await calculateCommission(operator, saleData, supabaseClient);
         const oldCommission = parseFloat(sale.calculated_commission || 0);
 
-        if (Math.abs(newCommission - oldCommission) > 0.01) {
+        if (forceUpdate || Math.abs(newCommission - oldCommission) > 0.01) {
           const updateData: any = {
             calculated_commission: newCommission,
           };
@@ -436,11 +486,10 @@ Deno.serve(async (req: Request) => {
             console.error(`Failed to update sale ${sale.sale_code}:`, updateError);
             failedCount++;
           } else {
-            console.log(`Updated sale ${sale.sale_code}: commission ${oldCommission} -> ${newCommission}`);
+            console.log(`Updated sale ${sale.sale_code}: ${oldCommission} -> ${newCommission}`);
             successCount++;
           }
         } else {
-          console.log(`Sale ${sale.sale_code} already has correct commission: ${newCommission}`);
           skippedCount++;
         }
       } catch (error) {
@@ -451,7 +500,7 @@ Deno.serve(async (req: Request) => {
 
     const result = {
       success: true,
-      message: "Recálculo concluído",
+      message: "Recalculo concluido",
       total: allSales.length,
       success_count: successCount,
       failed: failedCount,
@@ -461,24 +510,15 @@ Deno.serve(async (req: Request) => {
     console.log("Commission recalculation complete:", result);
 
     return new Response(JSON.stringify(result), {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("Error in recalculate-commissions:", error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
+      JSON.stringify({ success: false, error: error.message }),
       {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }

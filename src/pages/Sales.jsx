@@ -650,7 +650,7 @@ const Sales = ({ user }) => {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recalculate-commissions`;
       const { data: { session } } = await supabase.auth.getSession();
 
-      const requestBody = recalcStartDate ? { startDate: recalcStartDate } : {};
+      const requestBody = { force: true, ...(recalcStartDate ? { startDate: recalcStartDate } : {}) };
 
       const response = await fetch(apiUrl, {
         method: 'POST',
