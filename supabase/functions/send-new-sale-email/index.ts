@@ -23,6 +23,12 @@ interface SaleEmailPayload {
   message: string;
   attachments: Array<{ id: string; filename: string; path: string }>;
   sale_id: string;
+  scope?: string;
+  entry_type?: string;
+  cpe?: string;
+  power?: string;
+  cui?: string;
+  tier?: string;
 }
 
 function buildEmailTemplate(payload: SaleEmailPayload): string {
@@ -68,6 +74,12 @@ function buildEmailTemplate(payload: SaleEmailPayload): string {
           <tr><td>Cliente:</td><td>${payload.customer_name}</td></tr>
           <tr><td>NIF:</td><td>${payload.customer_nif || "N/A"}</td></tr>
           <tr><td>Operadora:</td><td>${payload.operator_name}</td></tr>
+          ${payload.scope === "energia" || payload.scope === "energias" ? `
+          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia</strong></td></tr>
+          ${payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
+          ${payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : ""}
+          ${payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : ""}
+          ` : ""}
         </table>
       </div>
 

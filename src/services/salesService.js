@@ -701,6 +701,12 @@ export const salesService = {
         message: `Venda registada para ${sale.client_name}`,
         attachments: attachments?.attachments || [],
         sale_id: saleId,
+        scope: sale.scope,
+        entry_type: sale.entry_type,
+        cpe: sale.cpe,
+        power: sale.power,
+        cui: sale.cui,
+        tier: sale.tier,
       }),
     });
 
