@@ -320,7 +320,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
+    const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
     const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
     const smtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
     const smtpPass = Deno.env.get("SMTP_PASS") || "";

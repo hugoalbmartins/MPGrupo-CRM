@@ -74,11 +74,11 @@ export async function sendEmailSMTP(
   html: string,
   config?: EmailConfig
 ) {
-  const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
+  const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
   const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-  const smtpUser = Deno.env.get("SMTP_USER") || "noreply@mpgrupo.pt";
+  const smtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
   const smtpPass = Deno.env.get("SMTP_PASS") || "";
-  const fromEmail = config?.from || Deno.env.get("FROM_EMAIL") || "noreply@mpgrupo.pt";
+  const fromEmail = config?.from || Deno.env.get("FROM_EMAIL") || "info@mpgrupo.pt";
   const fromName = config?.fromName || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
 
   if (!smtpPass) {

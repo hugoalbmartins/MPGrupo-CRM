@@ -46,18 +46,18 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: 
 }
 
 async function sendEmailSMTP(to: string, subject: string, html: string) {
-  const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
+  const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
   const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-  const smtpUser = Deno.env.get("SMTP_USER") || "noreply@mpgrupo.pt";
+  const smtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
   const smtpPass = Deno.env.get("SMTP_PASS") || "";
-  const fromEmail = Deno.env.get("FROM_EMAIL") || "noreply@mpgrupo.pt";
+  const fromEmail = Deno.env.get("FROM_EMAIL") || "info@mpgrupo.pt";
   const fromName = Deno.env.get("FROM_NAME") || "MP Grupo CRM";
 
   if (!smtpPass) {
     throw new Error("SMTP_PASS not configured");
   }
 
-  console.log(`[SMTP Alert] Sending to ${to}`);
+  console.log(`[SMTP Alert] Connecting to ${smtpHost}:${smtpPort}`);
 
   const boundary = `----=_Part_${Date.now()}`;
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
@@ -82,54 +82,73 @@ async function sendEmailSMTP(to: string, subject: string, html: string) {
     `--${boundary}--`,
   ].join("\r\n");
 
-  let conn = null;
-  let tls = null;
-  let reader = null;
-  let writer = null;
+  let conn: Deno.TlsConn | null = null;
 
   try {
     conn = await withTimeout(
-      Deno.connect({ hostname: smtpHost, port: smtpPort, transport: "tcp" }),
+      Deno.connectTls({ hostname: smtpHost, port: smtpPort }),
       10000,
       "SMTP connection timeout"
     );
 
-    tls = await withTimeout(
-      Deno.startTls(conn, { hostname: smtpHost }),
-      10000,
-      "TLS handshake timeout"
-    );
-
-    const decoder = new TextDecoder();
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const buffer = new Uint8Array(8192);
 
-    reader = tls.readable.getReader();
-    writer = tls.writable.getWriter();
+    const readResponse = async () => {
+      const bytesRead = await withTimeout(
+        conn!.read(buffer),
+        15000,
+        "SMTP read timeout"
+      );
 
-    async function readResponse(): Promise<string> {
-      const { value } = await withTimeout(reader.read(), 15000, "SMTP read timeout");
-      return decoder.decode(value);
-    }
+      if (bytesRead) {
+        const resp = decoder.decode(buffer.subarray(0, bytesRead));
+        console.log(`[SMTP Alert] Response: ${resp.substring(0, 100).trim()}`);
+        if (resp.startsWith("4") || resp.startsWith("5")) {
+          throw new Error(`SMTP error: ${resp.trim()}`);
+        }
+        return resp;
+      }
+      return "";
+    };
 
-    async function sendCommand(command: string): Promise<string> {
-      await withTimeout(writer.write(encoder.encode(command + "\r\n")), 5000, "SMTP write timeout");
-      return await readResponse();
-    }
+    const writeCommand = async (cmd: string) => {
+      await withTimeout(
+        conn!.write(encoder.encode(cmd + "\r\n")),
+        5000,
+        "SMTP write timeout"
+      );
+    };
 
     await readResponse();
-    await sendCommand(`EHLO ${smtpHost}`);
-    await sendCommand(`AUTH LOGIN`);
-    await sendCommand(btoa(smtpUser));
-    await sendCommand(btoa(smtpPass));
-    await sendCommand(`MAIL FROM:<${fromEmail}>`);
-    await sendCommand(`RCPT TO:<${to}>`);
-    await sendCommand(`DATA`);
+    await writeCommand(`EHLO ${smtpHost}`);
+    await readResponse();
+
+    const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
+    await writeCommand(`AUTH PLAIN ${credentials}`);
+    await readResponse();
+
+    await writeCommand(`MAIL FROM:<${fromEmail}>`);
+    await readResponse();
+
+    await writeCommand(`RCPT TO:<${to}>`);
+    await readResponse();
+
+    await writeCommand(`DATA`);
+    await readResponse();
+
     console.log(`[SMTP Alert] Sending email body (${emailBody.length} bytes)`);
-    await withTimeout(writer.write(encoder.encode(emailBody + "\r\n.\r\n")), 30000, "DATA write timeout");
+    await withTimeout(
+      conn!.write(encoder.encode(emailBody + "\r\n.\r\n")),
+      30000,
+      "DATA write timeout"
+    );
     await withTimeout(readResponse(), 30000, "DATA END response timeout");
 
     try {
-      await withTimeout(sendCommand(`QUIT`), 3000, "QUIT timeout");
+      await writeCommand(`QUIT`);
+      await withTimeout(readResponse(), 3000, "QUIT timeout");
     } catch (_e) {
       console.log("[SMTP Alert] QUIT ignored");
     }
@@ -139,12 +158,13 @@ async function sendEmailSMTP(to: string, subject: string, html: string) {
     console.error("[SMTP Alert] Error:", error.message);
     throw error;
   } finally {
-    try {
-      if (writer) await writer.close();
-      if (reader) await reader.cancel();
-      if (tls) tls.close();
-    } catch (e) {
-      console.error("[SMTP Alert] Error closing connection:", e);
+    if (conn) {
+      try {
+        conn.close();
+        console.log("[SMTP Alert] Connection closed");
+      } catch (_e) {
+        console.error("[SMTP Alert] Error closing connection");
+      }
     }
   }
 
@@ -238,9 +258,9 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error in send-alert-email:", error.message);
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: error.message }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
