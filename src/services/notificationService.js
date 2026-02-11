@@ -109,8 +109,7 @@ export const notificationService = {
         .upsert({
           user_id: user.id,
           endpoint: sub.endpoint,
-          p256dh: sub.keys?.p256dh || '',
-          auth_key: sub.keys?.auth || '',
+          subscription: sub,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id,endpoint'

@@ -118,15 +118,15 @@ async function createVapidAuthHeader(
 }
 
 async function sendWebPush(
-  subscription: { endpoint: string; p256dh: string; auth_key: string },
+  endpoint: string,
   payload: string,
   privateKey: CryptoKey,
   publicKeyBytes: Uint8Array
 ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
   try {
-    const jwt = await createVapidAuthHeader(subscription.endpoint, privateKey);
+    const jwt = await createVapidAuthHeader(endpoint, privateKey);
 
-    const response = await fetch(subscription.endpoint, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         Authorization: `vapid t=${jwt}, k=${uint8ArrayToBase64Url(publicKeyBytes)}`,
@@ -231,7 +231,7 @@ Deno.serve(async (req: Request) => {
 
     for (const sub of subscriptions) {
       if (vapidKeys) {
-        const result = await sendWebPush(sub, pushPayload, vapidKeys.privateKey, vapidKeys.publicKeyBytes);
+        const result = await sendWebPush(sub.endpoint, pushPayload, vapidKeys.privateKey, vapidKeys.publicKeyBytes);
         if (result.success) {
           sent++;
         } else if (result.statusCode === 410 || result.statusCode === 404) {
