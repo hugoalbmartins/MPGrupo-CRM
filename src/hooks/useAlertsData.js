@@ -7,7 +7,6 @@ export const useAlerts = (filters = {}) => {
     queryKey: ['alerts', filters],
     queryFn: () => alertsService.getAlerts(filters),
     staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
   });
 };
 

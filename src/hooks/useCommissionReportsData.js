@@ -7,7 +7,6 @@ export const useCommissionReports = (filters = {}) => {
     queryKey: ['commissionReports', filters],
     queryFn: () => commissionReportsService.getReports(filters),
     staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
   });
 };
 

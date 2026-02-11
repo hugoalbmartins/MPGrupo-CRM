@@ -36,16 +36,17 @@ const Alerts = ({ user }) => {
       fetchAlertsSuspensionStatus();
     }
 
-    const interval = setInterval(() => fetchAlerts(), 30000);
-
     const unsubscribe = alertsService.subscribeToAlerts(() => {
       fetchAlerts();
     });
 
     return () => {
-      clearInterval(interval);
       if (unsubscribe) unsubscribe();
     };
+  }, [currentPage, filter]);
+
+  useEffect(() => {
+    setSelectedAlerts([]);
   }, [currentPage, filter]);
 
   const fetchAlerts = async () => {
@@ -59,7 +60,6 @@ const Alerts = ({ user }) => {
       setAlerts(result.alerts);
       setTotalPages(result.totalPages);
       setTotalAlerts(result.total);
-      setSelectedAlerts([]);
     } catch (error) {
       toast.error("Erro ao carregar alertas");
     } finally {

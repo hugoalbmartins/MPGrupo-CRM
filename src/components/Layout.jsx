@@ -23,11 +23,9 @@ const Layout = ({ children, user, onLogout }) => {
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 30000);
       const unsubscribe = alertsService.subscribeToAlerts(() => fetchUnreadCount());
       if (user.role === 'partner') fetchPartnerType();
       return () => {
-        clearInterval(interval);
         if (unsubscribe) unsubscribe();
       };
     }
