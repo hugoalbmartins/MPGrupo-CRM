@@ -1,3 +1,10 @@
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]);
+}
+
 async function connectAndSendTLS(
   host: string,
   port: number,
@@ -7,62 +14,88 @@ async function connectAndSendTLS(
   to: string,
   emailBody: string
 ): Promise<void> {
-  console.log(`Connecting to ${host}:${port} with TLS`);
+  console.log(`[SMTP Notification] Connecting to ${host}:${port}`);
 
-  const conn = await Deno.connectTls({
-    hostname: host,
-    port: port,
-  });
-
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  let buffer = new Uint8Array(8192);
+  let conn = null;
 
   try {
+    conn = await withTimeout(
+      Deno.connectTls({ hostname: host, port: port }),
+      10000,
+      "SMTP connection timeout"
+    );
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    let buffer = new Uint8Array(8192);
+
     const readResponse = async () => {
-      const bytesRead = await conn.read(buffer);
+      const bytesRead = await withTimeout(
+        conn.read(buffer),
+        15000,
+        "SMTP read timeout"
+      );
+
       if (bytesRead) {
         const response = decoder.decode(buffer.subarray(0, bytesRead));
-        console.log(`Response: ${response.substring(0, 200)}...`);
+        console.log(`[SMTP Notification] Response: ${response.substring(0, 100)}...`);
         return response;
       }
       return "";
     };
 
+    const writeCommand = async (cmd: string) => {
+      await withTimeout(
+        conn.write(encoder.encode(cmd)),
+        5000,
+        "SMTP write timeout"
+      );
+    };
+
     await readResponse();
 
-    await conn.write(encoder.encode(`EHLO ${host}\r\n`));
+    await writeCommand(`EHLO ${host}\r\n`);
     await readResponse();
 
     const credentials = btoa(`\0${user}\0${pass}`);
-    await conn.write(encoder.encode(`AUTH PLAIN ${credentials}\r\n`));
+    await writeCommand(`AUTH PLAIN ${credentials}\r\n`);
     const authResponse = await readResponse();
 
     if (authResponse.startsWith("5")) {
       throw new Error(`SMTP Auth Error: ${authResponse}`);
     }
 
-    await conn.write(encoder.encode(`MAIL FROM:<${fromEmail}>\r\n`));
+    await writeCommand(`MAIL FROM:<${fromEmail}>\r\n`);
     await readResponse();
 
-    await conn.write(encoder.encode(`RCPT TO:<${to}>\r\n`));
+    await writeCommand(`RCPT TO:<${to}>\r\n`);
     await readResponse();
 
-    await conn.write(encoder.encode(`DATA\r\n`));
+    await writeCommand(`DATA\r\n`);
     await readResponse();
 
-    await conn.write(encoder.encode(`${emailBody}\r\n.\r\n`));
+    await writeCommand(`${emailBody}\r\n.\r\n`);
     await readResponse();
 
-    await conn.write(encoder.encode(`QUIT\r\n`));
-    await readResponse();
-
-    console.log("Email sent successfully via TLS");
-  } finally {
+    await writeCommand(`QUIT\r\n`);
     try {
-      conn.close();
-    } catch (e) {
-      console.error("Error closing connection:", e);
+      await withTimeout(readResponse(), 3000, "QUIT timeout");
+    } catch (_e) {
+      console.log("[SMTP Notification] QUIT ignored");
+    }
+
+    console.log("[SMTP Notification] Email sent successfully");
+  } catch (error) {
+    console.error("[SMTP Notification] Error:", error.message);
+    throw error;
+  } finally {
+    if (conn) {
+      try {
+        conn.close();
+        console.log("[SMTP Notification] Connection closed");
+      } catch (e) {
+        console.error("[SMTP Notification] Error closing connection:", e);
+      }
     }
   }
 }
