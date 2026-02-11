@@ -4,6 +4,17 @@ export interface EmailConfig {
   replyTo?: string;
 }
 
+function encodeSubject(subject: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(subject);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  return `=?UTF-8?B?${base64}?=`;
+}
+
 export async function sendEmailResend(
   to: string,
   subject: string,
@@ -69,11 +80,12 @@ export async function sendEmailSMTP(
 
   const boundary = `----=_Part_${Date.now()}`;
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
+  const encodedSubject = encodeSubject(subject);
 
   const emailHeaders = [
     `From: ${fromName} <${fromEmail}>`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     `Message-ID: ${messageId}`,
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,

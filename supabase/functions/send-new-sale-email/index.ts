@@ -135,6 +135,13 @@ function textToBase64Wrapped(text: string): string {
   return wrapBase64(base64);
 }
 
+function encodeSubject(subject: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(subject);
+  const base64 = encodeBase64(bytes);
+  return `=?UTF-8?B?${base64}?=`;
+}
+
 function buildMimeEmail(
   fromEmail: string,
   fromName: string,
@@ -147,10 +154,12 @@ function buildMimeEmail(
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(2)}`;
   const messageId = `<${Date.now()}.${Math.random().toString(36)}@mpgrupo.pt>`;
 
+  const encodedSubject = encodeSubject(subject);
+
   const headers = [
     `From: ${fromName} <${fromEmail}>`,
     `To: ${toAddresses.join(", ")}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     `Message-ID: ${messageId}`,
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,

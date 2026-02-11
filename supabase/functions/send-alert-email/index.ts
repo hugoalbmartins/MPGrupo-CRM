@@ -27,6 +27,17 @@ function encodeBase64Wrapped(text: string): string {
   return lines.join("\r\n");
 }
 
+function encodeSubject(subject: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(subject);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  return `=?UTF-8?B?${base64}?=`;
+}
+
 async function sendEmailSMTP(to: string, subject: string, html: string) {
   const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
   const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
@@ -42,11 +53,12 @@ async function sendEmailSMTP(to: string, subject: string, html: string) {
   const boundary = `----=_Part_${Date.now()}`;
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
   const htmlBase64 = encodeBase64Wrapped(html);
+  const encodedSubject = encodeSubject(subject);
 
   const emailBody = [
     `From: ${fromName} <${fromEmail}>`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     `Message-ID: ${messageId}`,
     `Date: ${new Date().toUTCString()}`,
     `MIME-Version: 1.0`,
