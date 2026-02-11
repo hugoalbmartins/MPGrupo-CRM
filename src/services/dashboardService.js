@@ -383,7 +383,12 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
 
       stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + commission;
 
-      if (isCommissioned && (sale.created_by_user_id === adminId || (adminPartnerId && sale.partner_id === adminPartnerId))) {
+      const isAdminOwnSale = isCommissioned && (
+        (adminPartnerId && sale.partner_id === adminPartnerId) ||
+        (!adminPartnerId && sale.created_by_user_id === adminId && !sale.partner_id)
+      );
+
+      if (isAdminOwnSale) {
         stats.admin_sales_count++;
         if (sale.paid_to_operator || sale.electricity_paid || sale.gas_paid) {
           stats.admin_commission_paid += commission;
@@ -874,7 +879,12 @@ async function getAdminProposalStats(adminId, isCommissioned, adminPartnerId = n
       stats.by_partner[partnerKey].count++;
       stats.by_partner[partnerKey].commission += commission;
 
-      if (isCommissioned && (proposal.created_by_user_id === adminId || (adminPartnerId && proposal.partner_id === adminPartnerId))) {
+      const isAdminOwnProposal = isCommissioned && (
+        (adminPartnerId && proposal.partner_id === adminPartnerId) ||
+        (!adminPartnerId && proposal.created_by_user_id === adminId && !proposal.partner_id)
+      );
+
+      if (isAdminOwnProposal) {
         stats.own_commission += commission;
       }
     }
