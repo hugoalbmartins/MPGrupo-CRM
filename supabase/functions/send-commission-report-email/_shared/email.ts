@@ -15,11 +15,19 @@ function encodeSubject(subject: string): string {
   return `=?UTF-8?B?${base64}?=`;
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
-  });
-  return Promise.race([promise, timeoutPromise]);
+function encodeBase64Wrapped(text: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(text);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  const lines: string[] = [];
+  for (let i = 0; i < base64.length; i += 76) {
+    lines.push(base64.substring(i, i + 76));
+  }
+  return lines.join("\r\n");
 }
 
 export async function sendEmailResend(
@@ -85,11 +93,12 @@ export async function sendEmailSMTP(
     throw new Error("SMTP_PASS not configured");
   }
 
-  console.log(`[SMTP Commission] Sending to ${to}`);
+  console.log(`[SMTP Commission] Connecting to ${smtpHost}:${smtpPort}`);
 
   const boundary = `----=_Part_${Date.now()}`;
   const messageId = `<${Date.now()}.${Math.random()}@mpgrupo.pt>`;
   const encodedSubject = encodeSubject(subject);
+  const htmlBase64 = encodeBase64Wrapped(html);
 
   const emailHeaders = [
     `From: ${fromName} <${fromEmail}>`,
@@ -110,61 +119,93 @@ export async function sendEmailSMTP(
     ``,
     `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: quoted-printable`,
+    `Content-Transfer-Encoding: base64`,
     ``,
-    html,
+    htmlBase64,
     ``,
     `--${boundary}--`,
   ].join("\r\n");
 
-  let conn = null;
-  let tls = null;
-  let reader = null;
-  let writer = null;
+  let conn: Deno.TlsConn | null = null;
 
   try {
-    conn = await withTimeout(
-      Deno.connect({ hostname: smtpHost, port: smtpPort, transport: "tcp" }),
-      10000,
-      "SMTP connection timeout"
-    );
+    conn = await Promise.race([
+      Deno.connectTls({ hostname: smtpHost, port: smtpPort }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("SMTP connection timeout")), 15000)
+      ),
+    ]);
 
-    tls = await withTimeout(
-      Deno.startTls(conn, { hostname: smtpHost }),
-      10000,
-      "TLS handshake timeout"
-    );
-
-    const decoder = new TextDecoder();
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
-    reader = tls.readable.getReader();
-    writer = tls.writable.getWriter();
+    const readFullResponse = async (label: string, timeoutMs = 15000): Promise<string> => {
+      let fullResponse = "";
+      const deadline = Date.now() + timeoutMs;
 
-    async function readResponse(): Promise<string> {
-      const { value } = await withTimeout(reader.read(), 15000, "SMTP read timeout");
-      return decoder.decode(value);
-    }
+      while (true) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw new Error(`SMTP timeout waiting for ${label}`);
 
-    async function sendCommand(command: string): Promise<string> {
-      await withTimeout(writer.write(encoder.encode(command + "\r\n")), 5000, "SMTP write timeout");
-      return await readResponse();
-    }
+        const buffer = new Uint8Array(4096);
+        const bytesRead = await Promise.race([
+          conn!.read(buffer),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`SMTP read timeout on ${label}`)), remaining)
+          ),
+        ]);
 
-    await readResponse();
-    await sendCommand(`EHLO ${smtpHost}`);
-    await sendCommand(`AUTH LOGIN`);
-    await sendCommand(btoa(smtpUser));
-    await sendCommand(btoa(smtpPass));
-    await sendCommand(`MAIL FROM:<${fromEmail}>`);
-    await sendCommand(`RCPT TO:<${to}>`);
-    await sendCommand(`DATA`);
+        if (bytesRead === null) throw new Error(`SMTP connection closed on ${label}`);
+
+        fullResponse += decoder.decode(buffer.subarray(0, bytesRead));
+
+        const lines = fullResponse.split("\r\n").filter((l) => l.length > 0);
+        const lastLine = lines[lines.length - 1];
+        if (lastLine && lastLine.length >= 4 && lastLine[3] === " ") {
+          break;
+        }
+      }
+
+      console.log(`[SMTP Commission] ${label}: ${fullResponse.substring(0, 120).trim()}`);
+
+      const lines = fullResponse.split("\r\n").filter((l) => l.length > 0);
+      const lastLine = lines[lines.length - 1];
+      if (lastLine.startsWith("4") || lastLine.startsWith("5")) {
+        throw new Error(`SMTP error on ${label}: ${lastLine.trim()}`);
+      }
+
+      return fullResponse;
+    };
+
+    const writeCommand = async (cmd: string) => {
+      await conn!.write(encoder.encode(cmd + "\r\n"));
+    };
+
+    await readFullResponse("CONNECT");
+
+    await writeCommand(`EHLO ${smtpHost}`);
+    await readFullResponse("EHLO", 10000);
+
+    const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
+    await writeCommand(`AUTH PLAIN ${credentials}`);
+    await readFullResponse("AUTH", 10000);
+
+    await writeCommand(`MAIL FROM:<${fromEmail}>`);
+    await readFullResponse("MAIL FROM");
+
+    await writeCommand(`RCPT TO:<${to}>`);
+    await readFullResponse("RCPT TO");
+
+    await writeCommand(`DATA`);
+    await readFullResponse("DATA");
+
     console.log(`[SMTP Commission] Sending email body (${emailBody.length} bytes)`);
-    await withTimeout(writer.write(encoder.encode(emailBody + "\r\n.\r\n")), 30000, "DATA write timeout");
-    await withTimeout(readResponse(), 30000, "DATA END response timeout");
+    await conn!.write(encoder.encode(emailBody + "\r\n.\r\n"));
+    await readFullResponse("DATA END", 60000);
 
     try {
-      await withTimeout(sendCommand(`QUIT`), 3000, "QUIT timeout");
+      await writeCommand(`QUIT`);
+      await readFullResponse("QUIT", 3000);
     } catch (_e) {
       console.log("[SMTP Commission] QUIT ignored");
     }
@@ -174,12 +215,13 @@ export async function sendEmailSMTP(
     console.error("[SMTP Commission] Error:", error.message);
     throw error;
   } finally {
-    try {
-      if (writer) await writer.close();
-      if (reader) await reader.cancel();
-      if (tls) tls.close();
-    } catch (e) {
-      console.error("[SMTP Commission] Error closing connection:", e);
+    if (conn) {
+      try {
+        conn.close();
+        console.log("[SMTP Commission] Connection closed");
+      } catch (_e) {
+        console.error("[SMTP Commission] Error closing connection");
+      }
     }
   }
 

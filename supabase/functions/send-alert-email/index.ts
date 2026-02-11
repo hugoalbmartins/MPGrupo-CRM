@@ -38,13 +38,6 @@ function encodeSubject(subject: string): string {
   return `=?UTF-8?B?${base64}?=`;
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
-  });
-  return Promise.race([promise, timeoutPromise]);
-}
-
 async function sendEmailSMTP(to: string, subject: string, html: string) {
   const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
   const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
@@ -85,70 +78,83 @@ async function sendEmailSMTP(to: string, subject: string, html: string) {
   let conn: Deno.TlsConn | null = null;
 
   try {
-    conn = await withTimeout(
+    conn = await Promise.race([
       Deno.connectTls({ hostname: smtpHost, port: smtpPort }),
-      10000,
-      "SMTP connection timeout"
-    );
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("SMTP connection timeout")), 15000)
+      ),
+    ]);
 
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
-    const buffer = new Uint8Array(8192);
 
-    const readResponse = async () => {
-      const bytesRead = await withTimeout(
-        conn!.read(buffer),
-        15000,
-        "SMTP read timeout"
-      );
+    const readFullResponse = async (label: string, timeoutMs = 15000): Promise<string> => {
+      let fullResponse = "";
+      const deadline = Date.now() + timeoutMs;
 
-      if (bytesRead) {
-        const resp = decoder.decode(buffer.subarray(0, bytesRead));
-        console.log(`[SMTP Alert] Response: ${resp.substring(0, 100).trim()}`);
-        if (resp.startsWith("4") || resp.startsWith("5")) {
-          throw new Error(`SMTP error: ${resp.trim()}`);
+      while (true) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) throw new Error(`SMTP timeout waiting for ${label}`);
+
+        const buffer = new Uint8Array(4096);
+        const bytesRead = await Promise.race([
+          conn!.read(buffer),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`SMTP read timeout on ${label}`)), remaining)
+          ),
+        ]);
+
+        if (bytesRead === null) throw new Error(`SMTP connection closed on ${label}`);
+
+        fullResponse += decoder.decode(buffer.subarray(0, bytesRead));
+
+        const lines = fullResponse.split("\r\n").filter((l) => l.length > 0);
+        const lastLine = lines[lines.length - 1];
+        if (lastLine && lastLine.length >= 4 && lastLine[3] === " ") {
+          break;
         }
-        return resp;
       }
-      return "";
+
+      console.log(`[SMTP Alert] ${label}: ${fullResponse.substring(0, 120).trim()}`);
+
+      const lines = fullResponse.split("\r\n").filter((l) => l.length > 0);
+      const lastLine = lines[lines.length - 1];
+      if (lastLine.startsWith("4") || lastLine.startsWith("5")) {
+        throw new Error(`SMTP error on ${label}: ${lastLine.trim()}`);
+      }
+
+      return fullResponse;
     };
 
     const writeCommand = async (cmd: string) => {
-      await withTimeout(
-        conn!.write(encoder.encode(cmd + "\r\n")),
-        5000,
-        "SMTP write timeout"
-      );
+      await conn!.write(encoder.encode(cmd + "\r\n"));
     };
 
-    await readResponse();
+    await readFullResponse("CONNECT");
+
     await writeCommand(`EHLO ${smtpHost}`);
-    await readResponse();
+    await readFullResponse("EHLO", 10000);
 
     const credentials = btoa(`\0${smtpUser}\0${smtpPass}`);
     await writeCommand(`AUTH PLAIN ${credentials}`);
-    await readResponse();
+    await readFullResponse("AUTH", 10000);
 
     await writeCommand(`MAIL FROM:<${fromEmail}>`);
-    await readResponse();
+    await readFullResponse("MAIL FROM");
 
     await writeCommand(`RCPT TO:<${to}>`);
-    await readResponse();
+    await readFullResponse("RCPT TO");
 
     await writeCommand(`DATA`);
-    await readResponse();
+    await readFullResponse("DATA");
 
     console.log(`[SMTP Alert] Sending email body (${emailBody.length} bytes)`);
-    await withTimeout(
-      conn!.write(encoder.encode(emailBody + "\r\n.\r\n")),
-      30000,
-      "DATA write timeout"
-    );
-    await withTimeout(readResponse(), 30000, "DATA END response timeout");
+    await conn!.write(encoder.encode(emailBody + "\r\n.\r\n"));
+    await readFullResponse("DATA END", 60000);
 
     try {
       await writeCommand(`QUIT`);
-      await withTimeout(readResponse(), 3000, "QUIT timeout");
+      await readFullResponse("QUIT", 3000);
     } catch (_e) {
       console.log("[SMTP Alert] QUIT ignored");
     }
