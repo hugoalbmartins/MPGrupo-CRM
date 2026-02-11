@@ -385,7 +385,18 @@ export const energySimulatorService = {
           const dias = parseFloat(formData.eletricidade.dias) || 0;
           const ciclo = formData.eletricidade.ciclo;
 
-          const precoPotencia = parseFloat(tarifasElet[ciclo]?.potencia?.[potencia]) || parseFloat(tarifasElet.potencia?.[potencia]) || 0;
+          let precoPotencia = 0;
+          const potenciaObj = tarifasElet[ciclo]?.potencia || tarifasElet.potencia || {};
+
+          if (potenciaObj[potencia]) {
+            precoPotencia = parseFloat(potenciaObj[potencia]);
+          } else {
+            const [intPart, decPart] = potencia.split('.');
+            if (decPart && potenciaObj[intPart]?.[decPart]) {
+              precoPotencia = parseFloat(potenciaObj[intPart][decPart]);
+            }
+          }
+
           let custoPotencia = precoPotencia * dias;
 
           let custoEnergia = 0;

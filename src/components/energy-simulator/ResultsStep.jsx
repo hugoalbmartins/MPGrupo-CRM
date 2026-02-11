@@ -96,33 +96,34 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
           const det = resultado.detalhesCalculo.eletricidade;
           doc.text('Eletricidade:', margin, yPos);
           yPos += 6;
-          doc.text(`  Potência: ${formatCurrency(det.custoPotenciaComDesconto)} (desconto: ${det.descontoPotencia}%)`, margin, yPos);
+          doc.text(`  Potência - Sem desconto: ${formatCurrency(det.custoPotenciaSemDesconto)} | Com desconto: ${formatCurrency(det.custoPotenciaComDesconto)}`, margin, yPos);
           yPos += 6;
-          doc.text(`  Energia: ${formatCurrency(det.custoEnergiaComDesconto)} (desconto: ${det.descontoEnergia}%)`, margin, yPos);
+          doc.text(`  Energia (kWh) - Sem desconto: ${formatCurrency(det.custoEnergiaSemDesconto)} | Com desconto: ${formatCurrency(det.custoEnergiaComDesconto)}`, margin, yPos);
           yPos += 8;
         }
 
         if (resultado.detalhesCalculo.gas) {
           const det = resultado.detalhesCalculo.gas;
-          doc.text('Gás:', margin, yPos);
+          doc.text('Gás Natural:', margin, yPos);
           yPos += 6;
-          doc.text(`  Diário: ${formatCurrency(det.custoDiarioComDesconto)} (desconto: ${det.descontoDiario}%)`, margin, yPos);
+          doc.text(`  Valor Diário - Sem desconto: ${formatCurrency(det.custoDiarioSemDesconto)} | Com desconto: ${formatCurrency(det.custoDiarioComDesconto)}`, margin, yPos);
           yPos += 6;
-          doc.text(`  Energia: ${formatCurrency(det.custoEnergiaComDesconto)} (desconto: ${det.descontoEnergia}%)`, margin, yPos);
+          doc.text(`  Energia (kWh) - Sem desconto: ${formatCurrency(det.custoEnergiaSemDesconto)} | Com desconto: ${formatCurrency(det.custoEnergiaComDesconto)}`, margin, yPos);
           yPos += 8;
         }
 
         if (resultado.detalhesCalculo.eletricidade?.campanhaAplicavel || resultado.detalhesCalculo.gas?.campanhaAplicavel) {
           const campanha = resultado.detalhesCalculo.eletricidade?.campanha || resultado.detalhesCalculo.gas?.campanha;
           if (campanha.desconto_mensal_temporario > 0) {
+            const novoCustoComCampanha = resultado.custoNovaOperadora.total - parseFloat(campanha.desconto_mensal_temporario);
             doc.setFillColor(147, 51, 234);
-            doc.rect(margin - 2, yPos - 2, pageWidth - 2 * margin + 4, 20, 'F');
+            doc.rect(margin - 2, yPos - 2, pageWidth - 2 * margin + 4, 24, 'F');
             doc.setTextColor(255, 255, 255);
             doc.text('CAMPANHA ESPECIAL', margin, yPos + 3);
             yPos += 8;
-            doc.text(`Desconto adicional: ${formatCurrency(campanha.desconto_mensal_temporario)}/mês`, margin, yPos);
+            doc.text(`Durante ${campanha.duracao_meses_desconto} meses, o novo custo mensal será de ${formatCurrency(novoCustoComCampanha)}`, margin, yPos);
             yPos += 6;
-            doc.text(`Duração: ${campanha.duracao_meses_desconto} meses`, margin, yPos);
+            doc.text(`Desconto adicional: ${formatCurrency(campanha.desconto_mensal_temporario)}/mês`, margin, yPos);
             yPos += 10;
             doc.setTextColor(0, 0, 0);
           }
@@ -205,21 +206,75 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
         </Card>
       </motion.div>
 
-      {canImproveDiscount && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          <Alert className="bg-blue-500/10 border-blue-500/30">
-            <AlertCircle className="h-4 w-4 text-blue-400" />
-            <AlertDescription className="text-blue-300">
-              <strong>Poupança Adicional Disponível!</strong> Pode obter descontos maiores aderindo a{' '}
-              {!hasDD && !hasFE ? 'Débito Direto e Fatura Eletrónica' : !hasDD ? 'Débito Direto' : 'Fatura Eletrónica'}.
-            </AlertDescription>
-          </Alert>
-        </motion.div>
-      )}
+      {canImproveDiscount && resultados.length > 0 && (() => {
+        const melhorResultado = resultados[0];
+        const detalhes = melhorResultado.detalhesCalculo;
+
+        let descontoAdicional = 0;
+
+        if (detalhes.eletricidade) {
+          const campanha = detalhes.eletricidade.campanha || {};
+          const descontoAtualPot = hasDD && hasFE ? parseFloat(campanha.desconto_dd_fe_potencia || 0)
+                                 : hasDD ? parseFloat(campanha.desconto_dd_potencia || 0)
+                                 : hasFE ? parseFloat(campanha.desconto_fe_potencia || 0)
+                                 : parseFloat(campanha.desconto_base_potencia || 0);
+          const descontoMaxPot = parseFloat(campanha.desconto_dd_fe_potencia || 0);
+          const diferencaPot = descontoMaxPot - descontoAtualPot;
+
+          const descontoAtualEng = hasDD && hasFE ? parseFloat(campanha.desconto_dd_fe_energia || 0)
+                                 : hasDD ? parseFloat(campanha.desconto_dd_energia || 0)
+                                 : hasFE ? parseFloat(campanha.desconto_fe_energia || 0)
+                                 : parseFloat(campanha.desconto_base_energia || 0);
+          const descontoMaxEng = parseFloat(campanha.desconto_dd_fe_energia || 0);
+          const diferencaEng = descontoMaxEng - descontoAtualEng;
+
+          const custoPot = detalhes.eletricidade.custoPotenciaSemDesconto || 0;
+          const custoEng = detalhes.eletricidade.custoEnergiaSemDesconto || 0;
+
+          descontoAdicional += (custoPot * diferencaPot / 100) + (custoEng * diferencaEng / 100);
+        }
+
+        if (detalhes.gas) {
+          const campanha = detalhes.gas.campanha || {};
+          const descontoAtualDiario = hasDD && hasFE ? parseFloat(campanha.desconto_dd_fe_potencia || 0)
+                                    : hasDD ? parseFloat(campanha.desconto_dd_potencia || 0)
+                                    : hasFE ? parseFloat(campanha.desconto_fe_potencia || 0)
+                                    : parseFloat(campanha.desconto_base_potencia || 0);
+          const descontoMaxDiario = parseFloat(campanha.desconto_dd_fe_potencia || 0);
+          const diferencaDiario = descontoMaxDiario - descontoAtualDiario;
+
+          const descontoAtualEng = hasDD && hasFE ? parseFloat(campanha.desconto_dd_fe_energia || 0)
+                                 : hasDD ? parseFloat(campanha.desconto_dd_energia || 0)
+                                 : hasFE ? parseFloat(campanha.desconto_fe_energia || 0)
+                                 : parseFloat(campanha.desconto_base_energia || 0);
+          const descontoMaxEng = parseFloat(campanha.desconto_dd_fe_energia || 0);
+          const diferencaEng = descontoMaxEng - descontoAtualEng;
+
+          const custoDiario = detalhes.gas.custoDiarioSemDesconto || 0;
+          const custoEng = detalhes.gas.custoEnergiaSemDesconto || 0;
+
+          descontoAdicional += (custoDiario * diferencaDiario / 100) + (custoEng * diferencaEng / 100);
+        }
+
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <Alert className="bg-blue-500/10 border-blue-500/30">
+              <AlertCircle className="h-4 w-4 text-blue-400" />
+              <AlertDescription className="text-blue-300">
+                <strong>Poupança Adicional Disponível!</strong> Pode obter descontos maiores aderindo a{' '}
+                {!hasDD && !hasFE ? 'Débito Direto e Fatura Eletrónica' : !hasDD ? 'Débito Direto' : 'Fatura Eletrónica'}.
+                {descontoAdicional > 0 && (
+                  <> Com ambos, pouparia mais <strong>{formatCurrency(descontoAdicional)}/mês</strong>.</>
+                )}
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        );
+      })()}
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -250,25 +305,49 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             <Card className={`border-white/10 bg-dark-800/50 backdrop-blur-sm overflow-hidden ${index === 0 ? 'ring-2 ring-green-500/50' : ''}`}>
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    {resultado.operadora.logotipo_url && (
-                      <img
-                        src={resultado.operadora.logotipo_url}
-                        alt={resultado.operadora.nome}
-                        className="w-16 h-16 object-contain rounded-lg bg-white/5 p-2"
-                      />
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-xl font-bold text-white">{resultado.operadora.nome}</h4>
-                        {index === 0 && (
-                          <Badge className="bg-green-500 text-white">Melhor Opção</Badge>
-                        )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-3">
+                      {resultado.operadora.logotipo_url && (
+                        <img
+                          src={resultado.operadora.logotipo_url}
+                          alt={resultado.operadora.nome}
+                          className="w-16 h-16 object-contain rounded-lg bg-white/5 p-2"
+                        />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="text-xl font-bold text-white">{resultado.operadora.nome}</h4>
+                          {index === 0 && (
+                            <Badge className="bg-green-500 text-white">Melhor Opção</Badge>
+                          )}
+                        </div>
+                        <p className="text-dark-300 text-sm">
+                          Novo custo: <span className="text-white font-semibold">{formatCurrency(resultado.custoNovaOperadora.total)}/mês</span>
+                        </p>
                       </div>
-                      <p className="text-dark-300 text-sm">
-                        Novo custo: <span className="text-white font-semibold">{formatCurrency(resultado.custoNovaOperadora.total)}/mês</span>
-                      </p>
                     </div>
+
+                    {(resultado.detalhesCalculo.eletricidade?.campanhaAplicavel || resultado.detalhesCalculo.gas?.campanhaAplicavel) && (() => {
+                      const campanhaElet = resultado.detalhesCalculo.eletricidade?.campanha;
+                      const campanhaGas = resultado.detalhesCalculo.gas?.campanha;
+                      const campanha = campanhaElet || campanhaGas;
+                      const descontoMensal = parseFloat(campanha.desconto_mensal_temporario || 0);
+                      const duracaoMeses = parseInt(campanha.duracao_meses_desconto || 0);
+                      const novoCustoComCampanha = resultado.custoNovaOperadora.total - descontoMensal;
+
+                      return (
+                        <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-3 rounded-lg border border-purple-500/30 mb-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Gift className="w-4 h-4 text-purple-400" />
+                            <span className="font-semibold text-purple-300 text-sm">Campanha Especial</span>
+                          </div>
+                          <p className="text-sm text-purple-200">
+                            Durante <strong>{duracaoMeses} meses</strong>, o novo custo mensal será de{' '}
+                            <strong className="text-purple-100">{formatCurrency(novoCustoComCampanha)}</strong>
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
@@ -312,23 +391,39 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                       <div className="mt-6 pt-6 border-t border-white/10 space-y-4">
                         {resultado.detalhesCalculo.eletricidade && (
                           <div className="bg-dark-700/30 p-4 rounded-lg">
-                            <h5 className="font-semibold text-white mb-3">Eletricidade</h5>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                              <div>
-                                <p className="text-dark-400">Potência (sem desconto)</p>
-                                <p className="text-white">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto)}</p>
+                            <h5 className="font-semibold text-white mb-4">Detalhamento Eletricidade</h5>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                                <span className="text-dark-300 text-sm font-medium">Componente</span>
+                                <div className="flex gap-8">
+                                  <span className="text-dark-300 text-sm font-medium">Sem Desconto</span>
+                                  <span className="text-green-400 text-sm font-medium">Com Desconto</span>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-dark-400">Potência (com desconto {resultado.detalhesCalculo.eletricidade.descontoPotencia}%)</p>
-                                <p className="text-green-400 font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto)}</p>
+                              <div className="flex justify-between items-center">
+                                <span className="text-white text-sm">Potência</span>
+                                <div className="flex gap-8">
+                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto)}</span>
+                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto)}</span>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-dark-400">Energia (sem desconto)</p>
-                                <p className="text-white">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}</p>
+                              <div className="flex justify-between items-center">
+                                <span className="text-white text-sm">Energia (kWh)</span>
+                                <div className="flex gap-8">
+                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}</span>
+                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}</span>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-dark-400">Energia (com desconto {resultado.detalhesCalculo.eletricidade.descontoEnergia}%)</p>
-                                <p className="text-green-400 font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}</p>
+                              <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                                <span className="text-white font-semibold">Total</span>
+                                <div className="flex gap-8">
+                                  <span className="text-white text-sm w-20 text-right font-semibold">
+                                    {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}
+                                  </span>
+                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">
+                                    {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -336,23 +431,39 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
 
                         {resultado.detalhesCalculo.gas && (
                           <div className="bg-dark-700/30 p-4 rounded-lg">
-                            <h5 className="font-semibold text-white mb-3">Gás Natural</h5>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                              <div>
-                                <p className="text-dark-400">Diário (sem desconto)</p>
-                                <p className="text-white">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto)}</p>
+                            <h5 className="font-semibold text-white mb-4">Detalhamento Gás Natural</h5>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                                <span className="text-dark-300 text-sm font-medium">Componente</span>
+                                <div className="flex gap-8">
+                                  <span className="text-dark-300 text-sm font-medium">Sem Desconto</span>
+                                  <span className="text-green-400 text-sm font-medium">Com Desconto</span>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-dark-400">Diário (com desconto {resultado.detalhesCalculo.gas.descontoDiario}%)</p>
-                                <p className="text-green-400 font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto)}</p>
+                              <div className="flex justify-between items-center">
+                                <span className="text-white text-sm">Valor Diário</span>
+                                <div className="flex gap-8">
+                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto)}</span>
+                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto)}</span>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-dark-400">Energia (sem desconto)</p>
-                                <p className="text-white">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}</p>
+                              <div className="flex justify-between items-center">
+                                <span className="text-white text-sm">Energia (kWh)</span>
+                                <div className="flex gap-8">
+                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}</span>
+                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}</span>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-dark-400">Energia (com desconto {resultado.detalhesCalculo.gas.descontoEnergia}%)</p>
-                                <p className="text-green-400 font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}</p>
+                              <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                                <span className="text-white font-semibold">Total</span>
+                                <div className="flex gap-8">
+                                  <span className="text-white text-sm w-20 text-right font-semibold">
+                                    {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto + resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}
+                                  </span>
+                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">
+                                    {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto + resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
