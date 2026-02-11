@@ -159,8 +159,9 @@ export async function sendEmailSMTP(
     await sendCommand(`MAIL FROM:<${fromEmail}>`);
     await sendCommand(`RCPT TO:<${to}>`);
     await sendCommand(`DATA`);
-    await withTimeout(writer.write(encoder.encode(emailBody + "\r\n.\r\n")), 10000, "DATA write timeout");
-    await readResponse();
+    console.log(`[SMTP Commission] Sending email body (${emailBody.length} bytes)`);
+    await withTimeout(writer.write(encoder.encode(emailBody + "\r\n.\r\n")), 30000, "DATA write timeout");
+    await withTimeout(readResponse(), 30000, "DATA END response timeout");
 
     try {
       await withTimeout(sendCommand(`QUIT`), 3000, "QUIT timeout");

@@ -74,8 +74,17 @@ async function connectAndSendTLS(
     await writeCommand(`DATA\r\n`);
     await readResponse();
 
-    await writeCommand(`${emailBody}\r\n.\r\n`);
-    await readResponse();
+    console.log(`[SMTP Notification] Sending email body (${emailBody.length} bytes)`);
+    await withTimeout(
+      conn.write(encoder.encode(`${emailBody}\r\n.\r\n`)),
+      30000,
+      "SMTP DATA body write timeout"
+    );
+    await withTimeout(
+      readResponse(),
+      30000,
+      "SMTP DATA END response timeout"
+    );
 
     await writeCommand(`QUIT\r\n`);
     try {

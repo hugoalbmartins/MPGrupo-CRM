@@ -270,8 +270,17 @@ async function sendViaSMTP(
     await writeCommand(`DATA\r\n`);
     await readResponse("DATA");
 
-    await writeCommand(`${emailBody}\r\n.\r\n`);
-    await readResponse("DATA END");
+    console.log(`[SMTP] Sending email body (${emailBody.length} bytes)`);
+    await withTimeout(
+      conn!.write(encoder.encode(`${emailBody}\r\n.\r\n`)),
+      30000,
+      "SMTP DATA body write timeout"
+    );
+    await withTimeout(
+      readResponse("DATA END"),
+      30000,
+      "SMTP DATA END response timeout"
+    );
 
     await writeCommand(`QUIT\r\n`);
     try {
