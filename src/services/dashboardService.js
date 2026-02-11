@@ -17,7 +17,7 @@ export const dashboardService = {
 
     switch (currentUser.role) {
       case 'admin':
-        return await getAdminDashboard(selectedYear, selectedMonth, user.id, currentUser.is_commissioned);
+        return await getAdminDashboard(selectedYear, selectedMonth, user.id, currentUser.is_commissioned, currentUser.partner_id);
       case 'bo':
         return await getBODashboard(selectedYear, selectedMonth);
       case 'partner':
@@ -49,7 +49,7 @@ export const dashboardService = {
 
     switch (currentUser.role) {
       case 'admin':
-        return await getAdminProposalStats(user.id, currentUser.is_commissioned);
+        return await getAdminProposalStats(user.id, currentUser.is_commissioned, currentUser.partner_id);
       case 'bo':
         return await getBOProposalStats();
       case 'partner':
@@ -273,7 +273,7 @@ async function getLast12MonthsData(partnerId = null) {
   return result;
 }
 
-async function getAdminDashboard(year, month, adminId, isCommissioned) {
+async function getAdminDashboard(year, month, adminId, isCommissioned, adminPartnerId = null) {
   const { start, end } = getMonthRange(year, month);
 
   const [salesResult, partnerCountResult, last12Months, allCommissionConfigs] = await Promise.all([
@@ -383,7 +383,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned) {
 
       stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + commission;
 
-      if (isCommissioned && sale.created_by_user_id === adminId && !sale.partner_id) {
+      if (isCommissioned && (sale.created_by_user_id === adminId || (adminPartnerId && sale.partner_id === adminPartnerId))) {
         stats.admin_sales_count++;
         if (sale.paid_to_operator || sale.electricity_paid || sale.gas_paid) {
           stats.admin_commission_paid += commission;
@@ -806,12 +806,22 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
   return stats;
 }
 
-async function getAdminProposalStats(adminId, isCommissioned) {
-  const { data: proposals } = await supabase
-    .from('sales')
-    .select('*, partners(name)')
-    .eq('status', 'Em proposta');
+async function getAdminProposalStats(adminId, isCommissioned, adminPartnerId = null) {
+  const [proposalsResult, adminUserResult] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('*, partners(name)')
+      .eq('status', 'Em proposta'),
+    supabase
+      .from('users')
+      .select('name')
+      .eq('id', adminId)
+      .maybeSingle()
+  ]);
 
+  const proposals = proposalsResult.data;
+  const adminUser = adminUserResult.data;
+  const adminName = adminUser?.name ? `${adminUser.name} (Admin)` : 'Admin Comissionado';
   const now = new Date();
   const stats = {
     total_proposals: proposals?.length || 0,
@@ -850,13 +860,13 @@ async function getAdminProposalStats(adminId, isCommissioned) {
       stats.by_scope[proposal.scope] = (stats.by_scope[proposal.scope] || 0) + 1;
 
       const partnerKey = proposal.partner_id || 'admin_commissioned';
-      const partnerName = proposal.partner_id
+      const partnerNameDisplay = proposal.partner_id
         ? (proposal.partners?.name || 'Desconhecido')
-        : 'Admin Comissionado';
+        : adminName;
 
       if (!stats.by_partner[partnerKey]) {
         stats.by_partner[partnerKey] = {
-          name: partnerName,
+          name: partnerNameDisplay,
           count: 0,
           commission: 0
         };
@@ -864,7 +874,7 @@ async function getAdminProposalStats(adminId, isCommissioned) {
       stats.by_partner[partnerKey].count++;
       stats.by_partner[partnerKey].commission += commission;
 
-      if (isCommissioned && proposal.created_by_user_id === adminId && !proposal.partner_id) {
+      if (isCommissioned && (proposal.created_by_user_id === adminId || (adminPartnerId && proposal.partner_id === adminPartnerId))) {
         stats.own_commission += commission;
       }
     }

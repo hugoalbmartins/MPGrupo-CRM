@@ -1038,11 +1038,22 @@ const Dashboard = ({ user }) => {
             onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
             className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-500/40 focus:border-cyber-500/40 transition-all duration-200 hover:border-cyber-500/30 appearance-none cursor-pointer backdrop-blur-sm"
           >
-            {months.map((month, index) => (
-              <option key={index} value={index + 1} className="bg-dark-900 text-slate-300">
-                {month}
-              </option>
-            ))}
+            {months.map((month, index) => {
+              const currentDate = new Date();
+              const currentYear = currentDate.getFullYear();
+              const currentMonth = currentDate.getMonth() + 1;
+              const isDisabled = selectedYear > currentYear || (selectedYear === currentYear && index + 1 > currentMonth);
+              return (
+                <option
+                  key={index}
+                  value={index + 1}
+                  className="bg-dark-900 text-slate-300"
+                  disabled={isDisabled}
+                >
+                  {month}
+                </option>
+              );
+            })}
           </select>
           <select
             value={selectedYear}
