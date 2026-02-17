@@ -252,12 +252,20 @@ export const partnersService = {
   },
 
   async delete(id) {
-    const { error } = await supabase
-      .from('partners')
-      .delete()
-      .eq('id', id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
 
-    if (error) throw error;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(`${supabaseUrl}/functions/v1/delete-partner?partnerId=${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || 'Failed to delete partner');
   },
 
   async getD2DLevels(partnerId) {

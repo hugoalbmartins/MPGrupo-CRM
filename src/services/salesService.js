@@ -594,7 +594,7 @@ export const salesService = {
 
     const { data: sale } = await supabase
       .from('sales')
-      .select('operator_doc_file')
+      .select('operator_doc_file, attachments')
       .eq('id', id)
       .maybeSingle();
 
@@ -604,6 +604,17 @@ export const salesService = {
       await supabase.storage
         .from('operator-validations')
         .remove([sale.operator_doc_file]);
+    }
+
+    if (Array.isArray(sale.attachments) && sale.attachments.length > 0) {
+      const paths = sale.attachments
+        .map(a => a.path)
+        .filter(Boolean);
+      if (paths.length > 0) {
+        await supabase.storage
+          .from('sales-documents')
+          .remove(paths);
+      }
     }
 
     const { error } = await supabase

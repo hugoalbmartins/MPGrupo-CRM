@@ -98,9 +98,6 @@ export async function generatePartnerCode(partnerType, supabase) {
 
 export async function generateSaleCode(partnerId, saleDate, supabase) {
   let namePrefix = 'ADM';
-  let queryBuilder = supabase
-    .from('sales')
-    .select('sale_code');
 
   if (partnerId) {
     const { data: partner } = await supabase
@@ -112,23 +109,33 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
     if (partner) {
       namePrefix = partner.name.substring(0, 3).toUpperCase();
     }
-    queryBuilder = queryBuilder.eq('partner_id', partnerId);
-  } else {
-    queryBuilder = queryBuilder.is('partner_id', null);
   }
 
   const date = new Date(saleDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear()).slice(-2);
 
-  const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
-  const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1).toISOString();
+  const query = partnerId
+    ? supabase.from('sales').select('sale_code').eq('partner_id', partnerId)
+    : supabase.from('sales').select('sale_code').is('partner_id', null);
 
-  const { data: salesInMonth } = await queryBuilder
-    .gte('date', startOfMonth)
-    .lt('date', endOfMonth);
+  const { data: allSales } = await query;
 
-  const sequence = String((salesInMonth?.length || 0) + 1).padStart(4, '0');
+  let maxSequence = 0;
+  if (allSales && allSales.length > 0) {
+    for (const sale of allSales) {
+      const code = sale.sale_code || '';
+      if (code.length >= 9) {
+        const seqStr = code.substring(3, 7);
+        const seq = parseInt(seqStr, 10);
+        if (!isNaN(seq) && seq > maxSequence) {
+          maxSequence = seq;
+        }
+      }
+    }
+  }
+
+  const sequence = String(maxSequence + 1).padStart(4, '0');
   return `${namePrefix}${sequence}${month}${year}`;
 }
 
