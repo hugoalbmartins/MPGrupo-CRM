@@ -102,12 +102,30 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   if (partnerId) {
     const { data: partner } = await supabase
       .from('partners')
-      .select('name')
+      .select('name, created_at')
       .eq('id', partnerId)
       .maybeSingle();
 
     if (partner) {
-      namePrefix = partner.name.substring(0, 3).toUpperCase();
+      const base3 = partner.name.substring(0, 3).toUpperCase();
+      const base2 = partner.name.substring(0, 2).toUpperCase();
+
+      const { data: conflicting } = await supabase
+        .from('partners')
+        .select('id, created_at')
+        .ilike('name', `${partner.name.substring(0, 3)}%`)
+        .order('created_at', { ascending: true });
+
+      if (!conflicting || conflicting.length <= 1) {
+        namePrefix = base3;
+      } else {
+        const index = conflicting.findIndex(p => p.id === partnerId);
+        if (index <= 0) {
+          namePrefix = base3;
+        } else {
+          namePrefix = `${base2}${index}`;
+        }
+      }
     }
   }
 
