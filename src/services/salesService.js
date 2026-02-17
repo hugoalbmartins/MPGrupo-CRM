@@ -345,7 +345,8 @@ export const salesService = {
       tier: saleData.tier || null,
       observations: saleData.observations || null,
       calculated_commission: commission,
-      attachments: []
+      attachments: [],
+      is_bulk_import: saleData.is_bulk_import === true,
     };
 
     const { data, error } = await supabase

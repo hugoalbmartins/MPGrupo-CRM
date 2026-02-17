@@ -261,7 +261,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             throw new Error("ID Operadora em falta");
           }
 
-          const result = await salesService.createSale(saleData);
+          const result = await salesService.createSale({ ...saleData, is_bulk_import: true });
 
           successfulImports.push({
             row: rowNumber,
