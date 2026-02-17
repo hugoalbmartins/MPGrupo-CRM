@@ -364,7 +364,7 @@ const Partners = ({ user }) => {
             <Download className="w-4 h-4 mr-2" />
             Exportar Excel
           </Button>
-          {user?.role === 'admin' && (
+          {(user?.role === 'admin' || user?.role === 'bo') && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm} className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-lg shadow-cyan-500/20">
@@ -630,12 +630,12 @@ const Partners = ({ user }) => {
                   Contacto{getSortIcon("contact")}
                 </th>
                 {user?.role === 'admin' && <th className="text-center text-cyan-400 font-semibold text-xs uppercase tracking-wider">Documentos</th>}
-                {user?.role === 'admin' && <th className="text-center text-cyan-400 font-semibold text-xs uppercase tracking-wider">Acoes</th>}
+                {(user?.role === 'admin' || user?.role === 'bo') && <th className="text-center text-cyan-400 font-semibold text-xs uppercase tracking-wider">Acoes</th>}
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedPartners.length === 0 ? (
-                <tr><td colSpan={user?.role === 'admin' ? 8 : 6} className="text-center py-8 text-slate-500">Nenhum parceiro encontrado</td></tr>
+                <tr><td colSpan={user?.role === 'admin' ? 8 : (user?.role === 'bo' ? 7 : 6)} className="text-center py-8 text-slate-500">Nenhum parceiro encontrado</td></tr>
               ) : (
                 filteredAndSortedPartners.map((partner) => (
                   <tr key={partner.id} className="border-b border-white/[0.06] hover:bg-white/[0.02] transition-colors">
@@ -666,7 +666,7 @@ const Partners = ({ user }) => {
                         </Button>
                       </td>
                     )}
-                    {user?.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.role === 'bo') && (
                       <td className="text-center">
                         <div className="flex gap-2 justify-center">
                           <Button
@@ -681,9 +681,11 @@ const Partners = ({ user }) => {
                           <Button onClick={() => handleEdit(partner)} size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10">
                             Editar
                           </Button>
-                          <Button onClick={() => handleDelete(partner.id, partner.name)} size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {user?.role === 'admin' && (
+                            <Button onClick={() => handleDelete(partner.id, partner.name)} size="sm" variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     )}

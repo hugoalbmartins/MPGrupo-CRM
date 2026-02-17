@@ -56,8 +56,12 @@ Deno.serve(async (req: Request) => {
       .eq("id", currentUser.id)
       .maybeSingle();
 
-    if (userError || !userData || userData.role !== "admin") {
-      throw new Error("Only admins can create users");
+    const callerRole = userData?.role;
+    const isAdmin = callerRole === "admin";
+    const isBo = callerRole === "bo";
+
+    if (userError || !userData || (!isAdmin && !isBo)) {
+      throw new Error("Only admins and backoffice users can create users");
     }
 
     const supabaseAdmin = createClient(
@@ -75,6 +79,11 @@ Deno.serve(async (req: Request) => {
 
     if (!requestData.name || !requestData.email || !requestData.password || !requestData.role || !requestData.position) {
       throw new Error("Missing required fields");
+    }
+
+    const partnerOnlyRoles = ['partner', 'partner_commercial'];
+    if (isBo && !partnerOnlyRoles.includes(requestData.role)) {
+      throw new Error("Backoffice users can only create partner accounts");
     }
 
     // Validate email for specific roles

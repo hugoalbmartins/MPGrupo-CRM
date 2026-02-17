@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download
+  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
@@ -229,6 +229,40 @@ const Layout = ({ children, user, onLogout }) => {
           </button>
         </div>
 
+        {/* New Sale Quick Action */}
+        <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(6, 182, 212, 0.08)' }}>
+          <button
+            onClick={() => navigate('/sales', { state: { openNewSale: true } })}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-200"
+            style={{
+              background: 'linear-gradient(135deg, rgba(6,182,212,0.12), rgba(8,145,178,0.08))',
+              border: '1px solid rgba(6,182,212,0.25)',
+              color: '#06b6d4',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(6,182,212,0.2), rgba(8,145,178,0.15))';
+              e.currentTarget.style.borderColor = 'rgba(6,182,212,0.5)';
+              e.currentTarget.style.boxShadow = '0 0 12px rgba(6,182,212,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(6,182,212,0.12), rgba(8,145,178,0.08))';
+              e.currentTarget.style.borderColor = 'rgba(6,182,212,0.25)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+            title="Nova Venda"
+          >
+            <div
+              className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(6,182,212,0.2)' }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </div>
+            {!sidebarCollapsed && (
+              <span className="text-sm font-semibold">Nova Venda</span>
+            )}
+          </button>
+        </div>
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-premium space-y-6">
           <div>
@@ -347,6 +381,18 @@ const Layout = ({ children, user, onLogout }) => {
           </Link>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/sales', { state: { openNewSale: true } })}
+              className="p-2 rounded-lg transition-all duration-200 flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(8,145,178,0.15))',
+                border: '1px solid rgba(6,182,212,0.3)',
+                color: '#06b6d4',
+              }}
+              title="Nova Venda"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
             {unreadCount > 0 && (
               <Link
                 to="/alerts"
