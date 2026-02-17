@@ -935,6 +935,29 @@ const Sales = ({ user }) => {
               </div>
             </div>
 
+            {(sale.cpe || sale.cui || sale.request_number) && (
+              <div className="flex flex-wrap gap-4 text-sm pt-1">
+                {sale.cpe && (
+                  <div>
+                    <span className="text-slate-500 text-xs uppercase tracking-wide">CPE</span>
+                    <p className="text-slate-300 font-mono text-xs mt-0.5">{sale.cpe}</p>
+                  </div>
+                )}
+                {sale.cui && (
+                  <div>
+                    <span className="text-slate-500 text-xs uppercase tracking-wide">CUI</span>
+                    <p className="text-slate-300 font-mono text-xs mt-0.5">{sale.cui}</p>
+                  </div>
+                )}
+                {sale.request_number && (
+                  <div>
+                    <span className="text-slate-500 text-xs uppercase tracking-wide">Requisicao</span>
+                    <p className="text-slate-300 font-mono text-xs mt-0.5">{sale.request_number}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center justify-between pt-2" style={{ borderTopWidth: '1px', borderTopColor: 'rgba(255,255,255,0.06)' }}>
               <div className="flex items-center gap-4">
                 {user?.role !== 'bo' && user?.role !== 'partner_commercial' && (
