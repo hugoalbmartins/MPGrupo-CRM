@@ -215,7 +215,7 @@ const Login = ({ onLogin }) => {
                 type="text"
                 value={emailOrCode}
                 onChange={(e) => setEmailOrCode(e.target.value)}
-                placeholder="seu@email.com ou D2D1015_1"
+                placeholder="seu@mail.com ou Codigo de utilizador"
                 required
                 data-testid="email-input"
                 className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none text-white"
