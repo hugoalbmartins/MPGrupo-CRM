@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { FileDown, Download, FileText, Trash2, Calendar, CheckCircle, Loader2 } from "lucide-react";
+import { FileDown, Download, FileText, Trash2, Calendar, CheckCircle, Loader2, Banknote, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { partnersService } from "../services/partnersService";
 import { commissionReportsService } from "../services/commissionReportsService";
 import { salesService } from "../services/salesService";
+import { advancesService } from "../services/advancesService";
 import { supabase } from "../lib/supabase";
 
 const CommissionReports = ({ user }) => {
@@ -22,6 +24,10 @@ const CommissionReports = ({ user }) => {
   const [filterMonth, setFilterMonth] = useState(null);
   const [availableMonths, setAvailableMonths] = useState([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+
+  const [advanceDialog, setAdvanceDialog] = useState(null);
+  const [advanceSelections, setAdvanceSelections] = useState({});
+  const [pendingPrintArgs, setPendingPrintArgs] = useState(null);
 
   const { data: partners = [], isLoading: partnersLoading } = useQuery({
     queryKey: ['partners'],
@@ -181,6 +187,379 @@ const CommissionReports = ({ user }) => {
     });
   };
 
+  const openPrintWindow = async (partnerId, settledAdvances) => {
+    const allSales = await salesService.getAll(null, true);
+    const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+    const filteredByMonth = filterSalesByMonth(paidSales);
+    let finalSales = filteredByMonth.filter(s => s.partner_id === partnerId);
+
+    const partner = partners.find(p => p.id === partnerId);
+    if (!partner) { toast.error("Parceiro nao encontrado"); return; }
+
+    const settledSaleIds = await commissionReportsService.getSettledSalesForPartner(partnerId, selectedMonth, selectedYear);
+    if (settledSaleIds.length > 0) {
+      finalSales = finalSales.filter(sale => !settledSaleIds.includes(sale.id));
+    }
+    if (finalSales.length === 0) {
+      const monthName = months.find(m => m.value === selectedMonth)?.label;
+      toast.error(settledSaleIds.length > 0
+        ? `Todas as vendas de ${monthName}/${selectedYear} para ${partner.name} ja foram liquidadas em auto anterior.`
+        : `Nao existem vendas pagas para ${partner.name} no mes de ${monthName}/${selectedYear}`);
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error("Sessao expirada."); return; }
+
+    const monthName = months.find(m => m.value === selectedMonth)?.label;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) { toast.error("Popup bloqueado. Por favor, permita popups para este site."); return; }
+
+    const salesIds = finalSales.map(sale => sale.id);
+
+    const today = new Date();
+    const retentionRefDate = new Date(selectedYear, selectedMonth - 1, 1);
+    const sixMonthsAgo = new Date(retentionRefDate);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const refundMonthStart = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth(), 1);
+    const refundMonthEnd = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth() + 1, 0);
+    const refundMonthLabel = sixMonthsAgo.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+
+    let totalCommissions = 0;
+    let totalRetentions = 0;
+    let totalRefunds = 0;
+
+    const salesRowsData = finalSales.map(sale => {
+      const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
+      const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
+      const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
+      const totalComm = commission + ddValue + feValue;
+      const retentionValue = parseFloat(sale.retention_value || 0);
+      totalCommissions += totalComm;
+      totalRetentions += retentionValue;
+      return { sale, totalComm, retentionValue };
+    });
+
+    const refundSales = finalSales.filter(sale => {
+      const saleDate = new Date(sale.activation_date || sale.paid_date || sale.date);
+      return sale.retention_value > 0 && saleDate >= refundMonthStart && saleDate <= refundMonthEnd;
+    });
+    refundSales.forEach(sale => { totalRefunds += parseFloat(sale.retention_value || 0); });
+
+    const totalAdvancesSettled = (settledAdvances || []).reduce((sum, a) => sum + a.settle_amount, 0);
+
+    const totalSemIVA = totalCommissions - totalRetentions - totalAdvancesSettled + totalRefunds;
+    const iva = totalSemIVA * 0.23;
+    const totalComIVA = totalSemIVA * 1.23;
+
+    const salesRows = salesRowsData.map(({ sale, totalComm, retentionValue }) => `
+      <tr>
+        <td>${sale.client_name || '-'}</td>
+        <td>${sale.client_nif || '-'}</td>
+        <td>${sale.cpe || '-'}</td>
+        <td>${sale.cui || '-'}</td>
+        <td>${sale.request_number || '-'}</td>
+        <td style="text-align:right">\u20AC${totalComm.toFixed(2)}</td>
+        <td style="text-align:right; color:#b91c1c">${retentionValue > 0 ? '\u20AC' + retentionValue.toFixed(2) : '-'}</td>
+      </tr>
+    `).join('');
+
+    const refundTableHtml = (totalRefunds > 0 && refundSales.length > 0) ? `
+      <div style="margin-top:18px;">
+        <table style="width:100%;border-collapse:collapse;font-size:9px;">
+          <thead>
+            <tr>
+              <th colspan="5" style="background:#1F4E78;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">
+                Retencoes a Devolver — Mes de referencia: ${refundMonthLabel}
+              </th>
+              <th style="background:#1F4E78;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;visibility:hidden">-</th>
+              <th style="background:#166534;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">A Devolver (\u20AC)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${refundSales.map(sale => `
+              <tr>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_name || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_nif || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cpe || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cui || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.request_number || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;"></td>
+                <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#166534;font-weight:bold;">\u20AC${parseFloat(sale.retention_value || 0).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '';
+
+    const advancesLineHtml = totalAdvancesSettled > 0 ? `
+      <tr style="background-color:#fff3cd !important;">
+        <td colspan="6" style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">Adiantamentos:</td>
+        <td style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">-\u20AC${totalAdvancesSettled.toFixed(2)}</td>
+      </tr>
+    ` : '';
+
+    const retentionsLineHtml = totalRetentions > 0 ? `
+      <tr style="background-color:#fee2e2 !important;">
+        <td colspan="6" style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">Retencoes:</td>
+        <td style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">-\u20AC${totalRetentions.toFixed(2)}</td>
+      </tr>
+    ` : '';
+
+    const refundsLineHtml = totalRefunds > 0 ? `
+      <tr style="background-color:#dcfce7 !important;">
+        <td colspan="6" style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">Retencoes a Devolver:</td>
+        <td style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">+\u20AC${totalRefunds.toFixed(2)}</td>
+      </tr>
+    ` : '';
+
+    const advancesJson = JSON.stringify(settledAdvances || []);
+
+    printWindow.reportData = {
+      partnerId,
+      partnerName: partner.name,
+      partnerEmail: partner.email,
+      month: selectedMonth,
+      monthName,
+      year: selectedYear,
+      userId: user.id,
+      supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      accessToken: session.access_token,
+      salesIds,
+      settledAdvances: settledAdvances || [],
+    };
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Auto de Comissoes - ${partner.name} - ${monthName}/${selectedYear}</title>
+        <style>
+          @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          }
+          body { font-family: Arial, sans-serif; margin: 15px; color: #333; max-width: 100%; }
+          .header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:15px; border-bottom:2px solid #1F4E78; padding-bottom:10px; }
+          .header-left { flex:1; }
+          .header-logo { flex-shrink:0; margin-left:20px; }
+          .header-logo img { height:45px; width:auto; }
+          .company-name { font-size:14px; font-weight:bold; color:#1F4E78; margin-bottom:3px; }
+          .company-details { font-size:9px; color:#666; line-height:1.4; }
+          .title { font-size:16px; font-weight:bold; color:#1F4E78; text-align:center; margin:12px 0; padding:8px; background-color:#f0f4f8; border-radius:4px; }
+          table { width:100%; border-collapse:collapse; margin:10px 0; font-size:9px; }
+          th { background-color:#1F4E78; color:white; padding:6px 4px; text-align:left; font-weight:bold; font-size:9px; }
+          td { padding:5px 4px; border:1px solid #ddd; }
+          tr:nth-child(even) { background-color:#f9f9f9; }
+          .total-row { background-color:#e8f0f7 !important; font-weight:bold; font-size:11px; }
+          .total-row td { border-top:2px solid #1F4E78; }
+          .iva-section { background-color:#f0f4f8; border:2px dashed #94a3b8; border-radius:6px; padding:8px; margin-top:4px; }
+          .footer { margin-top:20px; text-align:right; font-size:8px; color:#666; }
+          .no-print { margin:20px 0; text-align:center; }
+          @media print { .no-print { display:none; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="header-left">
+            <div class="company-name">MARCIO &amp; SANDRA LDA</div>
+            <div class="company-details">
+              Avenida rainha Santa Isabel Lt 8 loja 1<br>
+              5000-434 Vila Real<br>
+              NIF: 518162796
+            </div>
+          </div>
+          <div class="header-logo">
+            <img src="${window.location.origin}/logo.png" alt="Logo MP Grupo" onerror="this.style.display='none'" />
+          </div>
+        </div>
+
+        <div class="title">AUTO DE COMISSOES - ${partner.name} - ${monthName}/${selectedYear}</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Cliente</th>
+              <th>NIF</th>
+              <th>CPE</th>
+              <th>CUI</th>
+              <th>REQ</th>
+              <th style="text-align:right">Comissao (\u20AC)</th>
+              <th style="text-align:right">A Reter (\u20AC)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${salesRows}
+            <tr class="total-row">
+              <td colspan="5" style="text-align:right;font-weight:bold;">Total Comissoes:</td>
+              <td style="text-align:right;font-weight:bold;">\u20AC${totalCommissions.toFixed(2)}</td>
+              <td style="text-align:right;font-weight:bold;color:#991b1b;">${totalRetentions > 0 ? '-\u20AC' + totalRetentions.toFixed(2) : '-'}</td>
+            </tr>
+            ${advancesLineHtml}
+            ${retentionsLineHtml}
+            ${refundsLineHtml}
+            <tr class="total-row" style="font-size:12px;">
+              <td colspan="6" style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">TOTAL S/IVA:</td>
+              <td style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">\u20AC${totalSemIVA.toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        ${refundTableHtml}
+
+        <div class="iva-section" style="margin-top:10px;">
+          <div style="font-size:10px;font-weight:bold;color:#475569;margin-bottom:6px;">
+            &#9888;&#65039; Desconsiderar os valores abaixo se o parceiro for isento de IVA
+          </div>
+          <table style="margin:0;">
+            <tbody>
+              <tr style="background:#e2e8f0;">
+                <td colspan="6" style="text-align:right;font-weight:bold;color:#475569;">IVA 23%:</td>
+                <td style="text-align:right;font-weight:bold;color:#475569;">\u20AC${iva.toFixed(2)}</td>
+              </tr>
+              <tr style="background:#cbd5e1;">
+                <td colspan="6" style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">TOTAL C/IVA:</td>
+                <td style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">\u20AC${totalComIVA.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          Documento gerado em ${new Date().toLocaleDateString('pt-PT')} as ${new Date().toLocaleTimeString('pt-PT')}
+        </div>
+
+        <div class="no-print" style="display:flex;gap:10px;margin-top:20px;justify-content:center;">
+          <button id="approveBtn" onclick="approveAndRegister()" style="padding:10px 20px;font-size:16px;cursor:pointer;background-color:#10b981;color:white;border:none;border-radius:5px;">
+            Aprovar e Registrar Auto
+          </button>
+          <button onclick="window.print()" style="padding:10px 20px;font-size:16px;cursor:pointer;background-color:#1F4E78;color:white;border:none;border-radius:5px;">
+            Imprimir
+          </button>
+          <button onclick="window.close()" style="padding:10px 20px;font-size:16px;cursor:pointer;background-color:#6c757d;color:white;border:none;border-radius:5px;">
+            Fechar
+          </button>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+        <script>
+          let librariesReady = false;
+          let checkAttempts = 0;
+          const maxAttempts = 50;
+
+          function checkLibraries() {
+            checkAttempts++;
+            const btn = document.getElementById('approveBtn');
+            if (typeof html2canvas !== 'undefined' && typeof window.jspdf !== 'undefined') {
+              librariesReady = true;
+              if (btn) { btn.disabled = false; btn.textContent = 'Aprovar e Registrar Auto'; btn.style.opacity = '1'; }
+              return true;
+            }
+            if (checkAttempts < maxAttempts) {
+              setTimeout(checkLibraries, 100);
+            } else {
+              if (btn) { btn.disabled = false; btn.textContent = 'Tentar Registar (bibliotecas nao carregadas)'; btn.style.opacity = '1'; btn.style.backgroundColor = '#f59e0b'; }
+            }
+            return false;
+          }
+
+          window.addEventListener('DOMContentLoaded', function() {
+            const approveBtn = document.getElementById('approveBtn');
+            if (approveBtn) { approveBtn.disabled = true; approveBtn.textContent = 'Carregando bibliotecas...'; approveBtn.style.opacity = '0.6'; }
+            checkLibraries();
+          });
+
+          async function approveAndRegister() {
+            const btn = document.getElementById('approveBtn');
+            btn.disabled = true; btn.textContent = 'Processando...'; btn.style.opacity = '0.6';
+            try {
+              if (typeof window.jspdf === 'undefined') throw new Error('jsPDF library not loaded');
+              if (typeof html2canvas === 'undefined') throw new Error('html2canvas library not loaded');
+
+              const { jsPDF } = window.jspdf;
+              btn.textContent = 'Capturando imagem...';
+              const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false, allowTaint: true });
+              btn.textContent = 'Gerando PDF...';
+              const imgData = canvas.toDataURL('image/jpeg', 0.85);
+              const pdf = new jsPDF('l', 'mm', 'a4');
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+              const pdfBlob = pdf.output('blob');
+              const data = window.reportData;
+
+              btn.textContent = 'Verificando versao...';
+              const versionResponse = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&select=version&order=version.desc&limit=1\`, {
+                headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\` }
+              });
+              const versionData = await versionResponse.json();
+              const version = versionData.length > 0 ? versionData[0].version + 1 : 1;
+
+              const monthNames = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+              const mName = monthNames[data.month - 1];
+              const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_\${mName}_\${data.year}_V\${version}.pdf\`;
+              const filePath = \`\${data.partnerId}/\${data.year}/\${fileName}\`;
+
+              btn.textContent = 'Enviando PDF...';
+              const uploadResponse = await fetch(\`\${data.supabaseUrl}/storage/v1/object/commission-reports/\${filePath}\`, {
+                method: 'POST',
+                headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/pdf', 'x-upsert': 'true' },
+                body: pdfBlob
+              });
+              if (!uploadResponse.ok) throw new Error('Erro ao fazer upload do PDF: ' + await uploadResponse.text());
+
+              if (data.settledAdvances && data.settledAdvances.length > 0) {
+                btn.textContent = 'Liquidando adiantamentos...';
+                for (const adv of data.settledAdvances) {
+                  const newSettled = (adv.settled_amount || 0) + adv.settle_amount;
+                  const isFullySettled = newSettled >= adv.amount;
+                  const updateBody = { settled_amount: newSettled, is_settled: isFullySettled, settled_by: data.userId };
+                  if (isFullySettled) updateBody.settled_at = new Date().toISOString();
+                  await fetch(\`\${data.supabaseUrl}/rest/v1/partner_advances?id=eq.\${adv.id}\`, {
+                    method: 'PATCH',
+                    headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                    body: JSON.stringify(updateBody)
+                  });
+                }
+              }
+
+              btn.textContent = 'Enviando email...';
+              const emailData = { partnerId: data.partnerId, partnerEmail: data.partnerEmail, partnerName: data.partnerName, month: data.month, year: data.year, userId: data.userId, filePath, fileName, version, salesIds: data.salesIds || [] };
+              const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${data.accessToken}\` },
+                body: JSON.stringify(emailData)
+              });
+              if (!response.ok) {
+                const errorText = await response.text();
+                try { const ed = JSON.parse(errorText); throw new Error(ed.error || \`Erro (\${response.status})\`); } catch(e) { throw new Error(\`Erro (\${response.status}): \${errorText.substring(0, 200)}\`); }
+              }
+
+              btn.textContent = 'Concluido!'; btn.style.backgroundColor = '#10b981'; btn.style.opacity = '1';
+              setTimeout(() => {
+                alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
+                if (window.opener) { try { window.opener.location.reload(); } catch(e) {} }
+                setTimeout(() => window.close(), 300);
+              }, 100);
+            } catch (error) {
+              btn.style.opacity = '1'; btn.disabled = false; btn.textContent = 'Aprovar e Registrar Auto'; btn.style.backgroundColor = '#10b981';
+              alert('Erro ao processar auto: ' + error.message);
+            }
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    toast.success(`Auto de comissoes de ${partner.name} aberto em nova janela`);
+  };
+
   const printCommissionReport = async (partnerId) => {
     setLoading(true);
     try {
@@ -198,480 +577,47 @@ const CommissionReports = ({ user }) => {
         return;
       }
 
-      const allSales = await salesService.getAll(null, true);
-      const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
-      const filteredByMonth = filterSalesByMonth(paidSales);
-      let finalSales = filteredByMonth.filter(s => s.partner_id === partnerId);
+      const pendingAdvances = await advancesService.getPendingByPartnerId(partnerId);
 
-      const partner = partners.find(p => p.id === partnerId);
-      if (!partner) {
-        toast.error("Parceiro nao encontrado");
+      if (pendingAdvances.length > 0) {
+        const partner = partners.find(p => p.id === partnerId);
+        const initialSelections = {};
+        pendingAdvances.forEach(adv => {
+          const remaining = parseFloat(adv.amount) - parseFloat(adv.settled_amount || 0);
+          initialSelections[adv.id] = { selected: true, amount: remaining.toFixed(2), advance: adv };
+        });
+        setAdvanceSelections(initialSelections);
+        setAdvanceDialog({ partnerId, partnerName: partner?.name, advances: pendingAdvances });
         setLoading(false);
         return;
       }
 
-      const settledSaleIds = await commissionReportsService.getSettledSalesForPartner(partnerId, selectedMonth, selectedYear);
-
-      if (settledSaleIds.length > 0) {
-        finalSales = finalSales.filter(sale => !settledSaleIds.includes(sale.id));
-      }
-
-      if (finalSales.length === 0) {
-        const monthName = months.find(m => m.value === selectedMonth)?.label;
-        if (settledSaleIds.length > 0) {
-          toast.error(`Todas as vendas de ${monthName}/${selectedYear} para ${partner.name} ja foram liquidadas em auto anterior.`);
-        } else {
-          toast.error(`Nao existem vendas pagas para ${partner.name} no mes de ${monthName}/${selectedYear}`);
-        }
-        setLoading(false);
-        return;
-      }
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Sessao expirada. Por favor, faca login novamente.");
-        setLoading(false);
-        return;
-      }
-
-      const monthName = months.find(m => m.value === selectedMonth)?.label;
-      const printWindow = window.open('', '_blank');
-
-      if (!printWindow) {
-        toast.error("Popup bloqueado. Por favor, permita popups para este site.");
-        setLoading(false);
-        return;
-      }
-
-      const salesIds = finalSales.map(sale => sale.id);
-
-      printWindow.reportData = {
-        partnerId,
-        partnerName: partner.name,
-        partnerEmail: partner.email,
-        month: selectedMonth,
-        monthName,
-        year: selectedYear,
-        userId: user.id,
-        supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-        supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        accessToken: session.access_token,
-        salesIds: salesIds
-      };
-
-      let total = 0;
-      const salesRows = finalSales.map(sale => {
-        const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
-        const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
-        const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
-        const totalComm = commission + ddValue + feValue;
-        total += totalComm;
-
-        return `
-          <tr>
-            <td>${sale.client_name}</td>
-            <td>${sale.client_nif}</td>
-            <td>${sale.operator?.name || '-'}</td>
-            <td>${sale.cpe || '-'}</td>
-            <td>${sale.cui || '-'}</td>
-            <td>${sale.request_number || '-'}</td>
-            <td>${sale.activation_date ? new Date(sale.activation_date).toLocaleDateString('pt-PT') : '-'}</td>
-            <td>${sale.has_direct_debit ? 'Sim' : 'Nao'}</td>
-            <td>${sale.has_electronic_invoice ? 'Sim' : 'Nao'}</td>
-            <td style="text-align: right">\u20AC${totalComm.toFixed(2)}</td>
-          </tr>
-        `;
-      }).join('');
-
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Auto de Comissoes - ${partner.name} - ${monthName}/${selectedYear}</title>
-          <style>
-            @media print {
-              @page {
-                size: A4 landscape;
-                margin: 10mm;
-              }
-              body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            }
-            body {
-              font-family: Arial, sans-serif;
-              margin: 15px;
-              color: #333;
-              max-width: 100%;
-            }
-            .header {
-              display: flex;
-              align-items: flex-start;
-              justify-content: space-between;
-              margin-bottom: 15px;
-              border-bottom: 2px solid #1F4E78;
-              padding-bottom: 10px;
-            }
-            .header-left {
-              flex: 1;
-            }
-            .header-logo {
-              flex-shrink: 0;
-              margin-left: 20px;
-            }
-            .header-logo img {
-              height: 45px;
-              width: auto;
-            }
-            .company-name {
-              font-size: 14px;
-              font-weight: bold;
-              color: #1F4E78;
-              margin-bottom: 3px;
-            }
-            .company-details {
-              font-size: 9px;
-              color: #666;
-              line-height: 1.4;
-            }
-            .title {
-              font-size: 16px;
-              font-weight: bold;
-              color: #1F4E78;
-              text-align: center;
-              margin: 12px 0;
-              padding: 8px;
-              background-color: #f0f4f8;
-              border-radius: 4px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 10px 0;
-              font-size: 9px;
-            }
-            th {
-              background-color: #1F4E78;
-              color: white;
-              padding: 6px 4px;
-              text-align: left;
-              font-weight: bold;
-              font-size: 9px;
-            }
-            td {
-              padding: 5px 4px;
-              border: 1px solid #ddd;
-            }
-            tr:nth-child(even) {
-              background-color: #f9f9f9;
-            }
-            .total-row {
-              background-color: #e8f0f7 !important;
-              font-weight: bold;
-              font-size: 11px;
-            }
-            .total-row td {
-              border-top: 2px solid #1F4E78;
-            }
-            .footer {
-              margin-top: 20px;
-              text-align: right;
-              font-size: 8px;
-              color: #666;
-            }
-            .no-print {
-              margin: 20px 0;
-              text-align: center;
-            }
-            @media print {
-              .no-print { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="header-left">
-              <div class="company-name">MARCIO & SANDRA LDA</div>
-              <div class="company-details">
-                Avenida rainha Santa Isabel Lt 8 loja 1<br>
-                5000-434 Vila Real<br>
-                NIF: 518162796
-              </div>
-            </div>
-            <div class="header-logo">
-              <img src="${window.location.origin}/logo.png" alt="Logo MP Grupo" onerror="this.style.display='none'" />
-            </div>
-          </div>
-
-          <div class="title">
-            AUTO DE COMISSOES - ${partner.name} - ${monthName}/${selectedYear}
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Nome Cliente</th>
-                <th>NIF</th>
-                <th>Operadora</th>
-                <th>CPE</th>
-                <th>CUI</th>
-                <th>REQ</th>
-                <th>Data Ativacao</th>
-                <th>DD</th>
-                <th>FE</th>
-                <th style="text-align: right">Valor (\u20AC)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${salesRows}
-              <tr class="total-row">
-                <td colspan="9" style="text-align: right; font-weight: bold;">TOTAL S/IVA:</td>
-                <td style="text-align: right; font-weight: bold;">\u20AC${total.toFixed(2)}</td>
-              </tr>
-              <tr class="total-row">
-                <td colspan="9" style="text-align: right; font-weight: bold;">IVA 23%:</td>
-                <td style="text-align: right; font-weight: bold;">\u20AC${(total * 0.23).toFixed(2)}</td>
-              </tr>
-              <tr class="total-row">
-                <td colspan="9" style="text-align: right; font-weight: bold; background-color: #d4edda !important;">TOTAL C/IVA:</td>
-                <td style="text-align: right; font-weight: bold; background-color: #d4edda !important;">\u20AC${(total * 1.23).toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div style="margin-top: 15px; padding: 12px; background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; font-size: 11px; color: #856404;">
-            <strong style="display: block; margin-bottom: 5px;">⚠️ ATENÇÃO - IVA:</strong>
-            <p style="margin: 0;">Caso seja isento de IVA, o parceiro deve desconsiderar o valor "TOTAL C/IVA" e emitir fatura apenas pelo valor indicado em "TOTAL S/IVA" (Total de Comissões sem IVA).</p>
-          </div>
-
-          <div class="footer">
-            Documento gerado em ${new Date().toLocaleDateString('pt-PT')} as ${new Date().toLocaleTimeString('pt-PT')}
-          </div>
-
-          <div class="no-print" style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
-            <button id="approveBtn" onclick="approveAndRegister()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #10b981; color: white; border: none; border-radius: 5px;">
-              Aprovar e Registrar Auto
-            </button>
-            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #1F4E78; color: white; border: none; border-radius: 5px;">
-              Imprimir
-            </button>
-            <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 5px;">
-              Fechar
-            </button>
-          </div>
-
-          <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-          <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-          <script>
-            let librariesReady = false;
-            let checkAttempts = 0;
-            const maxAttempts = 50;
-
-            function checkLibraries() {
-              checkAttempts++;
-              const btn = document.getElementById('approveBtn');
-
-              if (typeof html2canvas !== 'undefined' && typeof window.jspdf !== 'undefined') {
-                librariesReady = true;
-                if (btn) {
-                  btn.disabled = false;
-                  btn.textContent = 'Aprovar e Registrar Auto';
-                  btn.style.opacity = '1';
-                }
-                console.log('Libraries loaded successfully');
-                return true;
-              }
-
-              if (checkAttempts < maxAttempts) {
-                setTimeout(checkLibraries, 100);
-              } else {
-                console.error('Libraries failed to load after ' + maxAttempts + ' attempts');
-                if (btn) {
-                  btn.disabled = false;
-                  btn.textContent = 'Tentar Registar (bibliotecas nao carregadas)';
-                  btn.style.opacity = '1';
-                  btn.style.backgroundColor = '#f59e0b';
-                }
-              }
-              return false;
-            }
-
-            window.addEventListener('DOMContentLoaded', function() {
-              const approveBtn = document.getElementById('approveBtn');
-              if (approveBtn) {
-                approveBtn.disabled = true;
-                approveBtn.textContent = 'Carregando bibliotecas...';
-                approveBtn.style.opacity = '0.6';
-              }
-              checkLibraries();
-            });
-
-            async function approveAndRegister() {
-              const btn = document.getElementById('approveBtn');
-
-              if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
-                alert('Bibliotecas nao carregadas. A funcionalidade pode nao funcionar corretamente. Deseja continuar mesmo assim?');
-                if (!confirm('Continuar sem bibliotecas carregadas?')) {
-                  return;
-                }
-              }
-
-              btn.disabled = true;
-              btn.textContent = 'Processando...';
-              btn.style.opacity = '0.6';
-
-              try {
-                if (typeof window.jspdf === 'undefined') {
-                  throw new Error('jsPDF library not loaded');
-                }
-                if (typeof html2canvas === 'undefined') {
-                  throw new Error('html2canvas library not loaded');
-                }
-
-                const { jsPDF } = window.jspdf;
-                const element = document.body;
-
-                btn.textContent = 'Capturando imagem...';
-                const canvas = await html2canvas(element, {
-                  scale: 1,
-                  useCORS: true,
-                  logging: false,
-                  allowTaint: true
-                });
-
-                btn.textContent = 'Gerando PDF...';
-
-                const imgData = canvas.toDataURL('image/jpeg', 0.85);
-
-                const pdf = new jsPDF('l', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-
-                const pdfBlob = pdf.output('blob');
-
-                const data = window.reportData;
-
-                btn.textContent = 'Verificando versao...';
-
-                const versionResponse = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&select=version&order=version.desc&limit=1\`, {
-                  headers: {
-                    'apikey': data.supabaseKey,
-                    'Authorization': \`Bearer \${data.accessToken}\`
-                  }
-                });
-
-                const versionData = await versionResponse.json();
-                const version = versionData.length > 0 ? versionData[0].version + 1 : 1;
-
-                const monthNames = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                const monthName = monthNames[data.month - 1];
-                const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_\${monthName}_\${data.year}_V\${version}.pdf\`;
-                const filePath = \`\${data.partnerId}/\${data.year}/\${fileName}\`;
-
-                btn.textContent = 'Enviando PDF...';
-                const uploadResponse = await fetch(\`\${data.supabaseUrl}/storage/v1/object/commission-reports/\${filePath}\`, {
-                  method: 'POST',
-                  headers: {
-                    'apikey': data.supabaseKey,
-                    'Authorization': \`Bearer \${data.accessToken}\`,
-                    'Content-Type': 'application/pdf',
-                    'x-upsert': 'true'
-                  },
-                  body: pdfBlob
-                });
-
-                if (!uploadResponse.ok) {
-                  const uploadError = await uploadResponse.text();
-                  throw new Error('Erro ao fazer upload do PDF: ' + uploadError);
-                }
-
-                btn.textContent = 'Enviando email...';
-
-                const emailData = {
-                  partnerId: data.partnerId,
-                  partnerEmail: data.partnerEmail,
-                  partnerName: data.partnerName,
-                  month: data.month,
-                  year: data.year,
-                  userId: data.userId,
-                  filePath: filePath,
-                  fileName: fileName,
-                  version: version,
-                  salesIds: data.salesIds || []
-                };
-
-                const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': \`Bearer \${data.accessToken}\`
-                  },
-                  body: JSON.stringify(emailData)
-                });
-
-                const responseStatus = response.status;
-
-                if (!response.ok) {
-                  const errorText = await response.text();
-                  let errorData;
-                  try {
-                    errorData = JSON.parse(errorText);
-                  } catch (e) {
-                    throw new Error(\`Erro do servidor (\${responseStatus}): \${errorText.substring(0, 200)}\`);
-                  }
-                  throw new Error(errorData.error || \`Erro ao registrar auto (\${responseStatus})\`);
-                }
-
-                let result;
-                try {
-                  result = await response.json();
-                } catch (jsonError) {
-                  result = { success: true };
-                }
-
-                btn.textContent = 'Concluido!';
-                btn.style.backgroundColor = '#10b981';
-                btn.style.opacity = '1';
-
-                setTimeout(() => {
-                  alert('Auto aprovado e registrado com sucesso! Email enviado ao parceiro.');
-
-                  if (window.opener) {
-                    try {
-                      window.opener.location.reload();
-                    } catch (e) {
-                      console.error('Failed to reload opener:', e);
-                    }
-                  }
-
-                  setTimeout(() => {
-                    window.close();
-                  }, 300);
-                }, 100);
-
-              } catch (error) {
-                console.error('Error:', error);
-
-                btn.style.opacity = '1';
-                btn.disabled = false;
-                btn.textContent = 'Aprovar e Registrar Auto';
-                btn.style.backgroundColor = '#10b981';
-
-                alert('Erro ao processar auto: ' + error.message);
-              }
-            }
-          </script>
-        </body>
-        </html>
-      `;
-
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-
-      toast.success(`Auto de comissoes de ${partner.name} aberto em nova janela`);
+      await openPrintWindow(partnerId, []);
     } catch (error) {
       toast.error("Erro ao gerar auto para impressao");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdvanceDialogConfirm = async () => {
+    const { partnerId } = advanceDialog;
+    const settledAdvances = Object.entries(advanceSelections)
+      .filter(([, v]) => v.selected)
+      .map(([id, v]) => {
+        const adv = v.advance;
+        const settleAmount = Math.min(parseFloat(v.amount) || 0, parseFloat(adv.amount) - parseFloat(adv.settled_amount || 0));
+        return { id, amount: parseFloat(adv.amount), settled_amount: parseFloat(adv.settled_amount || 0), settle_amount: settleAmount };
+      })
+      .filter(a => a.settle_amount > 0);
+
+    setAdvanceDialog(null);
+    setLoading(true);
+    try {
+      await openPrintWindow(partnerId, settledAdvances);
+    } catch (error) {
+      toast.error("Erro ao gerar auto");
       console.error(error);
     } finally {
       setLoading(false);
@@ -1310,6 +1256,93 @@ const CommissionReports = ({ user }) => {
           <p>-- A listagem filtra automaticamente pelo ultimo mes emitido</p>
         </CardContent>
       </Card>
+
+      {advanceDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 animate-fade-in">
+          <div className="bg-dark-850 border border-amber-500/30 rounded-xl shadow-2xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between p-5 border-b border-dark-700">
+              <div className="flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-amber-400" />
+                <h2 className="text-lg font-bold text-white">Adiantamentos Pendentes</h2>
+              </div>
+              <button onClick={() => setAdvanceDialog(null)} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-300">
+                O parceiro <strong className="text-white">{advanceDialog.partnerName}</strong> tem adiantamentos pendentes.
+                Selecione quais liquidar neste auto:
+              </p>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {advanceDialog.advances.map(adv => {
+                  const remaining = parseFloat(adv.amount) - parseFloat(adv.settled_amount || 0);
+                  const sel = advanceSelections[adv.id];
+                  return (
+                    <div key={adv.id} className={`p-3 rounded-lg border transition-all ${sel?.selected ? 'bg-amber-500/10 border-amber-500/30' : 'bg-dark-900 border-dark-700'}`}>
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={sel?.selected || false}
+                          onChange={e => setAdvanceSelections(prev => ({ ...prev, [adv.id]: { ...prev[adv.id], selected: e.target.checked } }))}
+                          className="mt-1 accent-amber-400 w-4 h-4 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-white font-medium">€{parseFloat(adv.amount).toFixed(2)}</span>
+                            <span className="text-xs text-slate-400">{new Date(adv.advance_date).toLocaleDateString('pt-PT')}</span>
+                          </div>
+                          {adv.notes && <p className="text-xs text-slate-500 mt-1">{adv.notes}</p>}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Label className="text-xs text-slate-400 whitespace-nowrap">Valor a liquidar (€):</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0.01"
+                              max={remaining}
+                              value={sel?.amount || ''}
+                              disabled={!sel?.selected}
+                              onChange={e => setAdvanceSelections(prev => ({ ...prev, [adv.id]: { ...prev[adv.id], amount: e.target.value } }))}
+                              className="h-7 text-sm bg-dark-900 border-dark-700 focus:border-amber-500 text-white disabled:opacity-40"
+                            />
+                            <span className="text-xs text-slate-500 whitespace-nowrap">/ €{remaining.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="bg-dark-900 border border-dark-700 rounded-lg p-3 text-sm text-slate-400">
+                Total a deduzir no auto: <strong className="text-amber-400">
+                  €{Object.entries(advanceSelections).filter(([,v]) => v.selected).reduce((sum, [,v]) => sum + (parseFloat(v.amount) || 0), 0).toFixed(2)}
+                </strong>
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-dark-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const noSelectAll = {};
+                  advanceDialog.advances.forEach(adv => {
+                    noSelectAll[adv.id] = { ...advanceSelections[adv.id], selected: false };
+                  });
+                  setAdvanceSelections(noSelectAll);
+                }}
+                className="border-dark-700 text-slate-300"
+              >
+                Nao Liquidar Nenhum
+              </Button>
+              <Button
+                onClick={handleAdvanceDialogConfirm}
+                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700"
+              >
+                Continuar e Gerar Auto
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

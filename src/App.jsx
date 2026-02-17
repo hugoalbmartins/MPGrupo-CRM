@@ -29,6 +29,7 @@ const Objectives = lazy(() => import("./pages/Objectives.jsx"));
 const BOWebsite = lazy(() => import("./pages/BOWebsite.jsx"));
 const EnergySimulatorNew = lazy(() => import("./pages/EnergySimulatorNew.jsx"));
 const EnergySimulatorAdmin = lazy(() => import("./pages/EnergySimulatorAdmin.jsx"));
+const Advances = lazy(() => import("./pages/Advances.jsx"));
 
 export { supabase };
 
@@ -372,6 +373,7 @@ function App() {
                     <Route path="/objectives" element={<Objectives user={user} />} />
                     <Route path="/users" element={<Users user={user} />} />
                     <Route path="/commission-reports" element={<CommissionReports user={user} />} />
+                    <Route path="/advances" element={<Advances user={user} />} />
                     <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
                     <Route path="/bo-website" element={<BOWebsite user={user} />} />
                     <Route path="/simulador-energia-admin" element={<EnergySimulatorAdmin user={user} />} />

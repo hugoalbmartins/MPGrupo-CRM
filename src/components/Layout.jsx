@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus
+  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus, Banknote
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
@@ -101,6 +101,7 @@ const Layout = ({ children, user, onLogout }) => {
       { path: "/objectives", label: "Objetivos", icon: Target, roles: ["admin"], section: "SISTEMA" },
       { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"], section: "SISTEMA" },
       { path: "/commission-reports", label: "Comissoes", icon: FileSpreadsheet, roles: ["admin"], section: "SISTEMA" },
+      { path: "/advances", label: "Adiantamentos", icon: Banknote, roles: ["admin"], section: "SISTEMA" },
       { path: "/bo-website", label: "BO Website", icon: Globe, roles: ["admin"], section: "SISTEMA" },
       { path: "/simulador-energia-admin", label: "Admin Simulador Energia", icon: Settings, roles: ["admin"], section: "SISTEMA" }
     );
