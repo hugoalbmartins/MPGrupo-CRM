@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { partnersService } from "../services/partnersService";
 import { advancesService } from "../services/advancesService";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const Advances = ({ user }) => {
   const queryClient = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     partner_id: "",
@@ -101,22 +103,34 @@ const Advances = ({ user }) => {
     createMutation.mutate({ ...form, amount });
   };
 
-  const handleSettle = (advance) => {
-    if (!window.confirm(`Confirmar liquidacao total do adiantamento de €${parseFloat(advance.amount).toFixed(2)} ao parceiro ${advance.partner?.name}?`)) return;
+  const handleSettle = async (advance) => {
+    const ok = await confirm({
+      title: 'Liquidar adiantamento',
+      description: `Confirmar liquidacao total de €${parseFloat(advance.amount).toFixed(2)} ao parceiro ${advance.partner?.name}?`,
+      confirmLabel: 'Liquidar',
+      confirmVariant: 'success',
+    });
+    if (!ok) return;
     settleMutation.mutate({ id: advance.id, userId: user.id });
   };
 
-  const handleDelete = (advance) => {
+  const handleDelete = async (advance) => {
     if (advance.is_settled) {
       toast.error('Nao e possivel eliminar um adiantamento ja liquidado');
       return;
     }
-    if (!window.confirm('Eliminar este adiantamento?')) return;
+    const ok = await confirm({
+      title: 'Eliminar adiantamento',
+      description: 'Esta acao nao pode ser revertida.',
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
     deleteMutation.mutate(advance.id);
   };
 
   return (
     <div className="space-y-6 p-6 animate-fade-in">
+      {confirmDialog}
       <div className="flex justify-between items-center animate-slide-up">
         <div>
           <h1 className="text-2xl font-bold text-white">Adiantamentos</h1>

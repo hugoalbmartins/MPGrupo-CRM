@@ -7,10 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Trash2, Plus, Check, X, Edit2, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { operatorsService } from "../services/operatorsService";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 import CommissionTable from "./CommissionTable";
 
 const CommissionWizard = ({ operator, onSave, onCancel }) => {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activePartnerTab, setActivePartnerTab] = useState('D2D');
@@ -136,8 +138,9 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     setConfigs(newConfigs);
   };
 
-  const removeConfig = (index) => {
-    if (!window.confirm('Remover esta configuracao?')) return;
+  const removeConfig = async (index) => {
+    const ok = await confirm({ title: 'Remover configuracao?', confirmLabel: 'Remover' });
+    if (!ok) return;
     const newConfigs = [...configs];
     newConfigs.splice(index, 1);
     setConfigs(newConfigs);
@@ -156,12 +159,13 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     toast.success(`Nivel ${newLevel} adicionado`);
   };
 
-  const removeD2DLevel = (level) => {
+  const removeD2DLevel = async (level) => {
     if (d2dLevels.length <= 1) {
       toast.error('Deve existir pelo menos um nivel');
       return;
     }
-    if (!window.confirm(`Remover ${level} e todas as suas configuracoes?`)) return;
+    const ok = await confirm({ title: `Remover ${level}?`, description: 'Todas as configuracoes deste nivel serao removidas.', confirmLabel: 'Remover' });
+    if (!ok) return;
 
     setConfigs(prev => prev.filter(c => !(c.partner_type === 'D2D' && c.d2d_level === level)));
     const newLevels = d2dLevels.filter(l => l !== level);
@@ -187,12 +191,13 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     toast.success(`Nivel ${nextLevel} adicionado`);
   };
 
-  const removeREVLevel = (level) => {
+  const removeREVLevel = async (level) => {
     if (revLevels.length <= 1) {
       toast.error('Deve existir pelo menos um nivel');
       return;
     }
-    if (!window.confirm(`Remover Nivel ${level} e todas as suas configuracoes?`)) return;
+    const ok = await confirm({ title: `Remover Nivel ${level}?`, description: 'Todas as configuracoes deste nivel serao removidas.', confirmLabel: 'Remover' });
+    if (!ok) return;
 
     setConfigs(prev => prev.filter(c => !(c.partner_type === 'REV' && c.rev_level === level)));
     const newLevels = revLevels.filter(l => l !== level);
@@ -218,12 +223,13 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     toast.success(`Nivel ${nextLevel} adicionado`);
   };
 
-  const removeRevPlusLevel = (level) => {
+  const removeRevPlusLevel = async (level) => {
     if (revPlusLevels.length <= 1) {
       toast.error('Deve existir pelo menos um nivel');
       return;
     }
-    if (!window.confirm(`Remover Nivel ${level} e todas as suas configuracoes?`)) return;
+    const ok = await confirm({ title: `Remover Nivel ${level}?`, description: 'Todas as configuracoes deste nivel serao removidas.', confirmLabel: 'Remover' });
+    if (!ok) return;
 
     setConfigs(prev => prev.filter(c => !(c.partner_type === 'Rev+' && c.rev_level === level)));
     const newLevels = revPlusLevels.filter(l => l !== level);
@@ -244,6 +250,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <div className="bg-dark-850 border border-white/[0.06] rounded-lg">
         <div className="border-b border-dark-700 bg-dark-900 p-6 rounded-t-lg">
           <div className="flex items-center justify-between">

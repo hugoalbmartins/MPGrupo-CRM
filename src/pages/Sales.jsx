@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plus, Download, ArrowUpDown, Trash2, Paperclip, AlertTriangle, Filter, X as XIcon, Search, Upload, Mail, MoreVertical } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9
 const Sales = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const todayDate = new Date().toISOString().split('T')[0];
   const [sales, setSales] = useState([]);
   const [partners, setPartners] = useState([]);
@@ -820,9 +822,12 @@ const Sales = ({ user }) => {
   };
 
   const handleDeleteSale = async (sale) => {
-    if (!window.confirm(`Tem a certeza que deseja apagar a venda ${sale.sale_code}?\n\nEsta acao e irreversivel e ira remover todos os dados associados a venda.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Apagar venda ${sale.sale_code}`,
+      description: 'Esta acao e irreversivel e ira remover todos os dados associados a esta venda.',
+      confirmLabel: 'Apagar venda',
+    });
+    if (!ok) return;
 
     try {
       await salesService.delete(sale.id);
@@ -1009,6 +1014,7 @@ const Sales = ({ user }) => {
 
   return (
     <div className="space-y-6 p-6 animate-fade-in" style={{ backgroundColor: '#080c14', minHeight: '100vh' }}>
+      {confirmDialog}
       {/* Header with Title and Actions */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

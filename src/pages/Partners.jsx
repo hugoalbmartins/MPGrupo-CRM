@@ -12,9 +12,11 @@ import { useQuery } from "@tanstack/react-query";
 import { partnersService } from "../services/partnersService";
 import { usersService } from "../services/usersService";
 import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const Partners = ({ user }) => {
   const navigate = useNavigate();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortColumn, setSortColumn] = useState("name");
@@ -164,9 +166,12 @@ const Partners = ({ user }) => {
   };
 
   const handleDelete = async (partnerId, partnerName) => {
-    if (!window.confirm(`Tem a certeza que deseja eliminar o parceiro "${partnerName}"? Esta acao nao pode ser revertida.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Eliminar parceiro`,
+      description: `Tem a certeza que deseja eliminar "${partnerName}"? Esta acao nao pode ser revertida.`,
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
 
     try {
       await partnersService.delete(partnerId);
@@ -349,6 +354,7 @@ const Partners = ({ user }) => {
 
   return (
     <div className="space-y-6" style={{ backgroundColor: '#080c14', minHeight: '100%' }}>
+      {confirmDialog}
       {/* Page Header */}
       <div className="flex justify-between items-center">
         <div>

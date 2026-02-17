@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOperators, useCreateOperator, useUpdateOperator, useDeleteOperator } from "@/hooks/useOperatorsData";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { operatorsService } from "../services/operatorsService";
 import CommissionWizard from "../components/CommissionWizard";
 import { supabase } from "../lib/supabase";
@@ -31,6 +32,7 @@ const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 t
 );
 
 const Operators = ({ user }) => {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [operators, setOperators] = useState([]);
   const [hiddenOperators, setHiddenOperators] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -115,9 +117,12 @@ const Operators = ({ user }) => {
   };
 
   const handleDelete = async (operatorId, operatorName) => {
-    if (!window.confirm(`Tem a certeza que deseja eliminar a operadora "${operatorName}"? Esta ação não pode ser revertida.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Eliminar operadora',
+      description: `Tem a certeza que deseja eliminar "${operatorName}"? Esta acao nao pode ser revertida.`,
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
 
     try {
       await operatorsService.delete(operatorId);
@@ -317,7 +322,12 @@ const Operators = ({ user }) => {
   };
 
   const handleDeleteDocument = async (operatorId, docId) => {
-    if (!window.confirm("Tem a certeza que deseja eliminar este documento?")) return;
+    const ok = await confirm({
+      title: 'Eliminar documento',
+      description: 'Tem a certeza que deseja eliminar este documento?',
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
 
     try {
       const operator = operators.find(op => op.id === operatorId);
@@ -389,6 +399,7 @@ const Operators = ({ user }) => {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       {/* Header */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">

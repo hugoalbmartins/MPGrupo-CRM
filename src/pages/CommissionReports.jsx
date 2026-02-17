@@ -13,9 +13,11 @@ import { commissionReportsService } from "../services/commissionReportsService";
 import { salesService } from "../services/salesService";
 import { advancesService } from "../services/advancesService";
 import { supabase } from "../lib/supabase";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const CommissionReports = ({ user }) => {
   const queryClient = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [selectedPartner, setSelectedPartner] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -125,9 +127,13 @@ const CommissionReports = ({ user }) => {
   };
 
   const handleValidatePayment = async (reportId) => {
-    if (!window.confirm("Confirma que este auto foi pago? Esta acao nao pode ser revertida e o auto ficara bloqueado.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Validar pagamento',
+      description: 'Confirma que este auto foi pago? Esta acao nao pode ser revertida e o auto ficara bloqueado.',
+      confirmLabel: 'Confirmar pagamento',
+      confirmVariant: 'success',
+    });
+    if (!ok) return;
 
     markAsPaidMutation.mutate({
       reportId,
@@ -141,7 +147,12 @@ const CommissionReports = ({ user }) => {
       return;
     }
 
-    if (!window.confirm("Tem certeza que deseja eliminar este auto?")) return;
+    const ok = await confirm({
+      title: 'Eliminar auto',
+      description: 'Tem a certeza que deseja eliminar este auto?',
+      confirmLabel: 'Eliminar',
+    });
+    if (!ok) return;
 
     deleteReportMutation.mutate(reportId);
   };
@@ -724,9 +735,14 @@ const CommissionReports = ({ user }) => {
       }
 
       const monthName = months.find(m => m.value === selectedMonth)?.label;
-      const confirmMsg = `Sera aberta uma janela individual para cada um dos ${partnersWithSales.length} parceiro(s) com vendas em ${monthName}/${selectedYear}:\n\n${partnersWithSales.map(p => `\u2022 ${p.partner_name} (${p.sales_count} venda(s), \u20AC${parseFloat(p.total_commission).toFixed(2)})`).join('\n')}\n\nDeseja continuar?`;
-
-      if (!window.confirm(confirmMsg)) {
+      const partnersList = partnersWithSales.map(p => `${p.partner_name} (${p.sales_count} venda(s), €${parseFloat(p.total_commission).toFixed(2)})`).join(', ');
+      const ok = await confirm({
+        title: `Emitir autos — ${monthName}/${selectedYear}`,
+        description: `Serao abertas ${partnersWithSales.length} janela(s) individuais para: ${partnersList}`,
+        confirmLabel: 'Continuar',
+        confirmVariant: 'success',
+      });
+      if (!ok) {
         setLoading(false);
         return;
       }
@@ -932,6 +948,7 @@ const CommissionReports = ({ user }) => {
 
   return (
     <div className="space-y-6 p-6 animate-fade-in">
+      {confirmDialog}
       <div className="flex justify-between items-center animate-slide-up">
         <div>
           <h1 className="text-2xl font-bold text-white">Autos de Comissoes</h1>
