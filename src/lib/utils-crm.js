@@ -75,19 +75,33 @@ export async function generatePartnerCode(partnerType, supabase) {
   try {
     console.log('generatePartnerCode: Starting for type', partnerType);
 
-    const { count, error } = await supabase
+    const { data: existing, error } = await supabase
       .from('partners')
-      .select('*', { count: 'exact', head: true })
-      .eq('partner_type', partnerType);
+      .select('partner_code')
+      .ilike('partner_code', `${partnerType}%`);
 
     if (error) {
       console.error('generatePartnerCode: Query error:', error);
       throw error;
     }
 
-    console.log('generatePartnerCode: Found', count, 'existing partners of type', partnerType);
-    const number = 1001 + (count || 0);
-    const code = `${partnerType}${number}`;
+    const usedNumbers = (existing || [])
+      .map(p => parseInt(p.partner_code.replace(partnerType, ''), 10))
+      .filter(n => !isNaN(n));
+
+    let number = 1001;
+    if (usedNumbers.length > 0) {
+      number = Math.max(...usedNumbers) + 1;
+    }
+
+    let code = `${partnerType}${number}`;
+
+    const existingCodes = new Set((existing || []).map(p => p.partner_code));
+    while (existingCodes.has(code)) {
+      number++;
+      code = `${partnerType}${number}`;
+    }
+
     console.log('generatePartnerCode: Generated code', code);
     return code;
   } catch (error) {

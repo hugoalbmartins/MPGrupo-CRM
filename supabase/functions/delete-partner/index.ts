@@ -45,6 +45,7 @@ Deno.serve(async (req: Request) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
+    // Collect all user IDs linked to this partner before deletion
     const { data: partnerUsers, error: usersError } = await supabaseAdmin
       .from("users")
       .select("id")
@@ -52,16 +53,13 @@ Deno.serve(async (req: Request) => {
 
     if (usersError) throw new Error(`Failed to fetch partner users: ${usersError.message}`);
 
-    for (const partnerUser of partnerUsers ?? []) {
-      if (partnerUser.id === currentUser.id) continue;
+    const userIdsToDelete = (partnerUsers ?? [])
+      .map(u => u.id)
+      .filter(id => id !== currentUser.id);
 
-      await supabaseAdmin.from("users").delete().eq("id", partnerUser.id);
-      const { error: authDelError } = await supabaseAdmin.auth.admin.deleteUser(partnerUser.id);
-      if (authDelError) {
-        console.error(`Failed to delete auth user ${partnerUser.id}:`, authDelError.message);
-      }
-    }
-
+    // Deleting the partner cascades: users, commission_reports, partner_advances,
+    // partner_d2d_operator_levels, push_subscriptions (via users cascade).
+    // sales.partner_id and forms.partner_id are SET NULL.
     const { error: partnerError } = await supabaseAdmin
       .from("partners")
       .delete()
@@ -69,8 +67,19 @@ Deno.serve(async (req: Request) => {
 
     if (partnerError) throw new Error(`Failed to delete partner: ${partnerError.message}`);
 
+    // Delete Supabase auth users (not handled by DB cascade)
+    let authDeletedCount = 0;
+    for (const userId of userIdsToDelete) {
+      const { error: authDelError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (authDelError) {
+        console.error(`Failed to delete auth user ${userId}:`, authDelError.message);
+      } else {
+        authDeletedCount++;
+      }
+    }
+
     return new Response(
-      JSON.stringify({ success: true, users_deleted: (partnerUsers ?? []).length }),
+      JSON.stringify({ success: true, users_deleted: authDeletedCount }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
