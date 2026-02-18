@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -702,7 +703,17 @@ const SaleFormDialog = ({
                         multiple
                         accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                         capture="environment"
-                        onChange={(e) => setUploadFiles(Array.from(e.target.files))}
+                        onChange={(e) => {
+                          const MAX_SIZE = 5 * 1024 * 1024;
+                          const files = Array.from(e.target.files);
+                          const oversized = files.filter(f => f.size > MAX_SIZE);
+                          if (oversized.length > 0) {
+                            toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
+                            e.target.value = '';
+                            return;
+                          }
+                          setUploadFiles(files);
+                        }}
                         required={(() => {
                           const selectedPartner = partners.find(p => p.id === formData.partner_id);
                           return selectedPartner && selectedPartner.partner_type === 'D2D';
@@ -715,11 +726,12 @@ const SaleFormDialog = ({
                           {uploadFiles.length} ficheiro(s) selecionado(s)
                         </p>
                       )}
+                      <p className="text-xs mt-2 text-slate-500">Tamanho maximo por ficheiro: 5MB</p>
                       {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
                         const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
                         return isD2D && (
-                          <p className="text-xs mt-2 text-orange-400 font-medium">
+                          <p className="text-xs mt-1 text-orange-400 font-medium">
                             Obrigatório para parceiros D2D - Aceita fotos da câmara
                           </p>
                         );

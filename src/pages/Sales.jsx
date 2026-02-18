@@ -1667,7 +1667,17 @@ const Sales = ({ user }) => {
                   id="note-attachments"
                   type="file"
                   multiple
-                  onChange={(e) => setNoteAttachments(Array.from(e.target.files))}
+                  onChange={(e) => {
+                    const MAX_SIZE = 5 * 1024 * 1024;
+                    const files = Array.from(e.target.files);
+                    const oversized = files.filter(f => f.size > MAX_SIZE);
+                    if (oversized.length > 0) {
+                      toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
+                      e.target.value = '';
+                      return;
+                    }
+                    setNoteAttachments(files);
+                  }}
                   className="hidden"
                 />
                 {noteAttachments.length > 0 && (
@@ -1675,6 +1685,7 @@ const Sales = ({ user }) => {
                     {noteAttachments.length} ficheiro(s) selecionado(s)
                   </span>
                 )}
+                <span className="text-xs text-slate-600">Max 5MB</span>
               </div>
 
               <Button
@@ -1708,33 +1719,39 @@ const Sales = ({ user }) => {
                       {note.attachments && note.attachments.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {note.attachments.map((attachment) => (
-                            <div key={attachment.id} className="flex items-center gap-2 text-xs text-cyan-400">
+                            <div key={attachment.id} className={`flex items-center gap-2 text-xs ${attachment.expired ? 'text-slate-600' : 'text-cyan-400'}`}>
                               <Paperclip className="w-3 h-3" />
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    const { data, error } = await supabase.storage
-                                      .from('sales-documents')
-                                      .download(attachment.path);
-                                    if (error) throw error;
-                                    const url = URL.createObjectURL(data);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = attachment.filename;
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                    URL.revokeObjectURL(url);
-                                    toast.success("Download concluido!");
-                                  } catch (error) {
-                                    console.error('Error downloading:', error);
-                                    toast.error("Erro ao descarregar ficheiro");
-                                  }
-                                }}
-                                className="hover:underline text-cyan-400"
-                              >
-                                {attachment.filename}
-                              </button>
+                              {attachment.expired ? (
+                                <span className="line-through text-slate-600" title={`Expirado em ${new Date(attachment.expired_at).toLocaleDateString('pt-PT')} — ficheiro removido apos 60 dias`}>
+                                  {attachment.filename}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const { data, error } = await supabase.storage
+                                        .from('sales-documents')
+                                        .download(attachment.path);
+                                      if (error) throw error;
+                                      const url = URL.createObjectURL(data);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = attachment.filename;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      URL.revokeObjectURL(url);
+                                      toast.success("Download concluido!");
+                                    } catch (error) {
+                                      console.error('Error downloading:', error);
+                                      toast.error("Erro ao descarregar ficheiro");
+                                    }
+                                  }}
+                                  className="hover:underline text-cyan-400"
+                                >
+                                  {attachment.filename}
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>

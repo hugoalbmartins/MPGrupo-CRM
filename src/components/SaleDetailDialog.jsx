@@ -895,48 +895,55 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
               <div className="space-y-3">
                 {sale.attachments && sale.attachments.length > 0 ? (
                   sale.attachments.map((attachment) => (
-                    <div key={attachment.id} className="p-4 bg-dark-900 rounded-lg border border-dark-700 hover:bg-dark-800 transition-colors">
+                    <div key={attachment.id} className={`p-4 rounded-lg border transition-colors ${attachment.expired ? 'bg-dark-900/50 border-dark-700/50 opacity-60' : 'bg-dark-900 border-dark-700 hover:bg-dark-800'}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Paperclip className="w-5 h-5 text-cyber-400" />
+                          <Paperclip className={`w-5 h-5 ${attachment.expired ? 'text-slate-600' : 'text-cyber-400'}`} />
                           <div>
-                            <p className="font-medium text-sm text-white">{attachment.filename}</p>
+                            <p className={`font-medium text-sm ${attachment.expired ? 'text-slate-500 line-through' : 'text-white'}`}>{attachment.filename}</p>
                             <p className="text-xs text-slate-500">
                               {new Date(attachment.uploaded_at).toLocaleString('pt-PT')}
                             </p>
+                            {attachment.expired && (
+                              <p className="text-xs text-red-500/70 mt-0.5">
+                                Expirado em {new Date(attachment.expired_at).toLocaleDateString('pt-PT')} — ficheiro removido apos 60 dias
+                              </p>
+                            )}
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={async () => {
-                            try {
-                              const { data, error } = await supabase.storage
-                                .from('sales-documents')
-                                .download(attachment.path);
+                        {!attachment.expired && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              try {
+                                const { data, error } = await supabase.storage
+                                  .from('sales-documents')
+                                  .download(attachment.path);
 
-                              if (error) throw error;
+                                if (error) throw error;
 
-                              const url = window.URL.createObjectURL(data);
-                              const link = document.createElement('a');
-                              link.href = url;
-                              link.download = attachment.filename;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              window.URL.revokeObjectURL(url);
+                                const url = window.URL.createObjectURL(data);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = attachment.filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(url);
 
-                              toast.success('Ficheiro transferido com sucesso');
-                            } catch (error) {
-                              console.error('Error downloading file:', error);
-                              toast.error('Erro ao transferir ficheiro');
-                            }
-                          }}
-                          className="gap-1 bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
-                        >
-                          <Download className="w-4 h-4" />
-                          Transferir
-                        </Button>
+                                toast.success('Ficheiro transferido com sucesso');
+                              } catch (error) {
+                                console.error('Error downloading file:', error);
+                                toast.error('Erro ao transferir ficheiro');
+                              }
+                            }}
+                            className="gap-1 bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
+                          >
+                            <Download className="w-4 h-4" />
+                            Transferir
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))

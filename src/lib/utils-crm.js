@@ -96,6 +96,10 @@ export async function generatePartnerCode(partnerType, supabase) {
   }
 }
 
+function normalizeToAscii(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]/g, '');
+}
+
 export async function generateSaleCode(partnerId, saleDate, supabase) {
   let namePrefix = 'ADM';
 
@@ -107,8 +111,9 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
       .maybeSingle();
 
     if (partner) {
-      const base3 = partner.name.substring(0, 3).toUpperCase();
-      const base2 = partner.name.substring(0, 2).toUpperCase();
+      const normalizedName = normalizeToAscii(partner.name);
+      const base3 = normalizedName.substring(0, 3).toUpperCase();
+      const base2 = normalizedName.substring(0, 2).toUpperCase();
 
       const { data: conflicting } = await supabase
         .from('partners')
