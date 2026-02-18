@@ -71,10 +71,10 @@ const Advances = ({ user }) => {
     },
   });
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'admin' && user?.role !== 'bo') {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-slate-400">Acesso negado. Apenas administradores podem aceder a esta pagina.</p>
+        <p className="text-slate-400">Acesso negado.</p>
       </div>
     );
   }

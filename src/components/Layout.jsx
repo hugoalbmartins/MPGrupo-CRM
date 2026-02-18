@@ -108,7 +108,8 @@ const Layout = ({ children, user, onLogout }) => {
   } else if (user?.role === "bo") {
     menuItems.push(
       { path: "/operators", label: "Operadoras", icon: Building2, roles: ["bo"], section: "SISTEMA" },
-      { path: "/operator-validations", label: "Validacoes", icon: CheckSquare, roles: ["bo"], section: "SISTEMA" }
+      { path: "/operator-validations", label: "Validacoes", icon: CheckSquare, roles: ["bo"], section: "SISTEMA" },
+      { path: "/advances", label: "Adiantamentos", icon: Banknote, roles: ["bo"], section: "SISTEMA" }
     );
   } else if (user?.role === "partner") {
     if (!isD2DPartner) {

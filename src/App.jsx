@@ -383,6 +383,7 @@ function App() {
                   <>
                     <Route path="/operators" element={<Operators user={user} />} />
                     <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
+                    <Route path="/advances" element={<Advances user={user} />} />
                   </>
                 )}
                 <Route path="*" element={<Navigate to="/" />} />
