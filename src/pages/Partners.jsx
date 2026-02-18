@@ -444,20 +444,20 @@ const Partners = ({ user }) => {
                     <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.contact_person} onChange={(e) => setFormData({...formData, contact_person: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-slate-400">Rua *</Label>
-                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.street} onChange={(e) => setFormData({...formData, street: e.target.value})} required />
+                    <Label className="text-slate-400">Rua {formData.partner_type !== 'D2D' ? '*' : '(opcional)'}</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.street} onChange={(e) => setFormData({...formData, street: e.target.value})} required={formData.partner_type !== 'D2D'} />
                   </div>
                   <div>
-                    <Label className="text-slate-400">Numero Porta *</Label>
-                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.door_number} onChange={(e) => setFormData({...formData, door_number: e.target.value})} required />
+                    <Label className="text-slate-400">Numero Porta {formData.partner_type !== 'D2D' ? '*' : '(opcional)'}</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.door_number} onChange={(e) => setFormData({...formData, door_number: e.target.value})} required={formData.partner_type !== 'D2D'} />
                   </div>
                   <div>
-                    <Label className="text-slate-400">Codigo Postal *</Label>
-                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.postal_code} onChange={(e) => setFormData({...formData, postal_code: e.target.value})} required />
+                    <Label className="text-slate-400">Codigo Postal {formData.partner_type !== 'D2D' ? '*' : '(opcional)'}</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.postal_code} onChange={(e) => setFormData({...formData, postal_code: e.target.value})} required={formData.partner_type !== 'D2D'} />
                   </div>
                   <div>
-                    <Label className="text-slate-400">Localidade *</Label>
-                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.locality} onChange={(e) => setFormData({...formData, locality: e.target.value})} required />
+                    <Label className="text-slate-400">Localidade {formData.partner_type !== 'D2D' ? '*' : '(opcional)'}</Label>
+                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.locality} onChange={(e) => setFormData({...formData, locality: e.target.value})} required={formData.partner_type !== 'D2D'} />
                   </div>
                   <div>
                     <Label className="text-slate-400">NIF *</Label>
@@ -497,12 +497,11 @@ const Partners = ({ user }) => {
                     </div>
                   )}
                   <div>
-                    <Label className="text-slate-400">IBAN para Pagamento de Comissoes *</Label>
+                    <Label className="text-slate-400">IBAN para Pagamento de Comissoes (opcional)</Label>
                     <Input
                       className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white"
                       value={formData.iban}
                       onChange={(e) => setFormData({...formData, iban: e.target.value})}
-                      required
                       placeholder="PT50..."
                       maxLength={25}
                     />
