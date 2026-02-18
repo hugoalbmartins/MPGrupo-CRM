@@ -9,6 +9,38 @@ import { Plus, Trash2 } from "lucide-react";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
+const expandPointsForDB = (localPoints, saleType) => {
+  if (saleType !== 'dual') return localPoints;
+  const expanded = [];
+  localPoints.forEach(point => {
+    if (point.point_code) {
+      expanded.push({
+        id: point.id,
+        point_type: 'cpe',
+        point_code: point.point_code,
+        power_kva: point.power_kva,
+        tier: null,
+        activation_status: point.activation_status,
+        activation_date: point.activation_date,
+        operator_paid: point.operator_paid
+      });
+    }
+    if (point.cui_code) {
+      expanded.push({
+        id: point.cui_id || crypto.randomUUID(),
+        point_type: 'cui',
+        point_code: point.cui_code,
+        power_kva: null,
+        tier: point.tier,
+        activation_status: point.activation_status,
+        activation_date: point.activation_date,
+        operator_paid: point.operator_paid
+      });
+    }
+  });
+  return expanded;
+};
+
 const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
   const [isMultipoint, setIsMultipoint] = useState(false);
   const [pointCount, setPointCount] = useState(1);
@@ -16,9 +48,33 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
 
   useEffect(() => {
     if (points && points.length > 0) {
-      setLocalPoints(points);
-      setIsMultipoint(points.length > 1);
-      setPointCount(points.length);
+      if (saleType === 'dual') {
+        const merged = [];
+        const cpePoints = points.filter(p => p.point_type === 'cpe');
+        const cuiPoints = points.filter(p => p.point_type === 'cui');
+        const count = Math.max(cpePoints.length, cuiPoints.length, 1);
+        for (let i = 0; i < count; i++) {
+          merged.push({
+            id: cpePoints[i]?.id || crypto.randomUUID(),
+            cui_id: cuiPoints[i]?.id,
+            point_type: 'cpe',
+            point_code: cpePoints[i]?.point_code || '',
+            cui_code: cuiPoints[i]?.point_code || '',
+            power_kva: cpePoints[i]?.power_kva || '',
+            tier: cuiPoints[i]?.tier || '',
+            activation_status: cpePoints[i]?.activation_status || 'pending',
+            activation_date: cpePoints[i]?.activation_date || null,
+            operator_paid: cpePoints[i]?.operator_paid || false
+          });
+        }
+        setLocalPoints(merged);
+        setIsMultipoint(merged.length > 1);
+        setPointCount(merged.length);
+      } else {
+        setLocalPoints(points);
+        setIsMultipoint(points.length > 1);
+        setPointCount(points.length);
+      }
     } else {
       const initialPoint = createEmptyPoint();
       setLocalPoints([initialPoint]);
@@ -33,6 +89,8 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
       id: crypto.randomUUID(),
       point_type: needsCPE && !needsCUI ? 'cpe' : needsCUI && !needsCPE ? 'cui' : 'cpe',
       point_code: '',
+      cui_code: '',
+      cui_id: null,
       power_kva: '',
       tier: '',
       activation_status: 'pending',
@@ -41,22 +99,23 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
     };
   };
 
+  const emitChange = (pts) => {
+    onChange(expandPointsForDB(pts, saleType));
+  };
+
   const handleMultipointToggle = (enabled) => {
     setIsMultipoint(enabled);
 
     if (enabled && localPoints.length === 1) {
       setPointCount(2);
-      const newPoints = [
-        localPoints[0],
-        createEmptyPoint()
-      ];
+      const newPoints = [localPoints[0], createEmptyPoint()];
       setLocalPoints(newPoints);
-      onChange(newPoints);
+      emitChange(newPoints);
     } else if (!enabled) {
       setPointCount(1);
       const singlePoint = [localPoints[0] || createEmptyPoint()];
       setLocalPoints(singlePoint);
-      onChange(singlePoint);
+      emitChange(singlePoint);
     }
   };
 
@@ -75,18 +134,15 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
     }
 
     setLocalPoints(currentPoints);
-    onChange(currentPoints);
+    emitChange(currentPoints);
   };
 
   const handlePointChange = (index, field, value) => {
     const updated = [...localPoints];
     const finalValue = field === 'activation_date' && value === '' ? null : value;
-    updated[index] = {
-      ...updated[index],
-      [field]: finalValue
-    };
+    updated[index] = { ...updated[index], [field]: finalValue };
     setLocalPoints(updated);
-    onChange(updated);
+    emitChange(updated);
   };
 
   const handleRemovePoint = (index) => {
@@ -95,7 +151,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
     const updated = localPoints.filter((_, i) => i !== index);
     setLocalPoints(updated);
     setPointCount(updated.length);
-    onChange(updated);
+    emitChange(updated);
 
     if (updated.length === 1) {
       setIsMultipoint(false);
@@ -106,7 +162,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
     const updated = [...localPoints, createEmptyPoint()];
     setLocalPoints(updated);
     setPointCount(updated.length);
-    onChange(updated);
+    emitChange(updated);
   };
 
   const needsCPE = saleType === 'eletricidade' || saleType === 'dual';

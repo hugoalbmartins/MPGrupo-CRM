@@ -224,19 +224,21 @@ const Sales = ({ user }) => {
         return;
       }
 
-      for (let i = 0; i < formData.energy_points.length; i++) {
-        const point = formData.energy_points[i];
+      const cpePoints = formData.energy_points.filter(p => p.point_type === 'cpe' || (!p.point_type && (saleType === 'eletricidade' || saleType === 'dual')));
+      const cuiPoints = formData.energy_points.filter(p => p.point_type === 'cui' || (!p.point_type && saleType === 'gas'));
 
-        if (saleType === 'eletricidade' || saleType === 'dual') {
-          if (!point.point_code || !point.power_kva) {
+      if (saleType === 'eletricidade' || saleType === 'dual') {
+        for (let i = 0; i < cpePoints.length; i++) {
+          if (!cpePoints[i].point_code || !cpePoints[i].power_kva) {
             toast.error(`Ponto ${i + 1}: CPE e Potencia sao obrigatorios!`);
             return;
           }
         }
+      }
 
-        if (saleType === 'gas' || saleType === 'dual') {
-          const cuiField = saleType === 'dual' ? 'cui_code' : 'point_code';
-          if (!point[cuiField] || !point.tier) {
+      if (saleType === 'gas' || saleType === 'dual') {
+        for (let i = 0; i < cuiPoints.length; i++) {
+          if (!cuiPoints[i].point_code || !cuiPoints[i].tier) {
             toast.error(`Ponto ${i + 1}: CUI e Escalao sao obrigatorios!`);
             return;
           }
@@ -265,19 +267,20 @@ const Sales = ({ user }) => {
         const energyType = selectedOperator?.energy_type;
         const saleType = energyType === 'dual' ? formData.energy_sale_type : energyType;
 
-        const firstPoint = formData.energy_points[0];
+        const firstCPE = formData.energy_points.find(p => p.point_type === 'cpe') || formData.energy_points[0];
+        const firstCUI = formData.energy_points.find(p => p.point_type === 'cui');
 
         if (saleType === 'eletricidade' || saleType === 'dual') {
-          submitData.cpe = firstPoint.point_code || '';
-          submitData.power = firstPoint.power_kva || '';
+          submitData.cpe = firstCPE?.point_code || '';
+          submitData.power = firstCPE?.power_kva || '';
         }
 
         if (saleType === 'gas') {
-          submitData.cui = firstPoint.point_code || '';
-          submitData.tier = firstPoint.tier || '';
+          submitData.cui = firstCPE?.point_code || '';
+          submitData.tier = firstCPE?.tier || '';
         } else if (saleType === 'dual') {
-          submitData.cui = firstPoint.cui_code || '';
-          submitData.tier = firstPoint.tier || '';
+          submitData.cui = firstCUI?.point_code || '';
+          submitData.tier = firstCUI?.tier || '';
         }
       }
 

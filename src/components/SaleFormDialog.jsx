@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus } from 'lucide-react';
+import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, AlertCircle, Trash2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -48,7 +48,47 @@ const SaleFormDialog = ({
   fetchOperatorCommissions,
   user
 }) => {
+  const [pendingFile, setPendingFile] = useState(null);
+  const fileInputRef = useRef(null);
+
   if (!isOpen) return null;
+
+  const handleFileSelected = (e) => {
+    const MAX_SIZE = 5 * 1024 * 1024;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    const oversized = files.filter(f => f.size > MAX_SIZE);
+    if (oversized.length > 0) {
+      toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
+      e.target.value = '';
+      return;
+    }
+    setPendingFile(files[0]);
+  };
+
+  const handleAddFile = () => {
+    if (!pendingFile) return;
+    const alreadyAdded = uploadFiles.some(f => f.name === pendingFile.name && f.size === pendingFile.size);
+    if (alreadyAdded) {
+      toast.error(`Ficheiro "${pendingFile.name}" ja foi adicionado`);
+      return;
+    }
+    setUploadFiles([...uploadFiles, pendingFile]);
+    setPendingFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemoveFile = (index) => {
+    setUploadFiles(uploadFiles.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitWithCheck = (e) => {
+    if (pendingFile) {
+      toast.warning(`Tem um ficheiro selecionado ("${pendingFile.name}") que nao foi adicionado. Clique em "Adicionar" ou remova a selecao antes de gravar.`);
+      return;
+    }
+    onSubmit(e);
+  };
 
   return (
     <AnimatePresence>
@@ -68,7 +108,7 @@ const SaleFormDialog = ({
                 <p className="text-sm text-slate-400">Preencha os dados da nova venda no sistema</p>
               </div>
               <button
-                onClick={onClose}
+                onClick={() => { setPendingFile(null); onClose(); }}
                 className="w-10 h-10 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
               >
                 <X className="w-5 h-5 text-red-400" />
@@ -697,42 +737,62 @@ const SaleFormDialog = ({
                         return isD2D ? '*' : '(opcional)';
                       })()}
                     </Label>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                        capture="environment"
-                        onChange={(e) => {
-                          const MAX_SIZE = 5 * 1024 * 1024;
-                          const files = Array.from(e.target.files);
-                          const oversized = files.filter(f => f.size > MAX_SIZE);
-                          if (oversized.length > 0) {
-                            toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
-                            e.target.value = '';
-                            return;
-                          }
-                          setUploadFiles(files);
-                        }}
-                        required={(() => {
-                          const selectedPartner = partners.find(p => p.id === formData.partner_id);
-                          return selectedPartner && selectedPartner.partner_type === 'D2D';
-                        })()}
-                        className="block w-full text-sm text-slate-300 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20 transition-colors cursor-pointer"
-                      />
-                      {uploadFiles.length > 0 && (
-                        <p className="text-sm mt-3 flex items-center gap-2 text-slate-300">
-                          <Upload className="w-4 h-4 text-cyber-400" />
-                          {uploadFiles.length} ficheiro(s) selecionado(s)
-                        </p>
+                    <div className="space-y-3">
+                      <div className="flex gap-2 items-start">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                          capture="environment"
+                          onChange={handleFileSelected}
+                          className="flex-1 block text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20 transition-colors cursor-pointer"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleAddFile}
+                          disabled={!pendingFile}
+                          size="sm"
+                          className="shrink-0 bg-cyber-500 hover:bg-cyber-600 text-white disabled:opacity-40"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Adicionar
+                        </Button>
+                      </div>
+
+                      {pendingFile && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                          <span className="text-xs text-amber-300 flex-1 truncate">
+                            "{pendingFile.name}" selecionado mas nao adicionado — clique em Adicionar
+                          </span>
+                        </div>
                       )}
-                      <p className="text-xs mt-2 text-slate-500">Tamanho maximo por ficheiro: 5MB</p>
+
+                      {uploadFiles.length > 0 && (
+                        <div className="space-y-1">
+                          {uploadFiles.map((file, idx) => (
+                            <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-dark-900 border border-dark-700">
+                              <FileText className="w-4 h-4 text-cyber-400 shrink-0" />
+                              <span className="text-sm text-slate-300 flex-1 truncate">{file.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFile(idx)}
+                                className="text-slate-500 hover:text-red-400 transition-colors shrink-0"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-500">Tamanho maximo por ficheiro: 5MB</p>
                       {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
                         const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
                         return isD2D && (
-                          <p className="text-xs mt-1 text-orange-400 font-medium">
-                            Obrigatório para parceiros D2D - Aceita fotos da câmara
+                          <p className="text-xs text-orange-400 font-medium">
+                            Obrigatorio para parceiros D2D - Aceita fotos da camara
                           </p>
                         );
                       })()}
@@ -747,7 +807,7 @@ const SaleFormDialog = ({
             <div className="flex justify-end gap-4">
               <Button
                 type="button"
-                onClick={onClose}
+                onClick={() => { setPendingFile(null); onClose(); }}
                 variant="outline"
                 className="px-6 py-3 rounded-xl font-semibold bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
               >
@@ -755,7 +815,7 @@ const SaleFormDialog = ({
               </Button>
               <Button
                 type="submit"
-                onClick={onSubmit}
+                onClick={handleSubmitWithCheck}
                 disabled={formData.operator_id && operatorCommissions.length === 0}
                 className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25"
               >
