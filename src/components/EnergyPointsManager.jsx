@@ -25,24 +25,40 @@ const formatPowerKvaForDisplay = (value) => {
   return match || '';
 };
 
+const toDBPoint = (p) => ({
+  id: p.id,
+  point_type: p.point_type,
+  point_code: p.point_code,
+  power_kva: parsePowerKva(p.power_kva),
+  tier: p.tier || null,
+  activation_status: p.activation_status || 'pending',
+  activation_date: p.activation_date || null,
+  operator_paid: p.operator_paid || false,
+});
+
 const expandPointsForDB = (localPoints, saleType) => {
-  if (saleType !== 'dual') return localPoints.map(p => ({ ...p, power_kva: parsePowerKva(p.power_kva) }));
+  if (saleType === 'gas') {
+    return localPoints.map(p => toDBPoint({ ...p, point_type: 'cui', power_kva: null }));
+  }
+  if (saleType === 'eletricidade') {
+    return localPoints.map(p => toDBPoint({ ...p, point_type: 'cpe' }));
+  }
   const expanded = [];
   localPoints.forEach(point => {
     if (point.point_code) {
-      expanded.push({
+      expanded.push(toDBPoint({
         id: point.id,
         point_type: 'cpe',
         point_code: point.point_code,
-        power_kva: parsePowerKva(point.power_kva),
+        power_kva: point.power_kva,
         tier: null,
         activation_status: point.activation_status,
         activation_date: point.activation_date,
-        operator_paid: point.operator_paid
-      });
+        operator_paid: point.operator_paid,
+      }));
     }
     if (point.cui_code) {
-      expanded.push({
+      expanded.push(toDBPoint({
         id: point.cui_id || crypto.randomUUID(),
         point_type: 'cui',
         point_code: point.cui_code,
@@ -50,8 +66,8 @@ const expandPointsForDB = (localPoints, saleType) => {
         tier: point.tier,
         activation_status: point.activation_status,
         activation_date: point.activation_date,
-        operator_paid: point.operator_paid
-      });
+        operator_paid: point.operator_paid,
+      }));
     }
   });
   return expanded;
