@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,8 +49,10 @@ const Operators = ({ user }) => {
     pays_direct_debit: false,
     pays_electronic_invoice: false,
     notification_emails: [],
+    notification_user_ids: [],
   });
   const [newNotifEmail, setNewNotifEmail] = useState("");
+  const [adminBoUsers, setAdminBoUsers] = useState([]);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -192,8 +194,12 @@ const Operators = ({ user }) => {
 
   const openEditOperatorDialog = async (operator) => {
     try {
-      const freshData = await operatorsService.getById(operator.id);
+      const [freshData, usersResult] = await Promise.all([
+        operatorsService.getById(operator.id),
+        supabase.from('users').select('id, name, email, role').in('role', ['admin', 'bo']).order('role').order('name')
+      ]);
       setSelectedOperator(freshData);
+      setAdminBoUsers(usersResult.data || []);
       setEditOperatorData({
         activation_types: freshData.activation_types || [],
         allowed_energy_types: freshData.allowed_energy_types || [],
@@ -201,6 +207,7 @@ const Operators = ({ user }) => {
         pays_direct_debit: freshData.pays_direct_debit || false,
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
         notification_emails: freshData.notification_emails || [],
+        notification_user_ids: freshData.notification_user_ids || [],
       });
       setNewNotifEmail("");
       setEditOperatorDialogOpen(true);
@@ -915,6 +922,44 @@ const Operators = ({ user }) => {
                       Paga adesão a Fatura Eletrónica
                     </Label>
                   </div>
+                </div>
+              </div>
+
+              <div className="border-t border-dark-700 pt-4">
+                <Label className="text-slate-300 text-sm font-semibold block mb-3">
+                  <Users className="w-4 h-4 inline mr-1 text-cyber-400" />
+                  Admins / Backoffice com Alertas de Email
+                </Label>
+                <p className="text-xs text-slate-500 mb-3">
+                  Selecione quais admins e backoffice recebem emails de alerta para esta operadora. Se nenhum for selecionado, todos receberao (comportamento padrao).
+                </p>
+                <div className="space-y-2 mb-1">
+                  {adminBoUsers.map((u) => {
+                    const checked = (editOperatorData.notification_user_ids || []).includes(u.id);
+                    return (
+                      <div
+                        key={u.id}
+                        onClick={() => setEditOperatorData(prev => ({
+                          ...prev,
+                          notification_user_ids: checked
+                            ? prev.notification_user_ids.filter(id => id !== u.id)
+                            : [...(prev.notification_user_ids || []), u.id]
+                        }))}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer border transition-colors ${checked ? 'bg-cyber-500/10 border-cyber-500/40' : 'bg-dark-900 border-dark-700 hover:border-dark-600'}`}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-cyber-500 border-cyber-500' : 'border-dark-600 bg-dark-800'}`}>
+                          {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white truncate">{u.name}</p>
+                          <p className="text-xs text-slate-500 truncate">{u.email}</p>
+                        </div>
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                          {u.role === 'admin' ? 'Admin' : 'BO'}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
