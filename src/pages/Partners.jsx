@@ -326,7 +326,7 @@ const Partners = ({ user }) => {
         'Codigo': partner.partner_code,
         'Tipo': partner.partner_type,
         'Nome': partner.name,
-        'Email Principal': partner.email,
+        'Email Principal': partner.email?.endsWith('@noemail.mpgrupo.local') ? '' : (partner.email || ''),
         'Emails Comunicacao': (partner.communication_emails || []).join(', '),
         'Telefone': partner.phone,
         'Pessoa Contacto': partner.contact_person,
@@ -671,7 +671,7 @@ const Partners = ({ user }) => {
                             : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                       }`}>{partner.partner_type}</span>
                     </td>
-                    <td className="text-slate-300">{partner.email}</td>
+                    <td className="text-slate-300">{partner.email?.endsWith('@noemail.mpgrupo.local') ? '' : (partner.email || '')}</td>
                     <td className="text-slate-300">{partner.phone}</td>
                     <td className="text-slate-300">{partner.contact_person}</td>
                     {user?.role === 'admin' && (
