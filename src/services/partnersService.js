@@ -93,12 +93,17 @@ export const partnersService = {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
       console.log('6. Calling edge function:', apiUrl);
 
+      const emailForAuth = partnerData.email && partnerData.email.trim()
+        ? partnerData.email.trim()
+        : `${partnerCode.toLowerCase()}@noemail.mpgrupo.local`;
+
       const requestBody = {
         name: partnerData.name,
-        email: partnerData.email,
+        email: emailForAuth,
         password: userPassword,
         role: 'partner',
-        position: 'Parceiro'
+        position: 'Parceiro',
+        no_real_email: !partnerData.email || !partnerData.email.trim(),
       };
       console.log('6a. Request body:', requestBody);
 
@@ -142,7 +147,7 @@ export const partnersService = {
           partner_code: partnerCode,
           partner_type: partnerData.partner_type,
           name: partnerData.name,
-          email: partnerData.email,
+          email: emailForAuth,
           communication_emails: partnerData.communication_emails || [],
           phone: partnerData.phone,
           contact_person: partnerData.contact_person,
@@ -181,7 +186,7 @@ export const partnersService = {
         body: JSON.stringify({
           userId,
           name: partnerData.name,
-          email: partnerData.email,
+          email: emailForAuth,
           role: 'partner',
           position: 'Parceiro',
           partner_id: partner.id,

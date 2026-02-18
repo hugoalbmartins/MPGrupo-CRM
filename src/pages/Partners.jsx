@@ -74,10 +74,12 @@ const Partners = ({ user }) => {
   };
 
   useEffect(() => {
-    if (formData.email && !editingPartner) {
-      generatePassword();
+    if (!editingPartner) {
+      if (formData.email || formData.partner_type === 'D2D') {
+        generatePassword();
+      }
     }
-  }, [formData.email]);
+  }, [formData.email, formData.partner_type, editingPartner]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,11 +129,12 @@ const Partners = ({ user }) => {
 
   const handleEdit = async (partner) => {
     setEditingPartner(partner);
+    const displayEmail = partner.email && partner.email.endsWith('@noemail.mpgrupo.local') ? '' : (partner.email || '');
     setFormData({
       partner_type: partner.partner_type,
       rev_level: partner.rev_level || 1,
       name: partner.name,
-      email: partner.email,
+      email: displayEmail,
       communication_emails: partner.communication_emails.length > 0 ? partner.communication_emails : [""],
       manager_id: partner.manager_id || "",
       phone: partner.phone,
@@ -417,8 +420,20 @@ const Partners = ({ user }) => {
                     <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
                   </div>
                   <div>
-                    <Label className="text-slate-400">Email Principal *</Label>
-                    <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required />
+                    <Label className="text-slate-400">
+                      Email Principal {formData.partner_type !== 'D2D' ? '*' : '(opcional)'}
+                    </Label>
+                    <Input
+                      className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      required={formData.partner_type !== 'D2D'}
+                      placeholder={formData.partner_type === 'D2D' ? 'Opcional — login por codigo de parceiro' : ''}
+                    />
+                    {formData.partner_type === 'D2D' && !formData.email && (
+                      <p className="text-xs mt-1 text-slate-500">Sem email: login apenas via codigo de parceiro</p>
+                    )}
                   </div>
                   <div>
                     <Label className="text-slate-400">Telefone *</Label>

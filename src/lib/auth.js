@@ -18,6 +18,10 @@ export const authService = {
 
     let emailToUse = emailOrCode;
 
+    if (emailOrCode.includes('@') && emailOrCode.toLowerCase().endsWith('@noemail.mpgrupo.local')) {
+      throw new Error('Este parceiro nao tem email registado. Use o codigo de parceiro para fazer login.');
+    }
+
     if (!emailOrCode.includes('@')) {
       const code = emailOrCode.toUpperCase();
 

@@ -15,6 +15,7 @@ interface CreateUserRequest {
   position: string;
   partner_id?: string;
   is_commissioned?: boolean;
+  no_real_email?: boolean;
 }
 
 Deno.serve(async (req: Request) => {
@@ -81,14 +82,17 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing required fields");
     }
 
+    // Synthetic emails (no_real_email flag) bypass domain restriction checks
+    const isNoRealEmail = requestData.no_real_email === true || requestData.email.endsWith('@noemail.mpgrupo.local');
+
     const partnerOnlyRoles = ['partner', 'partner_commercial'];
     if (isBo && !partnerOnlyRoles.includes(requestData.role)) {
       throw new Error("Backoffice users can only create partner accounts");
     }
 
-    // Validate email for specific roles
+    // Validate email for specific roles (skip for synthetic/no-email accounts)
     const restrictedRoles = ['admin', 'bo', 'gestor_nv1', 'gestor_nv2'];
-    if (restrictedRoles.includes(requestData.role)) {
+    if (!isNoRealEmail && restrictedRoles.includes(requestData.role)) {
       const emailDomain = requestData.email.split('@')[1];
       if (emailDomain !== 'mpgrupo.pt' && emailDomain !== 'marciopinto.pt') {
         throw new Error(`Users with role ${requestData.role} must have email ending in @mpgrupo.pt or @marciopinto.pt`);
