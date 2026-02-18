@@ -9,8 +9,24 @@ import { Plus, Trash2 } from "lucide-react";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
+const parsePowerKva = (value) => {
+  if (!value || value === 'Outros') return null;
+  const numeric = parseFloat(String(value).replace(/kVA$/i, '').trim());
+  return isNaN(numeric) ? null : numeric;
+};
+
+const formatPowerKvaForDisplay = (value) => {
+  if (!value && value !== 0) return '';
+  const str = String(value);
+  if (str.toLowerCase().includes('kva')) return str;
+  const num = parseFloat(str);
+  if (isNaN(num)) return '';
+  const match = POWER_OPTIONS.find(opt => opt !== 'Outros' && parseFloat(opt) === num);
+  return match || '';
+};
+
 const expandPointsForDB = (localPoints, saleType) => {
-  if (saleType !== 'dual') return localPoints;
+  if (saleType !== 'dual') return localPoints.map(p => ({ ...p, power_kva: parsePowerKva(p.power_kva) }));
   const expanded = [];
   localPoints.forEach(point => {
     if (point.point_code) {
@@ -18,7 +34,7 @@ const expandPointsForDB = (localPoints, saleType) => {
         id: point.id,
         point_type: 'cpe',
         point_code: point.point_code,
-        power_kva: point.power_kva,
+        power_kva: parsePowerKva(point.power_kva),
         tier: null,
         activation_status: point.activation_status,
         activation_date: point.activation_date,
@@ -60,7 +76,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
             point_type: 'cpe',
             point_code: cpePoints[i]?.point_code || '',
             cui_code: cuiPoints[i]?.point_code || '',
-            power_kva: cpePoints[i]?.power_kva || '',
+            power_kva: formatPowerKvaForDisplay(cpePoints[i]?.power_kva),
             tier: cuiPoints[i]?.tier || '',
             activation_status: cpePoints[i]?.activation_status || 'pending',
             activation_date: cpePoints[i]?.activation_date || null,
@@ -71,9 +87,10 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
         setIsMultipoint(merged.length > 1);
         setPointCount(merged.length);
       } else {
-        setLocalPoints(points);
-        setIsMultipoint(points.length > 1);
-        setPointCount(points.length);
+        const displayPoints = points.map(p => ({ ...p, power_kva: formatPowerKvaForDisplay(p.power_kva) }));
+        setLocalPoints(displayPoints);
+        setIsMultipoint(displayPoints.length > 1);
+        setPointCount(displayPoints.length);
       }
     } else {
       const initialPoint = createEmptyPoint();
