@@ -110,7 +110,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   };
 
   const addNewConfig = (partnerType, d2dLevel, revLevel, newConfig) => {
-    if (!newConfig.service_type && (!newConfig.service_types || newConfig.service_types.length === 0)) {
+    const isByPower = newConfig.tier_mode === 'by_power';
+    if (!isByPower && !newConfig.service_type && (!newConfig.service_types || newConfig.service_types.length === 0)) {
       toast.error('Selecione um tipo de servico');
       return false;
     }
@@ -120,11 +121,23 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       partner_type: partnerType,
       d2d_level: partnerType === 'D2D' ? d2dLevel : null,
       rev_level: (partnerType === 'REV' || partnerType === 'Rev+') ? revLevel : null,
-      service_types: newConfig.service_types?.length > 0 ? newConfig.service_types : [newConfig.service_type]
+      service_types: newConfig.service_types?.length > 0 ? newConfig.service_types : (newConfig.service_type ? [newConfig.service_type] : [])
     };
 
-    setConfigs(prev => [...prev, configToAdd]);
-    toast.success('Configuracao adicionada');
+    setConfigs(prev => {
+      const alreadyExists = isByPower && prev.some(c =>
+        c.partner_type === configToAdd.partner_type &&
+        c.d2d_level === configToAdd.d2d_level &&
+        c.rev_level === configToAdd.rev_level &&
+        c.client_type === configToAdd.client_type &&
+        (c.service_type === configToAdd.service_type || (c.service_types || []).some(t => (configToAdd.service_types || []).includes(t))) &&
+        c.tier_mode === 'by_power' &&
+        c.power_value === configToAdd.power_value
+      );
+      if (alreadyExists) return prev;
+      return [...prev, configToAdd];
+    });
+    if (!isByPower) toast.success('Configuracao adicionada');
     return true;
   };
 

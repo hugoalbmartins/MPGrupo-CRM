@@ -216,6 +216,30 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
     return { base: 0.0, bonuses: 0.0, config: null };
   }
 
+  const byPowerConfigs = commissionConfigs.filter(c => c.tier_mode === 'by_power');
+  const regularConfigs = commissionConfigs.filter(c => c.tier_mode !== 'by_power');
+
+  if (byPowerConfigs.length > 0) {
+    if (saleData.power) {
+      const powerConfig = byPowerConfigs.find(c => c.power_value === saleData.power);
+      if (powerConfig) {
+        let baseCommission = parseFloat(powerConfig.commission_value || 0);
+        let bonuses = 0;
+        if (includeBonuses) {
+          if (saleData.has_direct_debit) bonuses += parseFloat(powerConfig.direct_debit_bonus || 0);
+          if (saleData.has_electronic_invoice) bonuses += parseFloat(powerConfig.electronic_invoice_bonus || 0);
+        }
+        return { base: baseCommission, bonuses, config: powerConfig };
+      }
+    }
+    if (regularConfigs.length === 0) {
+      console.warn(`No by_power config for power: ${saleData.power}, energy type: ${energyType}`);
+      return { base: 0.0, bonuses: 0.0, config: null };
+    }
+  }
+
+  const tieredConfigs = regularConfigs.length > 0 ? regularConfigs : commissionConfigs;
+
   const searchPartnerId = saleData.partner_id;
   let partnerSalesAtOperator = 0;
 
@@ -241,9 +265,9 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
     partnerSalesAtOperator = count || 0;
   }
 
-  const applicableTier = commissionConfigs.find(config =>
+  const applicableTier = tieredConfigs.find(config =>
     partnerSalesAtOperator >= (config.min_sales || 0)
-  ) || commissionConfigs[commissionConfigs.length - 1];
+  ) || tieredConfigs[tieredConfigs.length - 1];
 
   if (!applicableTier) {
     return { base: 0.0, bonuses: 0.0, config: null };
