@@ -93,9 +93,10 @@ export const partnersService = {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`;
       console.log('6. Calling edge function:', apiUrl);
 
+      const uniqueSuffix = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
       const emailForAuth = partnerData.email && partnerData.email.trim()
         ? partnerData.email.trim()
-        : `${partnerCode.toLowerCase()}@noemail.mpgrupo.local`;
+        : `${partnerCode.toLowerCase()}.${uniqueSuffix}@noemail.mpgrupo.local`;
 
       const requestBody = {
         name: partnerData.name,
