@@ -315,7 +315,15 @@ export const salesService = {
       partnerName = partner?.name || 'Unknown';
     }
 
+    const saleId = crypto.randomUUID();
+
+    let attachments = [];
+    if (files && files.length > 0) {
+      attachments = await this.uploadAttachments(saleId, files);
+    }
+
     const insertData = {
+      id: saleId,
       sale_code: saleCode,
       date: saleData.date,
       partner_id: actualPartnerId,
@@ -345,7 +353,7 @@ export const salesService = {
       tier: saleData.tier || null,
       observations: saleData.observations || null,
       calculated_commission: commission,
-      attachments: [],
+      attachments,
       is_bulk_import: saleData.is_bulk_import === true,
     };
 
@@ -357,23 +365,6 @@ export const salesService = {
 
     if (error) throw error;
     if (!data) throw new Error('Sale created but not returned from database');
-
-    if (files && files.length > 0) {
-      const attachments = await this.uploadAttachments(data.id, files);
-
-      if (attachments.length > 0) {
-        const { error: updateError } = await supabase
-          .from('sales')
-          .update({ attachments })
-          .eq('id', data.id);
-
-        if (updateError) {
-          console.error('Error updating sale with attachments:', updateError);
-        } else {
-          data.attachments = attachments;
-        }
-      }
-    }
 
     return data;
   },

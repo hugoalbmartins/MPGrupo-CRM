@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap } from "lucide-react";
+import { AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap, Paperclip, Upload, X, Download } from "lucide-react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/lib/supabase";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
@@ -46,9 +48,92 @@ const SaleEditDialog = ({
   partners,
   operators,
   user,
+  onAttachmentsChanged,
 }) => {
+  const fileInputRef = useRef(null);
+
   const update = (field, value) => {
     setEditFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddFiles = async (e) => {
+    const MAX_SIZE = 5 * 1024 * 1024;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const oversized = files.filter(f => f.size > MAX_SIZE);
+    if (oversized.length > 0) {
+      toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
+      e.target.value = '';
+      return;
+    }
+
+    const saleId = editingSale?.id;
+    if (!saleId) return;
+
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const newAttachments = [];
+
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const randomId = crypto.randomUUID();
+      const fileName = `${saleId}_${Date.now()}_${randomId}.${fileExt}`;
+      const filePath = `${saleId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('sales-documents')
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+      if (uploadError) {
+        toast.error(`Erro ao carregar ${file.name}`);
+        continue;
+      }
+
+      newAttachments.push({
+        id: randomId,
+        filename: file.name,
+        path: filePath,
+        uploaded_at: new Date().toISOString(),
+        uploaded_by: authUser?.id || null,
+      });
+    }
+
+    if (newAttachments.length > 0) {
+      const existing = editFormData.attachments || [];
+      const updated = [...existing, ...newAttachments];
+      setEditFormData(prev => ({ ...prev, attachments: updated }));
+      if (onAttachmentsChanged) onAttachmentsChanged(updated);
+      toast.success(`${newAttachments.length} ficheiro(s) adicionado(s)`);
+    }
+
+    e.target.value = '';
+  };
+
+  const handleRemoveAttachment = async (att) => {
+    if (att.expired) return;
+    if (att.path) {
+      await supabase.storage.from('sales-documents').remove([att.path]);
+    }
+    const updated = (editFormData.attachments || []).filter(a => a.id !== att.id);
+    setEditFormData(prev => ({ ...prev, attachments: updated }));
+    if (onAttachmentsChanged) onAttachmentsChanged(updated);
+  };
+
+  const handleDownload = async (att) => {
+    try {
+      const { data, error } = await supabase.storage.from('sales-documents').download(att.path);
+      if (error) throw error;
+      const url = window.URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = att.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Erro ao transferir ficheiro');
+    }
   };
 
   const saleOperator = operators.find(op => op.id === editFormData.operator_id);
@@ -508,6 +593,56 @@ const SaleEditDialog = ({
                       : 'Comissao para venda Solar'}
                     {!canEditCommission && ' - Apenas administradores podem definir comissoes manuais'}
                   </p>
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection icon={Paperclip} title="Anexos" gradient="from-slate-500 to-slate-600">
+              <div className="space-y-3">
+                {(editFormData.attachments || []).map((att) => (
+                  <div key={att.id} className={`flex items-center justify-between p-3 rounded-lg border ${att.expired ? 'border-dark-700/50 bg-dark-900/40 opacity-60' : 'border-dark-700 bg-dark-900'}`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Paperclip className={`w-4 h-4 flex-shrink-0 ${att.expired ? 'text-slate-600' : 'text-cyber-400'}`} />
+                      <div className="min-w-0">
+                        <p className={`text-sm truncate ${att.expired ? 'line-through text-slate-500' : 'text-white'}`}>{att.filename}</p>
+                        <p className="text-xs text-slate-600">{new Date(att.uploaded_at).toLocaleDateString('pt-PT')}</p>
+                        {att.expired && <p className="text-xs text-red-500/70">Expirado — ficheiro removido apos 60 dias</p>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!att.expired && (
+                        <>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => handleDownload(att)} className="h-7 w-7 p-0 text-slate-400 hover:text-white">
+                            <Download className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => handleRemoveAttachment(att)} className="h-7 w-7 p-0 text-slate-400 hover:text-red-400">
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    onChange={handleAddFiles}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="gap-2 bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800 hover:text-white"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Adicionar Ficheiros
+                  </Button>
+                  <p className="text-xs text-slate-600 mt-1">Aceita imagens, PDF, Word, Excel — max 5MB por ficheiro</p>
                 </div>
               </div>
             </FormSection>

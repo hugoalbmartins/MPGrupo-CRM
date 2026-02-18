@@ -293,8 +293,8 @@ const Sales = ({ user }) => {
           return;
         }
 
-        if (result.sale && energyPoints && energyPoints.length > 0) {
-          await energyPointsService.replacePointsForSale(result.sale.id, energyPoints);
+        if (result && result.id && energyPoints && energyPoints.length > 0) {
+          await energyPointsService.replacePointsForSale(result.id, energyPoints);
         }
 
         toast.success("Venda criada com sucesso!");
@@ -737,7 +737,8 @@ const Sales = ({ user }) => {
       has_net: Boolean(sale.has_net),
       has_lr: Boolean(sale.has_lr),
       mobile_count: sale.mobile_count || 0,
-      observations: sale.observations || ""
+      observations: sale.observations || "",
+      attachments: sale.attachments || []
     });
     setEditDialogOpen(true);
   };
