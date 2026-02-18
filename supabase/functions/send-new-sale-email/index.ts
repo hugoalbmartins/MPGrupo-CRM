@@ -284,9 +284,14 @@ async function sendViaSMTP(
     await writeCommand(`DATA`);
     await readFullResponse("DATA");
 
-    console.log(`[SMTP] Sending email body (${emailBody.length} bytes)`);
-    await conn!.write(encoder.encode(`${emailBody}\r\n.\r\n`));
-    await readFullResponse("DATA END", 60000);
+    const bodyBytes = encoder.encode(`${emailBody}\r\n.\r\n`);
+    const chunkSize = 65536;
+    console.log(`[SMTP] Sending email body (${bodyBytes.length} bytes) in chunks of ${chunkSize}`);
+    for (let offset = 0; offset < bodyBytes.length; offset += chunkSize) {
+      await conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length)));
+    }
+    const dataSendTimeoutMs = Math.max(60000, Math.ceil(bodyBytes.length / 10000) * 1000);
+    await readFullResponse("DATA END", dataSendTimeoutMs);
 
     try {
       await writeCommand(`QUIT`);
