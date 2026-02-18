@@ -240,7 +240,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {needsCPE && (
                 <>
                   <div>
@@ -334,7 +334,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                 </>
               )}
 
-              <div className="col-span-2">
+              <div className="col-span-1 sm:col-span-2">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={`operator-paid-${index}`}

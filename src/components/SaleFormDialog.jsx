@@ -23,7 +23,7 @@ const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 t
       </div>
       <h3 className="text-lg font-bold text-white">{title}</h3>
     </div>
-    <div className="space-y-4 pl-13">
+    <div className="space-y-4">
       {children}
     </div>
   </motion.div>
@@ -98,10 +98,10 @@ const SaleFormDialog = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-          className="relative w-full max-w-5xl max-h-[95vh] overflow-hidden bg-dark-850 border border-cyber-500/10 rounded-2xl shadow-2xl flex flex-col"
+          className="relative w-full max-w-5xl max-h-[95vh] overflow-hidden bg-dark-850 border border-cyber-500/10 rounded-2xl shadow-2xl flex flex-col min-w-0"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="sticky top-0 z-10 bg-dark-850 border-b border-dark-700 px-8 py-6">
+          <div className="sticky top-0 z-10 bg-dark-850 border-b border-dark-700 px-4 sm:px-8 py-4 sm:py-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-bold text-white mb-1">Nova Venda</h2>
@@ -116,10 +116,10 @@ const SaleFormDialog = ({
             </div>
           </div>
 
-          <div className="overflow-y-auto flex-1 px-8 py-6 scrollbar-modern">
+          <div className="overflow-y-auto flex-1 px-4 sm:px-8 py-6 scrollbar-modern overflow-x-hidden"  >
             <form onSubmit={onSubmit} className="space-y-8">
               <FormSection icon={Clock} title="Informações Gerais" gradient="from-cyber-500 to-cyber-600">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Data da Venda *</Label>
                     <Input
@@ -305,7 +305,7 @@ const SaleFormDialog = ({
               <div className="border-t border-dark-700 my-6" />
 
               <FormSection icon={User} title="Dados do Cliente" gradient="from-cyber-500 to-cyber-600">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Nome Completo *</Label>
                     <Input
@@ -361,8 +361,8 @@ const SaleFormDialog = ({
               <div className="border-t border-dark-700 my-6" />
 
               <FormSection icon={MapPin} title="Morada" gradient="from-cyber-500 to-cyber-600">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="col-span-1 sm:col-span-2">
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Morada Completa *</Label>
                     <Input
                       value={formData.street}
@@ -393,7 +393,7 @@ const SaleFormDialog = ({
                       className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Morada de Instalação/Fornecimento</Label>
                     <Input
                       value={formData.installation_address}
@@ -419,7 +419,7 @@ const SaleFormDialog = ({
                     </div>
                   ) : (
                     <FormSection icon={TrendingUp} title="Detalhes da Venda - Telecomunicações" gradient="from-cyber-500 to-cyber-600">
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                           <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Serviço *</Label>
                           <Select
@@ -479,7 +479,7 @@ const SaleFormDialog = ({
                           <h4 className="font-bold mb-4 text-white">
                             Dados REFID - Downsell/Upsell
                           </h4>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label className="text-sm font-semibold mb-2 text-slate-400">Mensalidade Atual (€) *</Label>
                               <Input
@@ -589,7 +589,7 @@ const SaleFormDialog = ({
 
               {formData.scope === 'solar' && (
                 <FormSection icon={Zap} title="Detalhes Solar" gradient="from-cyber-500 to-cyber-600">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <Label className="text-sm font-semibold mb-2 text-slate-400">CPE * (PT0002...)</Label>
                       <Input
@@ -738,21 +738,21 @@ const SaleFormDialog = ({
                       })()}
                     </Label>
                     <div className="space-y-3">
-                      <div className="flex gap-2 items-start">
+                      <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-start">
                         <input
                           ref={fileInputRef}
                           type="file"
                           accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                           capture="environment"
                           onChange={handleFileSelected}
-                          className="flex-1 block text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20 transition-colors cursor-pointer"
+                          className="flex-1 min-w-0 block text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20 transition-colors cursor-pointer"
                         />
                         <Button
                           type="button"
                           onClick={handleAddFile}
                           disabled={!pendingFile}
                           size="sm"
-                          className="shrink-0 bg-cyber-500 hover:bg-cyber-600 text-white disabled:opacity-40"
+                          className="shrink-0 bg-cyber-500 hover:bg-cyber-600 text-white disabled:opacity-40 w-full sm:w-auto"
                         >
                           <Plus className="w-4 h-4 mr-1" />
                           Adicionar
@@ -803,8 +803,8 @@ const SaleFormDialog = ({
             </form>
           </div>
 
-          <div className="sticky bottom-0 z-10 bg-dark-850 border-t border-dark-700 px-8 py-6">
-            <div className="flex justify-end gap-4">
+          <div className="sticky bottom-0 z-10 bg-dark-850 border-t border-dark-700 px-4 sm:px-8 py-4 sm:py-6">
+            <div className="flex justify-end gap-3 sm:gap-4">
               <Button
                 type="button"
                 onClick={() => { setPendingFile(null); onClose(); }}

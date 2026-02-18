@@ -28,6 +28,16 @@ import SaleEditDialog from "../components/SaleEditDialog";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 
+const formatPowerForEdit = (value) => {
+  if (!value && value !== 0) return '';
+  const str = String(value);
+  if (str.toLowerCase().includes('kva')) return str;
+  const num = parseFloat(str);
+  if (isNaN(num)) return '';
+  const match = POWER_OPTIONS.find(opt => opt !== 'Outros' && parseFloat(opt) === num);
+  return match || '';
+};
+
 const Sales = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -272,7 +282,7 @@ const Sales = ({ user }) => {
 
         if (saleType === 'eletricidade' || saleType === 'dual') {
           submitData.cpe = firstCPE?.point_code || '';
-          submitData.power = firstCPE?.power_kva || '';
+          submitData.power = formatPowerForEdit(firstCPE?.power_kva) || '';
         }
 
         if (saleType === 'gas') {
@@ -730,7 +740,7 @@ const Sales = ({ user }) => {
       activation_type: sale.activation_type || "",
       energy_sale_type: sale.energy_sale_type || "",
       cpe: sale.cpe || "",
-      power: sale.power || "",
+      power: formatPowerForEdit(sale.power),
       cui: sale.cui || "",
       tier: sale.tier || "",
       entry_type: sale.entry_type || "",
