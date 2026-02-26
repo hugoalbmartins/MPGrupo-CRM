@@ -829,14 +829,16 @@ const Operators = ({ user }) => {
 
       {/* Edit Operator Dialog */}
       <Dialog open={editOperatorDialogOpen} onOpenChange={setEditOperatorDialogOpen}>
-        <DialogContent className="max-w-lg bg-dark-850 border border-cyber-500/10">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-white">
-              Editar Operadora - {selectedOperator?.name}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden bg-dark-850 border border-cyber-500/10 flex flex-col p-0">
+          <div className="sticky top-0 z-10 bg-dark-850 border-b border-white/[0.06] px-6 py-5">
+            <DialogHeader>
+              <DialogTitle className="text-2xl text-white">
+                Editar Operadora - {selectedOperator?.name}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
           {selectedOperator && (
-            <div className="space-y-5 mt-4">
+            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
               {selectedOperator.scope === 'telecomunicacoes' && (
                 <div>
                   <Label className="text-slate-300 text-sm font-semibold">Tipos de Ativação Permitidos</Label>
@@ -1036,16 +1038,16 @@ const Operators = ({ user }) => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-dark-700">
-                <Button type="button" onClick={() => setEditOperatorDialogOpen(false)} variant="outline" className="border-dark-700 text-slate-300 hover:bg-dark-800 hover:border-cyber-500/30 bg-transparent">
-                  Cancelar
-                </Button>
-                <Button onClick={handleEditOperatorSave} className="bg-gradient-to-r from-cyber-500 to-cyber-600 hover:from-cyber-400 hover:to-cyber-500 text-white font-semibold shadow-lg shadow-cyber-500/20">
-                  Guardar
-                </Button>
-              </div>
             </div>
           )}
+          <div className="sticky bottom-0 bg-dark-850 border-t border-dark-700 px-6 py-4 flex justify-end gap-2">
+            <Button type="button" onClick={() => setEditOperatorDialogOpen(false)} variant="outline" className="border-dark-700 text-slate-300 hover:bg-dark-800 hover:border-cyber-500/30 bg-transparent">
+              Cancelar
+            </Button>
+            <Button onClick={handleEditOperatorSave} className="bg-gradient-to-r from-cyber-500 to-cyber-600 hover:from-cyber-400 hover:to-cyber-500 text-white font-semibold shadow-lg shadow-cyber-500/20">
+              Guardar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
