@@ -23,12 +23,12 @@ export const authService = {
     }
 
     if (!emailOrCode.includes('@')) {
-      const code = emailOrCode.toUpperCase();
+      const code = emailOrCode.trim();
 
       const { data: userByCode } = await supabase
         .from('users')
         .select('email')
-        .eq('user_code', code)
+        .ilike('user_code', code)
         .maybeSingle();
 
       if (userByCode?.email) {
@@ -37,7 +37,7 @@ export const authService = {
         const { data: partner, error: partnerError } = await supabase
           .from('partners')
           .select('user_id, users!partners_user_id_fkey(email)')
-          .eq('partner_code', code)
+          .ilike('partner_code', code)
           .maybeSingle();
 
         if (partnerError || !partner) {
