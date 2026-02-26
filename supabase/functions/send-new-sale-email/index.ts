@@ -29,6 +29,7 @@ interface SaleEmailPayload {
   power?: string;
   cui?: string;
   tier?: string;
+  autoriza_documentos?: string;
 }
 
 function buildEmailTemplate(payload: SaleEmailPayload): string {
@@ -74,6 +75,7 @@ function buildEmailTemplate(payload: SaleEmailPayload): string {
           <tr><td>Cliente:</td><td>${payload.customer_name}</td></tr>
           <tr><td>NIF:</td><td>${payload.customer_nif || "N/A"}</td></tr>
           <tr><td>Operadora:</td><td>${payload.operator_name}</td></tr>
+          ${payload.autoriza_documentos ? `<tr><td>Autoriza docs. pessoais:</td><td>${payload.autoriza_documentos}</td></tr>` : ""}
           ${payload.scope === "energia" || payload.scope === "energias" ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia</strong></td></tr>
           ${payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}

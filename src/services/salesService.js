@@ -352,6 +352,7 @@ export const salesService = {
       cui: saleData.cui?.toUpperCase() || null,
       tier: saleData.tier || null,
       observations: saleData.observations || null,
+      autoriza_documentos: saleData.autoriza_documentos || null,
       calculated_commission: commission,
       attachments,
       is_bulk_import: saleData.is_bulk_import === true,
@@ -698,6 +699,7 @@ export const salesService = {
         power: sale.power,
         cui: sale.cui,
         tier: sale.tier,
+        autoriza_documentos: sale.autoriza_documentos,
       }),
     });
 

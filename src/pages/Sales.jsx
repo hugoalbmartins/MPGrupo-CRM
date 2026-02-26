@@ -116,6 +116,7 @@ const Sales = ({ user }) => {
     has_lr: false,
     mobile_count: 0,
     observations: "",
+    autoriza_documentos: "",
     is_proposal: false,
     energy_points: []
   });
@@ -184,6 +185,11 @@ const Sales = ({ user }) => {
         toast.error("Selecione o tipo de ativacao!");
         return;
       }
+    }
+
+    if (!formData.autoriza_documentos) {
+      toast.error("Indique se o cliente autoriza copia dos documentos pessoais!");
+      return;
     }
 
     if (!formData.street || !formData.postal_code || !formData.locality) {
@@ -391,6 +397,7 @@ const Sales = ({ user }) => {
       mobile_count: 0,
       energy_points: [],
       observations: "",
+      autoriza_documentos: "",
       is_proposal: false
     });
     setUploadFiles([]);

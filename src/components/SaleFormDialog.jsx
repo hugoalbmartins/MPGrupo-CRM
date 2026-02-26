@@ -355,6 +355,21 @@ const SaleFormDialog = ({
                       placeholder="PT50..."
                     />
                   </div>
+                  <div className="col-span-1 sm:col-span-2">
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Autoriza cópia dos documentos pessoais? *</Label>
+                    <Select
+                      value={formData.autoriza_documentos}
+                      onValueChange={(v) => setFormData({...formData, autoriza_documentos: v})}
+                    >
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sim.">Sim.</SelectItem>
+                        <SelectItem value="Nao.">Não.</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </FormSection>
 
