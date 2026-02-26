@@ -20,6 +20,15 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
     }).format(value);
   };
 
+  const formatUnitPrice = (value) => {
+    return new Intl.NumberFormat('pt-PT', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6
+    }).format(value);
+  };
+
   const exportToPDF = async (operadora = null) => {
     try {
       const doc = new jsPDF();
@@ -327,36 +336,40 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                       </div>
                     </div>
 
-                    {(resultado.detalhesCalculo.eletricidade?.campanhaAplicavel || resultado.detalhesCalculo.gas?.campanhaAplicavel) && (() => {
-                      const campanhaElet = resultado.detalhesCalculo.eletricidade?.campanha;
-                      const campanhaGas = resultado.detalhesCalculo.gas?.campanha;
-                      const campanha = campanhaElet || campanhaGas;
-                      const descontoMensal = parseFloat(campanha.desconto_mensal_temporario || 0);
-                      const duracaoMeses = parseInt(campanha.duracao_meses_desconto || 0);
-                      const novoCustoComCampanha = resultado.custoNovaOperadora.total - descontoMensal;
-
-                      return (
-                        <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-3 rounded-lg border border-purple-500/30 mb-2">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Gift className="w-4 h-4 text-purple-400" />
-                            <span className="font-semibold text-purple-300 text-sm">Campanha Especial</span>
-                          </div>
-                          <p className="text-sm text-purple-200">
-                            Durante <strong>{duracaoMeses} meses</strong>, o novo custo mensal será de{' '}
-                            <strong className="text-purple-100">{formatCurrency(novoCustoComCampanha)}</strong>
-                          </p>
+                    {resultado.descontoMensalCampanha > 0 && (
+                      <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 p-3 rounded-lg border border-amber-500/30 mb-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Gift className="w-4 h-4 text-amber-400" />
+                          <span className="font-semibold text-amber-300 text-sm">Campanha Especial</span>
                         </div>
-                      );
-                    })()}
+                        <p className="text-sm text-amber-200">
+                          Durante <strong>{resultado.duracaoCampanha} meses</strong>, o custo mensal será de{' '}
+                          <strong className="text-amber-100">{formatCurrency(resultado.custoComCampanha)}</strong>
+                          {' '}(desconto adicional de <strong>{formatCurrency(resultado.descontoMensalCampanha)}/mês</strong>)
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
                     <div className="text-right">
-                      <p className="text-dark-400 text-sm mb-1">Poupança Mensal</p>
-                      <p className="text-3xl font-bold text-green-400">{formatCurrency(resultado.poupancaMensal)}</p>
-                      <p className="text-dark-300 text-sm">
-                        Anual: <span className="text-green-400 font-semibold">{formatCurrency(resultado.poupancaAnual)}</span>
-                      </p>
+                      {resultado.descontoMensalCampanha > 0 ? (
+                        <>
+                          <p className="text-dark-400 text-sm mb-1">Poupança c/ Campanha</p>
+                          <p className="text-3xl font-bold text-amber-400">{formatCurrency(resultado.poupancaMensalComCampanha)}</p>
+                          <p className="text-dark-300 text-sm">
+                            Sem campanha: <span className="text-green-400 font-semibold">{formatCurrency(resultado.poupancaMensal)}/mês</span>
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-dark-400 text-sm mb-1">Poupança Mensal</p>
+                          <p className="text-3xl font-bold text-green-400">{formatCurrency(resultado.poupancaMensal)}</p>
+                          <p className="text-dark-300 text-sm">
+                            Anual: <span className="text-green-400 font-semibold">{formatCurrency(resultado.poupancaAnual)}</span>
+                          </p>
+                        </>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <Button
@@ -393,37 +406,60 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                           <div className="bg-dark-700/30 p-4 rounded-lg">
                             <h5 className="font-semibold text-white mb-4">Detalhamento Eletricidade</h5>
                             <div className="space-y-3">
-                              <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                                <span className="text-dark-300 text-sm font-medium">Componente</span>
-                                <div className="flex gap-8">
-                                  <span className="text-dark-300 text-sm font-medium">Sem Desconto</span>
-                                  <span className="text-green-400 text-sm font-medium">Com Desconto</span>
-                                </div>
+                              <div className="grid grid-cols-5 gap-2 pb-2 border-b border-white/10">
+                                <span className="text-dark-300 text-xs font-medium col-span-1">Componente</span>
+                                <span className="text-dark-300 text-xs font-medium text-right">Preço Unit.</span>
+                                <span className="text-blue-400 text-xs font-medium text-right">Preço Unit. c/ Desc.</span>
+                                <span className="text-dark-300 text-xs font-medium text-right">Total</span>
+                                <span className="text-green-400 text-xs font-medium text-right">Total c/ Desc.</span>
                               </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-white text-sm">Potência</span>
-                                <div className="flex gap-8">
-                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto)}</span>
-                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto)}</span>
+                              <div className="grid grid-cols-5 gap-2 items-center">
+                                <div className="col-span-1">
+                                  <span className="text-white text-sm">Potência</span>
+                                  <p className="text-dark-400 text-xs">(€/kW/dia)</p>
                                 </div>
+                                <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoPotenciaUnitario)}</span>
+                                <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoPotenciaUnitarioComDesconto)}</span>
+                                <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto)}</span>
+                                <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto)}</span>
                               </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-white text-sm">Energia (kWh)</span>
-                                <div className="flex gap-8">
-                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}</span>
-                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}</span>
+                              {typeof resultado.detalhesCalculo.eletricidade.precoEnergiaUnitario === 'number' ? (
+                                <div className="grid grid-cols-5 gap-2 items-center">
+                                  <div className="col-span-1">
+                                    <span className="text-white text-sm">Energia</span>
+                                    <p className="text-dark-400 text-xs">(€/kWh)</p>
+                                  </div>
+                                  <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoEnergiaUnitario)}</span>
+                                  <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoEnergiaUnitarioComDesconto)}</span>
+                                  <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}</span>
+                                  <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}</span>
                                 </div>
-                              </div>
-                              <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                                <span className="text-white font-semibold">Total</span>
-                                <div className="flex gap-8">
-                                  <span className="text-white text-sm w-20 text-right font-semibold">
-                                    {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}
-                                  </span>
-                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">
-                                    {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}
-                                  </span>
-                                </div>
+                              ) : (
+                                Object.entries(resultado.detalhesCalculo.eletricidade.precoEnergiaUnitario || {}).map(([periodo, preco]) => {
+                                  const periodoLabel = periodo === 'vazio' ? 'Energia Vazio' : periodo === 'fora_vazio' ? 'Energia Fora Vazio' : periodo === 'cheia' ? 'Energia Cheia' : 'Energia Ponta';
+                                  const precoComDesc = resultado.detalhesCalculo.eletricidade.precoEnergiaUnitarioComDesconto?.[periodo] || 0;
+                                  return (
+                                    <div key={periodo} className="grid grid-cols-5 gap-2 items-center">
+                                      <div className="col-span-1">
+                                        <span className="text-white text-sm">{periodoLabel}</span>
+                                        <p className="text-dark-400 text-xs">(€/kWh)</p>
+                                      </div>
+                                      <span className="text-white text-xs text-right">{formatUnitPrice(preco)}</span>
+                                      <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(precoComDesc)}</span>
+                                      <span className="text-dark-400 text-xs text-right">—</span>
+                                      <span className="text-dark-400 text-xs text-right">—</span>
+                                    </div>
+                                  );
+                                })
+                              )}
+                              <div className="grid grid-cols-5 gap-2 items-center pt-2 border-t border-white/10">
+                                <span className="text-white text-sm font-semibold col-span-3">Total Eletricidade</span>
+                                <span className="text-white text-sm text-right font-semibold">
+                                  {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}
+                                </span>
+                                <span className="text-green-400 text-sm text-right font-semibold">
+                                  {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -433,57 +469,61 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                           <div className="bg-dark-700/30 p-4 rounded-lg">
                             <h5 className="font-semibold text-white mb-4">Detalhamento Gás Natural</h5>
                             <div className="space-y-3">
-                              <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                                <span className="text-dark-300 text-sm font-medium">Componente</span>
-                                <div className="flex gap-8">
-                                  <span className="text-dark-300 text-sm font-medium">Sem Desconto</span>
-                                  <span className="text-green-400 text-sm font-medium">Com Desconto</span>
-                                </div>
+                              <div className="grid grid-cols-5 gap-2 pb-2 border-b border-white/10">
+                                <span className="text-dark-300 text-xs font-medium col-span-1">Componente</span>
+                                <span className="text-dark-300 text-xs font-medium text-right">Preço Unit.</span>
+                                <span className="text-blue-400 text-xs font-medium text-right">Preço Unit. c/ Desc.</span>
+                                <span className="text-dark-300 text-xs font-medium text-right">Total</span>
+                                <span className="text-green-400 text-xs font-medium text-right">Total c/ Desc.</span>
                               </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-white text-sm">Valor Diário</span>
-                                <div className="flex gap-8">
-                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto)}</span>
-                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto)}</span>
+                              <div className="grid grid-cols-5 gap-2 items-center">
+                                <div className="col-span-1">
+                                  <span className="text-white text-sm">Valor Diário</span>
+                                  <p className="text-dark-400 text-xs">(€/dia)</p>
                                 </div>
+                                <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.gas.precoDiarioUnitario)}</span>
+                                <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.gas.precoDiarioUnitarioComDesconto)}</span>
+                                <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto)}</span>
+                                <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto)}</span>
                               </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-white text-sm">Energia (kWh)</span>
-                                <div className="flex gap-8">
-                                  <span className="text-white text-sm w-20 text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}</span>
-                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}</span>
+                              <div className="grid grid-cols-5 gap-2 items-center">
+                                <div className="col-span-1">
+                                  <span className="text-white text-sm">Energia</span>
+                                  <p className="text-dark-400 text-xs">(€/kWh)</p>
                                 </div>
+                                <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.gas.precoEnergiaUnitario)}</span>
+                                <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.gas.precoEnergiaUnitarioComDesconto)}</span>
+                                <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}</span>
+                                <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}</span>
                               </div>
-                              <div className="flex justify-between items-center pt-2 border-t border-white/10">
-                                <span className="text-white font-semibold">Total</span>
-                                <div className="flex gap-8">
-                                  <span className="text-white text-sm w-20 text-right font-semibold">
-                                    {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto + resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}
-                                  </span>
-                                  <span className="text-green-400 text-sm w-20 text-right font-semibold">
-                                    {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto + resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}
-                                  </span>
-                                </div>
+                              <div className="grid grid-cols-5 gap-2 items-center pt-2 border-t border-white/10">
+                                <span className="text-white text-sm font-semibold col-span-3">Total Gás</span>
+                                <span className="text-white text-sm text-right font-semibold">
+                                  {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto + resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}
+                                </span>
+                                <span className="text-green-400 text-sm text-right font-semibold">
+                                  {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto + resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}
+                                </span>
                               </div>
                             </div>
                           </div>
                         )}
 
-                        {(resultado.detalhesCalculo.eletricidade?.campanhaAplicavel || resultado.detalhesCalculo.gas?.campanhaAplicavel) && (
-                          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-4 rounded-lg border border-purple-500/30">
+                        {resultado.descontoMensalCampanha > 0 && (
+                          <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 p-4 rounded-lg border border-amber-500/30">
                             <div className="flex items-start gap-3">
-                              <Gift className="w-5 h-5 text-purple-400 flex-shrink-0 mt-1" />
+                              <Gift className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
                               <div>
-                                <h5 className="font-semibold text-purple-300 mb-2">Campanha Especial Disponível!</h5>
-                                {resultado.detalhesCalculo.eletricidade?.campanha && (
-                                  <div className="text-sm text-purple-200 space-y-1">
-                                    <p>Desconto adicional: <strong>{formatCurrency(resultado.detalhesCalculo.eletricidade.campanha.desconto_mensal_temporario)}/mês</strong></p>
-                                    <p>Duração: <strong>{resultado.detalhesCalculo.eletricidade.campanha.duracao_meses_desconto} meses</strong></p>
-                                    {resultado.detalhesCalculo.eletricidade.campanha.descricao_desconto_temporario && (
-                                      <p className="italic">{resultado.detalhesCalculo.eletricidade.campanha.descricao_desconto_temporario}</p>
-                                    )}
-                                  </div>
-                                )}
+                                <h5 className="font-semibold text-amber-300 mb-2">Campanha Especial Disponível!</h5>
+                                <div className="text-sm text-amber-200 space-y-1">
+                                  <p>Desconto adicional: <strong>{formatCurrency(resultado.descontoMensalCampanha)}/mês</strong></p>
+                                  <p>Duração: <strong>{resultado.duracaoCampanha} meses</strong></p>
+                                  <p>Custo mensal com campanha: <strong className="text-amber-100">{formatCurrency(resultado.custoComCampanha)}</strong></p>
+                                  <p>Poupança com campanha: <strong className="text-amber-100">{formatCurrency(resultado.poupancaMensalComCampanha)}/mês</strong></p>
+                                  {(resultado.detalhesCalculo.eletricidade?.campanha?.descricao_desconto_temporario || resultado.detalhesCalculo.gas?.campanha?.descricao_desconto_temporario) && (
+                                    <p className="italic opacity-80">{resultado.detalhesCalculo.eletricidade?.campanha?.descricao_desconto_temporario || resultado.detalhesCalculo.gas?.campanha?.descricao_desconto_temporario}</p>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>

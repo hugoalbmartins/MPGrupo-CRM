@@ -426,6 +426,13 @@ export const energySimulatorService = {
           const comDesconto = this.aplicarDescontos(custoPotencia, custoEnergia, desconto, temDD, temFE);
           custoNovaOperadora.eletricidade = comDesconto.total;
 
+          const precoPotenciaUnitario = precoPotencia;
+          const precoEnergiaUnitario = ciclo === 'simples'
+            ? parseFloat(tarifasElet.simples?.energia) || 0
+            : ciclo === 'bi-horario'
+              ? { vazio: parseFloat(tarifasElet['bi-horario']?.vazio) || 0, fora_vazio: parseFloat(tarifasElet['bi-horario']?.fora_vazio) || 0 }
+              : { vazio: parseFloat(tarifasElet['tri-horario']?.vazio) || 0, cheia: parseFloat(tarifasElet['tri-horario']?.cheia) || 0, ponta: parseFloat(tarifasElet['tri-horario']?.ponta) || 0 };
+
           detalhesCalculo.eletricidade = {
             custoPotenciaSemDesconto: custoPotencia,
             custoEnergiaSemDesconto: custoEnergia,
@@ -433,6 +440,12 @@ export const energySimulatorService = {
             custoEnergiaComDesconto: comDesconto.energia,
             descontoPotencia: comDesconto.descontoPotencia,
             descontoEnergia: comDesconto.descontoEnergia,
+            precoPotenciaUnitario: precoPotenciaUnitario,
+            precoEnergiaUnitario: precoEnergiaUnitario,
+            precoPotenciaUnitarioComDesconto: precoPotenciaUnitario * (1 - comDesconto.descontoPotencia / 100),
+            precoEnergiaUnitarioComDesconto: typeof precoEnergiaUnitario === 'number'
+              ? precoEnergiaUnitario * (1 - comDesconto.descontoEnergia / 100)
+              : Object.fromEntries(Object.entries(precoEnergiaUnitario).map(([k, v]) => [k, v * (1 - comDesconto.descontoEnergia / 100)])),
             campanhaAplicavel: this.verificarCampanhaAplicavel(desconto, temDD, temFE),
             campanha: desconto
           };
@@ -468,6 +481,10 @@ export const energySimulatorService = {
             custoEnergiaComDesconto: comDesconto.energia,
             descontoDiario: comDesconto.descontoPotencia,
             descontoEnergia: comDesconto.descontoEnergia,
+            precoDiarioUnitario: precoDiario,
+            precoEnergiaUnitario: precoEnergia,
+            precoDiarioUnitarioComDesconto: precoDiario * (1 - comDesconto.descontoPotencia / 100),
+            precoEnergiaUnitarioComDesconto: precoEnergia * (1 - comDesconto.descontoEnergia / 100),
             campanhaAplicavel: this.verificarCampanhaAplicavel(desconto, temDD, temFE),
             campanha: desconto
           };
@@ -475,23 +492,37 @@ export const energySimulatorService = {
 
         custoNovaOperadora.total = custoNovaOperadora.eletricidade + custoNovaOperadora.gas;
 
+        const campanhaElet = detalhesCalculo.eletricidade?.campanhaAplicavel ? detalhesCalculo.eletricidade?.campanha : null;
+        const campanhaGas = detalhesCalculo.gas?.campanhaAplicavel ? detalhesCalculo.gas?.campanha : null;
+        const descontoMensalCampanha = parseFloat(campanhaElet?.desconto_mensal_temporario || 0) + parseFloat(campanhaGas?.desconto_mensal_temporario || 0);
+        const duracaoCampanha = campanhaElet?.duracao_meses_desconto || campanhaGas?.duracao_meses_desconto || 0;
+
+        const custoComCampanha = custoNovaOperadora.total - descontoMensalCampanha;
+        const poupancaComCampanha = custoAtual.total - custoComCampanha;
+
         const poupanca = custoAtual.total - custoNovaOperadora.total;
 
-        if (poupanca > 0) {
+        if (custoComCampanha < custoAtual.total) {
           resultados.push({
             operadora,
             custoAtual,
             custoNovaOperadora,
+            custoComCampanha,
+            descontoMensalCampanha,
+            duracaoCampanha,
             poupanca,
             poupancaMensal: poupanca,
             poupancaAnual: poupanca * 12,
             poupancaPercentual: (poupanca / custoAtual.total) * 100,
+            poupancaComCampanha,
+            poupancaMensalComCampanha: poupancaComCampanha,
+            poupancaAnualComCampanha: poupancaComCampanha * 12,
             detalhesCalculo
           });
         }
       }
 
-      resultados.sort((a, b) => b.poupanca - a.poupanca);
+      resultados.sort((a, b) => b.poupancaComCampanha - a.poupancaComCampanha);
 
       return {
         custoAtual,
