@@ -33,129 +33,485 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 20;
+      const margin = 15;
+      const colW = (pageWidth - margin * 2) / 5;
       let yPos = 20;
 
+      const checkPageBreak = (needed = 10) => {
+        if (yPos + needed > 280) {
+          doc.addPage();
+          yPos = 20;
+        }
+      };
+
+      const drawSectionTitle = (title, r, g, b) => {
+        checkPageBreak(12);
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.setFillColor(r, g, b);
+        doc.rect(margin - 2, yPos - 5, pageWidth - 2 * margin + 4, 9, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.text(title, margin, yPos);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'normal');
+        yPos += 8;
+      };
+
+      const drawTableHeader = (cols) => {
+        checkPageBreak(8);
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(80, 80, 80);
+        cols.forEach((col, i) => {
+          const xPos = margin + i * colW + (i > 0 ? colW * 0.05 : 0);
+          doc.text(col.label, xPos + (i === 0 ? 0 : colW * 0.95), yPos, { align: i === 0 ? 'left' : 'right' });
+        });
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, yPos + 1.5, pageWidth - margin, yPos + 1.5);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(0, 0, 0);
+        yPos += 6;
+      };
+
+      const drawTableRow = (label, sublabel, values, highlight = false) => {
+        checkPageBreak(10);
+        doc.setFontSize(8.5);
+        if (highlight) {
+          doc.setFillColor(240, 255, 240);
+          doc.rect(margin - 2, yPos - 5, pageWidth - 2 * margin + 4, 9, 'F');
+        }
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(30, 30, 30);
+        doc.text(label, margin, yPos);
+        if (sublabel) {
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(7);
+          doc.setTextColor(120, 120, 120);
+          doc.text(sublabel, margin, yPos + 3.5);
+        }
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8.5);
+        values.forEach((val, i) => {
+          if (val === null || val === undefined) return;
+          const xPos = margin + (i + 1) * colW + colW * 0.95;
+          const isDiscount = i === 1 || i === 3;
+          doc.setTextColor(isDiscount ? 22 : 50, isDiscount ? 163 : 50, isDiscount ? 74 : 50);
+          doc.text(String(val), xPos, yPos, { align: 'right' });
+        });
+        doc.setTextColor(0, 0, 0);
+        yPos += sublabel ? 7 : 6;
+      };
+
       const partnerName = user?.name || 'MP GRUPO';
-      doc.setFontSize(20);
-      doc.setTextColor(255, 193, 7);
+
+      doc.setFontSize(18);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(40, 120, 200);
       doc.text(partnerName, margin, yPos);
-      doc.setFontSize(11);
-      doc.setTextColor(80, 80, 80);
-      doc.text('O seu comercial de energias.', margin, yPos + 7);
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Simulação de Energia', margin, yPos + 14);
-      yPos += 27;
-
-      doc.setFontSize(10);
-      doc.text(`Data: ${new Date().toLocaleDateString('pt-PT')}`, margin, yPos);
-      yPos += 10;
-
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('O seu comercial de energias.', margin, yPos + 6);
       doc.setFontSize(14);
       doc.setFont(undefined, 'bold');
-      doc.text('Custo Atual Mensal', margin, yPos);
-      yPos += 8;
+      doc.setTextColor(30, 30, 30);
+      doc.text('Simulação de Energia', pageWidth - margin, yPos, { align: 'right' });
+      doc.setFontSize(9);
       doc.setFont(undefined, 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Data: ${new Date().toLocaleDateString('pt-PT')}`, pageWidth - margin, yPos + 6, { align: 'right' });
+      yPos += 16;
+      doc.setDrawColor(40, 120, 200);
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+
+      const formData = simulationData.formData || {};
+      const elForm = formData.eletricidade || formData;
+      const gasForm = formData.gas || formData;
+      const hasDD = formData.tem_debito_direto || elForm.tem_debito_direto;
+      const hasFE = formData.tem_fatura_eletronica || elForm.tem_fatura_eletronica;
+
+      drawSectionTitle('Dados do Consumo Atual', 60, 80, 120);
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(50, 50, 50);
+
+      const tipoLabel = formData.tipo_energia === 'dual' ? 'Dual (Eletricidade + Gás)' : formData.tipo_energia === 'gas' ? 'Gás Natural' : 'Eletricidade';
+      doc.text(`Tipo de Energia: ${tipoLabel}`, margin, yPos);
+      yPos += 5;
+
+      if (elForm.operadora_atual) {
+        doc.text(`Operadora Atual: ${elForm.operadora_atual}`, margin, yPos);
+        yPos += 5;
+      }
+
+      const condStr = [];
+      if (hasDD) condStr.push('Débito Direto');
+      if (hasFE) condStr.push('Fatura Eletrónica');
+      if (condStr.length > 0) {
+        doc.text(`Condições Atuais: ${condStr.join(' + ')}`, margin, yPos);
+        yPos += 5;
+      }
+
+      if (custoAtual.eletricidade > 0 || custoAtual.gas > 0) {
+        yPos += 2;
+        if (custoAtual.eletricidade > 0) {
+          doc.text(`Custo Mensal Eletricidade: ${formatCurrency(custoAtual.eletricidade)}`, margin + 5, yPos);
+          yPos += 5;
+        }
+        if (custoAtual.gas > 0) {
+          doc.text(`Custo Mensal Gás: ${formatCurrency(custoAtual.gas)}`, margin + 5, yPos);
+          yPos += 5;
+        }
+      }
+
+      doc.setFont(undefined, 'bold');
       doc.setFontSize(10);
-      doc.text(`Total: ${formatCurrency(custoAtual.total)}`, margin, yPos);
-      if (custoAtual.eletricidade > 0) {
-        yPos += 6;
-        doc.text(`Eletricidade: ${formatCurrency(custoAtual.eletricidade)}`, margin + 5, yPos);
+      doc.setTextColor(30, 30, 30);
+      doc.text(`Custo Total Mensal Atual: ${formatCurrency(custoAtual.total)}`, margin, yPos);
+      doc.setFont(undefined, 'normal');
+      yPos += 10;
+
+      if (formData.tipo_energia !== 'gas' && elForm.potencia) {
+        doc.setFontSize(8.5);
+        doc.setTextColor(50, 50, 50);
+        const cicloLabel = elForm.ciclo === 'simples' ? 'Simples' : elForm.ciclo === 'bi-horario' ? 'Bi-horário' : elForm.ciclo === 'tri-horario' ? 'Tri-horário' : (elForm.ciclo || '');
+        const elDetails = [];
+        if (elForm.potencia) elDetails.push(`Potência: ${elForm.potencia} kW`);
+        if (cicloLabel) elDetails.push(`Ciclo: ${cicloLabel}`);
+        if (elForm.dias) elDetails.push(`Dias: ${elForm.dias}`);
+        if (elDetails.length > 0) {
+          doc.text(elDetails.join('   |   '), margin, yPos);
+          yPos += 5;
+        }
+        const consumos = elForm.consumos || {};
+        const consumoDetails = [];
+        if (consumos.energia) consumoDetails.push(`Simples: ${consumos.energia} kWh`);
+        if (consumos.vazio) consumoDetails.push(`Vazio: ${consumos.vazio} kWh`);
+        if (consumos.fora_vazio) consumoDetails.push(`Fora Vazio: ${consumos.fora_vazio} kWh`);
+        if (consumos.cheia) consumoDetails.push(`Cheia: ${consumos.cheia} kWh`);
+        if (consumos.ponta) consumoDetails.push(`Ponta: ${consumos.ponta} kWh`);
+        if (consumoDetails.length > 0) {
+          doc.text(`Consumos: ${consumoDetails.join('   ')}`, margin, yPos);
+          yPos += 5;
+        }
       }
-      if (custoAtual.gas > 0) {
-        yPos += 6;
-        doc.text(`Gás: ${formatCurrency(custoAtual.gas)}`, margin + 5, yPos);
+
+      if (formData.tipo_energia !== 'eletricidade' && gasForm.consumo_kwh) {
+        doc.setFontSize(8.5);
+        doc.setTextColor(50, 50, 50);
+        const gasDetails = [];
+        if (gasForm.escalao) gasDetails.push(`Escalão: ${gasForm.escalao}`);
+        if (gasForm.consumo_kwh) gasDetails.push(`Consumo: ${gasForm.consumo_kwh} kWh`);
+        if (gasForm.dias) gasDetails.push(`Dias: ${gasForm.dias}`);
+        if (gasDetails.length > 0) {
+          doc.text(gasDetails.join('   |   '), margin, yPos);
+          yPos += 5;
+        }
       }
-      yPos += 15;
+
+      yPos += 5;
 
       const operadorasParaPDF = operadora ? [resultados.find(r => r.operadora.id === operadora.id)] : resultados;
 
       operadorasParaPDF.forEach((resultado, index) => {
-        if (yPos > 250) {
-          doc.addPage();
-          yPos = 20;
-        }
+        checkPageBreak(20);
 
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.setFillColor(34, 197, 94);
-        doc.rect(margin - 2, yPos - 6, pageWidth - 2 * margin + 4, 10, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.text(resultado.operadora.nome, margin, yPos);
-        yPos += 12;
+        const headerColor = index === 0 ? [22, 163, 74] : index === 1 ? [37, 99, 235] : [107, 114, 128];
+        drawSectionTitle(
+          `${index + 1}. ${resultado.operadora.nome}${index === 0 ? '  ★ Melhor Opção' : ''}`,
+          headerColor[0], headerColor[1], headerColor[2]
+        );
 
-        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(9);
+        doc.setTextColor(30, 30, 30);
+
+        const col1X = margin;
+        const col2X = margin + (pageWidth - 2 * margin) / 3;
+        const col3X = margin + 2 * (pageWidth - 2 * margin) / 3;
+
         doc.setFont(undefined, 'normal');
-        doc.setFontSize(10);
+        doc.text(`Custo Mensal: ${formatCurrency(resultado.custoNovaOperadora.total)}`, col1X, yPos);
 
-        doc.text(`Custo Mensal: ${formatCurrency(resultado.custoNovaOperadora.total)}`, margin, yPos);
-        yPos += 6;
         doc.setFont(undefined, 'bold');
         doc.setTextColor(22, 163, 74);
-        doc.text(`Poupança Mensal: ${formatCurrency(resultado.poupancaMensal)}`, margin, yPos);
-        yPos += 6;
-        doc.text(`Poupança Anual: ${formatCurrency(resultado.poupancaAnual)}`, margin, yPos);
-        yPos += 10;
-
+        doc.text(`Poupança Mensal: ${formatCurrency(resultado.poupancaMensal)}`, col2X, yPos);
+        doc.text(`Poupança Anual: ${formatCurrency(resultado.poupancaAnual)}`, col3X, yPos);
         doc.setFont(undefined, 'normal');
         doc.setTextColor(0, 0, 0);
+        yPos += 7;
+
+        if (resultado.custoNovaOperadora.eletricidade > 0 && resultado.custoNovaOperadora.gas > 0) {
+          doc.setFontSize(8);
+          doc.setTextColor(80, 80, 80);
+          doc.text(`  Eletricidade: ${formatCurrency(resultado.custoNovaOperadora.eletricidade)}   Gás: ${formatCurrency(resultado.custoNovaOperadora.gas)}`, margin, yPos);
+          yPos += 5;
+          doc.setTextColor(0, 0, 0);
+        }
+
+        yPos += 3;
 
         if (resultado.detalhesCalculo.eletricidade) {
           const det = resultado.detalhesCalculo.eletricidade;
-          doc.text('Eletricidade:', margin, yPos);
-          yPos += 6;
-          doc.text(`  Potência - Sem desconto: ${formatCurrency(det.custoPotenciaSemDesconto)} | Com desconto: ${formatCurrency(det.custoPotenciaComDesconto)}`, margin, yPos);
-          yPos += 6;
-          doc.text(`  Energia (kWh) - Sem desconto: ${formatCurrency(det.custoEnergiaSemDesconto)} | Com desconto: ${formatCurrency(det.custoEnergiaComDesconto)}`, margin, yPos);
-          yPos += 8;
+          checkPageBreak(50);
+
+          doc.setFontSize(9);
+          doc.setFont(undefined, 'bold');
+          doc.setTextColor(30, 30, 30);
+          doc.text('Eletricidade — Detalhe de Preços e Custos', margin, yPos);
+          yPos += 5;
+
+          drawTableHeader([
+            { label: 'Componente' },
+            { label: 'Preço Unit.' },
+            { label: 'Preço c/ Desc.' },
+            { label: 'Total s/ Desc.' },
+            { label: 'Total c/ Desc.' }
+          ]);
+
+          drawTableRow(
+            'Potência', '(€/kW/dia)',
+            [
+              formatUnitPrice(det.precoPotenciaUnitario),
+              formatUnitPrice(det.precoPotenciaUnitarioComDesconto),
+              formatCurrency(det.custoPotenciaSemDesconto),
+              formatCurrency(det.custoPotenciaComDesconto)
+            ]
+          );
+
+          if (det.descontoPotencia > 0) {
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`  Desconto aplicado: ${det.descontoPotencia}%`, margin + 5, yPos - 1);
+            yPos += 3;
+            doc.setTextColor(0, 0, 0);
+          }
+
+          if (typeof det.precoEnergiaUnitario === 'number') {
+            drawTableRow(
+              'Energia', '(€/kWh)',
+              [
+                formatUnitPrice(det.precoEnergiaUnitario),
+                formatUnitPrice(det.precoEnergiaUnitarioComDesconto),
+                formatCurrency(det.custoEnergiaSemDesconto),
+                formatCurrency(det.custoEnergiaComDesconto)
+              ]
+            );
+            if (det.descontoEnergia > 0) {
+              doc.setFontSize(7.5);
+              doc.setTextColor(100, 100, 100);
+              doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos - 1);
+              yPos += 3;
+              doc.setTextColor(0, 0, 0);
+            }
+          } else if (det.precoEnergiaUnitario) {
+            const periodoLabels = { vazio: 'Energia Vazio', fora_vazio: 'Energia Fora Vazio', cheia: 'Energia Cheia', ponta: 'Energia Ponta' };
+            Object.entries(det.precoEnergiaUnitario).forEach(([periodo, preco]) => {
+              const precoComDesc = det.precoEnergiaUnitarioComDesconto?.[periodo] || 0;
+              drawTableRow(
+                periodoLabels[periodo] || periodo, '(€/kWh)',
+                [formatUnitPrice(preco), formatUnitPrice(precoComDesc), '—', '—']
+              );
+            });
+            drawTableRow(
+              'Total Energia', null,
+              [null, null, formatCurrency(det.custoEnergiaSemDesconto), formatCurrency(det.custoEnergiaComDesconto)]
+            );
+            if (det.descontoEnergia > 0) {
+              doc.setFontSize(7.5);
+              doc.setTextColor(100, 100, 100);
+              doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos - 1);
+              yPos += 3;
+              doc.setTextColor(0, 0, 0);
+            }
+          }
+
+          checkPageBreak(8);
+          doc.setDrawColor(200, 200, 200);
+          doc.line(margin, yPos - 1, pageWidth - margin, yPos - 1);
+          drawTableRow(
+            'TOTAL ELETRICIDADE', null,
+            [null, null,
+              formatCurrency(det.custoPotenciaSemDesconto + det.custoEnergiaSemDesconto),
+              formatCurrency(det.custoPotenciaComDesconto + det.custoEnergiaComDesconto)
+            ],
+            true
+          );
+
+          if (det.campanhaAplicavel && det.campanha) {
+            const c = det.campanha;
+            checkPageBreak(30);
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(180, 90, 0);
+            doc.text('Descontos da Campanha (Eletricidade)', margin, yPos);
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(80, 80, 80);
+            doc.setFontSize(8);
+            const discLines = [];
+            if (c.desconto_base_potencia) discLines.push(`Base Potência: ${c.desconto_base_potencia}%`);
+            if (c.desconto_base_energia) discLines.push(`Base Energia: ${c.desconto_base_energia}%`);
+            if (c.desconto_dd_potencia) discLines.push(`DD Potência: ${c.desconto_dd_potencia}%`);
+            if (c.desconto_dd_energia) discLines.push(`DD Energia: ${c.desconto_dd_energia}%`);
+            if (c.desconto_fe_potencia) discLines.push(`FE Potência: ${c.desconto_fe_potencia}%`);
+            if (c.desconto_fe_energia) discLines.push(`FE Energia: ${c.desconto_fe_energia}%`);
+            if (c.desconto_dd_fe_potencia) discLines.push(`DD+FE Potência: ${c.desconto_dd_fe_potencia}%`);
+            if (c.desconto_dd_fe_energia) discLines.push(`DD+FE Energia: ${c.desconto_dd_fe_energia}%`);
+            if (discLines.length > 0) {
+              doc.text(discLines.join('   '), margin + 5, yPos);
+              yPos += 5;
+            }
+          }
+          yPos += 3;
         }
 
         if (resultado.detalhesCalculo.gas) {
           const det = resultado.detalhesCalculo.gas;
-          doc.text('Gás Natural:', margin, yPos);
-          yPos += 6;
-          doc.text(`  Valor Diário - Sem desconto: ${formatCurrency(det.custoDiarioSemDesconto)} | Com desconto: ${formatCurrency(det.custoDiarioComDesconto)}`, margin, yPos);
-          yPos += 6;
-          doc.text(`  Energia (kWh) - Sem desconto: ${formatCurrency(det.custoEnergiaSemDesconto)} | Com desconto: ${formatCurrency(det.custoEnergiaComDesconto)}`, margin, yPos);
-          yPos += 8;
-        }
+          checkPageBreak(45);
 
-        if (resultado.detalhesCalculo.eletricidade?.campanhaAplicavel || resultado.detalhesCalculo.gas?.campanhaAplicavel) {
-          const campanha = resultado.detalhesCalculo.eletricidade?.campanha || resultado.detalhesCalculo.gas?.campanha;
-          if (campanha.desconto_mensal_temporario > 0) {
-            const novoCustoComCampanha = resultado.custoNovaOperadora.total - parseFloat(campanha.desconto_mensal_temporario);
-            doc.setFillColor(147, 51, 234);
-            doc.rect(margin - 2, yPos - 2, pageWidth - 2 * margin + 4, 24, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.text('CAMPANHA ESPECIAL', margin, yPos + 3);
-            yPos += 8;
-            doc.text(`Durante ${campanha.duracao_meses_desconto} meses, o novo custo mensal será de ${formatCurrency(novoCustoComCampanha)}`, margin, yPos);
-            yPos += 6;
-            doc.text(`Desconto adicional: ${formatCurrency(campanha.desconto_mensal_temporario)}/mês`, margin, yPos);
-            yPos += 10;
+          doc.setFontSize(9);
+          doc.setFont(undefined, 'bold');
+          doc.setTextColor(30, 30, 30);
+          doc.text('Gás Natural — Detalhe de Preços e Custos', margin, yPos);
+          yPos += 5;
+
+          drawTableHeader([
+            { label: 'Componente' },
+            { label: 'Preço Unit.' },
+            { label: 'Preço c/ Desc.' },
+            { label: 'Total s/ Desc.' },
+            { label: 'Total c/ Desc.' }
+          ]);
+
+          drawTableRow(
+            'Valor Diário', '(€/dia)',
+            [
+              formatUnitPrice(det.precoDiarioUnitario),
+              formatUnitPrice(det.precoDiarioUnitarioComDesconto),
+              formatCurrency(det.custoDiarioSemDesconto),
+              formatCurrency(det.custoDiarioComDesconto)
+            ]
+          );
+          if (det.descontoDiario > 0) {
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`  Desconto aplicado: ${det.descontoDiario}%`, margin + 5, yPos - 1);
+            yPos += 3;
             doc.setTextColor(0, 0, 0);
           }
+
+          drawTableRow(
+            'Energia', '(€/kWh)',
+            [
+              formatUnitPrice(det.precoEnergiaUnitario),
+              formatUnitPrice(det.precoEnergiaUnitarioComDesconto),
+              formatCurrency(det.custoEnergiaSemDesconto),
+              formatCurrency(det.custoEnergiaComDesconto)
+            ]
+          );
+          if (det.descontoEnergia > 0) {
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos - 1);
+            yPos += 3;
+            doc.setTextColor(0, 0, 0);
+          }
+
+          checkPageBreak(8);
+          doc.setDrawColor(200, 200, 200);
+          doc.line(margin, yPos - 1, pageWidth - margin, yPos - 1);
+          drawTableRow(
+            'TOTAL GÁS', null,
+            [null, null,
+              formatCurrency(det.custoDiarioSemDesconto + det.custoEnergiaSemDesconto),
+              formatCurrency(det.custoDiarioComDesconto + det.custoEnergiaComDesconto)
+            ],
+            true
+          );
+
+          if (det.campanhaAplicavel && det.campanha) {
+            const c = det.campanha;
+            checkPageBreak(30);
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(180, 90, 0);
+            doc.text('Descontos da Campanha (Gás)', margin, yPos);
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(80, 80, 80);
+            doc.setFontSize(8);
+            const discLines = [];
+            if (c.desconto_base_potencia) discLines.push(`Base Diário: ${c.desconto_base_potencia}%`);
+            if (c.desconto_base_energia) discLines.push(`Base Energia: ${c.desconto_base_energia}%`);
+            if (c.desconto_dd_potencia) discLines.push(`DD Diário: ${c.desconto_dd_potencia}%`);
+            if (c.desconto_dd_energia) discLines.push(`DD Energia: ${c.desconto_dd_energia}%`);
+            if (c.desconto_fe_potencia) discLines.push(`FE Diário: ${c.desconto_fe_potencia}%`);
+            if (c.desconto_fe_energia) discLines.push(`FE Energia: ${c.desconto_fe_energia}%`);
+            if (c.desconto_dd_fe_potencia) discLines.push(`DD+FE Diário: ${c.desconto_dd_fe_potencia}%`);
+            if (c.desconto_dd_fe_energia) discLines.push(`DD+FE Energia: ${c.desconto_dd_fe_energia}%`);
+            if (discLines.length > 0) {
+              doc.text(discLines.join('   '), margin + 5, yPos);
+              yPos += 5;
+            }
+          }
+          yPos += 3;
+        }
+
+        if (resultado.descontoMensalCampanha > 0) {
+          checkPageBreak(35);
+          doc.setFillColor(255, 243, 220);
+          doc.rect(margin - 2, yPos - 2, pageWidth - 2 * margin + 4, 34, 'F');
+          doc.setDrawColor(255, 180, 60);
+          doc.rect(margin - 2, yPos - 2, pageWidth - 2 * margin + 4, 34);
+          doc.setFontSize(9);
+          doc.setFont(undefined, 'bold');
+          doc.setTextColor(160, 80, 0);
+          doc.text('CAMPANHA ESPECIAL', margin, yPos + 4);
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(100, 50, 0);
+          doc.text(`Duração: ${resultado.duracaoCampanha} meses`, margin, yPos + 11);
+          doc.text(`Custo mensal com campanha: ${formatCurrency(resultado.custoComCampanha)}`, margin, yPos + 17);
+          doc.text(`Desconto adicional mensal: ${formatCurrency(resultado.descontoMensalCampanha)}`, margin + (pageWidth - 2 * margin) / 2, yPos + 17);
+          doc.setFont(undefined, 'bold');
+          doc.setTextColor(130, 60, 0);
+          doc.text(`Poupança c/ campanha: ${formatCurrency(resultado.poupancaMensalComCampanha)}/mês  |  Anual: ${formatCurrency(resultado.poupancaAnualComCampanha)}`, margin, yPos + 25);
+          const descCamp = resultado.detalhesCalculo.eletricidade?.campanha?.descricao_desconto_temporario || resultado.detalhesCalculo.gas?.campanha?.descricao_desconto_temporario;
+          if (descCamp) {
+            doc.setFont(undefined, 'italic');
+            doc.setFontSize(7.5);
+            doc.setTextColor(120, 70, 10);
+            doc.text(descCamp, margin, yPos + 30);
+          }
+          doc.setTextColor(0, 0, 0);
+          yPos += 40;
         }
 
         yPos += 5;
       });
 
-      yPos += 10;
-      if (yPos > 260) {
-        doc.addPage();
-        yPos = 20;
-      }
+      checkPageBreak(20);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 5;
 
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
+      doc.setTextColor(120, 120, 120);
+      doc.text('Nota: Esta simulação não considera a tarifa social de energia. Se é beneficiário da tarifa social, consulte os valores específicos junto da sua operadora.', margin, yPos, { maxWidth: pageWidth - 2 * margin });
+      yPos += 9;
+
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(40, 120, 200);
+      doc.text(`${partnerName} — Comparador de Energia`, margin, yPos);
+      doc.setFont(undefined, 'normal');
       doc.setTextColor(100, 100, 100);
-      doc.text(`${partnerName} - Comparador de Energia`, margin, yPos);
-      yPos += 4;
       const contactParts = [];
       if (user?.contact_email) contactParts.push(user.contact_email);
       if (user?.contact_phone) contactParts.push(user.contact_phone);
       if (contactParts.length > 0) {
-        doc.text(`Contacto: ${contactParts.join(' | ')}`, margin, yPos);
+        doc.text(`Contacto: ${contactParts.join(' | ')}`, margin, yPos + 5);
       }
 
       const fileName = operadora
