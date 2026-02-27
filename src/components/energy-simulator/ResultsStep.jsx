@@ -283,8 +283,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
           if (det.descontoPotencia > 0) {
             doc.setFontSize(7.5);
             doc.setTextColor(100, 100, 100);
-            doc.text(`  Desconto aplicado: ${det.descontoPotencia}%`, margin + 5, yPos - 1);
-            yPos += 3;
+            doc.text(`  Desconto aplicado: ${det.descontoPotencia}%`, margin + 5, yPos + 2);
+            yPos += 5;
             doc.setTextColor(0, 0, 0);
           }
 
@@ -301,8 +301,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             if (det.descontoEnergia > 0) {
               doc.setFontSize(7.5);
               doc.setTextColor(100, 100, 100);
-              doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos - 1);
-              yPos += 3;
+              doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos + 2);
+              yPos += 5;
               doc.setTextColor(0, 0, 0);
             }
           } else if (det.precoEnergiaUnitario) {
@@ -321,8 +321,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             if (det.descontoEnergia > 0) {
               doc.setFontSize(7.5);
               doc.setTextColor(100, 100, 100);
-              doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos - 1);
-              yPos += 3;
+              doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos + 2);
+              yPos += 5;
               doc.setTextColor(0, 0, 0);
             }
           }
@@ -338,32 +338,6 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             ],
             true
           );
-
-          if (det.campanhaAplicavel && det.campanha) {
-            const c = det.campanha;
-            checkPageBreak(30);
-            doc.setFontSize(8.5);
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(180, 90, 0);
-            doc.text('Descontos da Campanha (Eletricidade)', margin, yPos);
-            yPos += 5;
-            doc.setFont(undefined, 'normal');
-            doc.setTextColor(80, 80, 80);
-            doc.setFontSize(8);
-            const discLines = [];
-            if (c.desconto_base_potencia) discLines.push(`Base Potência: ${c.desconto_base_potencia}%`);
-            if (c.desconto_base_energia) discLines.push(`Base Energia: ${c.desconto_base_energia}%`);
-            if (c.desconto_dd_potencia) discLines.push(`DD Potência: ${c.desconto_dd_potencia}%`);
-            if (c.desconto_dd_energia) discLines.push(`DD Energia: ${c.desconto_dd_energia}%`);
-            if (c.desconto_fe_potencia) discLines.push(`FE Potência: ${c.desconto_fe_potencia}%`);
-            if (c.desconto_fe_energia) discLines.push(`FE Energia: ${c.desconto_fe_energia}%`);
-            if (c.desconto_dd_fe_potencia) discLines.push(`DD+FE Potência: ${c.desconto_dd_fe_potencia}%`);
-            if (c.desconto_dd_fe_energia) discLines.push(`DD+FE Energia: ${c.desconto_dd_fe_energia}%`);
-            if (discLines.length > 0) {
-              doc.text(discLines.join('   '), margin + 5, yPos);
-              yPos += 5;
-            }
-          }
           yPos += 3;
         }
 
@@ -397,8 +371,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
           if (det.descontoDiario > 0) {
             doc.setFontSize(7.5);
             doc.setTextColor(100, 100, 100);
-            doc.text(`  Desconto aplicado: ${det.descontoDiario}%`, margin + 5, yPos - 1);
-            yPos += 3;
+            doc.text(`  Desconto aplicado: ${det.descontoDiario}%`, margin + 5, yPos + 2);
+            yPos += 5;
             doc.setTextColor(0, 0, 0);
           }
 
@@ -414,8 +388,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
           if (det.descontoEnergia > 0) {
             doc.setFontSize(7.5);
             doc.setTextColor(100, 100, 100);
-            doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos - 1);
-            yPos += 3;
+            doc.text(`  Desconto aplicado: ${det.descontoEnergia}%`, margin + 5, yPos + 2);
+            yPos += 5;
             doc.setTextColor(0, 0, 0);
           }
 
@@ -430,32 +404,6 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             ],
             true
           );
-
-          if (det.campanhaAplicavel && det.campanha) {
-            const c = det.campanha;
-            checkPageBreak(30);
-            doc.setFontSize(8.5);
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(180, 90, 0);
-            doc.text('Descontos da Campanha (Gás)', margin, yPos);
-            yPos += 5;
-            doc.setFont(undefined, 'normal');
-            doc.setTextColor(80, 80, 80);
-            doc.setFontSize(8);
-            const discLines = [];
-            if (c.desconto_base_potencia) discLines.push(`Base Diário: ${c.desconto_base_potencia}%`);
-            if (c.desconto_base_energia) discLines.push(`Base Energia: ${c.desconto_base_energia}%`);
-            if (c.desconto_dd_potencia) discLines.push(`DD Diário: ${c.desconto_dd_potencia}%`);
-            if (c.desconto_dd_energia) discLines.push(`DD Energia: ${c.desconto_dd_energia}%`);
-            if (c.desconto_fe_potencia) discLines.push(`FE Diário: ${c.desconto_fe_potencia}%`);
-            if (c.desconto_fe_energia) discLines.push(`FE Energia: ${c.desconto_fe_energia}%`);
-            if (c.desconto_dd_fe_potencia) discLines.push(`DD+FE Diário: ${c.desconto_dd_fe_potencia}%`);
-            if (c.desconto_dd_fe_energia) discLines.push(`DD+FE Energia: ${c.desconto_dd_fe_energia}%`);
-            if (discLines.length > 0) {
-              doc.text(discLines.join('   '), margin + 5, yPos);
-              yPos += 5;
-            }
-          }
           yPos += 3;
         }
 
