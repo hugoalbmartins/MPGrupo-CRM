@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { SkeletonTable } from "@/components/ui/skeleton-loader";
 import { useQuery } from "@tanstack/react-query";
 import { partnersService } from "../services/partnersService";
@@ -45,6 +46,7 @@ const Partners = ({ user }) => {
     crc: "",
     iban: "",
     manager_id: "",
+    email_bcc_enabled: false,
   });
 
   const { data: partners = [], isLoading: partnersLoading, refetch: refetchPartners } = useQuery({
@@ -146,6 +148,7 @@ const Partners = ({ user }) => {
       nif: partner.nif,
       crc: partner.crc || "",
       iban: partner.iban || "",
+      email_bcc_enabled: partner.email_bcc_enabled || false,
     });
     setDialogOpen(true);
 
@@ -221,6 +224,7 @@ const Partners = ({ user }) => {
       crc: "",
       manager_id: "",
       iban: "",
+      email_bcc_enabled: false,
     });
   };
 
@@ -570,6 +574,21 @@ const Partners = ({ user }) => {
                         </p>
                       </div>
                     )}
+                  </div>
+                )}
+                {(formData.partner_type === 'D2D' || (editingPartner && editingPartner.partner_type === 'D2D')) && (
+                  <div className="border border-dark-700 rounded-xl p-4 bg-dark-900">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-300">Autorizar envio de email (BCC)</Label>
+                        <p className="text-xs text-slate-500 mt-0.5">Parceiros D2D nao recebem emails por defeito. Ative para incluir este parceiro nos emails BCC.</p>
+                      </div>
+                      <Switch
+                        checked={formData.email_bcc_enabled}
+                        onCheckedChange={(checked) => setFormData({...formData, email_bcc_enabled: checked})}
+                        className="data-[state=checked]:bg-cyan-500"
+                      />
+                    </div>
                   </div>
                 )}
                 <div>

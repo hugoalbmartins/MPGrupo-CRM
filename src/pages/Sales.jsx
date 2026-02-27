@@ -1034,18 +1034,12 @@ const Sales = ({ user }) => {
                 )}
               </div>
               <div className="flex gap-2 flex-wrap">
-                {(user?.role === 'admin' || user?.role === 'bo') ? (
-                  <Button onClick={() => openEditDialog(sale)} size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10">
-                    Editar
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => { setSelectedSaleId(sale.id); setDetailDialogOpen(true); }}
-                    size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10"
-                  >
-                    Ver
-                  </Button>
-                )}
+                <Button
+                  onClick={() => { setSelectedSaleId(sale.id); setDetailDialogOpen(true); }}
+                  size="sm" variant="ghost" className="text-cyan-400 hover:bg-cyan-500/10"
+                >
+                  Ver
+                </Button>
                 {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
                   <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700/40">
                     Notas ({sale.notes?.length || 0})
@@ -1645,6 +1639,10 @@ const Sales = ({ user }) => {
         saleId={selectedSaleId}
         user={user}
         onSaleUpdated={fetchData}
+        onEditRequested={(sale) => {
+          setDetailDialogOpen(false);
+          openEditDialog(sale);
+        }}
       />
 
       {/* Validation Warnings Dialog */}

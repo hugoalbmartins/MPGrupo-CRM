@@ -27,7 +27,7 @@ const STATUSES = [
   "Recusado"
 ];
 
-const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) => {
+const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onEditRequested }) => {
   const [sale, setSale] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -251,10 +251,17 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                 Código: {sale?.sale_code}
               </DialogDescription>
             </div>
-            {(user?.role === 'admin' || user?.role === 'bo') && sale && !isEditing && (
+            {(user?.role === 'admin' || user?.role === 'bo') && sale && (
               <Button
                 size="sm"
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  if (onEditRequested) {
+                    onEditRequested(sale);
+                    onOpenChange(false);
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
                 className="gap-2 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white"
               >
                 <Edit2 className="w-4 h-4" />
@@ -808,6 +815,79 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated }) =
                       )}
                     </div>
                   </div>
+
+                  {sale.scope === 'telecomunicacoes' && (sale.service_type || sale.activation_type || sale.has_tv || sale.has_net || sale.has_lr || (sale.mobile_numbers && sale.mobile_numbers.length > 0)) && (
+                    <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
+                      <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-cyber-500 rounded"></div>
+                        Telecomunicacoes
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {sale.service_type && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Tipo de Servico</Label>
+                            <p className="font-semibold text-white mt-1">{sale.service_type}</p>
+                          </div>
+                        )}
+                        {sale.activation_type && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Tipo de Ativacao</Label>
+                            <p className="font-semibold text-white mt-1">{sale.activation_type}</p>
+                          </div>
+                        )}
+                        {(sale.has_tv || sale.has_net || sale.has_lr) && (
+                          <div className="col-span-2">
+                            <Label className="text-slate-500 text-xs uppercase">Servicos Contratados</Label>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {sale.has_tv && <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">TV</Badge>}
+                              {sale.has_net && <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20">NET/Fibra</Badge>}
+                              {sale.has_lr && <Badge className="bg-green-500/10 text-green-400 border-green-500/20">Linha Fix/LR</Badge>}
+                            </div>
+                          </div>
+                        )}
+                        {sale.has_lr && (
+                          <div className="col-span-2">
+                            <Label className="text-slate-500 text-xs uppercase">Portabilidade Fixo</Label>
+                            <p className="font-semibold text-white mt-1">{sale.fix_ported ? 'Sim — fixo portado' : 'Nao'}</p>
+                            {sale.fix_ported && (
+                              <div className="mt-2 ml-4 space-y-1">
+                                {sale.fix_number && (
+                                  <p className="text-sm text-slate-300">Numero a portar: <span className="font-mono text-white">{sale.fix_number}</span></p>
+                                )}
+                                {sale.fix_operator && (
+                                  <p className="text-sm text-slate-300">Operadora atual: <span className="text-white">{sale.fix_operator}</span></p>
+                                )}
+                                {sale.fix_cvp && (
+                                  <p className="text-sm text-slate-300">CVP: <span className="font-mono text-white">{sale.fix_cvp}</span></p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {sale.activation_type === 'M4' && sale.mobile_numbers && sale.mobile_numbers.length > 0 && (
+                          <div className="col-span-2">
+                            <Label className="text-slate-500 text-xs uppercase">Numeros Moveis ({sale.mobile_numbers.length})</Label>
+                            <div className="space-y-2 mt-2">
+                              {sale.mobile_numbers.map((mob, idx) => (
+                                <div key={idx} className="flex items-center gap-4 p-3 bg-dark-850 rounded-lg border border-dark-700">
+                                  <span className="text-xs text-slate-500 w-16">Movel {idx + 1}</span>
+                                  <span className="font-mono text-white text-sm">{mob.number || '-'}</span>
+                                  {mob.ported ? (
+                                    <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 text-xs">Portado</Badge>
+                                  ) : (
+                                    <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 text-xs">Nao portado</Badge>
+                                  )}
+                                  {mob.ported && mob.cvp && (
+                                    <span className="text-xs text-slate-400">CVP: <span className="font-mono text-white">{mob.cvp}</span></span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>

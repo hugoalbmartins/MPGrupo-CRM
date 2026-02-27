@@ -234,7 +234,8 @@ export const partnersService = {
       locality: partnerData.locality,
       nif: partnerData.nif,
       crc: partnerData.crc,
-      iban: partnerData.iban
+      iban: partnerData.iban,
+      email_bcc_enabled: partnerData.email_bcc_enabled || false
     };
 
     const { data, error } = await supabase
