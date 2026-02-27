@@ -503,7 +503,7 @@ const SaleFormDialog = ({
 
                         <div>
                           <Label className="text-sm font-semibold mb-2 text-slate-400">
-                            Tipo de Ativação {availableActivationTypes.length > 0 ? '*' : ''}
+                            Tipo de Ativação *
                           </Label>
                           <Select
                             value={formData.activation_type}
@@ -520,25 +520,16 @@ const SaleFormDialog = ({
                             disabled={availableActivationTypes.length === 0}
                           >
                             <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                              <SelectValue placeholder={availableActivationTypes.length === 0 ? "N/A" : "Selecione..."} />
+                              <SelectValue placeholder={availableActivationTypes.length === 0 ? "Sem ativações disponíveis" : "Selecione..."} />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableActivationTypes.length > 0
-                                ? availableActivationTypes.map(type => (
-                                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                                  ))
-                                : (
-                                  <>
-                                    <SelectItem value="M2">M2</SelectItem>
-                                    <SelectItem value="M3">M3</SelectItem>
-                                    <SelectItem value="M4">M4</SelectItem>
-                                  </>
-                                )
-                              }
+                              {availableActivationTypes.map(type => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           {availableActivationTypes.length === 0 && (
-                            <p className="text-xs text-slate-500 mt-1">Configurar tipos de ativação nas comissões</p>
+                            <p className="text-xs text-red-400 mt-1">Sem ativações com comissão configurada</p>
                           )}
                         </div>
                       </div>

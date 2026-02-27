@@ -450,13 +450,23 @@ const Sales = ({ user }) => {
       if (data && data.length > 0) {
         const serviceTypesSet = new Set();
         const activationTypesSet = new Set();
+        const TELECOM_SERVICE_TYPES = new Set(['NI', 'MC', 'REFID', 'Refid']);
+        let hasTelecomConfigs = false;
 
         data.forEach(config => {
           if (config.service_type) {
             serviceTypesSet.add(config.service_type);
+            if (TELECOM_SERVICE_TYPES.has(config.service_type)) {
+              hasTelecomConfigs = true;
+            }
           }
           if (config.service_types && Array.isArray(config.service_types)) {
-            config.service_types.forEach(st => serviceTypesSet.add(st));
+            config.service_types.forEach(st => {
+              serviceTypesSet.add(st);
+              if (TELECOM_SERVICE_TYPES.has(st)) {
+                hasTelecomConfigs = true;
+              }
+            });
           }
           if (config.activation_type) {
             activationTypesSet.add(config.activation_type);
@@ -464,7 +474,12 @@ const Sales = ({ user }) => {
         });
 
         setAvailableServiceTypes(Array.from(serviceTypesSet));
-        setAvailableActivationTypes(Array.from(activationTypesSet));
+
+        if (activationTypesSet.size === 0 && hasTelecomConfigs) {
+          setAvailableActivationTypes(['M2', 'M3', 'M4']);
+        } else {
+          setAvailableActivationTypes(Array.from(activationTypesSet));
+        }
       } else {
         setAvailableServiceTypes([]);
         setAvailableActivationTypes([]);
