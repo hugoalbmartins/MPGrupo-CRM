@@ -638,27 +638,47 @@ export const salesService = {
       .from('sales')
       .select(`
         *,
-        partner:partners!sales_partner_id_fkey(id, name, user_id),
-        operator:operators!sales_operator_id_fkey(id, name, notification_emails)
+        partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
+        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids)
       `)
       .eq('id', saleId)
       .maybeSingle();
 
     if (saleError || !sale) throw new Error('Sale not found');
 
-    const { data: toRecipients } = await supabase
-      .from('users')
-      .select('email, name')
-      .in('role', ['admin', 'bo'])
-      .eq('email_alerts_enabled', true);
+    const isD2DPartner = sale.partner?.partner_type === 'D2D';
 
-    const { data: bccPartnerUsers } = await supabase
-      .from('users')
-      .select('email, name')
-      .or(`id.eq.${sale.partner.user_id},id.eq.${sale.created_by_user_id}`)
-      .eq('email_alerts_enabled', true);
+    let toRecipients = [];
+    const operatorUserIds = sale.operator?.notification_user_ids;
+    if (operatorUserIds && Array.isArray(operatorUserIds) && operatorUserIds.length > 0) {
+      const { data: operatorUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('id', operatorUserIds)
+        .eq('email_alerts_enabled', true);
+      toRecipients = operatorUsers || [];
+    } else {
+      const { data: adminBoUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('role', ['admin', 'bo'])
+        .eq('email_alerts_enabled', true);
+      toRecipients = adminBoUsers || [];
+    }
 
-    const bccRecipients = [...(bccPartnerUsers || [])];
+    const bccRecipients = [];
+
+    if (!isD2DPartner) {
+      const userIds = [sale.partner?.user_id, sale.created_by_user_id].filter(Boolean);
+      if (userIds.length > 0) {
+        const { data: bccPartnerUsers } = await supabase
+          .from('users')
+          .select('email, name')
+          .in('id', userIds)
+          .eq('email_alerts_enabled', true);
+        if (bccPartnerUsers) bccRecipients.push(...bccPartnerUsers);
+      }
+    }
 
     if (sale.operator?.notification_emails && Array.isArray(sale.operator.notification_emails)) {
       sale.operator.notification_emails.forEach(email => {
