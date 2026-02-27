@@ -10,6 +10,14 @@ import { Button } from '@/components/ui/button';
 import EnergyPointsManager from './EnergyPointsManager';
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
+const FIX_OPERATORS = ["MEO", "Vodafone", "NOS", "Digi", "Outro"];
+
+const CVP_REGEX = /^(\d{7}[A-Za-z]{4}\d{1}|\d{12})$/;
+
+function validateCVP(value) {
+  if (!value) return true;
+  return CVP_REGEX.test(value);
+}
 
 const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 to-cyber-600" }) => (
   <motion.div
@@ -88,6 +96,29 @@ const SaleFormDialog = ({
       return;
     }
     onSubmit(e);
+  };
+
+  const mobileCount = parseInt(formData.mobile_count) || 0;
+  const mobileNumbers = formData.mobile_numbers || [];
+
+  const updateMobileNumber = (index, field, value) => {
+    const updated = [...mobileNumbers];
+    if (!updated[index]) updated[index] = { number: '', ported: false, cvp: '' };
+    updated[index] = { ...updated[index], [field]: value };
+    setFormData({ ...formData, mobile_numbers: updated });
+  };
+
+  const ensureMobileSlots = (count) => {
+    const current = formData.mobile_numbers || [];
+    const updated = [...current];
+    while (updated.length < count) updated.push({ number: '', ported: false, cvp: '' });
+    return updated.slice(0, count);
+  };
+
+  const handleMobileCountChange = (v) => {
+    const count = parseInt(v) || 0;
+    const slots = ensureMobileSlots(count);
+    setFormData({ ...formData, mobile_count: count, mobile_numbers: slots });
   };
 
   return (
@@ -469,24 +500,47 @@ const SaleFormDialog = ({
                             <p className="text-xs text-red-400 mt-1">Nenhum tipo de serviço com comissão configurada</p>
                           )}
                         </div>
-                        {availableActivationTypes.length > 0 && (
-                          <div>
-                            <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Ativação *</Label>
-                            <Select
-                              value={formData.activation_type}
-                              onValueChange={(v) => setFormData({...formData, activation_type: v})}
-                            >
-                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableActivationTypes.map(type => (
-                                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
+
+                        <div>
+                          <Label className="text-sm font-semibold mb-2 text-slate-400">
+                            Tipo de Ativação {availableActivationTypes.length > 0 ? '*' : ''}
+                          </Label>
+                          <Select
+                            value={formData.activation_type}
+                            onValueChange={(v) => {
+                              const newMobileNumbers = v !== 'M4'
+                                ? []
+                                : ensureMobileSlots(formData.mobile_count || 0);
+                              setFormData({
+                                ...formData,
+                                activation_type: v,
+                                mobile_numbers: newMobileNumbers
+                              });
+                            }}
+                            disabled={availableActivationTypes.length === 0}
+                          >
+                            <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                              <SelectValue placeholder={availableActivationTypes.length === 0 ? "N/A" : "Selecione..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableActivationTypes.length > 0
+                                ? availableActivationTypes.map(type => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                  ))
+                                : (
+                                  <>
+                                    <SelectItem value="M2">M2</SelectItem>
+                                    <SelectItem value="M3">M3</SelectItem>
+                                    <SelectItem value="M4">M4</SelectItem>
+                                  </>
+                                )
+                              }
+                            </SelectContent>
+                          </Select>
+                          {availableActivationTypes.length === 0 && (
+                            <p className="text-xs text-slate-500 mt-1">Configurar tipos de ativação nas comissões</p>
+                          )}
+                        </div>
                       </div>
 
                       {(formData.service_type === 'REFID' || formData.service_type === 'Refid') ? (
@@ -553,7 +607,7 @@ const SaleFormDialog = ({
 
                       <div className="border-t border-dark-700 pt-4 mt-4">
                         <Label className="text-base font-bold mb-4 block text-white">Serviços Contratados</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="flex items-center space-x-3">
                             <input
                               type="checkbox"
@@ -584,18 +638,149 @@ const SaleFormDialog = ({
                             />
                             <Label htmlFor="has_lr" className="cursor-pointer font-medium text-white">Linha Fixa/LR</Label>
                           </div>
-                          <div>
-                            <Label htmlFor="mobile_count" className="text-sm font-semibold mb-2 text-slate-400">Móveis</Label>
-                            <Input
-                              id="mobile_count"
-                              type="number"
-                              min="0"
-                              value={formData.mobile_count}
-                              onChange={(e) => setFormData({...formData, mobile_count: parseInt(e.target.value) || 0})}
-                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
-                            />
-                          </div>
                         </div>
+
+                        {formData.has_lr && (
+                          <div className="mt-4 p-4 bg-dark-900/80 border border-dark-600 rounded-xl space-y-4">
+                            <div className="flex items-center space-x-3">
+                              <input
+                                type="checkbox"
+                                id="fix_ported"
+                                checked={formData.fix_ported || false}
+                                onChange={(e) => setFormData({
+                                  ...formData,
+                                  fix_ported: e.target.checked,
+                                  fix_number: e.target.checked ? formData.fix_number : '',
+                                  fix_operator: e.target.checked ? formData.fix_operator : '',
+                                  fix_cvp: e.target.checked ? formData.fix_cvp : '',
+                                })}
+                                className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                              />
+                              <Label htmlFor="fix_ported" className="cursor-pointer font-medium text-white">
+                                Fixo é portado?
+                              </Label>
+                            </div>
+
+                            {formData.fix_ported && (
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                                <div>
+                                  <Label className="text-sm font-semibold mb-2 text-slate-400">Número fixo a portar *</Label>
+                                  <Input
+                                    value={formData.fix_number || ''}
+                                    onChange={(e) => setFormData({...formData, fix_number: e.target.value})}
+                                    placeholder="2XXXXXXXX"
+                                    maxLength={9}
+                                    className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-semibold mb-2 text-slate-400">Operadora atual *</Label>
+                                  <Select
+                                    value={formData.fix_operator || ''}
+                                    onValueChange={(v) => setFormData({...formData, fix_operator: v})}
+                                  >
+                                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                      <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {FIX_OPERATORS.map(op => (
+                                        <SelectItem key={op} value={op}>{op}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label className="text-sm font-semibold mb-2 text-slate-400">CVP do fixo *</Label>
+                                  <Input
+                                    value={formData.fix_cvp || ''}
+                                    onChange={(e) => setFormData({...formData, fix_cvp: e.target.value})}
+                                    placeholder="12 dígitos ou 7d+4L+1d"
+                                    maxLength={12}
+                                    className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white ${formData.fix_cvp && !validateCVP(formData.fix_cvp) ? 'border-red-500' : ''}`}
+                                  />
+                                  {formData.fix_cvp && !validateCVP(formData.fix_cvp) && (
+                                    <p className="text-xs text-red-400 mt-1">Formato inválido: 12 dígitos ou 7 dígitos + 4 letras + 1 dígito</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {formData.activation_type === 'M4' && (
+                          <div className="mt-4">
+                            <div className="flex items-center gap-4 mb-3">
+                              <Label className="text-sm font-semibold text-slate-400">Quantidade de Móveis</Label>
+                              <Select
+                                value={String(formData.mobile_count || 0)}
+                                onValueChange={handleMobileCountChange}
+                              >
+                                <SelectTrigger className="w-24 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {[0,1,2,3,4,5].map(n => (
+                                    <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {mobileCount > 0 && (
+                              <div className="space-y-3">
+                                {Array.from({ length: mobileCount }).map((_, idx) => {
+                                  const mob = mobileNumbers[idx] || { number: '', ported: false, cvp: '' };
+                                  return (
+                                    <div key={idx} className="p-4 bg-dark-900/80 border border-dark-600 rounded-xl">
+                                      <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-sm font-semibold text-cyber-400">Móvel {idx + 1}</span>
+                                      </div>
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
+                                        <div>
+                                          <Label className="text-xs font-semibold mb-1 text-slate-400">Número (9 dígitos) *</Label>
+                                          <Input
+                                            value={mob.number}
+                                            onChange={(e) => updateMobileNumber(idx, 'number', e.target.value)}
+                                            placeholder="9XXXXXXXX"
+                                            maxLength={9}
+                                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                                          />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                          <div className="flex items-center space-x-2 mt-5">
+                                            <input
+                                              type="checkbox"
+                                              id={`mob_ported_${idx}`}
+                                              checked={mob.ported || false}
+                                              onChange={(e) => updateMobileNumber(idx, 'ported', e.target.checked)}
+                                              className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                                            />
+                                            <Label htmlFor={`mob_ported_${idx}`} className="cursor-pointer text-white text-sm">Portado?</Label>
+                                          </div>
+                                        </div>
+                                        {mob.ported && (
+                                          <div>
+                                            <Label className="text-xs font-semibold mb-1 text-slate-400">CVP *</Label>
+                                            <Input
+                                              value={mob.cvp || ''}
+                                              onChange={(e) => updateMobileNumber(idx, 'cvp', e.target.value)}
+                                              placeholder="12 dígitos ou 7d+4L+1d"
+                                              maxLength={12}
+                                              className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white ${mob.cvp && !validateCVP(mob.cvp) ? 'border-red-500' : ''}`}
+                                            />
+                                            {mob.cvp && !validateCVP(mob.cvp) && (
+                                              <p className="text-xs text-red-400 mt-1">Formato inválido</p>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </FormSection>
                   )}

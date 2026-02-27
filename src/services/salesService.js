@@ -353,6 +353,11 @@ export const salesService = {
       tier: saleData.tier || null,
       observations: saleData.observations || null,
       autoriza_documentos: saleData.autoriza_documentos || null,
+      fix_ported: saleData.fix_ported || false,
+      fix_number: saleData.fix_ported ? (saleData.fix_number || null) : null,
+      fix_operator: saleData.fix_ported ? (saleData.fix_operator || null) : null,
+      fix_cvp: saleData.fix_ported ? (saleData.fix_cvp || null) : null,
+      mobile_numbers: saleData.activation_type === 'M4' ? (saleData.mobile_numbers || []) : [],
       calculated_commission: commission,
       attachments,
       is_bulk_import: saleData.is_bulk_import === true,
@@ -380,8 +385,8 @@ export const salesService = {
     if (!oldSale) throw new Error('Sale not found');
 
     const PROTECTED_ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
-    const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint'];
-    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier'];
+    const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint'];
+    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'fix_number', 'fix_operator', 'fix_cvp'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
@@ -395,6 +400,8 @@ export const salesService = {
         updates[key] = value === null || value === '' || value === 'admin_commissioned' ? null : value;
       } else if (BOOLEAN_FIELDS.includes(key)) {
         updates[key] = Boolean(value);
+      } else if (key === 'mobile_numbers') {
+        updates[key] = Array.isArray(value) ? value : [];
       } else if (key === 'manual_commission') {
         updates[key] = value === '' || value === null || value === undefined ? null : parseFloat(value);
       } else if (OPTIONAL_FIELDS_WITH_CONSTRAINTS.includes(key)) {
@@ -720,6 +727,16 @@ export const salesService = {
         cui: sale.cui,
         tier: sale.tier,
         autoriza_documentos: sale.autoriza_documentos,
+        service_type: sale.service_type,
+        activation_type: sale.activation_type,
+        has_tv: sale.has_tv,
+        has_net: sale.has_net,
+        has_lr: sale.has_lr,
+        fix_ported: sale.fix_ported,
+        fix_number: sale.fix_number,
+        fix_operator: sale.fix_operator,
+        mobile_count: sale.mobile_count,
+        mobile_numbers: sale.mobile_numbers,
       }),
     });
 

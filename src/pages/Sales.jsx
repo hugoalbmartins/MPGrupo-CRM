@@ -115,6 +115,11 @@ const Sales = ({ user }) => {
     has_net: false,
     has_lr: false,
     mobile_count: 0,
+    mobile_numbers: [],
+    fix_ported: false,
+    fix_number: "",
+    fix_operator: "",
+    fix_cvp: "",
     observations: "",
     autoriza_documentos: "",
     is_proposal: false,
@@ -395,6 +400,11 @@ const Sales = ({ user }) => {
       has_net: false,
       has_lr: false,
       mobile_count: 0,
+      mobile_numbers: [],
+      fix_ported: false,
+      fix_number: "",
+      fix_operator: "",
+      fix_cvp: "",
       energy_points: [],
       observations: "",
       autoriza_documentos: "",
@@ -582,6 +592,31 @@ const Sales = ({ user }) => {
           'Tipo Servico': sale.service_type || '',
           'Tipo Ativacao': sale.activation_type || '',
           'Valor Mensal': sale.monthly_value || '',
+          'TV': sale.has_tv ? 'Sim' : 'Nao',
+          'NET/Fibra': sale.has_net ? 'Sim' : 'Nao',
+          'Linha Fixa/LR': sale.has_lr ? 'Sim' : 'Nao',
+          'Fixo Portado': sale.fix_ported ? 'Sim' : 'Nao',
+          'Numero Fixo Portar': sale.fix_ported ? (sale.fix_number || '') : '',
+          'Operadora Fixo Atual': sale.fix_ported ? (sale.fix_operator || '') : '',
+          'CVP Fixo': sale.fix_ported ? (sale.fix_cvp || '') : '',
+          'Qtd Moveis': sale.mobile_count || 0,
+          ...(() => {
+            const mobiles = sale.mobile_numbers || [];
+            const cols = {};
+            for (let i = 0; i < 5; i++) {
+              const mob = mobiles[i];
+              if (mob) {
+                cols[`Movel ${i+1} Numero`] = mob.number || '';
+                cols[`Movel ${i+1} Portado`] = mob.ported ? 'Sim' : 'Nao';
+                cols[`Movel ${i+1} CVP`] = mob.ported ? (mob.cvp || '') : '';
+              } else {
+                cols[`Movel ${i+1} Numero`] = '';
+                cols[`Movel ${i+1} Portado`] = '';
+                cols[`Movel ${i+1} CVP`] = '';
+              }
+            }
+            return cols;
+          })(),
           'Tipo Venda Energia': sale.energy_sale_type || '',
           'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Nao',
           'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : ''
@@ -757,6 +792,11 @@ const Sales = ({ user }) => {
       has_net: Boolean(sale.has_net),
       has_lr: Boolean(sale.has_lr),
       mobile_count: sale.mobile_count || 0,
+      mobile_numbers: sale.mobile_numbers || [],
+      fix_ported: Boolean(sale.fix_ported),
+      fix_number: sale.fix_number || "",
+      fix_operator: sale.fix_operator || "",
+      fix_cvp: sale.fix_cvp || "",
       observations: sale.observations || "",
       attachments: sale.attachments || []
     });
