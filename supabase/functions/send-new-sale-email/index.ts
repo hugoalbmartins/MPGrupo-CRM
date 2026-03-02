@@ -31,7 +31,13 @@ interface SaleEmailPayload {
   attachments: Array<{ id: string; filename: string; path: string }>;
   sale_id: string;
   scope?: string;
+  client_contact?: string;
+  client_email?: string;
+  client_iban?: string;
+  address?: string;
+  installation_address?: string;
   entry_type?: string;
+  energy_sale_type?: string;
   cpe?: string;
   power?: string;
   cui?: string;
@@ -39,14 +45,20 @@ interface SaleEmailPayload {
   autoriza_documentos?: string;
   service_type?: string;
   activation_type?: string;
+  monthly_value?: number | string;
+  current_monthly_fee?: number | string;
+  contracted_monthly_fee?: number | string;
   has_tv?: boolean;
   has_net?: boolean;
   has_lr?: boolean;
+  has_direct_debit?: boolean;
+  has_electronic_invoice?: boolean;
   fix_ported?: boolean;
   fix_number?: string;
   fix_operator?: string;
   mobile_count?: number;
   mobile_numbers?: MobileNumber[];
+  observations?: string;
   email_fields?: string[] | null;
 }
 
@@ -98,11 +110,28 @@ function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): str
           <tr><td>Cliente:</td><td>${payload.customer_name}</td></tr>
           <tr><td>NIF:</td><td>${payload.customer_nif || "N/A"}</td></tr>
           <tr><td>Operadora:</td><td>${payload.operator_name}</td></tr>
+
+          ${(hasField(payload, 'client_contact') && payload.client_contact) || (hasField(payload, 'client_email') && payload.client_email) || (hasField(payload, 'client_iban') && payload.client_iban) ? `
+          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Dados de Contacto</strong></td></tr>
+          ${hasField(payload, 'client_contact') && payload.client_contact ? `<tr><td>Contacto:</td><td>${payload.client_contact}</td></tr>` : ""}
+          ${hasField(payload, 'client_email') && payload.client_email ? `<tr><td>Email:</td><td>${payload.client_email}</td></tr>` : ""}
+          ${hasField(payload, 'client_iban') && payload.client_iban ? `<tr><td>IBAN:</td><td>${payload.client_iban}</td></tr>` : ""}
+          ` : ""}
+
+          ${(hasField(payload, 'address') && payload.address) || (hasField(payload, 'installation_address') && payload.installation_address) ? `
+          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Morada</strong></td></tr>
+          ${hasField(payload, 'address') && payload.address ? `<tr><td>Morada:</td><td>${payload.address}</td></tr>` : ""}
+          ${hasField(payload, 'installation_address') && payload.installation_address ? `<tr><td>Local de Instalacao:</td><td>${payload.installation_address}</td></tr>` : ""}
+          ` : ""}
+
           ${hasField(payload, 'autoriza_documentos') && payload.autoriza_documentos ? `<tr><td>Autoriza docs. pessoais:</td><td>${payload.autoriza_documentos}</td></tr>` : ""}
+
           ${payload.scope === "telecomunicacoes" ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Telecomunicacoes</strong></td></tr>
           ${hasField(payload, 'service_type') && payload.service_type ? `<tr><td>Tipo de Servico:</td><td>${payload.service_type === 'NI' ? 'NI (Nova Instalacao)' : payload.service_type === 'MC' ? 'MC (Mudanca de Casa)' : payload.service_type === 'REFID' ? 'REFID (Refidelizacao)' : payload.service_type}</td></tr>` : ""}
           ${hasField(payload, 'activation_type') && payload.activation_type ? `<tr><td>Tipo de Ativacao:</td><td>${payload.activation_type}</td></tr>` : ""}
+          ${hasField(payload, 'monthly_value') && payload.monthly_value && payload.service_type !== 'REFID' ? `<tr><td>Mensalidade:</td><td>${payload.monthly_value}€</td></tr>` : ""}
+          ${hasField(payload, 'refid_fees') && payload.current_monthly_fee && payload.contracted_monthly_fee ? `<tr><td>Mensalidade atual:</td><td>${payload.current_monthly_fee}€</td></tr><tr><td>Mensalidade contratada:</td><td>${payload.contracted_monthly_fee}€</td></tr>` : ""}
           ${hasField(payload, 'services') ? (() => {
             const services: string[] = [];
             if (payload.has_tv) services.push("TV");
@@ -126,12 +155,28 @@ function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): str
             if (portedCount > 0) mobileText += `, das quais ${portedCount} portada${portedCount > 1 ? "s" : ""}`;
             return `<tr><td>Moveis:</td><td>${mobileText}</td></tr>`;
           })() : ""}
+          ${hasField(payload, 'direct_debit') && payload.has_direct_debit ? `<tr><td>Debito Direto:</td><td>Sim</td></tr>` : ""}
+          ${hasField(payload, 'electronic_invoice') && payload.has_electronic_invoice ? `<tr><td>Fatura Eletronica:</td><td>Sim</td></tr>` : ""}
           ` : ""}
+
           ${payload.scope === "energia" || payload.scope === "energias" ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia</strong></td></tr>
+          ${hasField(payload, 'energy_sale_type') && payload.energy_sale_type ? `<tr><td>Tipo de Energia:</td><td>${payload.energy_sale_type === 'eletricidade' ? 'Eletricidade' : payload.energy_sale_type === 'gas' ? 'Gas' : payload.energy_sale_type === 'dual' ? 'Eletricidade + Gas (Dual)' : payload.energy_sale_type}</td></tr>` : ""}
           ${hasField(payload, 'entry_type') && payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
           ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
           ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
+          ${hasField(payload, 'direct_debit') && payload.has_direct_debit ? `<tr><td>Debito Direto:</td><td>Sim</td></tr>` : ""}
+          ${hasField(payload, 'electronic_invoice') && payload.has_electronic_invoice ? `<tr><td>Fatura Eletronica:</td><td>Sim</td></tr>` : ""}
+          ` : ""}
+
+          ${payload.scope === "solar" ? `
+          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Solar</strong></td></tr>
+          ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
+          ` : ""}
+
+          ${hasField(payload, 'observations') && payload.observations ? `
+          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Observacoes</strong></td></tr>
+          <tr><td colspan="2" style="color: #6b7280; font-style: italic;">${payload.observations}</td></tr>
           ` : ""}
         </table>
       </div>
