@@ -26,6 +26,7 @@ interface SaleEmailPayload {
   customer_name: string;
   customer_nif: string;
   operator_name: string;
+  partner_name?: string;
   message: string;
   attachments: Array<{ id: string; filename: string; path: string }>;
   sale_id: string;
@@ -80,8 +81,8 @@ function buildEmailTemplate(payload: SaleEmailPayload): string {
       <p>Nova Venda da Operadora ${payload.operator_name}</p>
     </div>
     <div class="content">
-      <p>Boa tarde,</p>
-      <p>Foi registada uma nova venda no sistema CRM.</p>
+      <p>Olá!</p>
+      <p>Foi registada uma nova venda no sistema CRM no parceiro <strong>${payload.partner_name || 'N/A'}</strong>.</p>
 
       <div class="badge">Nova Venda</div>
 

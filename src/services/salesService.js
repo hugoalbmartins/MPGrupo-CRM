@@ -717,6 +717,7 @@ export const salesService = {
         customer_name: sale.client_name,
         customer_nif: sale.client_nif || '',
         operator_name: sale.operator?.name || 'N/A',
+        partner_name: sale.partner?.name || sale.partner_name || 'N/A',
         message: `Venda registada para ${sale.client_name}`,
         attachments: attachments?.attachments || [],
         sale_id: saleId,
