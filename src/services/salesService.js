@@ -644,7 +644,7 @@ export const salesService = {
       .select(`
         *,
         partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
-        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids)
+        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields)
       `)
       .eq('id', saleId)
       .maybeSingle();
@@ -736,6 +736,7 @@ export const salesService = {
         fix_operator: sale.fix_operator,
         mobile_count: sale.mobile_count,
         mobile_numbers: sale.mobile_numbers,
+        email_fields: sale.operator?.email_fields || null,
       }),
     });
 

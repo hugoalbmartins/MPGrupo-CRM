@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard, Users } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard, Users, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,25 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { operatorsService } from "../services/operatorsService";
 import CommissionWizard from "../components/CommissionWizard";
 import { supabase } from "../lib/supabase";
+
+const EMAIL_FIELDS_BY_SCOPE = {
+  telecomunicacoes: [
+    { key: 'service_type', label: 'Tipo de Serviço (NI/MC/REFID)' },
+    { key: 'activation_type', label: 'Tipo de Ativação (M2/M3/M4)' },
+    { key: 'services', label: 'Serviços (TV, NET, LR)' },
+    { key: 'mobile_lines', label: 'Linhas Móveis' },
+    { key: 'autoriza_documentos', label: 'Autoriza Documentos Pessoais' },
+  ],
+  energia: [
+    { key: 'entry_type', label: 'Tipo de Entrada' },
+    { key: 'cpe_power', label: 'CPE / Potência' },
+    { key: 'cui_tier', label: 'CUI / Escalão' },
+    { key: 'autoriza_documentos', label: 'Autoriza Documentos Pessoais' },
+  ],
+  solar: [
+    { key: 'autoriza_documentos', label: 'Autoriza Documentos Pessoais' },
+  ],
+};
 
 const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 to-cyber-600" }) => (
   <motion.div
@@ -50,6 +69,7 @@ const Operators = ({ user }) => {
     pays_electronic_invoice: false,
     notification_emails: [],
     notification_user_ids: [],
+    email_fields: null,
   });
   const [newNotifEmail, setNewNotifEmail] = useState("");
   const [adminBoUsers, setAdminBoUsers] = useState([]);
@@ -200,6 +220,12 @@ const Operators = ({ user }) => {
       ]);
       setSelectedOperator(freshData);
       setAdminBoUsers(usersResult.data || []);
+      const availableFields = EMAIL_FIELDS_BY_SCOPE[freshData.scope] || [];
+      const allFieldKeys = availableFields.map(f => f.key);
+      const savedFields = freshData.email_fields;
+      const initialEmailFields = savedFields !== null && savedFields !== undefined
+        ? savedFields
+        : allFieldKeys;
       setEditOperatorData({
         activation_types: freshData.activation_types || [],
         allowed_energy_types: freshData.allowed_energy_types || [],
@@ -208,6 +234,7 @@ const Operators = ({ user }) => {
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
         notification_emails: freshData.notification_emails || [],
         notification_user_ids: freshData.notification_user_ids || [],
+        email_fields: initialEmailFields,
       });
       setNewNotifEmail("");
       setEditOperatorDialogOpen(true);
@@ -926,6 +953,43 @@ const Operators = ({ user }) => {
                   </div>
                 </div>
               </div>
+
+              {(EMAIL_FIELDS_BY_SCOPE[selectedOperator.scope] || []).length > 0 && (
+                <div className="border-t border-dark-700 pt-4">
+                  <Label className="text-slate-300 text-sm font-semibold block mb-1">
+                    <FileText className="w-4 h-4 inline mr-1 text-cyber-400" />
+                    Campos no Email de Nova Venda
+                  </Label>
+                  <p className="text-xs text-slate-500 mb-3">
+                    Nome e NIF do cliente sao sempre incluidos. Selecione os campos adicionais a mostrar no email.
+                  </p>
+                  <div className="space-y-2">
+                    {(EMAIL_FIELDS_BY_SCOPE[selectedOperator.scope] || []).map(field => {
+                      const checked = Array.isArray(editOperatorData.email_fields) && editOperatorData.email_fields.includes(field.key);
+                      return (
+                        <div key={field.key} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`email-field-${field.key}`}
+                            checked={checked}
+                            onChange={() => setEditOperatorData(prev => {
+                              const current = Array.isArray(prev.email_fields) ? prev.email_fields : [];
+                              return {
+                                ...prev,
+                                email_fields: checked
+                                  ? current.filter(k => k !== field.key)
+                                  : [...current, field.key]
+                              };
+                            })}
+                            className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                          />
+                          <Label htmlFor={`email-field-${field.key}`} className="cursor-pointer font-normal text-slate-300">{field.label}</Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="border-t border-dark-700 pt-4">
                 <Label className="text-slate-300 text-sm font-semibold block mb-3">

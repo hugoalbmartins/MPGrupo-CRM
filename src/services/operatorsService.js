@@ -126,6 +126,9 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('notification_user_ids')) {
       updateData.notification_user_ids = settingsData.notification_user_ids;
     }
+    if (settingsData.hasOwnProperty('email_fields')) {
+      updateData.email_fields = settingsData.email_fields;
+    }
 
     const { data, error } = await supabase
       .from('operators')

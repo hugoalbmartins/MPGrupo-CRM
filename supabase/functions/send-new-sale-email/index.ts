@@ -47,6 +47,12 @@ interface SaleEmailPayload {
   fix_operator?: string;
   mobile_count?: number;
   mobile_numbers?: MobileNumber[];
+  email_fields?: string[] | null;
+}
+
+function hasField(payload: SaleEmailPayload, key: string): boolean {
+  if (!payload.email_fields) return true;
+  return payload.email_fields.includes(key);
 }
 
 function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): string {
@@ -92,12 +98,12 @@ function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): str
           <tr><td>Cliente:</td><td>${payload.customer_name}</td></tr>
           <tr><td>NIF:</td><td>${payload.customer_nif || "N/A"}</td></tr>
           <tr><td>Operadora:</td><td>${payload.operator_name}</td></tr>
-          ${payload.autoriza_documentos ? `<tr><td>Autoriza docs. pessoais:</td><td>${payload.autoriza_documentos}</td></tr>` : ""}
+          ${hasField(payload, 'autoriza_documentos') && payload.autoriza_documentos ? `<tr><td>Autoriza docs. pessoais:</td><td>${payload.autoriza_documentos}</td></tr>` : ""}
           ${payload.scope === "telecomunicacoes" ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Telecomunicacoes</strong></td></tr>
-          ${payload.service_type ? `<tr><td>Tipo de Servico:</td><td>${payload.service_type === 'NI' ? 'NI (Nova Instalacao)' : payload.service_type === 'MC' ? 'MC (Mudanca de Casa)' : payload.service_type === 'REFID' ? 'REFID (Refidelizacao)' : payload.service_type}</td></tr>` : ""}
-          ${payload.activation_type ? `<tr><td>Tipo de Ativacao:</td><td>${payload.activation_type}</td></tr>` : ""}
-          ${(() => {
+          ${hasField(payload, 'service_type') && payload.service_type ? `<tr><td>Tipo de Servico:</td><td>${payload.service_type === 'NI' ? 'NI (Nova Instalacao)' : payload.service_type === 'MC' ? 'MC (Mudanca de Casa)' : payload.service_type === 'REFID' ? 'REFID (Refidelizacao)' : payload.service_type}</td></tr>` : ""}
+          ${hasField(payload, 'activation_type') && payload.activation_type ? `<tr><td>Tipo de Ativacao:</td><td>${payload.activation_type}</td></tr>` : ""}
+          ${hasField(payload, 'services') ? (() => {
             const services: string[] = [];
             if (payload.has_tv) services.push("TV");
             if (payload.has_net) services.push("NET/Fibra");
@@ -110,8 +116,8 @@ function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): str
             }
             if (services.length === 0) return "";
             return `<tr><td>Servicos:</td><td>${services.join(", ")}</td></tr>`;
-          })()}
-          ${(() => {
+          })() : ""}
+          ${hasField(payload, 'mobile_lines') ? (() => {
             if (!payload.activation_type || payload.activation_type !== "M4") return "";
             const total = payload.mobile_count || 0;
             if (total === 0) return "";
@@ -119,13 +125,13 @@ function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): str
             let mobileText = `${total} linha${total > 1 ? "s" : ""}`;
             if (portedCount > 0) mobileText += `, das quais ${portedCount} portada${portedCount > 1 ? "s" : ""}`;
             return `<tr><td>Moveis:</td><td>${mobileText}</td></tr>`;
-          })()}
+          })() : ""}
           ` : ""}
           ${payload.scope === "energia" || payload.scope === "energias" ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia</strong></td></tr>
-          ${payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
-          ${payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : ""}
-          ${payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : ""}
+          ${hasField(payload, 'entry_type') && payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
+          ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
+          ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
           ` : ""}
         </table>
       </div>

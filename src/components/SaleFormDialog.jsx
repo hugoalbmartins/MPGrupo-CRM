@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, AlertCircle, Trash2 } from 'lucide-react';
+import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, AlertCircle, Trash2, Info } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -57,9 +57,42 @@ const SaleFormDialog = ({
   user
 }) => {
   const [pendingFile, setPendingFile] = useState(null);
+  const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
+
+  const MANDATORY_ATTACHMENTS_BY_OPERATOR = {
+    'endesa': {
+      title: 'Endesa',
+      items: [
+        'Declaração preenchida manualmente, assinada e datada',
+        'Campanha e condições assinadas e datadas',
+        'Em caso de alteração de titularidade: documento comprovativo de posse do local (contrato de arrendamento / comodato / compra e venda / escritura / fatura dos serviços básicos como telecomunicações)',
+        'Se autorizar cópia de documentos pessoais, anexar também os mesmos',
+      ],
+    },
+    'iberdrola': {
+      title: 'Iberdrola',
+      items: [
+        'Checklist Iberdrola preenchida (se adere a GAS, número de CC/passaporte é obrigatório)',
+        'Em caso de alteração de titularidade: documento comprovativo de posse do local (contrato de arrendamento / comodato / compra e venda / escritura / fatura dos serviços básicos como telecomunicações)',
+      ],
+    },
+    'repsol': {
+      title: 'Repsol',
+      items: [
+        'Fatura atual do cliente ou print da mensagem e-redes com CPE',
+        'Em caso de alteração de titularidade: documento comprovativo de posse do local (contrato de arrendamento / comodato / compra e venda / escritura / fatura dos serviços básicos como telecomunicações)',
+      ],
+    },
+  };
+
+  const selectedOperatorObj = operators.find(op => op.id === formData.operator_id);
+  const operatorNameLower = (selectedOperatorObj?.name || '').toLowerCase();
+  const mandatoryAttachmentInfo = Object.entries(MANDATORY_ATTACHMENTS_BY_OPERATOR).find(([key]) =>
+    operatorNameLower.includes(key)
+  )?.[1] || null;
 
   const handleFileSelected = (e) => {
     const MAX_SIZE = 5 * 1024 * 1024;
@@ -921,13 +954,25 @@ const SaleFormDialog = ({
                   </div>
 
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-slate-400">
-                      Documentos {(() => {
-                        const selectedPartner = partners.find(p => p.id === formData.partner_id);
-                        const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
-                        return isD2D ? '*' : '(opcional)';
-                      })()}
-                    </Label>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label className="text-sm font-semibold text-slate-400">
+                        Documentos {(() => {
+                          const selectedPartner = partners.find(p => p.id === formData.partner_id);
+                          const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
+                          return isD2D ? '*' : '(opcional)';
+                        })()}
+                      </Label>
+                      {formData.scope === 'energia' && mandatoryAttachmentInfo && (
+                        <button
+                          type="button"
+                          onClick={() => setAttachmentInfoOpen(true)}
+                          className="text-cyber-400 hover:text-cyber-300 transition-colors"
+                          title="Ver anexos obrigatórios por operadora"
+                        >
+                          <Info className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-start">
                         <input
@@ -1017,6 +1062,61 @@ const SaleFormDialog = ({
           </div>
         </motion.div>
       </div>
+
+      {attachmentInfoOpen && mandatoryAttachmentInfo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setAttachmentInfoOpen(false)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative bg-dark-850 border border-cyber-500/20 rounded-2xl shadow-2xl max-w-lg w-full p-6 z-10"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-bold text-base">Anexos Obrigatórios por Operadora</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Sempre que possível em PDF e num único ficheiro com tamanho máximo de 5Mb</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAttachmentInfoOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors ml-3 shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-dark-900 border border-dark-700 rounded-xl p-4">
+                <h4 className="text-cyber-400 font-semibold text-sm mb-2">{mandatoryAttachmentInfo.title}</h4>
+                <ul className="space-y-2">
+                  {mandatoryAttachmentInfo.items.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-cyber-500 mt-1 shrink-0">•</span>
+                      <span className="text-slate-300 text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button
+                type="button"
+                onClick={() => setAttachmentInfoOpen(false)}
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white font-semibold"
+              >
+                Entendido
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   );
 };
