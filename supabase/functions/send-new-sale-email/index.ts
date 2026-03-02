@@ -49,7 +49,7 @@ interface SaleEmailPayload {
   mobile_numbers?: MobileNumber[];
 }
 
-function buildEmailTemplate(payload: SaleEmailPayload): string {
+function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): string {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -82,7 +82,7 @@ function buildEmailTemplate(payload: SaleEmailPayload): string {
     </div>
     <div class="content">
       <p>Olá!</p>
-      <p>Foi registada uma nova venda no sistema CRM no parceiro <strong>${payload.partner_name || 'N/A'}</strong>.</p>
+      <p>Foi registada uma nova venda no sistema CRM${hidePartner ? '.' : ` no parceiro <strong>${payload.partner_name || 'N/A'}</strong>.`}</p>
 
       <div class="badge">Nova Venda</div>
 
@@ -389,8 +389,6 @@ Deno.serve(async (req: Request) => {
       throw new Error("SMTP_PASS not configured");
     }
 
-    const html = buildEmailTemplate(payload);
-
     const attachmentParts: Array<{ filename: string; contentBase64: string; contentType: string }> = [];
 
     if (payload.attachments && payload.attachments.length > 0 && payload.sale_id) {
@@ -436,31 +434,40 @@ Deno.serve(async (req: Request) => {
 
     const toAddresses = payload.to_recipients.map((r) => r.email);
     const bccAddresses = (payload.bcc_recipients || []).map((r) => r.email);
-    const allRecipients = [...new Set([...toAddresses, ...bccAddresses])];
 
     const customerNameShort = getFirstFourNames(payload.customer_name);
     const nifPart = payload.customer_nif ? ` - NIF ${payload.customer_nif}` : '';
     const subject = `${customerNameShort}${nifPart} - ${payload.operator_name}`;
 
-    const emailBody = buildMimeEmail(
-      fromEmail,
-      fromName,
-      toAddresses,
-      bccAddresses,
-      subject,
-      html,
-      attachmentParts
-    );
+    if (toAddresses.length > 0) {
+      const htmlTo = buildEmailTemplate(payload, false);
+      const emailBodyTo = buildMimeEmail(
+        fromEmail,
+        fromName,
+        toAddresses,
+        [],
+        subject,
+        htmlTo,
+        attachmentParts
+      );
+      await sendViaSMTP(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, toAddresses, emailBodyTo);
+      console.log(`New sale email sent to TO recipients: ${toAddresses.length}`);
+    }
 
-    await sendViaSMTP(
-      smtpHost,
-      smtpPort,
-      smtpUser,
-      smtpPass,
-      fromEmail,
-      allRecipients,
-      emailBody
-    );
+    if (bccAddresses.length > 0) {
+      const htmlBcc = buildEmailTemplate(payload, true);
+      const emailBodyBcc = buildMimeEmail(
+        fromEmail,
+        fromName,
+        bccAddresses,
+        [],
+        subject,
+        htmlBcc,
+        attachmentParts
+      );
+      await sendViaSMTP(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, bccAddresses, emailBodyBcc);
+      console.log(`New sale email sent to BCC recipients (partner hidden): ${bccAddresses.length}`);
+    }
 
     console.log(`New sale email sent: TO=${toAddresses.length}, BCC=${bccAddresses.length}, attachments=${attachmentParts.length}`);
 
