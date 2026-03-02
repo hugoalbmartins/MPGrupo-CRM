@@ -286,10 +286,8 @@ export const salesService = {
     let status;
     if (saleData.is_proposal) {
       status = 'Em proposta';
-    } else if (['partner', 'partner_commercial'].includes(currentUser.role)) {
-      status = 'Para registo';
     } else {
-      status = 'Pendente';
+      status = 'Para registo';
     }
 
     const { data: operator } = await supabase
