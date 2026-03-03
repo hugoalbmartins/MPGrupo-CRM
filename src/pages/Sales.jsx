@@ -633,8 +633,10 @@ const Sales = ({ user }) => {
             return cols;
           })(),
           'Tipo Venda Energia': sale.energy_sale_type || '',
-          'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Nao',
-          'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : ''
+          ...((user?.role === 'admin' || user?.role === 'bo') ? {
+            'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Nao',
+            'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : ''
+          } : {})
         };
 
         if (sale.scope === 'energia' && sale.is_multipoint) {
@@ -654,7 +656,7 @@ const Sales = ({ user }) => {
                   'Escalao': point.tier || '',
                   'Estado Ativacao': point.activation_status,
                   'Data Ativacao': point.activation_date ? new Date(point.activation_date).toLocaleDateString('pt-PT') : '',
-                  'Pago Operador Ponto': point.operator_paid ? 'Sim' : 'Nao',
+                  ...((user?.role === 'admin' || user?.role === 'bo') ? { 'Pago Operador Ponto': point.operator_paid ? 'Sim' : 'Nao' } : {}),
                   'Tipo Entrada': sale.entry_type || '',
                   'Status': sale.status,
                   'Nr Requisicao': sale.request_number || '',

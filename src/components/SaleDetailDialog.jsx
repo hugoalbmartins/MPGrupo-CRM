@@ -347,7 +347,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                       />
                     </div>
 
-                    {user?.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.role === 'bo') && (
                       <>
                         <div>
                           <Label className="text-slate-400">Comissão Manual</Label>
@@ -800,7 +800,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                         </div>
                       )}
 
-                      {sale.paid_to_operator && (
+                      {(user?.role === 'admin' || user?.role === 'bo') && sale.paid_to_operator && (
                         <div className="col-span-2 bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                           <div className="flex items-center gap-2 text-green-400">
                             <CheckCircle className="w-5 h-5" />

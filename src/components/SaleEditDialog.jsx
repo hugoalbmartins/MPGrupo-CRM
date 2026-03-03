@@ -664,6 +664,7 @@ const SaleEditDialog = ({
               </div>
             </FormSection>
 
+            {(user?.role === 'admin' || user?.role === 'bo') && (
             <FormSection icon={CreditCard} title="Pagamento" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="col-span-1 sm:col-span-2 flex flex-col gap-2">
@@ -700,6 +701,7 @@ const SaleEditDialog = ({
                 )}
               </div>
             </FormSection>
+            )}
 
             <FormSection icon={DollarSign} title="Comissão" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
