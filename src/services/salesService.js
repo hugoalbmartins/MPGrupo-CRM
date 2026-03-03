@@ -385,17 +385,18 @@ export const salesService = {
 
     if (!oldSale) throw new Error('Sale not found');
 
-    const PROTECTED_ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
+    const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
     const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint'];
     const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'fix_number', 'fix_operator', 'fix_cvp'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
-      if (PROTECTED_ADDRESS_FIELDS.includes(key)) {
+      const value = updateData[key];
+
+      if (ADDRESS_FIELDS.includes(key)) {
+        updates[key] = value === '' ? null : (value || null);
         return;
       }
-
-      const value = updateData[key];
 
       if (key === 'partner_id') {
         updates[key] = value === null || value === '' || value === 'admin_commissioned' ? null : value;

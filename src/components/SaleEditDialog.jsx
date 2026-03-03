@@ -63,6 +63,12 @@ const SaleEditDialog = ({
     setEditFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const isAddressEditable = (fieldName) => {
+    if (user?.role === 'admin' || user?.role === 'bo') return true;
+    const originalValue = editingSale?.[fieldName];
+    return !originalValue || originalValue === '';
+  };
+
   const handleAddFiles = async (e) => {
     const MAX_SIZE = 5 * 1024 * 1024;
     const files = Array.from(e.target.files);
@@ -302,20 +308,44 @@ const SaleEditDialog = ({
 
               <FormSection icon={MapPin} title="Morada" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <FieldGroup label="Morada" colSpan={2} locked>
-                    <Input value={editFormData.street} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
+                  <FieldGroup label="Morada" colSpan={2} locked={!isAddressEditable('street')}>
+                    <Input
+                      value={editFormData.street || ''}
+                      disabled={!isAddressEditable('street')}
+                      onChange={(e) => update('street', e.target.value)}
+                      placeholder="Rua, Avenida, numero, andar, etc."
+                      className={!isAddressEditable('street') ? "bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" : "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"}
+                    />
                   </FieldGroup>
 
-                  <FieldGroup label="Codigo Postal" locked>
-                    <Input value={editFormData.postal_code} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
+                  <FieldGroup label="Codigo Postal" locked={!isAddressEditable('postal_code')}>
+                    <Input
+                      value={editFormData.postal_code || ''}
+                      disabled={!isAddressEditable('postal_code')}
+                      onChange={(e) => update('postal_code', e.target.value)}
+                      placeholder="0000-000"
+                      className={!isAddressEditable('postal_code') ? "bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" : "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"}
+                    />
                   </FieldGroup>
 
-                  <FieldGroup label="Localidade" locked>
-                    <Input value={editFormData.locality} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
+                  <FieldGroup label="Localidade" locked={!isAddressEditable('locality')}>
+                    <Input
+                      value={editFormData.locality || ''}
+                      disabled={!isAddressEditable('locality')}
+                      onChange={(e) => update('locality', e.target.value)}
+                      placeholder="Ex: Lisboa, Porto, etc."
+                      className={!isAddressEditable('locality') ? "bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" : "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"}
+                    />
                   </FieldGroup>
 
-                  <FieldGroup label="Morada de Instalacao" colSpan={2} locked>
-                    <Input value={editFormData.installation_address} disabled className="bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" />
+                  <FieldGroup label="Morada de Instalacao" colSpan={2} locked={!isAddressEditable('installation_address')}>
+                    <Input
+                      value={editFormData.installation_address || ''}
+                      disabled={!isAddressEditable('installation_address')}
+                      onChange={(e) => update('installation_address', e.target.value)}
+                      placeholder="Se diferente da morada do cliente"
+                      className={!isAddressEditable('installation_address') ? "bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" : "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"}
+                    />
                   </FieldGroup>
                 </div>
               </FormSection>
