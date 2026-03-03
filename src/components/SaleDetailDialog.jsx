@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { X, Edit2, Save, History, MessageSquare, AlertTriangle, CheckCircle, Upload, FileText, Download, Paperclip } from "lucide-react";
+import { X, LocationEdit as Edit2, Save, History, MessageSquare, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Upload, FileText, Download, Paperclip } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
