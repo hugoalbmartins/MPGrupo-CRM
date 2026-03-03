@@ -5,7 +5,7 @@ import { Toaster, toast } from "@/components/ui/sonner";
 import { authService } from "./lib/auth";
 import { supabase } from "./lib/supabase";
 import { notificationService } from "./services/notificationService";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { CircleAlert as AlertCircle, Loader as Loader2 } from "lucide-react";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import Layout from "./components/Layout.jsx";
 import { AppPrompt } from "./components/AppPrompt.jsx";
