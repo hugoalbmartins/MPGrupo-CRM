@@ -128,12 +128,16 @@ function App() {
 
     checkUser();
 
-    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session ? 'has session' : 'no session');
-
-      if (event === 'SIGNED_IN' && session) {
-        await loadUser();
-      } else if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+    const { data: { subscription } } = authService.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' && session) {
+        (async () => { await loadUser(); })();
+      } else if (event === 'SIGNED_IN' && session) {
+        (async () => { await loadUser(); })();
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        (async () => {
+          await notificationService.subscribeToPush();
+        })();
+      } else if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         setUser(null);
         setMustChangePassword(false);
       }
@@ -265,6 +269,8 @@ function App() {
               queryFn: () => import('./services/partnersService').then(mod => mod.partnersService.getAll()),
             });
           }
+
+          notificationService.subscribeToPush();
         }
       }
     } catch (error) {
