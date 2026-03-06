@@ -60,6 +60,8 @@ interface SaleEmailPayload {
   mobile_numbers?: MobileNumber[];
   observations?: string;
   email_fields?: string[] | null;
+  voltage_type?: string;
+  additional_services?: string;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -118,10 +120,10 @@ function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): str
           ${hasField(payload, 'client_iban') && payload.client_iban ? `<tr><td>IBAN:</td><td>${payload.client_iban}</td></tr>` : ""}
           ` : ""}
 
-          ${(hasField(payload, 'address') && payload.address) || (hasField(payload, 'installation_address') && payload.installation_address) ? `
+          ${hasField(payload, 'address') && payload.address ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Morada</strong></td></tr>
-          ${hasField(payload, 'address') && payload.address ? `<tr><td>Morada:</td><td>${payload.address}</td></tr>` : ""}
-          ${hasField(payload, 'installation_address') && payload.installation_address ? `<tr><td>Local de Instalacao:</td><td>${payload.installation_address}</td></tr>` : ""}
+          <tr><td>Morada:</td><td>${payload.address}</td></tr>
+          <tr><td>Local de Instalacao:</td><td>${payload.installation_address || "Mesma"}</td></tr>
           ` : ""}
 
           ${hasField(payload, 'autoriza_documentos') && payload.autoriza_documentos ? `<tr><td>Autoriza docs. pessoais:</td><td>${payload.autoriza_documentos}</td></tr>` : ""}
@@ -163,10 +165,12 @@ function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): str
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia</strong></td></tr>
           ${hasField(payload, 'energy_sale_type') && payload.energy_sale_type ? `<tr><td>Tipo de Energia:</td><td>${payload.energy_sale_type === 'eletricidade' ? 'Eletricidade' : payload.energy_sale_type === 'gas' ? 'Gas' : payload.energy_sale_type === 'dual' ? 'Eletricidade + Gas (Dual)' : payload.energy_sale_type}</td></tr>` : ""}
           ${hasField(payload, 'entry_type') && payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
+          ${hasField(payload, 'voltage_type') ? `<tr><td>Tipo de Tensao:</td><td>${payload.voltage_type || "N/A"}</td></tr>` : ""}
           ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
           ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
-          ${hasField(payload, 'direct_debit') && payload.has_direct_debit ? `<tr><td>Debito Direto:</td><td>Sim</td></tr>` : ""}
-          ${hasField(payload, 'electronic_invoice') && payload.has_electronic_invoice ? `<tr><td>Fatura Eletronica:</td><td>Sim</td></tr>` : ""}
+          ${hasField(payload, 'direct_debit') ? `<tr><td>Debito Direto:</td><td>${payload.has_direct_debit ? "Sim" : "Nao"}</td></tr>` : ""}
+          ${hasField(payload, 'electronic_invoice') ? `<tr><td>Fatura Eletronica:</td><td>${payload.has_electronic_invoice ? "Sim" : "Nao"}</td></tr>` : ""}
+          ${hasField(payload, 'additional_services') && payload.additional_services ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services}</td></tr>` : ""}
           ` : ""}
 
           ${payload.scope === "solar" ? `

@@ -123,7 +123,9 @@ const Sales = ({ user }) => {
     observations: "",
     autoriza_documentos: "",
     is_proposal: false,
-    energy_points: []
+    energy_points: [],
+    voltage_type: "",
+    additional_services: ""
   });
 
   useEffect(() => {
@@ -270,6 +272,16 @@ const Sales = ({ user }) => {
         toast.error("Tipo de Entrada e obrigatorio!");
         return;
       }
+
+      const selectedEnergyOperator = operators.find(op => op.id === formData.operator_id);
+      if (selectedEnergyOperator?.requires_voltage_type && !formData.voltage_type) {
+        toast.error("Tipo de Tensao e obrigatorio para esta operadora!");
+        return;
+      }
+      if (selectedEnergyOperator?.requires_additional_services && !formData.additional_services?.trim()) {
+        toast.error("Servicos Adicionais sao obrigatorios para esta operadora!");
+        return;
+      }
     }
 
     try {
@@ -408,7 +420,9 @@ const Sales = ({ user }) => {
       energy_points: [],
       observations: "",
       autoriza_documentos: "",
-      is_proposal: false
+      is_proposal: false,
+      voltage_type: "",
+      additional_services: ""
     });
     setUploadFiles([]);
     setOperatorCommissions([]);

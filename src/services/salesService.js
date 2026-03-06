@@ -354,6 +354,8 @@ export const salesService = {
       tier: saleData.tier || null,
       observations: saleData.observations || null,
       autoriza_documentos: saleData.autoriza_documentos || null,
+      voltage_type: saleData.voltage_type || null,
+      additional_services: saleData.additional_services || null,
       fix_ported: saleData.fix_ported || false,
       fix_number: saleData.fix_ported ? (saleData.fix_number || null) : null,
       fix_operator: saleData.fix_ported ? (saleData.fix_operator || null) : null,
@@ -753,6 +755,8 @@ export const salesService = {
         mobile_numbers: sale.mobile_numbers,
         observations: sale.observations,
         email_fields: sale.operator?.email_fields || null,
+        voltage_type: sale.voltage_type,
+        additional_services: sale.additional_services,
       }),
     });
 

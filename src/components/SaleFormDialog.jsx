@@ -860,22 +860,55 @@ const SaleFormDialog = ({
                           isNew={true}
                         />
 
-                        <div className="mt-4">
-                          <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Entrada *</Label>
-                          <Select
-                            value={formData.entry_type}
-                            onValueChange={(v) => setFormData({...formData, entry_type: v})}
-                          >
-                            <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                              <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
-                              <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
-                              <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className={currentOperator?.requires_voltage_type ? "col-span-1" : "col-span-1 sm:col-span-2"}>
+                            <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Entrada *</Label>
+                            <Select
+                              value={formData.entry_type}
+                              onValueChange={(v) => setFormData({...formData, entry_type: v})}
+                            >
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
+                                <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
+                                <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {currentOperator?.requires_voltage_type && (
+                            <div>
+                              <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Tensão *</Label>
+                              <Select
+                                value={formData.voltage_type}
+                                onValueChange={(v) => setFormData({...formData, voltage_type: v})}
+                              >
+                                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                  <SelectValue placeholder="Selecione..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Monofásico">Monofásico</SelectItem>
+                                  <SelectItem value="Trifásico">Trifásico</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </div>
+
+                        {currentOperator?.requires_additional_services && (
+                          <div className="mt-4">
+                            <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais *</Label>
+                            <Textarea
+                              value={formData.additional_services}
+                              onChange={(e) => setFormData({...formData, additional_services: e.target.value})}
+                              placeholder="Descreva os serviços adicionais contratados..."
+                              rows={3}
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white resize-none"
+                            />
+                          </div>
+                        )}
                       </>
                     );
                   })()}
