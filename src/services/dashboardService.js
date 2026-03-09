@@ -331,7 +331,9 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
     admin_commission_paid: 0,
     admin_retention: 0,
     current_month_retentions: retentions.current_month,
-    retentions_to_return: retentions.to_return
+    retentions_to_return: retentions.to_return,
+    dd_count: 0,
+    fe_count: 0
   };
 
   if (sales) {
@@ -382,6 +384,9 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
       }
 
       stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + commission;
+
+      if (sale.has_direct_debit) stats.dd_count++;
+      if (sale.has_electronic_invoice) stats.fe_count++;
 
       const isAdminOwnSale = isCommissioned && (
         (adminPartnerId && sale.partner_id === adminPartnerId) ||
@@ -441,7 +446,9 @@ async function getBODashboard(year, month) {
     by_partner: {},
     selected_month: month,
     selected_year: year,
-    last_12_months: last12Months
+    last_12_months: last12Months,
+    dd_count: 0,
+    fe_count: 0
   };
 
   if (sales) {
@@ -477,6 +484,9 @@ async function getBODashboard(year, month) {
         stats.by_partner[sale.partner_id] = { count: 0 };
       }
       stats.by_partner[sale.partner_id].count++;
+
+      if (sale.has_direct_debit) stats.dd_count++;
+      if (sale.has_electronic_invoice) stats.fe_count++;
     });
   }
 
@@ -525,7 +535,9 @@ async function getPartnerDashboard(partnerId, year, month) {
     selected_year: year,
     last_12_months: last12Months,
     current_month_retentions: retentions.current_month,
-    retentions_to_return: retentions.to_return
+    retentions_to_return: retentions.to_return,
+    dd_count: 0,
+    fe_count: 0
   };
 
   if (sales) {
@@ -567,6 +579,9 @@ async function getPartnerDashboard(partnerId, year, month) {
 
       stats.commission_by_status[status] = (stats.commission_by_status[status] || 0) + commission;
       stats.commission_by_type[scope] = (stats.commission_by_type[scope] || 0) + commission;
+
+      if (sale.has_direct_debit) stats.dd_count++;
+      if (sale.has_electronic_invoice) stats.fe_count++;
     });
   }
 
@@ -598,13 +613,15 @@ async function getCommercialDashboard(userId, year, month) {
   const stats = {
     total_sales: sales?.length || 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
-    energia: { count: 0 },
+    energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     dual: { count: 0 },
     by_status: {},
     selected_month: month,
     selected_year: year,
-    last_12_months: last12Months
+    last_12_months: last12Months,
+    dd_count: 0,
+    fe_count: 0
   };
 
   if (sales) {
@@ -617,6 +634,10 @@ async function getCommercialDashboard(userId, year, month) {
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
         stats.energia.count++;
+        const energyType = sale.energy_sale_type || 'eletricidade';
+        if (energyType === 'eletricidade') stats.energia.electricity++;
+        else if (energyType === 'gas') stats.energia.gas++;
+        else if (energyType === 'dual') { stats.energia.dual++; stats.energia.electricity++; stats.energia.gas++; }
       } else if (scope === 'solar') {
         stats.solar.count++;
       } else if (scope === 'dual') {
@@ -624,6 +645,9 @@ async function getCommercialDashboard(userId, year, month) {
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
+
+      if (sale.has_direct_debit) stats.dd_count++;
+      if (sale.has_electronic_invoice) stats.fe_count++;
     });
   }
 
@@ -780,6 +804,8 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     selected_month: month,
     selected_year: year,
     last_12_months: last12Months,
+    dd_count: 0,
+    fe_count: 0
   };
 
   if (sales) {
@@ -805,6 +831,9 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
       } else if (scope === 'solar') {
         stats.solar.count++;
       }
+
+      if (sale.has_direct_debit) stats.dd_count++;
+      if (sale.has_electronic_invoice) stats.fe_count++;
     });
   }
 

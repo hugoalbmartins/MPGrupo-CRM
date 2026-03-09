@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import SaleDetailDialog from "../components/SaleDetailDialog";
-import { useDashboardStats, useProposalStats, usePartnerStats, useProposals } from "@/hooks/useDashboardData";
+import { useDashboardStats, useProposalStats, usePartnerStats, useProposals, getAvailableWeeks } from "@/hooks/useDashboardData";
 import { AnimatedNumber } from "@/hooks/useAnimatedCounter";
 
 /* ---------------------------------------------------------------------------
@@ -147,11 +147,13 @@ const Dashboard = ({ user }) => {
   const [proposalFilter, setProposalFilter] = useState(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState(null);
+  const [partnerTableFilterMode, setPartnerTableFilterMode] = useState('month');
+  const [partnerTableWeekKey, setPartnerTableWeekKey] = useState(null);
 
   /* ---- data hooks ---- */
   const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedYear, selectedMonth);
   const { data: proposalStats } = useProposalStats();
-  const { data: partnerData } = usePartnerStats(user);
+  const { data: partnerData } = usePartnerStats(user, partnerTableFilterMode, partnerTableWeekKey);
   const { data: filteredProposals = [] } = useProposals(proposalFilter);
 
   const partnerStats = partnerData?.stats || [];
@@ -168,6 +170,8 @@ const Dashboard = ({ user }) => {
     "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
   ];
+
+  const availableWeeks = getAvailableWeeks();
 
   const getAvailableYears = () => {
     const currentYear = new Date().getFullYear();
@@ -292,7 +296,7 @@ const Dashboard = ({ user }) => {
           index={8}
           label="Energia"
           value={stats?.energia?.count || 0}
-          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual)`}
+          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
           icon={Zap}
           iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
           valueColor="text-amber-400"
@@ -389,7 +393,15 @@ const Dashboard = ({ user }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={7} label="Telecomunicacoes" value={stats?.telecomunicacoes?.count || 0} icon={Phone} iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600" valueColor="text-cyan-400" />
-        <StatCard index={8} label="Energia" value={stats?.energia?.count || 0} icon={Zap} iconGradient="bg-gradient-to-br from-amber-500 to-amber-600" valueColor="text-amber-400" />
+        <StatCard
+          index={8}
+          label="Energia"
+          value={stats?.energia?.count || 0}
+          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
+          icon={Zap}
+          iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
+          valueColor="text-amber-400"
+        />
         <StatCard index={9} label="Solar" value={stats?.solar?.count || 0} icon={Sun} iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600" valueColor="text-emerald-400" />
         <StatCard index={10} label="Dual" value={stats?.dual?.count || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-dark-500 to-dark-600" valueColor="text-dark-200" />
       </div>
@@ -402,7 +414,15 @@ const Dashboard = ({ user }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={0} label="Minhas Vendas" value={stats?.total_sales || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600" valueColor="text-white" />
         <StatCard index={1} label="Telecomunicacoes" value={stats?.telecomunicacoes?.count || 0} icon={Phone} iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600" valueColor="text-cyan-400" />
-        <StatCard index={2} label="Energia" value={stats?.energia?.count || 0} icon={Zap} iconGradient="bg-gradient-to-br from-amber-500 to-amber-600" valueColor="text-amber-400" />
+        <StatCard
+          index={2}
+          label="Energia"
+          value={stats?.energia?.count || 0}
+          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
+          icon={Zap}
+          iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
+          valueColor="text-amber-400"
+        />
         <StatCard index={3} label="Solar" value={stats?.solar?.count || 0} icon={Sun} iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600" valueColor="text-emerald-400" />
       </div>
 
@@ -433,7 +453,15 @@ const Dashboard = ({ user }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard index={0} label="Total Vendas" value={stats?.total_sales || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600" valueColor="text-white" />
       <StatCard index={1} label="Telecomunicacoes" value={stats?.telecomunicacoes?.count || 0} icon={Phone} iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600" valueColor="text-cyan-400" />
-      <StatCard index={2} label="Energia" value={stats?.energia?.count || 0} icon={Zap} iconGradient="bg-gradient-to-br from-amber-500 to-amber-600" valueColor="text-amber-400" />
+      <StatCard
+        index={2}
+        label="Energia"
+        value={stats?.energia?.count || 0}
+        subtitle={`DD: ${stats?.dd_count || 0} · FE: ${stats?.fe_count || 0}`}
+        icon={Zap}
+        iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
+        valueColor="text-amber-400"
+      />
       <StatCard index={3} label="Solar" value={stats?.solar?.count || 0} icon={Sun} iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600" valueColor="text-emerald-400" />
     </div>
   );
@@ -596,7 +624,7 @@ const Dashboard = ({ user }) => {
           index={5}
           label="Energia"
           value={stats?.energia?.count || 0}
-          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual)`}
+          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
           icon={Zap}
           iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
           valueColor="text-amber-400"
@@ -897,10 +925,45 @@ const Dashboard = ({ user }) => {
       {/* ---- Partner stats table ---- */}
       {partnerStats.length > 0 && operators.length > 0 && (
         <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
-          <h3 className="text-base font-bold text-white mb-1">Vendas por Parceiro</h3>
-          <p className="text-xs text-slate-500 mb-4">
-            {months[new Date().getMonth()]} {new Date().getFullYear()}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+            <div>
+              <h3 className="text-base font-bold text-white mb-1">Vendas por Parceiro</h3>
+              <p className="text-xs text-slate-500">
+                {partnerTableFilterMode === 'week'
+                  ? (availableWeeks.find(w => w.key === partnerTableWeekKey)?.label || availableWeeks[0]?.label || '')
+                  : `${months[new Date().getMonth()]} ${new Date().getFullYear()}`}
+              </p>
+            </div>
+            {user?.role === 'admin' && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex rounded-lg overflow-hidden border border-cyber-500/20">
+                  <button
+                    onClick={() => setPartnerTableFilterMode('month')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${partnerTableFilterMode === 'month' ? 'bg-cyber-500/20 text-cyber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Mes
+                  </button>
+                  <button
+                    onClick={() => { setPartnerTableFilterMode('week'); if (!partnerTableWeekKey) setPartnerTableWeekKey(availableWeeks[0]?.key || null); }}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${partnerTableFilterMode === 'week' ? 'bg-cyber-500/20 text-cyber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Semana
+                  </button>
+                </div>
+                {partnerTableFilterMode === 'week' && (
+                  <select
+                    value={partnerTableWeekKey || availableWeeks[0]?.key || ''}
+                    onChange={(e) => setPartnerTableWeekKey(e.target.value)}
+                    className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    {availableWeeks.map(w => (
+                      <option key={w.key} value={w.key}>{w.label}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+          </div>
           <div className="table-container">
             <table>
               <thead>

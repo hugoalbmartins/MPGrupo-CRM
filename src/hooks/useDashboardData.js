@@ -20,22 +20,88 @@ export const useProposalStats = () => {
   });
 };
 
-export const usePartnerStats = (user) => {
-  return useQuery({
-    queryKey: ['partnerStats'],
-    queryFn: async () => {
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
+const getWeekRange = (weekKey) => {
+  if (!weekKey) {
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return {
+      start: monday.toISOString().split('T')[0],
+      end: sunday.toISOString().split('T')[0],
+    };
+  }
+  const [year, week] = weekKey.split('-W').map(Number);
+  const jan4 = new Date(year, 0, 4);
+  const dayOfWeek = jan4.getDay() || 7;
+  const firstMonday = new Date(jan4);
+  firstMonday.setDate(jan4.getDate() - dayOfWeek + 1);
+  const monday = new Date(firstMonday);
+  monday.setDate(firstMonday.getDate() + (week - 1) * 7);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return {
+    start: monday.toISOString().split('T')[0],
+    end: sunday.toISOString().split('T')[0],
+  };
+};
 
-      const startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
-      const endDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+export const getAvailableWeeks = () => {
+  const weeks = [];
+  const now = new Date();
+  for (let i = 0; i < 52; i++) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - i * 7);
+    const day = date.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const year = monday.getFullYear();
+    const startOfYear = new Date(year, 0, 1);
+    const pastDaysOfYear = (monday - startOfYear) / 86400000;
+    const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+
+    const key = `${year}-W${String(weekNum).padStart(2, '0')}`;
+    const label = `${monday.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })} - ${sunday.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+
+    if (!weeks.find(w => w.key === key)) {
+      weeks.push({ key, label, monday, sunday });
+    }
+  }
+  return weeks;
+};
+
+export const usePartnerStats = (user, filterMode = 'month', weekKey = null) => {
+  return useQuery({
+    queryKey: ['partnerStats', filterMode, weekKey],
+    queryFn: async () => {
+      let startDate, endDate;
+
+      if (filterMode === 'week') {
+        const range = getWeekRange(weekKey);
+        startDate = range.start;
+        endDate = range.end;
+      } else {
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
+        endDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+      }
 
       const [salesResult, partnersResult, operatorsResult] = await Promise.all([
         supabase
           .from('sales')
           .select('*, partners(name), operators(name)')
           .gte('date', startDate)
-          .lt('date', endDate)
+          .lte('date', endDate)
           .neq('status', 'Em proposta'),
         supabase.from('partners').select('id, name'),
         supabase.from('operators').select('id, name').eq('hidden', false)
@@ -79,7 +145,7 @@ export const usePartnerStats = (user) => {
       });
 
       const sortedStats = Object.values(partnerMap)
-        .filter(p => p.total > 0)
+        .filter(p => p.total > 0 || Object.values(p.operators).some(v => v > 0))
         .sort((a, b) => b.total - a.total);
 
       return { stats: sortedStats, operators: allOperators };
