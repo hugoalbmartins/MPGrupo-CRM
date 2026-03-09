@@ -1011,8 +1011,7 @@ const SaleFormDialog = ({
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                          capture="environment"
+                          accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt,.heic,.heif"
                           onChange={handleFileSelected}
                           className="flex-1 min-w-0 block text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20 transition-colors cursor-pointer"
                         />

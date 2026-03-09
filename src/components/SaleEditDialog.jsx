@@ -803,7 +803,7 @@ const SaleEditDialog = ({
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt,.heic,.heif"
                     onChange={handleAddFiles}
                     className="hidden"
                   />
