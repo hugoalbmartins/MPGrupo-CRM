@@ -21,7 +21,8 @@ interface MobileNumber {
 
 interface SaleEmailPayload {
   to_recipients: Recipient[];
-  bcc_recipients: Recipient[];
+  bcc_recipients?: Recipient[];
+  show_partner?: boolean;
   sale_code: string;
   customer_name: string;
   customer_nif: string;
@@ -69,7 +70,8 @@ function hasField(payload: SaleEmailPayload, key: string): boolean {
   return payload.email_fields.includes(key);
 }
 
-function buildEmailTemplate(payload: SaleEmailPayload, hidePartner = false): string {
+function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true): string {
+  const hidePartner = !showPartner;
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -488,49 +490,30 @@ Deno.serve(async (req: Request) => {
     }
 
     const toAddresses = payload.to_recipients.map((r) => r.email);
-    const bccAddresses = (payload.bcc_recipients || []).map((r) => r.email);
 
     const customerNameShort = getFirstFourNames(payload.customer_name);
-    const nifPart = payload.customer_nif ? ` - NIF ${payload.customer_nif}` : '';
-    const subject = `${customerNameShort}${nifPart} - ${payload.operator_name}`;
+    const nifPart = payload.customer_nif ? ` NIF ${payload.customer_nif}` : '';
+    const subject = `MPGrupo - ${payload.operator_name} - ${customerNameShort}${nifPart}`;
 
-    if (toAddresses.length > 0) {
-      const htmlTo = buildEmailTemplate(payload, false);
-      const emailBodyTo = buildMimeEmail(
-        fromEmail,
-        fromName,
-        toAddresses,
-        [],
-        subject,
-        htmlTo,
-        attachmentParts
-      );
-      await sendViaSMTP(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, toAddresses, emailBodyTo);
-      console.log(`New sale email sent to TO recipients: ${toAddresses.length}`);
-    }
+    const showPartner = payload.show_partner !== false;
+    const html = buildEmailTemplate(payload, showPartner);
+    const emailBody = buildMimeEmail(
+      fromEmail,
+      fromName,
+      toAddresses,
+      [],
+      subject,
+      html,
+      attachmentParts
+    );
+    await sendViaSMTP(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, toAddresses, emailBody);
 
-    if (bccAddresses.length > 0) {
-      const htmlBcc = buildEmailTemplate(payload, true);
-      const emailBodyBcc = buildMimeEmail(
-        fromEmail,
-        fromName,
-        bccAddresses,
-        [],
-        subject,
-        htmlBcc,
-        attachmentParts
-      );
-      await sendViaSMTP(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, bccAddresses, emailBodyBcc);
-      console.log(`New sale email sent to BCC recipients (partner hidden): ${bccAddresses.length}`);
-    }
-
-    console.log(`New sale email sent: TO=${toAddresses.length}, BCC=${bccAddresses.length}, attachments=${attachmentParts.length}`);
+    console.log(`New sale email sent: TO=${toAddresses.length}, showPartner=${showPartner}, attachments=${attachmentParts.length}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         to_count: toAddresses.length,
-        bcc_count: bccAddresses.length,
         attachments_count: attachmentParts.length,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
