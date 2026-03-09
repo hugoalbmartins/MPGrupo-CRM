@@ -93,6 +93,8 @@ const Operators = ({ user }) => {
     allowed_client_types: [],
     pays_direct_debit: false,
     pays_electronic_invoice: false,
+    requires_voltage_type: false,
+    requires_additional_services: false,
     notification_emails: [],
     notification_user_ids: [],
     email_fields: null,
@@ -258,6 +260,8 @@ const Operators = ({ user }) => {
         allowed_client_types: freshData.allowed_client_types || ['particular', 'empresarial'],
         pays_direct_debit: freshData.pays_direct_debit || false,
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
+        requires_voltage_type: freshData.requires_voltage_type || false,
+        requires_additional_services: freshData.requires_additional_services || false,
         notification_emails: freshData.notification_emails || [],
         notification_user_ids: freshData.notification_user_ids || [],
         email_fields: initialEmailFields,
@@ -975,6 +979,37 @@ const Operators = ({ user }) => {
                     />
                     <Label htmlFor="edit_pays_electronic_invoice" className="cursor-pointer font-normal text-slate-300">
                       Paga adesão a Fatura Eletrónica
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-dark-700 pt-4">
+                <Label className="text-slate-300 text-sm font-semibold block mb-1">Campos do Formulário de Venda</Label>
+                <p className="text-xs text-slate-500 mb-3">Selecione os campos adicionais a pedir no formulário de nova venda.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit_requires_voltage_type"
+                      checked={editOperatorData.requires_voltage_type}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, requires_voltage_type: e.target.checked }))}
+                      className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                    />
+                    <Label htmlFor="edit_requires_voltage_type" className="cursor-pointer font-normal text-slate-300">
+                      Requer Tipo de Tensão (Monofásico / Trifásico)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit_requires_additional_services"
+                      checked={editOperatorData.requires_additional_services}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, requires_additional_services: e.target.checked }))}
+                      className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                    />
+                    <Label htmlFor="edit_requires_additional_services" className="cursor-pointer font-normal text-slate-300">
+                      Requer Serviços Adicionais
                     </Label>
                   </div>
                 </div>

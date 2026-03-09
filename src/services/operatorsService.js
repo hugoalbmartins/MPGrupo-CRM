@@ -120,6 +120,12 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('pays_electronic_invoice')) {
       updateData.pays_electronic_invoice = settingsData.pays_electronic_invoice;
     }
+    if (settingsData.hasOwnProperty('requires_voltage_type')) {
+      updateData.requires_voltage_type = settingsData.requires_voltage_type;
+    }
+    if (settingsData.hasOwnProperty('requires_additional_services')) {
+      updateData.requires_additional_services = settingsData.requires_additional_services;
+    }
     if (settingsData.hasOwnProperty('notification_emails')) {
       updateData.notification_emails = settingsData.notification_emails;
     }
