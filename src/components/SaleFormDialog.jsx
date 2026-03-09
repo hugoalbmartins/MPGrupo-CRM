@@ -858,6 +858,7 @@ const SaleFormDialog = ({
                             setFormData({...formData, energy_points: points});
                           }}
                           isNew={true}
+                          user={user}
                         />
 
                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

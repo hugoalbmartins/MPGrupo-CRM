@@ -73,7 +73,8 @@ const expandPointsForDB = (localPoints, saleType) => {
   return expanded;
 };
 
-const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
+const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user }) => {
+  const canSeeOperatorPaid = user?.role === 'admin' || user?.role === 'bo';
   const [isMultipoint, setIsMultipoint] = useState(false);
   const [pointCount, setPointCount] = useState(1);
   const [localPoints, setLocalPoints] = useState([]);
@@ -350,18 +351,20 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true }) => {
                 </>
               )}
 
-              <div className="col-span-1 sm:col-span-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id={`operator-paid-${index}`}
-                    checked={point.operator_paid}
-                    onCheckedChange={(checked) => handlePointChange(index, 'operator_paid', checked)}
-                  />
-                  <Label htmlFor={`operator-paid-${index}`} className="text-sm text-slate-300 cursor-pointer">
-                    Pago pelo operador
-                  </Label>
+              {canSeeOperatorPaid && (
+                <div className="col-span-1 sm:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`operator-paid-${index}`}
+                      checked={point.operator_paid}
+                      onCheckedChange={(checked) => handlePointChange(index, 'operator_paid', checked)}
+                    />
+                    <Label htmlFor={`operator-paid-${index}`} className="text-sm text-slate-300 cursor-pointer">
+                      Pago pelo operador
+                    </Label>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </Card>
         ))}
