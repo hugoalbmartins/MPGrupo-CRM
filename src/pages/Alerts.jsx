@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye, Mail, Check, X, ChevronLeft, ChevronRight, Archive, BellOff } from "lucide-react";
+import { Bell, CheckCircle, AlertCircle, MessageSquare, Eye, Mail, Check, X, ChevronLeft, ChevronRight, Archive, BellOff, CheckCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import { useAlerts, useMarkAlertAsRead } from "@/hooks/useAlertsData";
 import { alertsService } from "../services/alertsService";
 import { salesService } from "../services/salesService";
 import { usersService } from "../services/usersService";
@@ -22,12 +21,14 @@ const Alerts = ({ user }) => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
   const [selectedAlerts, setSelectedAlerts] = useState([]);
+  const [selectMode, setSelectMode] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalAlerts, setTotalAlerts] = useState(0);
   const [filter, setFilter] = useState('all');
   const [alertsSuspended, setAlertsSuspended] = useState(false);
   const [suspensionLoading, setSuspensionLoading] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     fetchAlerts();
@@ -47,6 +48,7 @@ const Alerts = ({ user }) => {
 
   useEffect(() => {
     setSelectedAlerts([]);
+    setSelectMode(null);
   }, [currentPage, filter]);
 
   const fetchAlerts = async () => {
@@ -134,28 +136,51 @@ const Alerts = ({ user }) => {
         ? prev.filter(id => id !== alertId)
         : [...prev, alertId]
     );
+    setSelectMode(null);
   };
 
-  const handleSelectAll = () => {
-    if (selectedAlerts.length === alerts.length) {
+  const handleSelectPage = () => {
+    if (selectMode === 'page' || selectedAlerts.length === alerts.length) {
       setSelectedAlerts([]);
+      setSelectMode(null);
     } else {
       setSelectedAlerts(alerts.map(a => a.id));
+      setSelectMode('page');
+    }
+  };
+
+  const handleSelectFilter = () => {
+    if (selectMode === 'filter') {
+      setSelectedAlerts([]);
+      setSelectMode(null);
+    } else {
+      setSelectedAlerts(alerts.map(a => a.id));
+      setSelectMode('filter');
     }
   };
 
   const handleMarkAsRead = async () => {
-    if (selectedAlerts.length === 0) {
+    if (selectedAlerts.length === 0 && selectMode !== 'filter') {
       toast.error("Selecione pelo menos um alerta");
       return;
     }
 
+    setBulkLoading(true);
     try {
-      await alertsService.markAsRead(selectedAlerts);
-      toast.success(`${selectedAlerts.length} alerta(s) marcado(s) como lido(s)`);
+      if (selectMode === 'filter') {
+        const count = await alertsService.markAllByFilter(filter);
+        toast.success(`${count} alerta(s) marcado(s) como lido(s)`);
+      } else {
+        await alertsService.markAsRead(selectedAlerts);
+        toast.success(`${selectedAlerts.length} alerta(s) marcado(s) como lido(s)`);
+      }
+      setSelectedAlerts([]);
+      setSelectMode(null);
       fetchAlerts();
     } catch (error) {
       toast.error("Erro ao marcar alertas como lidos");
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -165,12 +190,17 @@ const Alerts = ({ user }) => {
       return;
     }
 
+    setBulkLoading(true);
     try {
       await alertsService.markAsUnread(selectedAlerts);
       toast.success(`${selectedAlerts.length} alerta(s) marcado(s) como não lido(s)`);
+      setSelectedAlerts([]);
+      setSelectMode(null);
       fetchAlerts();
     } catch (error) {
       toast.error("Erro ao marcar alertas como não lidos");
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -181,13 +211,19 @@ const Alerts = ({ user }) => {
       case 'status_change':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'note_added':
-        return <MessageSquare className="w-5 h-5 text-purple-500" />;
+        return <MessageSquare className="w-5 h-5 text-blue-400" />;
       default:
         return <Bell className="w-5 h-5 text-slate-500" />;
     }
   };
 
   const isUnread = (alert) => !alert.read_by.includes(user?.id);
+
+  const pageCount = alerts.length;
+  const isPageSelected = selectMode === 'page' || (selectedAlerts.length === pageCount && pageCount > 0 && selectMode !== 'filter');
+  const isFilterSelected = selectMode === 'filter';
+
+  const filterLabel = filter === 'unread' ? 'não lidos' : filter === 'read' ? 'lidos' : 'todos';
 
   if (loading) {
     return (
@@ -294,46 +330,85 @@ const Alerts = ({ user }) => {
         </>
       )}
 
-      <div className="flex justify-between items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Select value={filter} onValueChange={(value) => { setFilter(value); setCurrentPage(1); }}>
-            <SelectTrigger className="w-48 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
-              <SelectValue placeholder="Filtrar alertas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Alertas</SelectItem>
-              <SelectItem value="unread">Não Lidos</SelectItem>
-              <SelectItem value="read">Lidos</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="space-y-3">
+        <div className="flex justify-between items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Select value={filter} onValueChange={(value) => { setFilter(value); setCurrentPage(1); }}>
+              <SelectTrigger className="w-48 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
+                <SelectValue placeholder="Filtrar alertas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Alertas</SelectItem>
+                <SelectItem value="unread">Não Lidos</SelectItem>
+                <SelectItem value="read">Lidos</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {alerts.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={selectedAlerts.length === alerts.length && alerts.length > 0}
-                onCheckedChange={handleSelectAll}
-                id="select-all"
-              />
-              <Label htmlFor="select-all" className="text-sm cursor-pointer text-slate-300">
-                Selecionar todos
-              </Label>
+            {alerts.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleSelectPage}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                    isPageSelected
+                      ? 'bg-cyber-500/15 border-cyber-500/40 text-cyber-300'
+                      : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500/30 hover:text-slate-200'
+                  }`}
+                >
+                  <Checkbox
+                    checked={isPageSelected}
+                    className="w-3.5 h-3.5 pointer-events-none"
+                  />
+                  Página ({pageCount})
+                </button>
+
+                {totalAlerts > pageCount && (
+                  <button
+                    onClick={handleSelectFilter}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      isFilterSelected
+                        ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
+                        : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-amber-500/30 hover:text-slate-200'
+                    }`}
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    {isFilterSelected ? `Todos ${filterLabel} (${totalAlerts})` : `Selec. todos ${filterLabel} (${totalAlerts})`}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {(selectedAlerts.length > 0 || selectMode === 'filter') && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-slate-400">
+                {selectMode === 'filter'
+                  ? `${totalAlerts} selecionado(s) — todos ${filterLabel}`
+                  : `${selectedAlerts.length} selecionado(s)`
+                }
+              </span>
+              <Button
+                size="sm"
+                onClick={handleMarkAsRead}
+                disabled={bulkLoading}
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-400 hover:to-cyber-500 gap-1"
+              >
+                <Check className="w-4 h-4" />
+                Marcar como Lido
+              </Button>
+              {selectMode !== 'filter' && (
+                <Button
+                  size="sm"
+                  onClick={handleMarkAsUnread}
+                  disabled={bulkLoading}
+                  className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyber-500/30 gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Marcar como Não Lido
+                </Button>
+              )}
             </div>
           )}
         </div>
-
-        {selectedAlerts.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-400">{selectedAlerts.length} selecionado(s)</span>
-            <Button size="sm" onClick={handleMarkAsRead} className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-400 hover:to-cyber-500 gap-1">
-              <Check className="w-4 h-4" />
-              Marcar como Lido
-            </Button>
-            <Button size="sm" onClick={handleMarkAsUnread} className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-cyber-500/30 gap-1">
-              <X className="w-4 h-4" />
-              Marcar como Não Lido
-            </Button>
-          </div>
-        )}
       </div>
 
       {alerts.length === 0 ? (
@@ -350,7 +425,7 @@ const Alerts = ({ user }) => {
           <div className="space-y-3">
             {alerts.map((alert, index) => {
               const unread = isUnread(alert);
-              const isSelected = selectedAlerts.includes(alert.id);
+              const isSelected = selectMode === 'filter' || selectedAlerts.includes(alert.id);
               return (
                 <div
                   key={alert.id}

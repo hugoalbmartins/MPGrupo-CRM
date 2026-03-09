@@ -127,6 +127,35 @@ export const alertsService = {
     }
   },
 
+  async markAllByFilter(filter) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    let query = supabase
+      .from('alerts')
+      .select('id, read_by')
+      .overlaps('user_ids', [user.id])
+      .is('archived_at', null);
+
+    if (filter === 'unread') {
+      query = query.not('read_by', 'cs', `{${user.id}}`);
+    } else if (filter === 'read') {
+      query = query.contains('read_by', [user.id]);
+    }
+
+    const { data: alerts, error } = await query;
+    if (error) throw error;
+
+    const toUpdate = (alerts || []).filter(a => !(a.read_by || []).includes(user.id));
+
+    for (const alert of toUpdate) {
+      const readBy = [...(alert.read_by || []), user.id];
+      await supabase.from('alerts').update({ read_by: readBy }).eq('id', alert.id);
+    }
+
+    return toUpdate.length;
+  },
+
   subscribeToAlerts(callback) {
     const subscription = supabase
       .channel('alerts')

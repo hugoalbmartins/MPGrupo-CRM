@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crm-mpgrupo-v1';
+const CACHE_NAME = 'crm-mpgrupo-v2';
 const STATIC_ASSETS = [
   '/',
   '/favicon.png',
@@ -78,6 +78,7 @@ self.addEventListener('push', (event) => {
     vibrate: [200, 100, 200],
     tag: data.tag || 'crm-notification',
     renotify: true,
+    requireInteraction: false,
     data: {
       url: data.url || '/alerts'
     }
@@ -104,4 +105,19 @@ self.addEventListener('notificationclick', (event) => {
       return self.clients.openWindow(url);
     })
   );
+});
+
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'keep-alive') {
+    event.waitUntil(Promise.resolve());
+  }
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  if (event.data?.type === 'KEEP_ALIVE') {
+    event.ports?.[0]?.postMessage({ alive: true });
+  }
 });

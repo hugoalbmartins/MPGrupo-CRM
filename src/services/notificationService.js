@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 const VAPID_PUBLIC_KEY = 'BJEE_mv62Tnt5wGmJHwMCrjHii0ocGmAjFZKJ87to6AG1YdQ8hVNIILMKdMzyajjcdey2tc5BGmIGMLbdXXZ0b0';
 
 let swRegistration = null;
+let keepAliveInterval = null;
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -20,11 +21,85 @@ export const notificationService = {
     if (!('serviceWorker' in navigator)) return null;
 
     try {
-      swRegistration = await navigator.serviceWorker.register('/sw.js');
+      swRegistration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+
+      swRegistration.addEventListener('updatefound', () => {
+        const newWorker = swRegistration.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        }
+      });
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        this.resubscribeAfterUpdate();
+      });
+
+      this.startKeepAlive();
+
       return swRegistration;
     } catch (error) {
       console.error('SW registration failed:', error);
       return null;
+    }
+  },
+
+  startKeepAlive() {
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+
+    keepAliveInterval = setInterval(async () => {
+      try {
+        if (!swRegistration) {
+          swRegistration = await navigator.serviceWorker.ready;
+        }
+
+        if (swRegistration?.active) {
+          const mc = new MessageChannel();
+          swRegistration.active.postMessage({ type: 'KEEP_ALIVE' }, [mc.port2]);
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await this.ensurePushSubscription();
+        }
+      } catch (e) {
+        // silent
+      }
+    }, 5 * 60 * 1000);
+  },
+
+  async ensurePushSubscription() {
+    try {
+      if (!('PushManager' in window)) return;
+      if (Notification.permission !== 'granted') return;
+
+      if (!swRegistration) {
+        swRegistration = await navigator.serviceWorker.ready;
+      }
+
+      const existingSub = await swRegistration.pushManager.getSubscription();
+      if (existingSub) {
+        await this.savePushSubscription(existingSub);
+      } else {
+        await this.subscribeToPush();
+      }
+    } catch (e) {
+      // silent
+    }
+  },
+
+  async resubscribeAfterUpdate() {
+    try {
+      swRegistration = await navigator.serviceWorker.ready;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && Notification.permission === 'granted') {
+        await this.subscribeToPush();
+      }
+    } catch (e) {
+      // silent
     }
   },
 
@@ -123,6 +198,11 @@ export const notificationService = {
 
   async removePushSubscription() {
     try {
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
