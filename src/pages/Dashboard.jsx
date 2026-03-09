@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight } from "lucide-react";
+import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight, Download } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -172,6 +173,24 @@ const Dashboard = ({ user }) => {
   ];
 
   const availableWeeks = getAvailableWeeks();
+
+  const exportPartnerStatsToExcel = () => {
+    const weekLabel = availableWeeks.find(w => w.key === partnerTableWeekKey)?.label || availableWeeks[0]?.label || 'semana';
+    const headers = ['Parceiro', ...operators.map(op => op.name), 'Total Comissoes (EUR)'];
+    const rows = partnerStats.map(partner => [
+      partner.name,
+      ...operators.map(op => partner.operators[op.name] || 0),
+      parseFloat(partner.total.toFixed(2))
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const colWidths = headers.map((h, i) => ({
+      wch: Math.max(h.length, ...rows.map(r => String(r[i]).length)) + 2
+    }));
+    ws['!cols'] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Vendas por Parceiro');
+    XLSX.writeFile(wb, `vendas_parceiro_${weekLabel.replace(/\//g, '-').replace(/ /g, '_')}.xlsx`);
+  };
 
   const getAvailableYears = () => {
     const currentYear = new Date().getFullYear();
@@ -951,15 +970,24 @@ const Dashboard = ({ user }) => {
                   </button>
                 </div>
                 {partnerTableFilterMode === 'week' && (
-                  <select
-                    value={partnerTableWeekKey || availableWeeks[0]?.key || ''}
-                    onChange={(e) => setPartnerTableWeekKey(e.target.value)}
-                    className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
-                  >
-                    {availableWeeks.map(w => (
-                      <option key={w.key} value={w.key}>{w.label}</option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      value={partnerTableWeekKey || availableWeeks[0]?.key || ''}
+                      onChange={(e) => setPartnerTableWeekKey(e.target.value)}
+                      className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
+                    >
+                      {availableWeeks.map(w => (
+                        <option key={w.key} value={w.key}>{w.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={exportPartnerStatsToExcel}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors duration-200"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Exportar Excel
+                    </button>
+                  </>
                 )}
               </div>
             )}
