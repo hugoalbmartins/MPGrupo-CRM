@@ -356,6 +356,8 @@ export const salesService = {
       autoriza_documentos: saleData.autoriza_documentos || null,
       voltage_type: saleData.voltage_type || null,
       additional_services: saleData.additional_services || null,
+      has_direct_debit: saleData.has_direct_debit || false,
+      has_electronic_invoice: saleData.has_electronic_invoice || false,
       fix_ported: saleData.fix_ported || false,
       fix_number: saleData.fix_ported ? (saleData.fix_number || null) : null,
       fix_operator: saleData.fix_ported ? (saleData.fix_operator || null) : null,
