@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { ShoppingCart, Phone, Zap, Sun, Award, CheckCircle, Clock, TrendingUp, Euro, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
