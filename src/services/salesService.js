@@ -358,10 +358,14 @@ export const salesService = {
       additional_services: saleData.additional_services || null,
       has_direct_debit: saleData.has_direct_debit || false,
       has_electronic_invoice: saleData.has_electronic_invoice || false,
+      has_tv: saleData.has_tv || false,
+      has_net: saleData.has_net || false,
+      has_lr: saleData.has_lr || false,
       fix_ported: saleData.fix_ported || false,
       fix_number: saleData.fix_ported ? (saleData.fix_number || null) : null,
       fix_operator: saleData.fix_ported ? (saleData.fix_operator || null) : null,
       fix_cvp: saleData.fix_ported ? (saleData.fix_cvp || null) : null,
+      mobile_count: saleData.activation_type === 'M4' ? (parseInt(saleData.mobile_count) || 0) : 0,
       mobile_numbers: saleData.activation_type === 'M4' ? (saleData.mobile_numbers || []) : [],
       calculated_commission: commission,
       attachments,
@@ -406,6 +410,8 @@ export const salesService = {
         updates[key] = value === null || value === '' || value === 'admin_commissioned' ? null : value;
       } else if (BOOLEAN_FIELDS.includes(key)) {
         updates[key] = Boolean(value);
+      } else if (key === 'mobile_count') {
+        updates[key] = parseInt(value) || 0;
       } else if (key === 'mobile_numbers') {
         updates[key] = Array.isArray(value) ? value : [];
       } else if (key === 'manual_commission') {
