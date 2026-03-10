@@ -1110,6 +1110,10 @@ const Operators = ({ user }) => {
                     <div className="flex items-center gap-0">
                       <Input
                         type="text"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
                         placeholder="info"
                         value={editOperatorData.email_envio || ''}
                         onChange={(e) => {
@@ -1131,6 +1135,7 @@ const Operators = ({ user }) => {
                     <div className="flex items-center gap-2">
                       <Input
                         type={showEmailPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
                         placeholder="Password do email"
                         value={editOperatorData.email_envio_password || ''}
                         onChange={(e) => setEditOperatorData(prev => ({ ...prev, email_envio_password: e.target.value }))}

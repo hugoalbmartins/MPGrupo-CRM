@@ -135,6 +135,12 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('email_fields')) {
       updateData.email_fields = settingsData.email_fields;
     }
+    if (settingsData.hasOwnProperty('email_envio')) {
+      updateData.email_envio = settingsData.email_envio || null;
+    }
+    if (settingsData.hasOwnProperty('email_envio_password')) {
+      updateData.email_envio_password = settingsData.email_envio_password || null;
+    }
 
     const { data, error } = await supabase
       .from('operators')
