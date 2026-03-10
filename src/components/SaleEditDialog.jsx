@@ -70,13 +70,13 @@ const SaleEditDialog = ({
   };
 
   const handleAddFiles = async (e) => {
-    const MAX_SIZE = 5 * 1024 * 1024;
+    const MAX_SIZE = 15 * 1024 * 1024;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     const oversized = files.filter(f => f.size > MAX_SIZE);
     if (oversized.length > 0) {
-      toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
+      toast.error(`Ficheiro(s) excedem o limite de 15MB: ${oversized.map(f => f.name).join(', ')}`);
       e.target.value = '';
       return;
     }
@@ -838,7 +838,7 @@ const SaleEditDialog = ({
                     <Upload className="w-4 h-4" />
                     Adicionar Ficheiros
                   </Button>
-                  <p className="text-xs text-slate-600 mt-1">Aceita imagens, PDF, Word, Excel — max 5MB por ficheiro</p>
+                  <p className="text-xs text-slate-600 mt-1">Aceita imagens, PDF, Word, Excel — max 15MB por ficheiro</p>
                 </div>
               </div>
             </FormSection>

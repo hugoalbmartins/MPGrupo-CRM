@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const EXPIRY_DAYS = 60;
+const EXPIRY_DAYS = 45;
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 Deno.serve(async (req: Request) => {

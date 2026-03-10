@@ -95,12 +95,12 @@ const SaleFormDialog = ({
   )?.[1] || null;
 
   const handleFileSelected = (e) => {
-    const MAX_SIZE = 5 * 1024 * 1024;
+    const MAX_SIZE = 15 * 1024 * 1024;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     const oversized = files.filter(f => f.size > MAX_SIZE);
     if (oversized.length > 0) {
-      toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
+      toast.error(`Ficheiro(s) excedem o limite de 15MB: ${oversized.map(f => f.name).join(', ')}`);
       e.target.value = '';
       return;
     }
@@ -1075,7 +1075,7 @@ const SaleFormDialog = ({
                         </div>
                       )}
 
-                      <p className="text-xs text-slate-500">Tamanho maximo por ficheiro: 5MB</p>
+                      <p className="text-xs text-slate-500">Tamanho maximo por ficheiro: 15MB</p>
                       {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
                         const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';

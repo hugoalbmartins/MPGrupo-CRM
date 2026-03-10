@@ -1758,11 +1758,11 @@ const Sales = ({ user }) => {
                   type="file"
                   multiple
                   onChange={(e) => {
-                    const MAX_SIZE = 5 * 1024 * 1024;
+                    const MAX_SIZE = 15 * 1024 * 1024;
                     const files = Array.from(e.target.files);
                     const oversized = files.filter(f => f.size > MAX_SIZE);
                     if (oversized.length > 0) {
-                      toast.error(`Ficheiro(s) excedem o limite de 5MB: ${oversized.map(f => f.name).join(', ')}`);
+                      toast.error(`Ficheiro(s) excedem o limite de 15MB: ${oversized.map(f => f.name).join(', ')}`);
                       e.target.value = '';
                       return;
                     }
@@ -1775,7 +1775,7 @@ const Sales = ({ user }) => {
                     {noteAttachments.length} ficheiro(s) selecionado(s)
                   </span>
                 )}
-                <span className="text-xs text-slate-600">Max 5MB</span>
+                <span className="text-xs text-slate-600">Max 15MB</span>
               </div>
 
               <Button
