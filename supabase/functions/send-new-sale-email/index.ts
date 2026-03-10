@@ -141,20 +141,20 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true): stri
           ${hasField(payload, 'monthly_value') && payload.monthly_value && payload.service_type !== 'REFID' ? `<tr><td>Mensalidade:</td><td>${payload.monthly_value}€</td></tr>` : ""}
           ${hasField(payload, 'refid_fees') && payload.current_monthly_fee && payload.contracted_monthly_fee ? `<tr><td>Mensalidade atual:</td><td>${payload.current_monthly_fee}€</td></tr><tr><td>Mensalidade contratada:</td><td>${payload.contracted_monthly_fee}€</td></tr>` : ""}
           ${hasField(payload, 'services') ? (() => {
-            const services: string[] = [];
-            if (payload.has_tv) services.push("TV");
-            if (payload.has_net) services.push("NET/Fibra");
-            if (payload.has_lr) {
-              let lrText = "Linha Fixa/LR";
-              if (payload.fix_ported) {
-                lrText += ` (portado de ${payload.fix_operator || "operadora anterior"}: ${payload.fix_number || ""}`;
-                if (payload.fix_cvp && payload.fix_cvp !== "") lrText += ` — CVP: ${payload.fix_cvp}`;
-                lrText += `)`;
+            const rows: string[] = [];
+            if (payload.has_tv !== undefined || payload.has_net !== undefined || payload.has_lr !== undefined) {
+              if (payload.has_tv) rows.push(`<tr><td>TV:</td><td>Sim</td></tr>`);
+              if (payload.has_net) rows.push(`<tr><td>NET/Fibra:</td><td>Sim</td></tr>`);
+              if (payload.has_lr) {
+                let lrText = "Sim";
+                if (payload.fix_ported) {
+                  lrText = `Portado de ${payload.fix_operator || "operadora anterior"}: ${payload.fix_number || ""}`;
+                  if (payload.fix_cvp && payload.fix_cvp !== "") lrText += ` — CVP: ${payload.fix_cvp}`;
+                }
+                rows.push(`<tr><td>Linha Fixa/LR:</td><td>${lrText}</td></tr>`);
               }
-              services.push(lrText);
             }
-            if (services.length === 0) return "";
-            return `<tr><td>Servicos:</td><td>${services.join(", ")}</td></tr>`;
+            return rows.join("");
           })() : ""}
           ${hasField(payload, 'mobile_lines') ? (() => {
             const numbers = payload.mobile_numbers || [];
@@ -169,9 +169,9 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true): stri
                 lineDesc = "Novo";
                 if (m.number && m.number !== "") lineDesc += ` (${m.number})`;
               }
-              return `<tr><td style="padding-left:12px; color:#6b7280;">Linha ${i + 1}:</td><td>${lineDesc}</td></tr>`;
+              return `<tr><td style="padding-left:12px; color:#6b7280;">Cartao ${i + 1}:</td><td>${lineDesc}</td></tr>`;
             });
-            const header = `<tr><td>Moveis:</td><td>${total} linha${total > 1 ? "s" : ""}</td></tr>`;
+            const header = `<tr><td>Cartoes Moveis:</td><td>${total} cartao${total > 1 ? "es" : ""}</td></tr>`;
             return header + (rows.length > 0 ? rows.join("") : "");
           })() : ""}
           ${hasField(payload, 'direct_debit') && payload.has_direct_debit ? `<tr><td>Debito Direto:</td><td>Sim</td></tr>` : ""}
