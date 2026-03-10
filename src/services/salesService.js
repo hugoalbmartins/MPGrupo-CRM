@@ -665,49 +665,7 @@ export const salesService = {
 
     if (saleError || !sale) throw new Error('Sale not found');
 
-    const isD2DPartner = sale.partner?.partner_type === 'D2D';
-
-    let toRecipients = [];
-    const operatorUserIds = sale.operator?.notification_user_ids;
-    if (operatorUserIds && Array.isArray(operatorUserIds) && operatorUserIds.length > 0) {
-      const { data: operatorUsers } = await supabase
-        .from('users')
-        .select('email, name')
-        .in('id', operatorUserIds)
-        .eq('email_alerts_enabled', true);
-      toRecipients = operatorUsers || [];
-    } else {
-      const { data: adminBoUsers } = await supabase
-        .from('users')
-        .select('email, name')
-        .in('role', ['admin', 'bo'])
-        .eq('email_alerts_enabled', true);
-      toRecipients = adminBoUsers || [];
-    }
-
-    const bccRecipients = [];
-
-    if (!isD2DPartner) {
-      const userIds = [sale.partner?.user_id, sale.created_by_user_id].filter(Boolean);
-      if (userIds.length > 0) {
-        const { data: bccPartnerUsers } = await supabase
-          .from('users')
-          .select('email, name')
-          .in('id', userIds)
-          .eq('email_alerts_enabled', true);
-        if (bccPartnerUsers) bccRecipients.push(...bccPartnerUsers);
-      }
-    }
-
-    if (sale.operator?.notification_emails && Array.isArray(sale.operator.notification_emails)) {
-      sale.operator.notification_emails.forEach(email => {
-        if (email && email.trim()) {
-          bccRecipients.push({ email: email.trim(), name: sale.operator.name });
-        }
-      });
-    }
-
-    const { data: attachments } = await supabase
+    const { data: attachmentsData } = await supabase
       .from('sales')
       .select('attachments')
       .eq('id', saleId)
@@ -716,67 +674,152 @@ export const salesService = {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/send-new-sale-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseAnonKey}`,
-      },
-      body: JSON.stringify({
-        to_recipients: toRecipients || [],
-        bcc_recipients: bccRecipients || [],
-        sale_code: sale.sale_code,
-        customer_name: sale.client_name,
-        customer_nif: sale.client_nif || '',
-        operator_name: sale.operator?.name || 'N/A',
-        partner_name: sale.partner?.name || sale.partner_name || 'N/A',
-        message: `Venda registada para ${sale.client_name}`,
-        attachments: attachments?.attachments || [],
-        sale_id: saleId,
-        scope: sale.scope,
-        client_contact: sale.client_contact,
-        client_email: sale.client_email,
-        client_iban: sale.client_iban,
-        address: [sale.street, sale.postal_code, sale.locality].filter(Boolean).join(', '),
-        installation_address: sale.installation_address,
-        entry_type: sale.entry_type,
-        energy_sale_type: sale.energy_sale_type,
-        cpe: sale.cpe,
-        power: sale.power,
-        cui: sale.cui,
-        tier: sale.tier,
-        autoriza_documentos: sale.autoriza_documentos,
-        service_type: sale.service_type,
-        activation_type: sale.activation_type,
-        monthly_value: sale.monthly_value,
-        current_monthly_fee: sale.current_monthly_fee,
-        contracted_monthly_fee: sale.contracted_monthly_fee,
-        has_tv: sale.has_tv,
-        has_net: sale.has_net,
-        has_lr: sale.has_lr,
-        has_direct_debit: sale.has_direct_debit,
-        has_electronic_invoice: sale.has_electronic_invoice,
-        fix_ported: sale.fix_ported,
-        fix_number: sale.fix_number,
-        fix_operator: sale.fix_operator,
-        mobile_count: sale.mobile_count,
-        mobile_numbers: sale.mobile_numbers,
-        observations: sale.observations,
-        email_fields: sale.operator?.email_fields || null,
-        voltage_type: sale.voltage_type,
-        additional_services: sale.additional_services,
-        from_email: sale.operator?.email_envio ? `${sale.operator.email_envio}@mpgrupo.pt` : null,
-        from_smtp_user: sale.operator?.email_envio ? `${sale.operator.email_envio}@mpgrupo.pt` : null,
-        from_smtp_pass: sale.operator?.email_envio && sale.operator?.email_envio_password ? sale.operator.email_envio_password : null,
-      }),
-    });
+    const fromEmail = sale.operator?.email_envio ? `${sale.operator.email_envio}@mpgrupo.pt` : null;
+    const fromSmtpPass = (sale.operator?.email_envio && sale.operator?.email_envio_password)
+      ? sale.operator.email_envio_password
+      : null;
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to resend email');
+    const basePayload = {
+      sale_code: sale.sale_code,
+      customer_name: sale.client_name,
+      customer_nif: sale.client_nif || '',
+      operator_name: sale.operator?.name || 'N/A',
+      partner_name: sale.partner?.name || sale.partner_name || 'N/A',
+      message: `Venda registada para ${sale.client_name}`,
+      attachments: attachmentsData?.attachments || [],
+      sale_id: saleId,
+      scope: sale.scope,
+      client_contact: sale.client_contact,
+      client_email: sale.client_email,
+      client_iban: sale.client_iban,
+      address: [sale.street, sale.postal_code, sale.locality].filter(Boolean).join(', '),
+      installation_address: sale.installation_address,
+      entry_type: sale.entry_type,
+      energy_sale_type: sale.energy_sale_type,
+      cpe: sale.cpe,
+      power: sale.power,
+      cui: sale.cui,
+      tier: sale.tier,
+      autoriza_documentos: sale.autoriza_documentos,
+      service_type: sale.service_type,
+      activation_type: sale.activation_type,
+      monthly_value: sale.monthly_value,
+      current_monthly_fee: sale.current_monthly_fee,
+      contracted_monthly_fee: sale.contracted_monthly_fee,
+      has_tv: sale.has_tv,
+      has_net: sale.has_net,
+      has_lr: sale.has_lr,
+      has_direct_debit: sale.has_direct_debit,
+      has_electronic_invoice: sale.has_electronic_invoice,
+      fix_ported: sale.fix_ported,
+      fix_number: sale.fix_number,
+      fix_operator: sale.fix_operator,
+      fix_cvp: sale.fix_cvp,
+      mobile_count: sale.mobile_count,
+      mobile_numbers: sale.mobile_numbers,
+      observations: sale.observations,
+      email_fields: sale.operator?.email_fields || null,
+      voltage_type: sale.voltage_type,
+      additional_services: sale.additional_services,
+      from_email: fromEmail,
+      from_smtp_user: fromEmail,
+      from_smtp_pass: fromSmtpPass,
+    };
+
+    const sendEmail = async (extraPayload) => {
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-new-sale-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({ ...basePayload, ...extraPayload }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Failed to send email');
+      }
+      return response.json();
+    };
+
+    const isD2DPartner = sale.partner?.partner_type === 'D2D';
+    const operatorUserIds = sale.operator?.notification_user_ids;
+    let adminRecipients = [];
+    let partnerRecipients = [];
+    let notificationRecipients = [];
+
+    // CALL 1 recipients: operator-specific users or all admins/BO
+    if (operatorUserIds && Array.isArray(operatorUserIds) && operatorUserIds.length > 0) {
+      const { data: operatorUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('id', operatorUserIds)
+        .eq('email_alerts_enabled', true);
+      adminRecipients = operatorUsers || [];
+    } else {
+      const { data: adminBoUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('role', ['admin', 'bo'])
+        .eq('email_alerts_enabled', true);
+      adminRecipients = adminBoUsers || [];
     }
 
-    return await response.json();
+    // CALL 2 recipients: partner/creator users (skip for D2D)
+    if (!isD2DPartner) {
+      const userIds = [sale.partner?.user_id, sale.created_by_user_id].filter(Boolean);
+      if (userIds.length > 0) {
+        const { data: partnerUsers } = await supabase
+          .from('users')
+          .select('email, name')
+          .in('id', userIds)
+          .eq('email_alerts_enabled', true);
+        partnerRecipients = partnerUsers || [];
+      }
+    }
+
+    // CALL 3 recipients: operator notification_emails (external addresses, no partner info)
+    if (sale.operator?.notification_emails && Array.isArray(sale.operator.notification_emails)) {
+      sale.operator.notification_emails.forEach(email => {
+        if (email && email.trim()) {
+          notificationRecipients.push({ email: email.trim(), name: sale.operator.name });
+        }
+      });
+    }
+
+    let sentCount = 0;
+    const errors = [];
+
+    if (adminRecipients.length > 0) {
+      try {
+        await sendEmail({ to_recipients: adminRecipients, show_partner: true });
+        sentCount++;
+      } catch (e) { errors.push(e.message); }
+    }
+
+    if (partnerRecipients.length > 0) {
+      try {
+        await sendEmail({ to_recipients: partnerRecipients, show_partner: true });
+        sentCount++;
+      } catch (e) { errors.push(e.message); }
+    }
+
+    if (notificationRecipients.length > 0) {
+      try {
+        await sendEmail({ to_recipients: notificationRecipients, show_partner: false });
+        sentCount++;
+      } catch (e) { errors.push(e.message); }
+    }
+
+    if (sentCount === 0 && errors.length > 0) {
+      throw new Error(errors[0]);
+    }
+
+    return {
+      success: true,
+      to_count: adminRecipients.length,
+      bcc_count: partnerRecipients.length + notificationRecipients.length,
+    };
   },
 
   async resendEditAlert(saleId) {
