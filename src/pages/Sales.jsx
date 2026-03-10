@@ -635,9 +635,9 @@ const Sales = ({ user }) => {
             for (let i = 0; i < 5; i++) {
               const mob = mobiles[i];
               if (mob) {
-                cols[`Movel ${i+1} Numero`] = mob.number || '';
-                cols[`Movel ${i+1} Portado`] = mob.ported ? 'Sim' : 'Nao';
-                cols[`Movel ${i+1} CVP`] = mob.ported ? (mob.cvp || '') : '';
+                cols[`Movel ${i+1} Numero`] = mob.novo ? 'Novo' : (mob.number || '');
+                cols[`Movel ${i+1} Portado`] = mob.novo ? 'Novo' : (mob.ported ? 'Sim' : 'Nao');
+                cols[`Movel ${i+1} CVP`] = mob.novo ? '' : (mob.ported ? (mob.cvp || '') : '');
               } else {
                 cols[`Movel ${i+1} Numero`] = '';
                 cols[`Movel ${i+1} Portado`] = '';

@@ -136,15 +136,23 @@ const SaleFormDialog = ({
 
   const updateMobileNumber = (index, field, value) => {
     const updated = [...mobileNumbers];
-    if (!updated[index]) updated[index] = { number: '', ported: false, cvp: '' };
+    if (!updated[index]) updated[index] = { number: '', ported: false, novo: false, cvp: '' };
     updated[index] = { ...updated[index], [field]: value };
+    if (field === 'novo' && value === true) {
+      updated[index].number = '';
+      updated[index].ported = false;
+      updated[index].cvp = '';
+    }
+    if (field === 'ported' && value === true) {
+      updated[index].novo = false;
+    }
     setFormData({ ...formData, mobile_numbers: updated });
   };
 
   const ensureMobileSlots = (count) => {
     const current = formData.mobile_numbers || [];
     const updated = [...current];
-    while (updated.length < count) updated.push({ number: '', ported: false, cvp: '' });
+    while (updated.length < count) updated.push({ number: '', ported: false, novo: false, cvp: '' });
     return updated.slice(0, count);
   };
 
@@ -753,7 +761,7 @@ const SaleFormDialog = ({
                             {mobileCount > 0 && (
                               <div className="space-y-3">
                                 {Array.from({ length: mobileCount }).map((_, idx) => {
-                                  const mob = mobileNumbers[idx] || { number: '', ported: false, cvp: '' };
+                                  const mob = mobileNumbers[idx] || { number: '', ported: false, novo: false, cvp: '' };
                                   return (
                                     <div key={idx} className="p-4 bg-dark-900/80 border border-dark-600 rounded-xl">
                                       <div className="flex items-center gap-3 mb-3">
@@ -763,26 +771,38 @@ const SaleFormDialog = ({
                                         <div>
                                           <Label className="text-xs font-semibold mb-1 text-slate-400">Número (9 dígitos) *</Label>
                                           <Input
-                                            value={mob.number}
+                                            value={mob.novo ? '' : (mob.number || '')}
                                             onChange={(e) => updateMobileNumber(idx, 'number', e.target.value)}
-                                            placeholder="9XXXXXXXX"
+                                            placeholder={mob.novo ? 'Novo número' : '9XXXXXXXX'}
                                             maxLength={9}
-                                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                                            disabled={mob.novo || false}
+                                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white disabled:opacity-40 disabled:cursor-not-allowed"
                                           />
                                         </div>
-                                        <div className="flex flex-col gap-2">
-                                          <div className="flex items-center space-x-2 mt-5">
+                                        <div className="flex flex-col gap-2 mt-5">
+                                          <div className="flex items-center space-x-2">
+                                            <input
+                                              type="checkbox"
+                                              id={`mob_novo_${idx}`}
+                                              checked={mob.novo || false}
+                                              onChange={(e) => updateMobileNumber(idx, 'novo', e.target.checked)}
+                                              className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                                            />
+                                            <Label htmlFor={`mob_novo_${idx}`} className="cursor-pointer text-white text-sm">Novo</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
                                             <input
                                               type="checkbox"
                                               id={`mob_ported_${idx}`}
                                               checked={mob.ported || false}
                                               onChange={(e) => updateMobileNumber(idx, 'ported', e.target.checked)}
-                                              className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                                              disabled={mob.novo || false}
+                                              className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900 disabled:opacity-40 disabled:cursor-not-allowed"
                                             />
-                                            <Label htmlFor={`mob_ported_${idx}`} className="cursor-pointer text-white text-sm">Portado?</Label>
+                                            <Label htmlFor={`mob_ported_${idx}`} className={`cursor-pointer text-sm ${mob.novo ? 'text-slate-600' : 'text-white'}`}>Portado</Label>
                                           </div>
                                         </div>
-                                        {mob.ported && (
+                                        {mob.ported && !mob.novo && (
                                           <div>
                                             <Label className="text-xs font-semibold mb-1 text-slate-400">CVP *</Label>
                                             <Input

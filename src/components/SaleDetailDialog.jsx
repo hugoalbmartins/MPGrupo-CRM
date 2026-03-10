@@ -871,13 +871,15 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                               {sale.mobile_numbers.map((mob, idx) => (
                                 <div key={idx} className="flex items-center gap-4 p-3 bg-dark-850 rounded-lg border border-dark-700">
                                   <span className="text-xs text-slate-500 w-16">Movel {idx + 1}</span>
-                                  <span className="font-mono text-white text-sm">{mob.number || '-'}</span>
-                                  {mob.ported ? (
+                                  <span className="font-mono text-white text-sm">{mob.novo ? 'Novo' : (mob.number || '-')}</span>
+                                  {mob.novo ? (
+                                    <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-xs">Novo</Badge>
+                                  ) : mob.ported ? (
                                     <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 text-xs">Portado</Badge>
                                   ) : (
                                     <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 text-xs">Nao portado</Badge>
                                   )}
-                                  {mob.ported && mob.cvp && (
+                                  {mob.ported && !mob.novo && mob.cvp && (
                                     <span className="text-xs text-slate-400">CVP: <span className="font-mono text-white">{mob.cvp}</span></span>
                                   )}
                                 </div>
