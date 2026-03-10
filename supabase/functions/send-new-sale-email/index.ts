@@ -57,6 +57,7 @@ interface SaleEmailPayload {
   fix_ported?: boolean;
   fix_number?: string;
   fix_operator?: string;
+  fix_cvp?: string;
   mobile_count?: number;
   mobile_numbers?: MobileNumber[];
   observations?: string;
@@ -146,7 +147,9 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true): stri
             if (payload.has_lr) {
               let lrText = "Linha Fixa/LR";
               if (payload.fix_ported) {
-                lrText += ` (portado de ${payload.fix_operator || "operadora anterior"}: ${payload.fix_number || ""})`;
+                lrText += ` (portado de ${payload.fix_operator || "operadora anterior"}: ${payload.fix_number || ""}`;
+                if (payload.fix_cvp && payload.fix_cvp !== "") lrText += ` — CVP: ${payload.fix_cvp}`;
+                lrText += `)`;
               }
               services.push(lrText);
             }
@@ -154,13 +157,22 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true): stri
             return `<tr><td>Servicos:</td><td>${services.join(", ")}</td></tr>`;
           })() : ""}
           ${hasField(payload, 'mobile_lines') ? (() => {
-            if (!payload.activation_type || payload.activation_type !== "M4") return "";
-            const total = payload.mobile_count || 0;
+            const numbers = payload.mobile_numbers || [];
+            const total = payload.mobile_count || numbers.length;
             if (total === 0) return "";
-            const portedCount = (payload.mobile_numbers || []).filter(m => m.ported).length;
-            let mobileText = `${total} linha${total > 1 ? "s" : ""}`;
-            if (portedCount > 0) mobileText += `, das quais ${portedCount} portada${portedCount > 1 ? "s" : ""}`;
-            return `<tr><td>Moveis:</td><td>${mobileText}</td></tr>`;
+            const rows = numbers.map((m, i) => {
+              let lineDesc = "";
+              if (m.ported) {
+                lineDesc = `Portado: ${m.number || ""}`;
+                if (m.cvp && m.cvp !== "") lineDesc += ` — CVP: ${m.cvp}`;
+              } else {
+                lineDesc = "Novo";
+                if (m.number && m.number !== "") lineDesc += ` (${m.number})`;
+              }
+              return `<tr><td style="padding-left:12px; color:#6b7280;">Linha ${i + 1}:</td><td>${lineDesc}</td></tr>`;
+            });
+            const header = `<tr><td>Moveis:</td><td>${total} linha${total > 1 ? "s" : ""}</td></tr>`;
+            return header + (rows.length > 0 ? rows.join("") : "");
           })() : ""}
           ${hasField(payload, 'direct_debit') && payload.has_direct_debit ? `<tr><td>Debito Direto:</td><td>Sim</td></tr>` : ""}
           ${hasField(payload, 'electronic_invoice') && payload.has_electronic_invoice ? `<tr><td>Fatura Eletronica:</td><td>Sim</td></tr>` : ""}
@@ -444,9 +456,12 @@ Deno.serve(async (req: Request) => {
     const globalSmtpPass = Deno.env.get("SMTP_PASS") || "";
 
     const hasOperatorEmail = payload.from_email && payload.from_smtp_user && payload.from_smtp_pass;
-    const smtpUser = hasOperatorEmail ? payload.from_smtp_user! : globalSmtpUser;
-    const smtpPass = hasOperatorEmail ? payload.from_smtp_pass! : globalSmtpPass;
-    const fromEmail = hasOperatorEmail ? payload.from_email! : "info@mpgrupo.pt";
+    const toAddressesRaw = payload.to_recipients.map((r) => r.email);
+    const allExternal = toAddressesRaw.every(e => !e.endsWith("@mpgrupo.pt"));
+    const useOperatorSmtp = hasOperatorEmail && !allExternal;
+    const smtpUser = useOperatorSmtp ? payload.from_smtp_user! : globalSmtpUser;
+    const smtpPass = useOperatorSmtp ? payload.from_smtp_pass! : globalSmtpPass;
+    const fromEmail = useOperatorSmtp ? payload.from_email! : "info@mpgrupo.pt";
     const fromName = "MP Grupo CRM";
 
     if (!smtpPass) {
@@ -498,7 +513,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const toAddresses = payload.to_recipients.map((r) => r.email);
+    const toAddresses = toAddressesRaw;
 
     const customerNameShort = getFirstFourNames(payload.customer_name);
     const nifPart = payload.customer_nif ? ` NIF ${payload.customer_nif}` : '';
