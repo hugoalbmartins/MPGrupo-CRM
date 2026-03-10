@@ -652,7 +652,7 @@ export const salesService = {
       .select(`
         *,
         partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
-        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields)
+        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields, email_envio, email_envio_password)
       `)
       .eq('id', saleId)
       .maybeSingle();
@@ -759,6 +759,9 @@ export const salesService = {
         email_fields: sale.operator?.email_fields || null,
         voltage_type: sale.voltage_type,
         additional_services: sale.additional_services,
+        from_email: sale.operator?.email_envio ? `${sale.operator.email_envio}@mpgrupo.pt` : null,
+        from_smtp_user: sale.operator?.email_envio ? `${sale.operator.email_envio}@mpgrupo.pt` : null,
+        from_smtp_pass: sale.operator?.email_envio && sale.operator?.email_envio_password ? sale.operator.email_envio_password : null,
       }),
     });
 

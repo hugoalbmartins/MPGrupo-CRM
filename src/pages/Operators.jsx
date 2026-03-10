@@ -98,7 +98,10 @@ const Operators = ({ user }) => {
     notification_emails: [],
     notification_user_ids: [],
     email_fields: null,
+    email_envio: '',
+    email_envio_password: '',
   });
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [newNotifEmail, setNewNotifEmail] = useState("");
   const [adminBoUsers, setAdminBoUsers] = useState([]);
   const [uploadFiles, setUploadFiles] = useState([]);
@@ -265,7 +268,10 @@ const Operators = ({ user }) => {
         notification_emails: freshData.notification_emails || [],
         notification_user_ids: freshData.notification_user_ids || [],
         email_fields: initialEmailFields,
+        email_envio: freshData.email_envio || '',
+        email_envio_password: freshData.email_envio_password || '',
       });
+      setShowEmailPassword(false);
       setNewNotifEmail("");
       setEditOperatorDialogOpen(true);
     } catch (error) {
@@ -1088,6 +1094,61 @@ const Operators = ({ user }) => {
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="border-t border-dark-700 pt-4">
+                <Label className="text-slate-300 text-sm font-semibold block mb-3">
+                  <Mail className="w-4 h-4 inline mr-1 text-blue-400" />
+                  Email de Envio das Vendas
+                </Label>
+                <p className="text-xs text-slate-500 mb-3">
+                  Email utilizado para envio das notificações de vendas desta operadora. Apenas o prefixo (@mpgrupo.pt é fixo). Se não configurado, será usado info@mpgrupo.pt.
+                </p>
+                <div className="grid grid-cols-1 gap-3 mb-3">
+                  <div>
+                    <Label className="text-xs text-slate-400 mb-1 block">Prefixo do Email de Envio</Label>
+                    <div className="flex items-center gap-0">
+                      <Input
+                        type="text"
+                        placeholder="info"
+                        value={editOperatorData.email_envio || ''}
+                        onChange={(e) => {
+                          const val = e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, '');
+                          setEditOperatorData(prev => ({ ...prev, email_envio: val }));
+                        }}
+                        className="bg-dark-900 border-dark-700 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-500 rounded-r-none border-r-0 flex-1"
+                      />
+                      <span className="bg-dark-800 border border-dark-700 text-slate-400 text-sm px-3 py-2 rounded-r-lg whitespace-nowrap border-l-0">
+                        @mpgrupo.pt
+                      </span>
+                    </div>
+                    {editOperatorData.email_envio && (
+                      <p className="text-xs text-blue-400 mt-1">Email de envio: {editOperatorData.email_envio}@mpgrupo.pt</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-400 mb-1 block">Password do Email de Envio</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type={showEmailPassword ? 'text' : 'password'}
+                        placeholder="Password do email"
+                        value={editOperatorData.email_envio_password || ''}
+                        onChange={(e) => setEditOperatorData(prev => ({ ...prev, email_envio_password: e.target.value }))}
+                        className="bg-dark-900 border-dark-700 focus:border-blue-500 focus:ring-blue-500/20 text-white placeholder:text-slate-500 flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowEmailPassword(v => !v)}
+                        className="text-slate-400 hover:text-white p-2"
+                      >
+                        {showEmailPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {editOperatorData.email_envio && !editOperatorData.email_envio_password && (
+                  <p className="text-xs text-amber-400 mb-3">Defina a password para ativar o email de envio personalizado.</p>
+                )}
               </div>
 
               <div className="border-t border-dark-700 pt-4">

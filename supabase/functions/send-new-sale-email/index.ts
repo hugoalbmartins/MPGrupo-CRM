@@ -63,6 +63,9 @@ interface SaleEmailPayload {
   email_fields?: string[] | null;
   voltage_type?: string;
   additional_services?: string;
+  from_email?: string | null;
+  from_smtp_user?: string | null;
+  from_smtp_pass?: string | null;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -437,14 +440,20 @@ Deno.serve(async (req: Request) => {
 
     const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
     const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
-    const smtpPass = Deno.env.get("SMTP_PASS") || "";
-    const fromEmail = "info@mpgrupo.pt";
+    const globalSmtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
+    const globalSmtpPass = Deno.env.get("SMTP_PASS") || "";
+
+    const hasOperatorEmail = payload.from_email && payload.from_smtp_user && payload.from_smtp_pass;
+    const smtpUser = hasOperatorEmail ? payload.from_smtp_user! : globalSmtpUser;
+    const smtpPass = hasOperatorEmail ? payload.from_smtp_pass! : globalSmtpPass;
+    const fromEmail = hasOperatorEmail ? payload.from_email! : "info@mpgrupo.pt";
     const fromName = "MP Grupo CRM";
 
     if (!smtpPass) {
       throw new Error("SMTP_PASS not configured");
     }
+
+    console.log(`[EMAIL] Using from: ${fromEmail} (operator-specific: ${!!hasOperatorEmail})`);
 
     const attachmentParts: Array<{ filename: string; contentBase64: string; contentType: string }> = [];
 
