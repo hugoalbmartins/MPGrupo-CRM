@@ -404,12 +404,12 @@ async function sendViaSMTP(
     await readFullResponse("DATA");
 
     const bodyBytes = encoder.encode(`${emailBody}\r\n.\r\n`);
-    const chunkSize = 65536;
+    const chunkSize = 131072;
     console.log(`[SMTP] Sending email body (${bodyBytes.length} bytes) in chunks of ${chunkSize}`);
     for (let offset = 0; offset < bodyBytes.length; offset += chunkSize) {
       await conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length)));
     }
-    const dataSendTimeoutMs = Math.max(60000, Math.ceil(bodyBytes.length / 10000) * 1000);
+    const dataSendTimeoutMs = Math.max(120000, Math.ceil(bodyBytes.length / 5000) * 1000);
     await readFullResponse("DATA END", dataSendTimeoutMs);
 
     try {
@@ -457,11 +457,9 @@ Deno.serve(async (req: Request) => {
 
     const hasOperatorEmail = payload.from_email && payload.from_smtp_user && payload.from_smtp_pass;
     const toAddressesRaw = payload.to_recipients.map((r) => r.email);
-    const allExternal = toAddressesRaw.every(e => !e.endsWith("@mpgrupo.pt"));
-    const useOperatorSmtp = hasOperatorEmail && !allExternal;
-    const smtpUser = useOperatorSmtp ? payload.from_smtp_user! : globalSmtpUser;
-    const smtpPass = useOperatorSmtp ? payload.from_smtp_pass! : globalSmtpPass;
-    const fromEmail = useOperatorSmtp ? payload.from_email! : "info@mpgrupo.pt";
+    const smtpUser = hasOperatorEmail ? payload.from_smtp_user! : globalSmtpUser;
+    const smtpPass = hasOperatorEmail ? payload.from_smtp_pass! : globalSmtpPass;
+    const fromEmail = hasOperatorEmail ? payload.from_email! : "info@mpgrupo.pt";
     const fromName = "MP Grupo CRM";
 
     if (!smtpPass) {
