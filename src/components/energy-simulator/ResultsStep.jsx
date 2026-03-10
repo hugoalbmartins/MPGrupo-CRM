@@ -12,6 +12,9 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
   const [expandedOperator, setExpandedOperator] = useState(null);
   const { custoAtual, resultados, todosResultados } = simulationData;
 
+  const formDataEl = simulationData.formData?.eletricidade || simulationData.formData || {};
+  const formDataGas = simulationData.formData?.gas || simulationData.formData || {};
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-PT', {
       style: 'currency',
@@ -710,57 +713,65 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                           <div className="bg-dark-700/30 p-4 rounded-lg">
                             <h5 className="font-semibold text-white mb-4">Detalhamento Eletricidade</h5>
                             <div className="space-y-3">
-                              <div className="grid grid-cols-5 gap-2 pb-2 border-b border-white/10">
+                              <div className="grid grid-cols-4 gap-2 pb-2 border-b border-white/10">
                                 <span className="text-dark-300 text-xs font-medium col-span-1">Componente</span>
-                                <span className="text-dark-300 text-xs font-medium text-right">Preço Unit.</span>
+                                <span className="text-slate-400 text-xs font-medium text-right">Consumo Cliente</span>
                                 <span className="text-blue-400 text-xs font-medium text-right">Preço Unit. c/ Desc.</span>
-                                <span className="text-dark-300 text-xs font-medium text-right">Total</span>
                                 <span className="text-green-400 text-xs font-medium text-right">Total c/ Desc.</span>
                               </div>
-                              <div className="grid grid-cols-5 gap-2 items-center">
+                              <div className="grid grid-cols-4 gap-2 items-center">
                                 <div className="col-span-1">
                                   <span className="text-white text-sm">Potência</span>
                                   <p className="text-dark-400 text-xs">(€/kW/dia)</p>
                                 </div>
-                                <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoPotenciaUnitario)}</span>
+                                <div className="text-slate-300 text-xs text-right">
+                                  {formDataEl.potencia ? <span>{formDataEl.potencia} kVA</span> : <span>—</span>}
+                                  {formDataEl.dias && <p className="text-dark-400">{formDataEl.dias} dias</p>}
+                                </div>
                                 <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoPotenciaUnitarioComDesconto)}</span>
-                                <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto)}</span>
                                 <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto)}</span>
                               </div>
                               {typeof resultado.detalhesCalculo.eletricidade.precoEnergiaUnitario === 'number' ? (
-                                <div className="grid grid-cols-5 gap-2 items-center">
+                                <div className="grid grid-cols-4 gap-2 items-center">
                                   <div className="col-span-1">
                                     <span className="text-white text-sm">Energia</span>
                                     <p className="text-dark-400 text-xs">(€/kWh)</p>
                                   </div>
-                                  <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoEnergiaUnitario)}</span>
+                                  <span className="text-slate-300 text-xs text-right">
+                                    {formDataEl.consumos?.energia ? `${formDataEl.consumos.energia} kWh` : '—'}
+                                  </span>
                                   <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.eletricidade.precoEnergiaUnitarioComDesconto)}</span>
-                                  <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}</span>
                                   <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}</span>
                                 </div>
                               ) : (
-                                Object.entries(resultado.detalhesCalculo.eletricidade.precoEnergiaUnitario || {}).map(([periodo, preco]) => {
-                                  const periodoLabel = periodo === 'vazio' ? 'Energia Vazio' : periodo === 'fora_vazio' ? 'Energia Fora Vazio' : periodo === 'cheia' ? 'Energia Cheia' : 'Energia Ponta';
-                                  const precoComDesc = resultado.detalhesCalculo.eletricidade.precoEnergiaUnitarioComDesconto?.[periodo] || 0;
-                                  return (
-                                    <div key={periodo} className="grid grid-cols-5 gap-2 items-center">
-                                      <div className="col-span-1">
-                                        <span className="text-white text-sm">{periodoLabel}</span>
-                                        <p className="text-dark-400 text-xs">(€/kWh)</p>
+                                <>
+                                  {Object.entries(resultado.detalhesCalculo.eletricidade.precoEnergiaUnitario || {}).map(([periodo, preco]) => {
+                                    const periodoLabel = periodo === 'vazio' ? 'Energia Vazio' : periodo === 'fora_vazio' ? 'Energia Fora Vazio' : periodo === 'cheia' ? 'Energia Cheia' : 'Energia Ponta';
+                                    const precoComDesc = resultado.detalhesCalculo.eletricidade.precoEnergiaUnitarioComDesconto?.[periodo] || 0;
+                                    const consumoPeriodo = formDataEl.consumos?.[periodo];
+                                    return (
+                                      <div key={periodo} className="grid grid-cols-4 gap-2 items-center">
+                                        <div className="col-span-1">
+                                          <span className="text-white text-sm">{periodoLabel}</span>
+                                          <p className="text-dark-400 text-xs">(€/kWh)</p>
+                                        </div>
+                                        <span className="text-slate-300 text-xs text-right">
+                                          {consumoPeriodo ? `${consumoPeriodo} kWh` : '—'}
+                                        </span>
+                                        <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(precoComDesc)}</span>
+                                        <span className="text-dark-400 text-xs text-right">—</span>
                                       </div>
-                                      <span className="text-white text-xs text-right">{formatUnitPrice(preco)}</span>
-                                      <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(precoComDesc)}</span>
-                                      <span className="text-dark-400 text-xs text-right">—</span>
-                                      <span className="text-dark-400 text-xs text-right">—</span>
-                                    </div>
-                                  );
-                                })
+                                    );
+                                  })}
+                                  <div className="grid grid-cols-4 gap-2 items-center">
+                                    <span className="text-dark-400 text-xs col-span-2">Total Energia</span>
+                                    <span className="text-dark-400 text-xs text-right">—</span>
+                                    <span className="text-green-400 text-xs text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}</span>
+                                  </div>
+                                </>
                               )}
-                              <div className="grid grid-cols-5 gap-2 items-center pt-2 border-t border-white/10">
+                              <div className="grid grid-cols-4 gap-2 items-center pt-2 border-t border-white/10">
                                 <span className="text-white text-sm font-semibold col-span-3">Total Eletricidade</span>
-                                <span className="text-white text-sm text-right font-semibold">
-                                  {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaSemDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaSemDesconto)}
-                                </span>
                                 <span className="text-green-400 text-sm text-right font-semibold">
                                   {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}
                                 </span>
@@ -773,38 +784,37 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                           <div className="bg-dark-700/30 p-4 rounded-lg">
                             <h5 className="font-semibold text-white mb-4">Detalhamento Gás Natural</h5>
                             <div className="space-y-3">
-                              <div className="grid grid-cols-5 gap-2 pb-2 border-b border-white/10">
+                              <div className="grid grid-cols-4 gap-2 pb-2 border-b border-white/10">
                                 <span className="text-dark-300 text-xs font-medium col-span-1">Componente</span>
-                                <span className="text-dark-300 text-xs font-medium text-right">Preço Unit.</span>
+                                <span className="text-slate-400 text-xs font-medium text-right">Consumo Cliente</span>
                                 <span className="text-blue-400 text-xs font-medium text-right">Preço Unit. c/ Desc.</span>
-                                <span className="text-dark-300 text-xs font-medium text-right">Total</span>
                                 <span className="text-green-400 text-xs font-medium text-right">Total c/ Desc.</span>
                               </div>
-                              <div className="grid grid-cols-5 gap-2 items-center">
+                              <div className="grid grid-cols-4 gap-2 items-center">
                                 <div className="col-span-1">
                                   <span className="text-white text-sm">Valor Diário</span>
                                   <p className="text-dark-400 text-xs">(€/dia)</p>
                                 </div>
-                                <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.gas.precoDiarioUnitario)}</span>
+                                <div className="text-slate-300 text-xs text-right">
+                                  {formDataGas.valor_diario ? <span>{formDataGas.valor_diario} €/dia</span> : <span>—</span>}
+                                  {formDataGas.dias && <p className="text-dark-400">{formDataGas.dias} dias</p>}
+                                </div>
                                 <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.gas.precoDiarioUnitarioComDesconto)}</span>
-                                <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto)}</span>
                                 <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto)}</span>
                               </div>
-                              <div className="grid grid-cols-5 gap-2 items-center">
+                              <div className="grid grid-cols-4 gap-2 items-center">
                                 <div className="col-span-1">
                                   <span className="text-white text-sm">Energia</span>
                                   <p className="text-dark-400 text-xs">(€/kWh)</p>
                                 </div>
-                                <span className="text-white text-xs text-right">{formatUnitPrice(resultado.detalhesCalculo.gas.precoEnergiaUnitario)}</span>
+                                <span className="text-slate-300 text-xs text-right">
+                                  {formDataGas.consumo_kwh ? `${formDataGas.consumo_kwh} kWh` : '—'}
+                                </span>
                                 <span className="text-blue-400 text-xs text-right font-semibold">{formatUnitPrice(resultado.detalhesCalculo.gas.precoEnergiaUnitarioComDesconto)}</span>
-                                <span className="text-white text-sm text-right">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}</span>
                                 <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}</span>
                               </div>
-                              <div className="grid grid-cols-5 gap-2 items-center pt-2 border-t border-white/10">
+                              <div className="grid grid-cols-4 gap-2 items-center pt-2 border-t border-white/10">
                                 <span className="text-white text-sm font-semibold col-span-3">Total Gás</span>
-                                <span className="text-white text-sm text-right font-semibold">
-                                  {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioSemDesconto + resultado.detalhesCalculo.gas.custoEnergiaSemDesconto)}
-                                </span>
                                 <span className="text-green-400 text-sm text-right font-semibold">
                                   {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto + resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}
                                 </span>

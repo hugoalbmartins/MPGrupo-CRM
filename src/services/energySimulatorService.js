@@ -12,22 +12,48 @@ export const ESCALOES_GAS = [
 ];
 
 export const OPERADORAS_PORTUGAL_ERSE = [
+  'ACCIONA Energia',
+  'Ágoraluz Energia',
+  'Alfa Energia',
+  'Audax Renovables',
+  'Axpo Energia',
+  'A Eléctrica Moreira de Cónegos',
+  'Capwatt Retail',
+  'CB Power Energy',
+  'Cepsa Gas y Electricidad',
+  'CLIDOMER (Holaluz)',
+  'Cooperativa Eléctrica de Vale D\'Este',
+  'Coopérnico',
   'EDP Comercial',
-  'Galp Energia',
+  'Elergone Energia',
   'Endesa Energia',
-  'Iberdrola',
+  'ENFORCESCO (Yes Energy)',
+  'ENI Plenitude',
+  'Ezurimbol (EZU)',
+  'Fortia Energia',
+  'Galp (Petrogal)',
   'Goldenergy',
-  'Coopernico',
-  'Luzboa',
-  'Energia Simples',
-  'Muon',
-  'YCE',
-  'Enat Energia',
-  'Dourogás',
-  'Audax',
+  'G9Telecom (G9Energy)',
+  'Ibelectra Mercados',
+  'Iberdrola',
+  'JAFPLUS',
+  'Logica Energy',
+  'LUZBOA',
+  'LusíadaEnergia',
+  'MEO Energia',
+  'Muon Electric',
+  'Nossa Energia',
+  'Oeneo Energy',
+  'On Demand Facilities (ODF)',
+  'Petrotermica (Ynerluz)',
+  'Portulogos Power',
+  'Propensalternativa (Nabalia)',
+  'Repsol',
+  'USENERGY',
+  'Volton',
+  'ZUG POWER',
   'SU Eletricidade',
-  'Ylce',
-  'MEO Energia'
+  'Outra'
 ];
 
 export const CICLOS_HORARIOS = [
@@ -360,8 +386,15 @@ export const energySimulatorService = {
       const temDD = formData.tem_debito_direto || false;
       const temFE = formData.tem_fatura_eletronica || false;
 
+      const operadoraAtualNorm = (formData.operadora_atual || '').toLowerCase().trim();
+
       for (const operadora of operadoras) {
-        if (formData.operadora_atual === operadora.nome) continue;
+        const nomeNorm = (operadora.nome || '').toLowerCase().trim();
+        if (operadoraAtualNorm && operadoraAtualNorm !== 'outra' && (
+          nomeNorm === operadoraAtualNorm ||
+          nomeNorm.includes(operadoraAtualNorm) ||
+          operadoraAtualNorm.includes(nomeNorm)
+        )) continue;
 
         const tiposEnergia = operadora.tipos_energia || [];
         if (formData.tipo_energia === 'eletricidade' && !tiposEnergia.includes('eletricidade')) continue;
