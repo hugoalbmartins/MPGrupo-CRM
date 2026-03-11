@@ -535,24 +535,22 @@ export const energySimulatorService = {
 
         const poupanca = custoAtual.total - custoNovaOperadora.total;
 
-        if (custoComCampanha < custoAtual.total) {
-          resultados.push({
-            operadora,
-            custoAtual,
-            custoNovaOperadora,
-            custoComCampanha,
-            descontoMensalCampanha,
-            duracaoCampanha,
-            poupanca,
-            poupancaMensal: poupanca,
-            poupancaAnual: poupanca * 12,
-            poupancaPercentual: (poupanca / custoAtual.total) * 100,
-            poupancaComCampanha,
-            poupancaMensalComCampanha: poupancaComCampanha,
-            poupancaAnualComCampanha: poupancaComCampanha * 12,
-            detalhesCalculo
-          });
-        }
+        resultados.push({
+          operadora,
+          custoAtual,
+          custoNovaOperadora,
+          custoComCampanha,
+          descontoMensalCampanha,
+          duracaoCampanha,
+          poupanca,
+          poupancaMensal: poupanca,
+          poupancaAnual: poupanca * 12,
+          poupancaPercentual: custoAtual.total > 0 ? (poupanca / custoAtual.total) * 100 : 0,
+          poupancaComCampanha,
+          poupancaMensalComCampanha: poupancaComCampanha,
+          poupancaAnualComCampanha: poupancaComCampanha * 12,
+          detalhesCalculo
+        });
       }
 
       resultados.sort((a, b) => b.poupancaComCampanha - a.poupancaComCampanha);

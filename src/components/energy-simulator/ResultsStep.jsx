@@ -238,9 +238,15 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
         doc.text(`Custo Mensal: ${formatCurrency(resultado.custoNovaOperadora.total)}`, col1X, yPos);
 
         doc.setFont(undefined, 'bold');
-        doc.setTextColor(22, 163, 74);
-        doc.text(`Poupança Mensal: ${formatCurrency(resultado.poupancaMensal)}`, col2X, yPos);
-        doc.text(`Poupança Anual: ${formatCurrency(resultado.poupancaAnual)}`, col3X, yPos);
+        if (resultado.poupancaMensal < 0) {
+          doc.setTextColor(220, 38, 38);
+          doc.text(`Custo Adicional: +${formatCurrency(Math.abs(resultado.poupancaMensal))}`, col2X, yPos);
+          doc.text(`Custo Adicional Anual: +${formatCurrency(Math.abs(resultado.poupancaAnual))}`, col3X, yPos);
+        } else {
+          doc.setTextColor(22, 163, 74);
+          doc.text(`Poupança Mensal: ${formatCurrency(resultado.poupancaMensal)}`, col2X, yPos);
+          doc.text(`Poupança Anual: ${formatCurrency(resultado.poupancaAnual)}`, col3X, yPos);
+        }
         doc.setFont(undefined, 'normal');
         doc.setTextColor(0, 0, 0);
         yPos += 7;
@@ -606,7 +612,7 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
           <Alert className="bg-yellow-500/10 border-yellow-500/30">
             <AlertCircle className="h-4 w-4 text-yellow-400" />
             <AlertDescription className="text-yellow-300">
-              Não foram encontradas operadoras com poupanças disponíveis para o seu perfil de consumo.
+              Não foram encontradas operadoras configuradas para o seu perfil de consumo.
             </AlertDescription>
           </Alert>
         )}
@@ -618,7 +624,7 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 + index * 0.1 }}
           >
-            <Card className={`border-white/10 bg-dark-800/50 backdrop-blur-sm overflow-hidden ${index === 0 ? 'ring-2 ring-green-500/50' : ''}`}>
+            <Card className={`border-white/10 bg-dark-800/50 backdrop-blur-sm overflow-hidden ${resultado.poupancaComCampanha < 0 ? 'ring-2 ring-red-500/40' : index === 0 ? 'ring-2 ring-green-500/50' : ''}`}>
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1">
@@ -633,8 +639,11 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="text-xl font-bold text-white">{resultado.operadora.nome}</h4>
-                          {index === 0 && (
+                          {index === 0 && resultado.poupancaComCampanha >= 0 && (
                             <Badge className="bg-green-500 text-white">Melhor Opção</Badge>
+                          )}
+                          {resultado.poupancaComCampanha < 0 && (
+                            <Badge className="bg-red-600 text-white">Custo Superior</Badge>
                           )}
                         </div>
                         <p className="text-dark-300 text-sm">
@@ -660,12 +669,20 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
 
                   <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
                     <div className="text-right">
-                      {resultado.descontoMensalCampanha > 0 ? (
+                      {resultado.poupancaComCampanha < 0 ? (
+                        <>
+                          <p className="text-dark-400 text-sm mb-1">Custo Adicional Mensal</p>
+                          <p className="text-3xl font-bold text-red-400">+{formatCurrency(Math.abs(resultado.poupancaMensalComCampanha))}</p>
+                          <p className="text-dark-300 text-sm">
+                            Anual: <span className="text-red-400 font-semibold">+{formatCurrency(Math.abs(resultado.poupancaAnualComCampanha))}</span>
+                          </p>
+                        </>
+                      ) : resultado.descontoMensalCampanha > 0 ? (
                         <>
                           <p className="text-dark-400 text-sm mb-1">Poupança c/ Campanha</p>
                           <p className="text-3xl font-bold text-amber-400">{formatCurrency(resultado.poupancaMensalComCampanha)}</p>
                           <p className="text-dark-300 text-sm">
-                            Sem campanha: <span className="text-green-400 font-semibold">{formatCurrency(resultado.poupancaMensal)}/mês</span>
+                            Sem campanha: <span className={resultado.poupancaMensal >= 0 ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>{resultado.poupancaMensal >= 0 ? formatCurrency(resultado.poupancaMensal) : `+${formatCurrency(Math.abs(resultado.poupancaMensal))}`}/mês</span>
                           </p>
                         </>
                       ) : (
