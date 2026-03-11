@@ -275,8 +275,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             { label: 'Componente' },
             { label: 'Preço Unit.' },
             { label: 'Preço c/ Desc.' },
-            { label: 'Total s/ Desc.' },
-            { label: 'Total c/ Desc.' }
+            { label: 'Nova Op. s/ Desc.' },
+            { label: 'Nova Op. c/ Desc.' }
           ]);
 
           drawTableRow(
@@ -336,18 +336,30 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             }
           }
 
-          checkPageBreak(8);
+          checkPageBreak(16);
           doc.setDrawColor(200, 200, 200);
           doc.line(margin, yPos - 1, pageWidth - margin, yPos - 1);
           drawTableRow(
-            'TOTAL ELETRICIDADE', null,
+            'TOTAL NOVA OPERADORA', null,
             [null, null,
               formatCurrency(det.custoPotenciaSemDesconto + det.custoEnergiaSemDesconto),
               formatCurrency(det.custoPotenciaComDesconto + det.custoEnergiaComDesconto)
             ],
             true
           );
-          yPos += 3;
+
+          checkPageBreak(8);
+          doc.setFontSize(8);
+          doc.setFont(undefined, 'normal');
+          doc.setTextColor(80, 80, 80);
+          const xCustoAtual = margin + 3 * colW + colW * 0.95;
+          doc.text('Custo Atual Cliente:', xCustoAtual - 30, yPos, { align: 'right' });
+          doc.setFont(undefined, 'bold');
+          doc.setTextColor(60, 60, 150);
+          doc.text(formatCurrency(custoAtual.eletricidade || custoAtual.total), xCustoAtual, yPos, { align: 'right' });
+          doc.setFont(undefined, 'normal');
+          doc.setTextColor(0, 0, 0);
+          yPos += 7;
         }
 
         if (resultado.detalhesCalculo.gas) {
@@ -364,8 +376,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             { label: 'Componente' },
             { label: 'Preço Unit.' },
             { label: 'Preço c/ Desc.' },
-            { label: 'Total s/ Desc.' },
-            { label: 'Total c/ Desc.' }
+            { label: 'Nova Op. s/ Desc.' },
+            { label: 'Nova Op. c/ Desc.' }
           ]);
 
           drawTableRow(
@@ -402,18 +414,30 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
             doc.setTextColor(0, 0, 0);
           }
 
-          checkPageBreak(8);
+          checkPageBreak(16);
           doc.setDrawColor(200, 200, 200);
           doc.line(margin, yPos - 1, pageWidth - margin, yPos - 1);
           drawTableRow(
-            'TOTAL GÁS', null,
+            'TOTAL NOVA OPERADORA', null,
             [null, null,
               formatCurrency(det.custoDiarioSemDesconto + det.custoEnergiaSemDesconto),
               formatCurrency(det.custoDiarioComDesconto + det.custoEnergiaComDesconto)
             ],
             true
           );
-          yPos += 3;
+
+          checkPageBreak(8);
+          doc.setFontSize(8);
+          doc.setFont(undefined, 'normal');
+          doc.setTextColor(80, 80, 80);
+          const xCustoAtualGas = margin + 3 * colW + colW * 0.95;
+          doc.text('Custo Atual Cliente:', xCustoAtualGas - 30, yPos, { align: 'right' });
+          doc.setFont(undefined, 'bold');
+          doc.setTextColor(60, 60, 150);
+          doc.text(formatCurrency(custoAtual.gas || custoAtual.total), xCustoAtualGas, yPos, { align: 'right' });
+          doc.setFont(undefined, 'normal');
+          doc.setTextColor(0, 0, 0);
+          yPos += 7;
         }
 
         if (resultado.descontoMensalCampanha > 0) {
@@ -788,11 +812,19 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                                 </>
                               )}
                               <div className="grid grid-cols-4 gap-2 items-center pt-2 border-t border-white/10">
-                                <span className="text-white text-sm font-semibold col-span-3">Total Eletricidade</span>
+                                <span className="text-white text-sm font-semibold col-span-3">Total Nova Operadora</span>
                                 <span className="text-green-400 text-sm text-right font-semibold">
                                   {formatCurrency(resultado.detalhesCalculo.eletricidade.custoPotenciaComDesconto + resultado.detalhesCalculo.eletricidade.custoEnergiaComDesconto)}
                                 </span>
                               </div>
+                              {custoAtual.eletricidade > 0 && (
+                                <div className="grid grid-cols-4 gap-2 items-center">
+                                  <span className="text-dark-400 text-xs col-span-3">Custo Atual Cliente (referência)</span>
+                                  <span className="text-blue-400 text-xs text-right font-semibold">
+                                    {formatCurrency(custoAtual.eletricidade)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -831,11 +863,19 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                                 <span className="text-green-400 text-sm text-right font-semibold">{formatCurrency(resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}</span>
                               </div>
                               <div className="grid grid-cols-4 gap-2 items-center pt-2 border-t border-white/10">
-                                <span className="text-white text-sm font-semibold col-span-3">Total Gás</span>
+                                <span className="text-white text-sm font-semibold col-span-3">Total Nova Operadora</span>
                                 <span className="text-green-400 text-sm text-right font-semibold">
                                   {formatCurrency(resultado.detalhesCalculo.gas.custoDiarioComDesconto + resultado.detalhesCalculo.gas.custoEnergiaComDesconto)}
                                 </span>
                               </div>
+                              {custoAtual.gas > 0 && (
+                                <div className="grid grid-cols-4 gap-2 items-center">
+                                  <span className="text-dark-400 text-xs col-span-3">Custo Atual Cliente (referência)</span>
+                                  <span className="text-blue-400 text-xs text-right font-semibold">
+                                    {formatCurrency(custoAtual.gas)}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
