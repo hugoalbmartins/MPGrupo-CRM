@@ -130,8 +130,9 @@ const Sales = ({ user }) => {
   });
 
   useEffect(() => {
+    setLoading(true);
     fetchData();
-  }, []);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!loading && location.state?.openNewSale && partners.length > 0) {

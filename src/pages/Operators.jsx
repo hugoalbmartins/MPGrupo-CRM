@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard, Users, FileText } from "lucide-react";
@@ -77,6 +78,7 @@ const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 t
 );
 
 const Operators = ({ user }) => {
+  const location = useLocation();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [operators, setOperators] = useState([]);
   const [hiddenOperators, setHiddenOperators] = useState([]);
@@ -119,8 +121,9 @@ const Operators = ({ user }) => {
   });
 
   useEffect(() => {
+    setLoading(true);
     fetchOperators();
-  }, []);
+  }, [location.pathname]);
 
   const fetchOperators = async () => {
     try {
