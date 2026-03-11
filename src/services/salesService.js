@@ -792,14 +792,14 @@ export const salesService = {
 
     if (adminRecipients.length > 0) {
       try {
-        await sendEmail({ to_recipients: adminRecipients, show_partner: true });
+        await sendEmail({ to_recipients: adminRecipients, show_partner: true, attachments: [] });
         sentCount++;
       } catch (e) { errors.push(e.message); }
     }
 
     if (partnerRecipients.length > 0) {
       try {
-        await sendEmail({ to_recipients: partnerRecipients, show_partner: true });
+        await sendEmail({ to_recipients: partnerRecipients, show_partner: true, attachments: [] });
         sentCount++;
       } catch (e) { errors.push(e.message); }
     }

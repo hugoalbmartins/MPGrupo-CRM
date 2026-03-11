@@ -243,9 +243,10 @@ function getFirstFourNames(fullName: string): string {
 }
 
 function encodeBase64(data: Uint8Array): string {
+  const chunkSize = 8192;
   let binary = "";
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
+  for (let i = 0; i < data.length; i += chunkSize) {
+    binary += String.fromCharCode(...data.subarray(i, Math.min(i + chunkSize, data.length)));
   }
   return btoa(binary);
 }
@@ -415,14 +416,12 @@ async function sendViaSMTP(
     await readFullResponse("DATA");
 
     const bodyBytes = encoder.encode(`${emailBody}\r\n.\r\n`);
-    const chunkSize = 524288;
+    const chunkSize = 65536;
     console.log(`[SMTP] Sending email body (${bodyBytes.length} bytes) in chunks of ${chunkSize}`);
-    const writePromises: Promise<number>[] = [];
     for (let offset = 0; offset < bodyBytes.length; offset += chunkSize) {
-      writePromises.push(conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length))));
+      await conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length)));
     }
-    await Promise.all(writePromises);
-    const dataSendTimeoutMs = Math.min(150000, Math.max(30000, Math.ceil(bodyBytes.length / 8000) * 1000));
+    const dataSendTimeoutMs = Math.min(180000, Math.max(60000, Math.ceil(bodyBytes.length / 4000) * 1000));
     await readFullResponse("DATA END", dataSendTimeoutMs);
 
     try {
@@ -483,7 +482,7 @@ Deno.serve(async (req: Request) => {
 
     const attachmentParts: Array<{ filename: string; contentBase64: string; contentType: string }> = [];
     const attachmentLinks: Array<{ filename: string; url: string }> = [];
-    const MAX_INLINE_BYTES = 1 * 1024 * 1024;
+    const MAX_INLINE_BYTES = 10 * 1024 * 1024;
 
     if (payload.attachments && payload.attachments.length > 0 && payload.sale_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
