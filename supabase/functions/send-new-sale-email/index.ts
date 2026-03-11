@@ -74,7 +74,7 @@ function hasField(payload: SaleEmailPayload, key: string): boolean {
   return payload.email_fields.includes(key);
 }
 
-function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true): string {
+function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attachmentLinks: Array<{ filename: string; url: string }> = []): string {
   const hidePartner = !showPartner;
   return `<!DOCTYPE html>
 <html>
@@ -210,6 +210,17 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true): stri
           ${payload.attachments.map((a) => `<li>${a.filename}</li>`).join("")}
         </ul>
         <p style="font-size: 12px; color: #6b7280; margin: 8px 0 0 0;">Os anexos estao incluidos neste email.</p>
+      </div>`
+          : ""
+      }
+      ${
+        attachmentLinks.length > 0
+          ? `<div class="attachments">
+        <h3>Documentos para Download (${attachmentLinks.length})</h3>
+        <ul>
+          ${attachmentLinks.map((a) => `<li><a href="${a.url}" style="color: #2563eb;">${a.filename}</a> <span style="font-size: 11px; color: #9ca3af;">(link valido 7 dias)</span></li>`).join("")}
+        </ul>
+        <p style="font-size: 12px; color: #6b7280; margin: 8px 0 0 0;">Clique nos links acima para descarregar os documentos.</p>
       </div>`
           : ""
       }
@@ -409,7 +420,7 @@ async function sendViaSMTP(
     for (let offset = 0; offset < bodyBytes.length; offset += chunkSize) {
       await conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length)));
     }
-    const dataSendTimeoutMs = Math.min(45000, Math.max(20000, Math.ceil(bodyBytes.length / 10000) * 1000));
+    const dataSendTimeoutMs = Math.min(120000, Math.max(30000, Math.ceil(bodyBytes.length / 5000) * 1000));
     await readFullResponse("DATA END", dataSendTimeoutMs);
 
     try {
@@ -469,6 +480,8 @@ Deno.serve(async (req: Request) => {
     console.log(`[EMAIL] Using from: ${fromEmail} (operator-specific: ${!!hasOperatorEmail})`);
 
     const attachmentParts: Array<{ filename: string; contentBase64: string; contentType: string }> = [];
+    const attachmentLinks: Array<{ filename: string; url: string }> = [];
+    const MAX_INLINE_BYTES = 512 * 1024;
 
     if (payload.attachments && payload.attachments.length > 0 && payload.sale_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -488,23 +501,34 @@ Deno.serve(async (req: Request) => {
 
           const arrayBuffer = await data.arrayBuffer();
           const bytes = new Uint8Array(arrayBuffer);
-          const base64Content = encodeBase64(bytes);
 
-          const ext = att.filename.split(".").pop()?.toLowerCase() || "";
-          let contentType = "application/octet-stream";
-          if (ext === "pdf") contentType = "application/pdf";
-          else if (["jpg", "jpeg"].includes(ext)) contentType = "image/jpeg";
-          else if (ext === "png") contentType = "image/png";
-          else if (ext === "doc") contentType = "application/msword";
-          else if (ext === "docx") contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-          else if (ext === "xls") contentType = "application/vnd.ms-excel";
-          else if (ext === "xlsx") contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+          if (bytes.length > MAX_INLINE_BYTES) {
+            const { data: signedData, error: signedError } = await supabase.storage
+              .from("sales-documents")
+              .createSignedUrl(att.path, 60 * 60 * 24 * 7);
 
-          attachmentParts.push({
-            filename: att.filename,
-            contentBase64: base64Content,
-            contentType,
-          });
+            if (signedError || !signedData?.signedUrl) {
+              console.error(`Failed to create signed URL for ${att.filename}:`, signedError);
+              continue;
+            }
+
+            attachmentLinks.push({ filename: att.filename, url: signedData.signedUrl });
+            console.log(`[EMAIL] Attachment ${att.filename} (${bytes.length} bytes) sent as link`);
+          } else {
+            const base64Content = encodeBase64(bytes);
+            const ext = att.filename.split(".").pop()?.toLowerCase() || "";
+            let contentType = "application/octet-stream";
+            if (ext === "pdf") contentType = "application/pdf";
+            else if (["jpg", "jpeg"].includes(ext)) contentType = "image/jpeg";
+            else if (ext === "png") contentType = "image/png";
+            else if (ext === "doc") contentType = "application/msword";
+            else if (ext === "docx") contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            else if (ext === "xls") contentType = "application/vnd.ms-excel";
+            else if (ext === "xlsx") contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+            attachmentParts.push({ filename: att.filename, contentBase64: base64Content, contentType });
+            console.log(`[EMAIL] Attachment ${att.filename} (${bytes.length} bytes) attached inline`);
+          }
         } catch (e) {
           console.error(`Error processing attachment ${att.filename}:`, e);
         }
@@ -518,7 +542,7 @@ Deno.serve(async (req: Request) => {
     const subject = `MPGrupo - ${payload.operator_name} - ${customerNameShort}${nifPart}`;
 
     const showPartner = payload.show_partner !== false;
-    const html = buildEmailTemplate(payload, showPartner);
+    const html = buildEmailTemplate(payload, showPartner, attachmentLinks);
     const emailBody = buildMimeEmail(
       fromEmail,
       fromName,
@@ -530,13 +554,13 @@ Deno.serve(async (req: Request) => {
     );
     await sendViaSMTP(smtpHost, smtpPort, smtpUser, smtpPass, fromEmail, toAddresses, emailBody);
 
-    console.log(`New sale email sent: TO=${toAddresses.length}, showPartner=${showPartner}, attachments=${attachmentParts.length}`);
+    console.log(`New sale email sent: TO=${toAddresses.length}, showPartner=${showPartner}, attachments=${attachmentParts.length}, links=${attachmentLinks.length}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         to_count: toAddresses.length,
-        attachments_count: attachmentParts.length,
+        attachments_count: attachmentParts.length + attachmentLinks.length,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
