@@ -492,7 +492,8 @@ const Sales = ({ user }) => {
         if (activationTypesSet.size === 0 && hasTelecomConfigs) {
           setAvailableActivationTypes(['M2', 'M3', 'M4']);
         } else {
-          setAvailableActivationTypes(Array.from(activationTypesSet));
+          const allTypes = Array.from(activationTypesSet).filter(t => t && t !== 'all');
+          setAvailableActivationTypes(allTypes);
         }
       } else {
         setAvailableServiceTypes([]);

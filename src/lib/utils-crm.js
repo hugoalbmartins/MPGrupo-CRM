@@ -476,7 +476,7 @@ export async function calculateCommission(operator, saleData, supabase) {
     } else if (scope === 'telecomunicacoes') {
       countQuery = countQuery.eq('scope', 'telecomunicacoes');
 
-      if (saleData.activation_type && (saleData.activation_type === 'M2' || saleData.activation_type === 'M3' || saleData.activation_type === 'M4')) {
+      if (saleData.activation_type && ['M2', 'M3', 'M4', 'Movel'].includes(saleData.activation_type)) {
         countQuery = countQuery.eq('activation_type', saleData.activation_type);
       }
 

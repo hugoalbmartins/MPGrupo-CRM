@@ -549,13 +549,15 @@ const SaleFormDialog = ({
                           <Select
                             value={formData.activation_type}
                             onValueChange={(v) => {
-                              const newMobileNumbers = v !== 'M4'
-                                ? []
-                                : ensureMobileSlots(formData.mobile_count || 0);
+                              const isMobileType = v === 'M4' || v === 'Movel';
+                              const newMobileNumbers = isMobileType
+                                ? ensureMobileSlots(formData.mobile_count || 0)
+                                : [];
                               setFormData({
                                 ...formData,
                                 activation_type: v,
-                                mobile_numbers: newMobileNumbers
+                                mobile_numbers: newMobileNumbers,
+                                ...(isMobileType ? {} : { mobile_count: 0 }),
                               });
                             }}
                             disabled={availableActivationTypes.length === 0}
@@ -639,40 +641,42 @@ const SaleFormDialog = ({
 
                       <div className="border-t border-dark-700 pt-4 mt-4">
                         <Label className="text-base font-bold mb-4 block text-white">Serviços Contratados</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              id="has_tv"
-                              checked={formData.has_tv}
-                              onChange={(e) => setFormData({...formData, has_tv: e.target.checked})}
-                              className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
-                            />
-                            <Label htmlFor="has_tv" className="cursor-pointer font-medium text-white">TV</Label>
+                        {formData.activation_type !== 'Movel' && (
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="flex items-center space-x-3">
+                              <input
+                                type="checkbox"
+                                id="has_tv"
+                                checked={formData.has_tv}
+                                onChange={(e) => setFormData({...formData, has_tv: e.target.checked})}
+                                className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                              />
+                              <Label htmlFor="has_tv" className="cursor-pointer font-medium text-white">TV</Label>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <input
+                                type="checkbox"
+                                id="has_net"
+                                checked={formData.has_net}
+                                onChange={(e) => setFormData({...formData, has_net: e.target.checked})}
+                                className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                              />
+                              <Label htmlFor="has_net" className="cursor-pointer font-medium text-white">NET/Fibra</Label>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <input
+                                type="checkbox"
+                                id="has_lr"
+                                checked={formData.has_lr}
+                                onChange={(e) => setFormData({...formData, has_lr: e.target.checked})}
+                                className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                              />
+                              <Label htmlFor="has_lr" className="cursor-pointer font-medium text-white">Linha Fixa/LR</Label>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              id="has_net"
-                              checked={formData.has_net}
-                              onChange={(e) => setFormData({...formData, has_net: e.target.checked})}
-                              className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
-                            />
-                            <Label htmlFor="has_net" className="cursor-pointer font-medium text-white">NET/Fibra</Label>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              id="has_lr"
-                              checked={formData.has_lr}
-                              onChange={(e) => setFormData({...formData, has_lr: e.target.checked})}
-                              className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
-                            />
-                            <Label htmlFor="has_lr" className="cursor-pointer font-medium text-white">Linha Fixa/LR</Label>
-                          </div>
-                        </div>
+                        )}
 
-                        {formData.has_lr && (
+                        {formData.has_lr && formData.activation_type !== 'Movel' && (
                           <div className="mt-4 p-4 bg-dark-900/80 border border-dark-600 rounded-xl space-y-4">
                             <div className="flex items-center space-x-3">
                               <input
@@ -739,7 +743,7 @@ const SaleFormDialog = ({
                           </div>
                         )}
 
-                        {formData.activation_type === 'M4' && (
+                        {(formData.activation_type === 'M4' || formData.activation_type === 'Movel') && (
                           <div className="mt-4">
                             <div className="flex items-center gap-4 mb-3">
                               <Label className="text-sm font-semibold text-slate-400">Quantidade de Móveis</Label>

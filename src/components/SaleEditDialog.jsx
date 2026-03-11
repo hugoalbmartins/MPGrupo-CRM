@@ -375,15 +375,23 @@ const SaleEditDialog = ({
 
                   <FieldGroup label="Tipo de Ativacao">
                     <Select value={editFormData.activation_type || ''} onValueChange={(v) => {
-                      const newCount = v !== 'M4' ? 0 : (editFormData.mobile_count || 0);
-                      const newMobiles = v !== 'M4' ? [] : (editFormData.mobile_numbers || []);
+                      const isMobileType = v === 'M4' || v === 'Movel';
+                      const newCount = isMobileType ? (editFormData.mobile_count || 0) : 0;
+                      const newMobiles = isMobileType ? (editFormData.mobile_numbers || []) : [];
                       setEditFormData(prev => ({ ...prev, activation_type: v, mobile_count: newCount, mobile_numbers: newMobiles }));
                     }}>
                       <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="NI">NI</SelectItem>
+                        <SelectItem value="MC">MC</SelectItem>
                         <SelectItem value="M2">M2</SelectItem>
                         <SelectItem value="M3">M3</SelectItem>
                         <SelectItem value="M4">M4</SelectItem>
+                        <SelectItem value="Movel">Movel</SelectItem>
+                        <SelectItem value="REFID">REFID</SelectItem>
+                        <SelectItem value="REV1">REV1</SelectItem>
+                        <SelectItem value="REV2">REV2</SelectItem>
+                        <SelectItem value="REV3">REV3</SelectItem>
                       </SelectContent>
                     </Select>
                   </FieldGroup>
@@ -507,7 +515,7 @@ const SaleEditDialog = ({
                       </div>
                     )}
 
-                    {editFormData.activation_type === 'M4' && (
+                    {(editFormData.activation_type === 'M4' || editFormData.activation_type === 'Movel') && (
                       <div className="mt-4">
                         <div className="flex items-center gap-3 mb-3">
                           <Label className="text-sm font-semibold text-slate-400">Quantidade de Móveis</Label>
