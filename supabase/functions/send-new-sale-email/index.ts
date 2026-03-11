@@ -409,7 +409,7 @@ async function sendViaSMTP(
     for (let offset = 0; offset < bodyBytes.length; offset += chunkSize) {
       await conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length)));
     }
-    const dataSendTimeoutMs = Math.max(120000, Math.ceil(bodyBytes.length / 5000) * 1000);
+    const dataSendTimeoutMs = Math.min(45000, Math.max(20000, Math.ceil(bodyBytes.length / 10000) * 1000));
     await readFullResponse("DATA END", dataSendTimeoutMs);
 
     try {
