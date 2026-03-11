@@ -815,10 +815,14 @@ export const salesService = {
       throw new Error(errors[0]);
     }
 
+    const totalRecipients = adminRecipients.length + partnerRecipients.length + notificationRecipients.length;
+
     return {
       success: true,
       to_count: adminRecipients.length,
       bcc_count: partnerRecipients.length + notificationRecipients.length,
+      sent_count: sentCount,
+      total_recipients: totalRecipients,
     };
   },
 

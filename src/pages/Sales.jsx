@@ -939,23 +939,29 @@ const Sales = ({ user }) => {
   };
 
   const handleResendNewSaleEmail = async (sale) => {
-    try {
-      const result = await salesService.resendNewSaleEmail(sale.id);
-      toast.success(`Email de nova venda reenviado com sucesso! (${result.to_count} destinatarios principais, ${result.bcc_count} em BCC)`);
-    } catch (error) {
-      toast.error(error.message || "Erro ao reenviar email de nova venda");
-      console.error('Erro ao reenviar email:', error);
-    }
+    toast.promise(
+      salesService.resendNewSaleEmail(sale.id),
+      {
+        loading: "A enviar email de nova venda...",
+        success: (result) => {
+          const total = result.total_recipients || 0;
+          if (total === 0) return "Nenhum destinatario encontrado com alertas de email ativos";
+          return `Email de nova venda enviado para ${total} destinatario${total !== 1 ? 's' : ''}`;
+        },
+        error: (err) => err.message || "Erro ao reenviar email de nova venda",
+      }
+    );
   };
 
   const handleResendEditAlert = async (sale) => {
-    try {
-      const result = await salesService.resendEditAlert(sale.id);
-      toast.success(`Alerta de edicao reenviado com sucesso! (${result.recipients_count} destinatarios)`);
-    } catch (error) {
-      toast.error(error.message || "Erro ao reenviar alerta de edicao");
-      console.error('Erro ao reenviar alerta:', error);
-    }
+    toast.promise(
+      salesService.resendEditAlert(sale.id),
+      {
+        loading: "A reenviar alerta de edicao...",
+        success: (result) => `Alerta de edicao reenviado para ${result.recipients_count || 0} destinatario${result.recipients_count !== 1 ? 's' : ''}`,
+        error: (err) => err.message || "Erro ao reenviar alerta de edicao",
+      }
+    );
   };
 
   const getStatusBadge = (status) => {
