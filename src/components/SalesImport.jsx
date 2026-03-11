@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { Upload, Download, FileSpreadsheet, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, Download, FileSpreadsheet, X, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -170,6 +170,13 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
     return null;
   };
 
+  const normalizeActivationType = (value) => {
+    if (!value) return null;
+    const str = String(value).trim().toUpperCase();
+    const valid = ['NI', 'MC', 'M2', 'M3', 'M4', 'REFID', 'REV1', 'REV2', 'REV3'];
+    return valid.includes(str) ? str : str || null;
+  };
+
   const handleImport = async () => {
     if (!file) {
       toast.error("Selecione um ficheiro para importar");
@@ -203,37 +210,65 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
         const rowNumber = i + 2;
 
         try {
+          const mobileNumbers = [];
+          for (let m = 1; m <= 5; m++) {
+            const num = row[`Movel ${m} Numero`];
+            const ported = row[`Movel ${m} Portado`];
+            const cvp = row[`Movel ${m} CVP`];
+            if (num || ported) {
+              const isNovo = String(num || '').trim().toLowerCase() === 'novo' || String(ported || '').trim().toLowerCase() === 'novo';
+              mobileNumbers.push({
+                number: isNovo ? '' : (String(num || '').trim()),
+                ported: isNovo ? false : parseBooleanValue(ported),
+                cvp: cvp ? String(cvp).trim() : '',
+                novo: isNovo,
+              });
+            }
+          }
+
+          const qtdMoveis = parseNumericValue(row['Qtd Moveis']);
+          const mobileCount = qtdMoveis ? Math.round(qtdMoveis) : mobileNumbers.length;
+
           const saleData = {
             date: parseDate(row['Data']),
             partner_id: row['ID Parceiro'],
-            scope: normalizeScope(row['\u00C2mbito']),
+            scope: normalizeScope(row['Ambito'] || row['\u00C2mbito']),
             client_type: normalizeClientType(row['Tipo Cliente']),
             client_name: row['Nome Cliente'],
             client_nif: row['NIF'],
             client_contact: row['Contacto'],
             client_email: row['Email'] || null,
             client_iban: row['IBAN'] || null,
-            has_direct_debit: parseBooleanValue(row['D\u00E9bito Direto']),
-            has_electronic_invoice: parseBooleanValue(row['Fatura Eletr\u00F3nica']),
+            has_direct_debit: parseBooleanValue(row['Debito Direto'] || row['D\u00E9bito Direto']),
+            has_electronic_invoice: parseBooleanValue(row['Fatura Eletronica'] || row['Fatura Eletr\u00F3nica']),
             street: row['Morada'] || null,
-            postal_code: row['C\u00F3digo Postal'] || null,
+            postal_code: row['Codigo Postal'] || row['C\u00F3digo Postal'] || null,
             locality: row['Localidade'] || null,
-            installation_address: row['Morada Instala\u00E7\u00E3o'] || null,
+            installation_address: row['Morada Instalacao'] || row['Morada Instala\u00E7\u00E3o'] || null,
             operator_id: row['ID Operadora'],
-            service_type: row['Tipo Servi\u00E7o'] || null,
-            activation_type: row['Tipo Ativa\u00E7\u00E3o'] || null,
+            service_type: row['Tipo Servico'] || row['Tipo Servi\u00E7o'] || null,
+            activation_type: normalizeActivationType(row['Tipo Ativacao'] || row['Tipo Ativa\u00E7\u00E3o']),
             monthly_value: parseNumericValue(row['Valor Mensal']),
+            has_tv: parseBooleanValue(row['TV']),
+            has_net: parseBooleanValue(row['NET/Fibra']),
+            has_lr: parseBooleanValue(row['Linha Fixa/LR']),
+            fix_ported: parseBooleanValue(row['Fixo Portado']),
+            fix_number: row['Numero Fixo Portar'] || null,
+            fix_operator: row['Operadora Fixo Atual'] || null,
+            fix_cvp: row['CVP Fixo'] || null,
+            mobile_count: mobileCount,
+            mobile_numbers: mobileNumbers,
             energy_sale_type: normalizeEnergySaleType(row['Tipo Venda Energia']),
             paid_to_operator: parseBooleanValue(row['Paga Operador']),
             payment_date: parseDate(row['Data Pagamento']),
             cpe: row['CPE'] || null,
-            power: row['Pot\u00EAncia'] || null,
+            power: row['Potencia'] || row['Pot\u00EAncia'] || null,
             cui: row['CUI'] || null,
-            tier: row['Escal\u00E3o'] || null,
+            tier: row['Escalao'] || row['Escal\u00E3o'] || null,
             entry_type: row['Tipo Entrada'] || null,
             status: row['Status'] || 'pendente',
-            request_number: row['N\u00BA Requisi\u00E7\u00E3o'] || null,
-            observations: row['Observa\u00E7\u00F5es'] || null,
+            request_number: row['Nr Requisicao'] || row['N\u00BA Requisi\u00E7\u00E3o'] || null,
+            observations: row['Observacoes'] || row['Observa\u00E7\u00F5es'] || null,
           };
 
           if (!saleData.date) {
@@ -316,34 +351,57 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       const templateData = [{
         'Data': '',
         'ID Parceiro': '',
-        '\u00C2mbito': '',
+        'Ambito': '',
         'Tipo Cliente': '',
         'Nome Cliente': '',
         'NIF': '',
         'Contacto': '',
         'Email': '',
         'IBAN': '',
-        'D\u00E9bito Direto': '',
-        'Fatura Eletr\u00F3nica': '',
+        'Debito Direto': '',
+        'Fatura Eletronica': '',
         'Morada': '',
-        'C\u00F3digo Postal': '',
+        'Codigo Postal': '',
         'Localidade': '',
-        'Morada Instala\u00E7\u00E3o': '',
+        'Morada Instalacao': '',
         'ID Operadora': '',
-        'Tipo Servi\u00E7o': '',
-        'Tipo Ativa\u00E7\u00E3o': '',
+        'Tipo Servico': '',
+        'Tipo Ativacao': '',
         'Valor Mensal': '',
+        'TV': '',
+        'NET/Fibra': '',
+        'Linha Fixa/LR': '',
+        'Fixo Portado': '',
+        'Numero Fixo Portar': '',
+        'Operadora Fixo Atual': '',
+        'CVP Fixo': '',
+        'Qtd Moveis': '',
+        'Movel 1 Numero': '',
+        'Movel 1 Portado': '',
+        'Movel 1 CVP': '',
+        'Movel 2 Numero': '',
+        'Movel 2 Portado': '',
+        'Movel 2 CVP': '',
+        'Movel 3 Numero': '',
+        'Movel 3 Portado': '',
+        'Movel 3 CVP': '',
+        'Movel 4 Numero': '',
+        'Movel 4 Portado': '',
+        'Movel 4 CVP': '',
+        'Movel 5 Numero': '',
+        'Movel 5 Portado': '',
+        'Movel 5 CVP': '',
         'Tipo Venda Energia': '',
         'Paga Operador': '',
         'Data Pagamento': '',
         'CPE': '',
-        'Pot\u00EAncia': '',
+        'Potencia': '',
         'CUI': '',
-        'Escal\u00E3o': '',
+        'Escalao': '',
         'Tipo Entrada': '',
         'Status': '',
-        'N\u00BA Requisi\u00E7\u00E3o': '',
-        'Observa\u00E7\u00F5es': ''
+        'Nr Requisicao': '',
+        'Observacoes': ''
       }];
 
       const ws = XLSX.utils.json_to_sheet(templateData);
