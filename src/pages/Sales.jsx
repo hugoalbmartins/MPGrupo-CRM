@@ -77,6 +77,7 @@ const Sales = ({ user }) => {
   const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [skipEmail, setSkipEmail] = useState(false);
   const [operatorCommissions, setOperatorCommissions] = useState([]);
   const [availableServiceTypes, setAvailableServiceTypes] = useState([]);
   const [availableActivationTypes, setAvailableActivationTypes] = useState([]);
@@ -166,7 +167,7 @@ const Sales = ({ user }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, forceSkipEmail = false) => {
     e.preventDefault();
 
     if (!formData.partner_id) {
@@ -286,6 +287,7 @@ const Sales = ({ user }) => {
 
     try {
       const submitData = { ...formData };
+      if (skipEmail || forceSkipEmail) submitData.is_bulk_import = true;
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
       if (submitData.current_monthly_fee) submitData.current_monthly_fee = parseFloat(submitData.current_monthly_fee);
       if (submitData.contracted_monthly_fee) submitData.contracted_monthly_fee = parseFloat(submitData.contracted_monthly_fee);
@@ -326,6 +328,7 @@ const Sales = ({ user }) => {
         if (result.warnings) {
           setValidationWarnings(result.warnings);
           setPendingSubmit(true);
+          if (skipEmail || forceSkipEmail) setSkipEmail(true);
           return;
         }
 
@@ -336,6 +339,7 @@ const Sales = ({ user }) => {
         toast.success("Venda criada com sucesso!");
         setDialogOpen(false);
         resetForm();
+        setSkipEmail(false);
         navigate('/dashboard');
       } else {
         const createdSale = await salesService.create(submitData, uploadFiles);
@@ -349,6 +353,7 @@ const Sales = ({ user }) => {
         resetForm();
         setValidationWarnings([]);
         setPendingSubmit(false);
+        setSkipEmail(false);
         navigate('/dashboard');
       }
     } catch (error) {
@@ -1256,6 +1261,8 @@ const Sales = ({ user }) => {
             setUploadFiles={setUploadFiles}
             fetchOperatorCommissions={fetchOperatorCommissions}
             user={user}
+            skipEmail={skipEmail}
+            setSkipEmail={setSkipEmail}
           />
         </div>
       </motion.div>

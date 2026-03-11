@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, CircleAlert as AlertCircle, Trash2, Info } from 'lucide-react';
+import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, CircleAlert as AlertCircle, Trash2, Info, MailX } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,7 +54,9 @@ const SaleFormDialog = ({
   uploadFiles,
   setUploadFiles,
   fetchOperatorCommissions,
-  user
+  user,
+  skipEmail,
+  setSkipEmail
 }) => {
   const [pendingFile, setPendingFile] = useState(null);
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
@@ -123,12 +125,12 @@ const SaleFormDialog = ({
     setUploadFiles(uploadFiles.filter((_, i) => i !== index));
   };
 
-  const handleSubmitWithCheck = (e) => {
+  const handleSubmitWithCheck = (e, forceSkipEmail = false) => {
     if (pendingFile) {
       toast.warning(`Tem um ficheiro selecionado ("${pendingFile.name}") que nao foi adicionado. Clique em "Adicionar" ou remova a selecao antes de gravar.`);
       return;
     }
-    onSubmit(e);
+    onSubmit(e, forceSkipEmail);
   };
 
   const mobileCount = parseInt(formData.mobile_count) || 0;
@@ -1097,7 +1099,7 @@ const SaleFormDialog = ({
           </div>
 
           <div className="sticky bottom-0 z-10 bg-dark-850 border-t border-dark-700 px-4 sm:px-8 py-4 sm:py-6">
-            <div className="flex justify-end gap-3 sm:gap-4">
+            <div className="flex flex-wrap justify-end gap-3 sm:gap-4">
               <Button
                 type="button"
                 onClick={() => { setPendingFile(null); onClose(); }}
@@ -1105,6 +1107,16 @@ const SaleFormDialog = ({
                 className="px-6 py-3 rounded-xl font-semibold bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
               >
                 Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={(e) => handleSubmitWithCheck(e, true)}
+                disabled={formData.operator_id && operatorCommissions.length === 0}
+                variant="outline"
+                className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500"
+              >
+                <MailX className="w-4 h-4 mr-2" />
+                Nao enviar email
               </Button>
               <Button
                 type="submit"
