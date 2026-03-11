@@ -1108,16 +1108,18 @@ const SaleFormDialog = ({
               >
                 Cancelar
               </Button>
-              <Button
-                type="button"
-                onClick={(e) => handleSubmitWithCheck(e, true)}
-                disabled={formData.operator_id && operatorCommissions.length === 0}
-                variant="outline"
-                className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500"
-              >
-                <MailX className="w-4 h-4 mr-2" />
-                Nao enviar email
-              </Button>
+              {(user?.role === 'admin' || user?.role === 'bo') && (
+                <Button
+                  type="button"
+                  onClick={(e) => handleSubmitWithCheck(e, true)}
+                  disabled={formData.operator_id && operatorCommissions.length === 0}
+                  variant="outline"
+                  className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500"
+                >
+                  <MailX className="w-4 h-4 mr-2" />
+                  Nao enviar email
+                </Button>
+              )}
               <Button
                 type="submit"
                 onClick={handleSubmitWithCheck}
