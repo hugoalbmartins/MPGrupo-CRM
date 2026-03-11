@@ -415,12 +415,14 @@ async function sendViaSMTP(
     await readFullResponse("DATA");
 
     const bodyBytes = encoder.encode(`${emailBody}\r\n.\r\n`);
-    const chunkSize = 131072;
+    const chunkSize = 524288;
     console.log(`[SMTP] Sending email body (${bodyBytes.length} bytes) in chunks of ${chunkSize}`);
+    const writePromises: Promise<number>[] = [];
     for (let offset = 0; offset < bodyBytes.length; offset += chunkSize) {
-      await conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length)));
+      writePromises.push(conn!.write(bodyBytes.subarray(offset, Math.min(offset + chunkSize, bodyBytes.length))));
     }
-    const dataSendTimeoutMs = Math.min(120000, Math.max(30000, Math.ceil(bodyBytes.length / 5000) * 1000));
+    await Promise.all(writePromises);
+    const dataSendTimeoutMs = Math.min(150000, Math.max(30000, Math.ceil(bodyBytes.length / 8000) * 1000));
     await readFullResponse("DATA END", dataSendTimeoutMs);
 
     try {
@@ -481,7 +483,7 @@ Deno.serve(async (req: Request) => {
 
     const attachmentParts: Array<{ filename: string; contentBase64: string; contentType: string }> = [];
     const attachmentLinks: Array<{ filename: string; url: string }> = [];
-    const MAX_INLINE_BYTES = 512 * 1024;
+    const MAX_INLINE_BYTES = 1 * 1024 * 1024;
 
     if (payload.attachments && payload.attachments.length > 0 && payload.sale_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
