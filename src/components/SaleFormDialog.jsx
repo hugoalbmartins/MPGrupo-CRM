@@ -1129,7 +1129,7 @@ const SaleFormDialog = ({
                   className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500 disabled:opacity-50"
                 >
                   <MailX className="w-4 h-4 mr-2" />
-                  Nao enviar email
+                  Criar sem envio de emails
                 </Button>
               )}
               <Button
