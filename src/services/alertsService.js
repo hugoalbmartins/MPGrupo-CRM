@@ -178,7 +178,8 @@ export const alertsService = {
       .from('alerts')
       .select('id')
       .overlaps('user_ids', [user.id])
-      .is('archived_at', null);
+      .is('archived_at', null)
+      .limit(10000);
 
     if (filter === 'unread') {
       query = query.not('read_by', 'cs', `{${user.id}}`);
@@ -192,12 +193,16 @@ export const alertsService = {
     if (!alerts || alerts.length === 0) return 0;
 
     const ids = alerts.map(a => a.id);
-    const { error: updateError } = await supabase
-      .from('alerts')
-      .update({ archived_at: new Date().toISOString() })
-      .in('id', ids);
 
-    if (updateError) throw updateError;
+    const batchSize = 500;
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      const { error: updateError } = await supabase
+        .from('alerts')
+        .update({ archived_at: new Date().toISOString() })
+        .in('id', batch);
+      if (updateError) throw updateError;
+    }
 
     return ids.length;
   },
