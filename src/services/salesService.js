@@ -125,6 +125,7 @@ export const salesService = {
         id: randomId,
         filename: file.name,
         path: filePath,
+        size: file.size,
         uploaded_at: new Date().toISOString(),
         uploaded_by: user.id
       });

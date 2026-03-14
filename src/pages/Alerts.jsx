@@ -204,6 +204,27 @@ const Alerts = ({ user }) => {
     }
   };
 
+  const handleArchive = async (alertIds) => {
+    const ids = Array.isArray(alertIds) ? alertIds : [alertIds];
+    setBulkLoading(true);
+    try {
+      if (selectMode === 'filter') {
+        const count = await alertsService.archiveAllByFilter(filter);
+        toast.success(`${count} alerta(s) arquivado(s)`);
+      } else {
+        await alertsService.archiveAlerts(ids);
+        toast.success(`${ids.length} alerta(s) arquivado(s)`);
+      }
+      setSelectedAlerts([]);
+      setSelectMode(null);
+      fetchAlerts();
+    } catch (error) {
+      toast.error("Erro ao arquivar alertas");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const getAlertIcon = (type) => {
     switch (type) {
       case 'new_sale':
@@ -406,6 +427,15 @@ const Alerts = ({ user }) => {
                   Marcar como Não Lido
                 </Button>
               )}
+              <Button
+                size="sm"
+                onClick={() => handleArchive(selectedAlerts)}
+                disabled={bulkLoading}
+                className="bg-dark-900 border border-dark-700 text-slate-300 hover:border-amber-500/30 hover:text-amber-300 gap-1"
+              >
+                <Archive className="w-4 h-4" />
+                Arquivar
+              </Button>
             </div>
           )}
         </div>
@@ -474,6 +504,18 @@ const Alerts = ({ user }) => {
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Ver Venda
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="bg-dark-900 border border-dark-700 text-slate-400 hover:border-amber-500/30 hover:text-amber-300 transition-all h-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleArchive([alert.id]);
+                          }}
+                          disabled={bulkLoading}
+                          title="Arquivar alerta"
+                        >
+                          <Archive className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>

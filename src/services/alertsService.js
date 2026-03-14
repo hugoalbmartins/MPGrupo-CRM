@@ -156,6 +156,53 @@ export const alertsService = {
     return toUpdate.length;
   },
 
+  async archiveAlerts(alertIds) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const ids = Array.isArray(alertIds) ? alertIds : [alertIds];
+
+    const { error } = await supabase
+      .from('alerts')
+      .update({ archived_at: new Date().toISOString() })
+      .in('id', ids)
+      .is('archived_at', null);
+
+    if (error) throw error;
+  },
+
+  async archiveAllByFilter(filter) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    let query = supabase
+      .from('alerts')
+      .select('id')
+      .overlaps('user_ids', [user.id])
+      .is('archived_at', null);
+
+    if (filter === 'unread') {
+      query = query.not('read_by', 'cs', `{${user.id}}`);
+    } else if (filter === 'read') {
+      query = query.contains('read_by', [user.id]);
+    }
+
+    const { data: alerts, error } = await query;
+    if (error) throw error;
+
+    if (!alerts || alerts.length === 0) return 0;
+
+    const ids = alerts.map(a => a.id);
+    const { error: updateError } = await supabase
+      .from('alerts')
+      .update({ archived_at: new Date().toISOString() })
+      .in('id', ids);
+
+    if (updateError) throw updateError;
+
+    return ids.length;
+  },
+
   subscribeToAlerts(callback) {
     const subscription = supabase
       .channel('alerts')

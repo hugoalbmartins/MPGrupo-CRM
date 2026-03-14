@@ -7,8 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const EXPIRY_DAYS = 45;
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const EXPIRY_DAYS_DEFAULT = 45;
+const EXPIRY_DAYS_LARGE = 15;
+const LARGE_FILE_THRESHOLD_BYTES = 5 * 1024 * 1024;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -21,11 +22,15 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - EXPIRY_DAYS);
-    const cutoffISO = cutoffDate.toISOString();
+    const now = new Date();
 
-    console.log(`Cleaning attachments uploaded before ${cutoffISO}`);
+    const cutoffDefault = new Date(now);
+    cutoffDefault.setDate(cutoffDefault.getDate() - EXPIRY_DAYS_DEFAULT);
+
+    const cutoffLarge = new Date(now);
+    cutoffLarge.setDate(cutoffLarge.getDate() - EXPIRY_DAYS_LARGE);
+
+    console.log(`Cleaning attachments: default cutoff=${cutoffDefault.toISOString()}, large-file cutoff=${cutoffLarge.toISOString()}`);
 
     const { data: sales, error: salesError } = await supabase
       .from("sales")
@@ -47,7 +52,10 @@ Deno.serve(async (req: Request) => {
         if (!att.uploaded_at) continue;
 
         const uploadedAt = new Date(att.uploaded_at);
-        if (uploadedAt < cutoffDate) {
+        const isLarge = att.size != null ? att.size > LARGE_FILE_THRESHOLD_BYTES : false;
+        const cutoff = isLarge ? cutoffLarge : cutoffDefault;
+
+        if (uploadedAt < cutoff) {
           if (att.path) {
             const { error: removeError } = await supabase.storage
               .from("sales-documents")
@@ -86,7 +94,10 @@ Deno.serve(async (req: Request) => {
           if (!att.uploaded_at) continue;
 
           const uploadedAt = new Date(att.uploaded_at);
-          if (uploadedAt < cutoffDate) {
+          const isLarge = att.size != null ? att.size > LARGE_FILE_THRESHOLD_BYTES : false;
+          const cutoff = isLarge ? cutoffLarge : cutoffDefault;
+
+          if (uploadedAt < cutoff) {
             if (att.path) {
               const { error: removeError } = await supabase.storage
                 .from("sales-documents")

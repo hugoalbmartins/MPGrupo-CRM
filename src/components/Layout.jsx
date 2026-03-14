@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell,
-  FileText, FileSpreadsheet, CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus, Banknote
-} from "lucide-react";
+import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet, SquareCheck as CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus, Banknote } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
@@ -192,7 +189,15 @@ const Layout = ({ children, user, onLogout }) => {
               className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
               style={{ boxShadow: '0 0 0 1px rgba(6, 182, 212, 0.3)' }}
             >
-              <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
+              <img
+                src="/mp_grupo.jpg"
+                alt="MP Grupo"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement.innerHTML = '<span style="color:#06b6d4;font-size:13px;font-weight:700;">MP</span>';
+                }}
+              />
             </div>
             {!sidebarCollapsed && (
               <motion.div
@@ -369,10 +374,18 @@ const Layout = ({ children, user, onLogout }) => {
         <div className="flex items-center justify-between px-4 py-3">
           <Link to="/dashboard" className="flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-lg overflow-hidden"
+              className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center"
               style={{ boxShadow: '0 0 0 1px rgba(6, 182, 212, 0.3)' }}
             >
-              <img src="/mp_grupo.jpg" alt="MP Grupo" className="w-full h-full object-cover" />
+              <img
+                src="/mp_grupo.jpg"
+                alt="MP Grupo"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement.innerHTML = '<span style="color:#06b6d4;font-size:12px;font-weight:700;">MP</span>';
+                }}
+              />
             </div>
             <div>
               <h1 className="text-sm font-bold text-white">
@@ -571,9 +584,9 @@ const Layout = ({ children, user, onLogout }) => {
           <div className="page-container min-h-full">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+              transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="content-wrapper"
             >
               {children}
