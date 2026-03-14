@@ -21,7 +21,7 @@ export const salesService = {
     let query = supabase
       .from('sales')
       .select(selectFields)
-      .order('date', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (currentUser.role === 'partner') {
       const { data: partner } = await supabase

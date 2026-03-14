@@ -62,7 +62,7 @@ const Sales = ({ user }) => {
   const [exportEndDate, setExportEndDate] = useState("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [sortField, setSortField] = useState("date");
+  const [sortField, setSortField] = useState("created_at");
   const [sortDirection, setSortDirection] = useState("desc");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -585,6 +585,11 @@ const Sales = ({ user }) => {
     if (aValue == null) aValue = '';
     if (bValue == null) bValue = '';
 
+    if (sortField === 'created_at' || sortField === 'date') {
+      const aTime = aValue ? new Date(aValue).getTime() : 0;
+      const bTime = bValue ? new Date(bValue).getTime() : 0;
+      return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
+    }
     if (typeof aValue === 'string') {
       return sortDirection === 'asc'
         ? aValue.localeCompare(bValue)
