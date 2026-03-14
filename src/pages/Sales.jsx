@@ -78,6 +78,7 @@ const Sales = ({ user }) => {
   const [validationWarnings, setValidationWarnings] = useState([]);
   const [pendingSubmit, setPendingSubmit] = useState(false);
   const [skipEmail, setSkipEmail] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [operatorCommissions, setOperatorCommissions] = useState([]);
   const [availableServiceTypes, setAvailableServiceTypes] = useState([]);
   const [availableActivationTypes, setAvailableActivationTypes] = useState([]);
@@ -170,6 +171,8 @@ const Sales = ({ user }) => {
 
   const handleSubmit = async (e, forceSkipEmail = false) => {
     e.preventDefault();
+
+    if (isSubmitting) return;
 
     if (!formData.partner_id) {
       toast.error("Selecione um parceiro!");
@@ -284,11 +287,18 @@ const Sales = ({ user }) => {
         toast.error("Servicos Adicionais sao obrigatorios para esta operadora!");
         return;
       }
+
+      if (uploadFiles.length === 0) {
+        toast.error("E obrigatorio adicionar pelo menos um anexo para vendas de energia!");
+        return;
+      }
     }
 
+    setIsSubmitting(true);
     try {
+      const shouldSkipEmail = skipEmail || forceSkipEmail;
       const submitData = { ...formData };
-      if (skipEmail || forceSkipEmail) submitData.is_bulk_import = true;
+      if (shouldSkipEmail) submitData.is_bulk_import = true;
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
       if (submitData.current_monthly_fee) submitData.current_monthly_fee = parseFloat(submitData.current_monthly_fee);
       if (submitData.contracted_monthly_fee) submitData.contracted_monthly_fee = parseFloat(submitData.contracted_monthly_fee);
@@ -329,25 +339,22 @@ const Sales = ({ user }) => {
         if (result.warnings) {
           setValidationWarnings(result.warnings);
           setPendingSubmit(true);
-          if (skipEmail || forceSkipEmail) setSkipEmail(true);
+          if (shouldSkipEmail) setSkipEmail(true);
           return;
-        }
-
-        if (result && result.id && energyPoints && energyPoints.length > 0) {
-          await energyPointsService.replacePointsForSale(result.id, energyPoints);
         }
 
         toast.success("Venda criada com sucesso!");
         setDialogOpen(false);
         resetForm();
         setSkipEmail(false);
+
+        if (result && result.id && energyPoints && energyPoints.length > 0) {
+          energyPointsService.replacePointsForSale(result.id, energyPoints).catch(() => {});
+        }
+
         navigate('/dashboard');
       } else {
         const createdSale = await salesService.create(submitData, uploadFiles);
-
-        if (createdSale && energyPoints && energyPoints.length > 0) {
-          await energyPointsService.replacePointsForSale(createdSale.id, energyPoints);
-        }
 
         toast.success("Venda criada com sucesso!");
         setDialogOpen(false);
@@ -355,6 +362,11 @@ const Sales = ({ user }) => {
         setValidationWarnings([]);
         setPendingSubmit(false);
         setSkipEmail(false);
+
+        if (createdSale && energyPoints && energyPoints.length > 0) {
+          energyPointsService.replacePointsForSale(createdSale.id, energyPoints).catch(() => {});
+        }
+
         navigate('/dashboard');
       }
     } catch (error) {
@@ -365,6 +377,8 @@ const Sales = ({ user }) => {
       } else {
         toast.error(errorMessage);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1270,6 +1284,7 @@ const Sales = ({ user }) => {
             user={user}
             skipEmail={skipEmail}
             setSkipEmail={setSkipEmail}
+            isSubmitting={isSubmitting}
           />
         </div>
       </motion.div>

@@ -482,7 +482,7 @@ Deno.serve(async (req: Request) => {
 
     const attachmentParts: Array<{ filename: string; contentBase64: string; contentType: string }> = [];
     const attachmentLinks: Array<{ filename: string; url: string }> = [];
-    const MAX_INLINE_BYTES = 10 * 1024 * 1024;
+    const MAX_INLINE_BYTES = 15 * 1024 * 1024;
 
     if (payload.attachments && payload.attachments.length > 0 && payload.sale_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

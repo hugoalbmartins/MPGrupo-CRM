@@ -56,7 +56,8 @@ const SaleFormDialog = ({
   fetchOperatorCommissions,
   user,
   skipEmail,
-  setSkipEmail
+  setSkipEmail,
+  isSubmitting
 }) => {
   const [pendingFile, setPendingFile] = useState(null);
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
@@ -97,12 +98,12 @@ const SaleFormDialog = ({
   )?.[1] || null;
 
   const handleFileSelected = (e) => {
-    const MAX_SIZE = 10 * 1024 * 1024;
+    const MAX_SIZE = 15 * 1024 * 1024;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     const oversized = files.filter(f => f.size > MAX_SIZE);
     if (oversized.length > 0) {
-      toast.error(`Ficheiro(s) excedem o limite de 10MB: ${oversized.map(f => f.name).join(', ')}`);
+      toast.error(`Ficheiro(s) excedem o limite de 15MB: ${oversized.map(f => f.name).join(', ')}`);
       e.target.value = '';
       return;
     }
@@ -1081,7 +1082,7 @@ const SaleFormDialog = ({
                         </div>
                       )}
 
-                      <p className="text-xs text-slate-500">Tamanho maximo por ficheiro: 10MB</p>
+                      <p className="text-xs text-slate-500">Tamanho maximo por ficheiro: 15MB</p>
                       {(() => {
                         const selectedPartner = partners.find(p => p.id === formData.partner_id);
                         const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
@@ -1112,9 +1113,9 @@ const SaleFormDialog = ({
                 <Button
                   type="button"
                   onClick={(e) => handleSubmitWithCheck(e, true)}
-                  disabled={formData.operator_id && operatorCommissions.length === 0}
+                  disabled={isSubmitting || (formData.operator_id && operatorCommissions.length === 0)}
                   variant="outline"
-                  className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500"
+                  className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500 disabled:opacity-50"
                 >
                   <MailX className="w-4 h-4 mr-2" />
                   Nao enviar email
@@ -1123,11 +1124,18 @@ const SaleFormDialog = ({
               <Button
                 type="submit"
                 onClick={handleSubmitWithCheck}
-                disabled={formData.operator_id && operatorCommissions.length === 0}
-                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25"
+                disabled={isSubmitting || (formData.operator_id && operatorCommissions.length === 0)}
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25 disabled:opacity-50"
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Criar Venda
+                {isSubmitting ? (
+                  <svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <Plus className="w-5 h-5 mr-2" />
+                )}
+                {isSubmitting ? 'A registar...' : 'Criar Venda'}
               </Button>
             </div>
           </div>
