@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -49,6 +49,7 @@ const Sales = ({ user }) => {
   const [operators, setOperators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const openNewSaleHandled = useRef(false);
   const [viewMode, setViewMode] = useState("sales");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPartner, setSelectedPartner] = useState("all");
@@ -137,8 +138,10 @@ const Sales = ({ user }) => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!loading && location.state?.openNewSale && partners.length > 0) {
+    if (!loading && location.state?.openNewSale && partners.length > 0 && !openNewSaleHandled.current) {
+      openNewSaleHandled.current = true;
       const { partnerId } = location.state;
+      resetForm();
       if (partnerId) {
         setFormData(prev => ({ ...prev, partner_id: partnerId }));
       }
@@ -1281,7 +1284,7 @@ const Sales = ({ user }) => {
 
           <SaleFormDialog
             isOpen={dialogOpen}
-            onClose={() => setDialogOpen(false)}
+            onClose={() => { setDialogOpen(false); resetForm(); }}
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleSubmit}
