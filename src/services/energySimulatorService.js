@@ -527,28 +527,52 @@ export const energySimulatorService = {
 
         const campanhaElet = detalhesCalculo.eletricidade?.campanhaAplicavel ? detalhesCalculo.eletricidade?.campanha : null;
         const campanhaGas = detalhesCalculo.gas?.campanhaAplicavel ? detalhesCalculo.gas?.campanha : null;
-        const descontoMensalCampanha = parseFloat(campanhaElet?.desconto_mensal_temporario || 0) + parseFloat(campanhaGas?.desconto_mensal_temporario || 0);
-        const duracaoCampanha = campanhaElet?.duracao_meses_desconto || campanhaGas?.duracao_meses_desconto || 0;
+        const descontoMensalElet = parseFloat(campanhaElet?.desconto_mensal_temporario || 0);
+        const descontoMensalGas = parseFloat(campanhaGas?.desconto_mensal_temporario || 0);
+        const descontoMensalCampanha = descontoMensalElet + descontoMensalGas;
+        const duracaoCampanhaElet = parseInt(campanhaElet?.duracao_meses_desconto || 0);
+        const duracaoCampanhaGas = parseInt(campanhaGas?.duracao_meses_desconto || 0);
+        const duracaoCampanha = duracaoCampanhaElet || duracaoCampanhaGas || 0;
 
+        const custoComCampanhaElet = custoNovaOperadora.eletricidade - descontoMensalElet;
+        const custoComCampanhaGas = custoNovaOperadora.gas - descontoMensalGas;
         const custoComCampanha = custoNovaOperadora.total - descontoMensalCampanha;
+        const poupancaComCampanhaElet = (custoAtual.eletricidade || 0) - custoComCampanhaElet;
+        const poupancaComCampanhaGas = (custoAtual.gas || 0) - custoComCampanhaGas;
         const poupancaComCampanha = custoAtual.total - custoComCampanha;
 
         const poupanca = custoAtual.total - custoNovaOperadora.total;
+        const poupancaElet = (custoAtual.eletricidade || 0) - custoNovaOperadora.eletricidade;
+        const poupancaGas = (custoAtual.gas || 0) - custoNovaOperadora.gas;
+
+        const poupancaAnualComCampanha = poupanca * 12
+          + (descontoMensalElet * duracaoCampanhaElet)
+          + (descontoMensalGas * duracaoCampanhaGas);
 
         resultados.push({
           operadora,
           custoAtual,
           custoNovaOperadora,
           custoComCampanha,
+          custoComCampanhaElet,
+          custoComCampanhaGas,
           descontoMensalCampanha,
+          descontoMensalElet,
+          descontoMensalGas,
           duracaoCampanha,
+          duracaoCampanhaElet,
+          duracaoCampanhaGas,
           poupanca,
+          poupancaElet,
+          poupancaGas,
           poupancaMensal: poupanca,
           poupancaAnual: poupanca * 12,
           poupancaPercentual: custoAtual.total > 0 ? (poupanca / custoAtual.total) * 100 : 0,
           poupancaComCampanha,
+          poupancaComCampanhaElet,
+          poupancaComCampanhaGas,
           poupancaMensalComCampanha: poupancaComCampanha,
-          poupancaAnualComCampanha: poupancaComCampanha * 12,
+          poupancaAnualComCampanha,
           detalhesCalculo
         });
       }

@@ -240,8 +240,8 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
         doc.setFont(undefined, 'bold');
         if (resultado.poupancaMensal < 0) {
           doc.setTextColor(220, 38, 38);
-          doc.text(`Custo Adicional: +${formatCurrency(Math.abs(resultado.poupancaMensal))}`, col2X, yPos);
-          doc.text(`Custo Adicional Anual: +${formatCurrency(Math.abs(resultado.poupancaAnual))}`, col3X, yPos);
+          doc.text(`Acréscimo Mensal: +${formatCurrency(Math.abs(resultado.poupancaMensal))}`, col2X, yPos);
+          doc.text(`Acréscimo Anual: +${formatCurrency(Math.abs(resultado.poupancaAnual))}`, col3X, yPos);
         } else {
           doc.setTextColor(22, 163, 74);
           doc.text(`Poupança Mensal: ${formatCurrency(resultado.poupancaMensal)}`, col2X, yPos);
@@ -453,12 +453,18 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
           doc.setFont(undefined, 'normal');
           doc.setFontSize(8.5);
           doc.setTextColor(100, 50, 0);
-          doc.text(`Duração: ${resultado.duracaoCampanha} meses`, margin, yPos + 11);
+          if (resultado.descontoMensalElet > 0 && resultado.descontoMensalGas > 0) {
+            doc.text(`Eletricidade: ${formatCurrency(resultado.descontoMensalElet)}/mês × ${resultado.duracaoCampanhaElet} meses`, margin, yPos + 11);
+            doc.text(`Gás: ${formatCurrency(resultado.descontoMensalGas)}/mês × ${resultado.duracaoCampanhaGas} meses`, margin + (pageWidth - 2 * margin) / 2, yPos + 11);
+          } else {
+            doc.text(`Duração: ${resultado.duracaoCampanha} meses  |  Desconto adicional: ${formatCurrency(resultado.descontoMensalCampanha)}/mês`, margin, yPos + 11);
+          }
           doc.text(`Custo mensal com campanha: ${formatCurrency(resultado.custoComCampanha)}`, margin, yPos + 17);
-          doc.text(`Desconto adicional mensal: ${formatCurrency(resultado.descontoMensalCampanha)}`, margin + (pageWidth - 2 * margin) / 2, yPos + 17);
           doc.setFont(undefined, 'bold');
           doc.setTextColor(130, 60, 0);
-          doc.text(`Poupança c/ campanha: ${formatCurrency(resultado.poupancaMensalComCampanha)}/mês  |  Anual: ${formatCurrency(resultado.poupancaAnualComCampanha)}`, margin, yPos + 25);
+          const labelCamp = resultado.poupancaMensalComCampanha >= 0 ? 'Poupança' : 'Acréscimo';
+          const sinalCamp = resultado.poupancaMensalComCampanha >= 0 ? '' : '+';
+          doc.text(`${labelCamp} c/ campanha: ${sinalCamp}${formatCurrency(Math.abs(resultado.poupancaMensalComCampanha))}/mês  |  Anual: ${sinalCamp}${formatCurrency(Math.abs(resultado.poupancaAnualComCampanha))}`, margin, yPos + 25);
           const descCamp = resultado.detalhesCalculo.eletricidade?.campanha?.descricao_desconto_temporario || resultado.detalhesCalculo.gas?.campanha?.descricao_desconto_temporario;
           if (descCamp) {
             doc.setFont(undefined, 'italic');
@@ -515,8 +521,126 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
   const hasFE = simulationData.formData?.tem_fatura_eletronica || simulationData.formData?.eletricidade?.tem_fatura_eletronica;
   const canImproveDiscount = !hasDD || !hasFE;
 
+  const tipoEnergia = simulationData.formData?.tipo_energia;
+  const cicloLabel = formDataEl.ciclo === 'simples' ? 'Simples' : formDataEl.ciclo === 'bi-horario' ? 'Bi-horário' : formDataEl.ciclo === 'tri-horario' ? 'Tri-horário' : formDataEl.ciclo || '';
+  const escalaoLabel = formDataGas.escalao ? `Escalão ${formDataGas.escalao}` : null;
+  const condicoes = [];
+  if (hasDD) condicoes.push('Débito Direto');
+  if (hasFE) condicoes.push('Fatura Eletrónica');
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className="border-white/10 bg-dark-800/50 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-dark-300 font-medium">Dados Inseridos pelo Cliente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(tipoEnergia === 'eletricidade' || tipoEnergia === 'dual') && (
+                <div className="bg-dark-700/30 p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-semibold text-blue-400 mb-2">Eletricidade</p>
+                  {formDataEl.operadora_atual && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Operadora atual</span>
+                      <span className="text-white font-medium">{formDataEl.operadora_atual}</span>
+                    </div>
+                  )}
+                  {formDataEl.potencia && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Potência</span>
+                      <span className="text-white font-medium">{formDataEl.potencia} kVA</span>
+                    </div>
+                  )}
+                  {cicloLabel && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Ciclo</span>
+                      <span className="text-white font-medium">{cicloLabel}</span>
+                    </div>
+                  )}
+                  {formDataEl.dias && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Dias</span>
+                      <span className="text-white font-medium">{formDataEl.dias}</span>
+                    </div>
+                  )}
+                  {formDataEl.consumos?.energia > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Consumo</span>
+                      <span className="text-white font-medium">{formDataEl.consumos.energia} kWh</span>
+                    </div>
+                  )}
+                  {formDataEl.consumos?.vazio > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Consumo Vazio</span>
+                      <span className="text-white font-medium">{formDataEl.consumos.vazio} kWh</span>
+                    </div>
+                  )}
+                  {formDataEl.consumos?.fora_vazio > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Consumo Fora Vazio</span>
+                      <span className="text-white font-medium">{formDataEl.consumos.fora_vazio} kWh</span>
+                    </div>
+                  )}
+                  {formDataEl.consumos?.cheia > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Consumo Cheia</span>
+                      <span className="text-white font-medium">{formDataEl.consumos.cheia} kWh</span>
+                    </div>
+                  )}
+                  {formDataEl.consumos?.ponta > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Consumo Ponta</span>
+                      <span className="text-white font-medium">{formDataEl.consumos.ponta} kWh</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {(tipoEnergia === 'gas' || tipoEnergia === 'dual') && (
+                <div className="bg-dark-700/30 p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-semibold text-orange-400 mb-2">Gás Natural</p>
+                  {escalaoLabel && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Escalão</span>
+                      <span className="text-white font-medium">{escalaoLabel}</span>
+                    </div>
+                  )}
+                  {formDataGas.consumo_kwh && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Consumo</span>
+                      <span className="text-white font-medium">{formDataGas.consumo_kwh} kWh</span>
+                    </div>
+                  )}
+                  {formDataGas.dias && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Dias</span>
+                      <span className="text-white font-medium">{formDataGas.dias}</span>
+                    </div>
+                  )}
+                  {formDataGas.valor_diario && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-dark-400">Valor diário referência</span>
+                      <span className="text-white font-medium">{formDataGas.valor_diario} €/dia</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {condicoes.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {condicoes.map(c => (
+                  <span key={c} className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs px-2 py-1 rounded-full">{c}</span>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -682,31 +806,54 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                           <Gift className="w-4 h-4 text-amber-400" />
                           <span className="font-semibold text-amber-300 text-sm">Campanha Especial</span>
                         </div>
-                        <p className="text-sm text-amber-200">
-                          Durante <strong>{resultado.duracaoCampanha} meses</strong>, o custo mensal será de{' '}
-                          <strong className="text-amber-100">{formatCurrency(resultado.custoComCampanha)}</strong>
-                          {' '}(desconto adicional de <strong>{formatCurrency(resultado.descontoMensalCampanha)}/mês</strong>)
-                        </p>
+                        {resultado.descontoMensalElet > 0 && resultado.descontoMensalGas > 0 ? (
+                          <div className="text-sm text-amber-200 space-y-0.5">
+                            <p>Eletricidade: desconto de <strong>{formatCurrency(resultado.descontoMensalElet)}/mês</strong> durante <strong>{resultado.duracaoCampanhaElet} meses</strong></p>
+                            <p>Gás: desconto de <strong>{formatCurrency(resultado.descontoMensalGas)}/mês</strong> durante <strong>{resultado.duracaoCampanhaGas} meses</strong></p>
+                            <p>Custo total com campanha: <strong className="text-amber-100">{formatCurrency(resultado.custoComCampanha)}</strong></p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-amber-200">
+                            Durante <strong>{resultado.duracaoCampanha} meses</strong>, o custo mensal será de{' '}
+                            <strong className="text-amber-100">{formatCurrency(resultado.custoComCampanha)}</strong>
+                            {' '}(desconto adicional de <strong>{formatCurrency(resultado.descontoMensalCampanha)}/mês</strong>)
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
 
                   <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
                     <div className="text-right">
-                      {resultado.poupancaComCampanha < 0 ? (
+                      {resultado.descontoMensalCampanha > 0 ? (
+                        resultado.poupancaComCampanha < 0 ? (
+                          <>
+                            <p className="text-dark-400 text-sm mb-1">Acréscimo Mensal c/ Campanha</p>
+                            <p className="text-3xl font-bold text-red-400">+{formatCurrency(Math.abs(resultado.poupancaMensalComCampanha))}</p>
+                            <p className="text-dark-300 text-sm">
+                              Sem campanha: <span className="text-red-400 font-semibold">+{formatCurrency(Math.abs(resultado.poupancaMensal))}/mês</span>
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-dark-400 text-sm mb-1">Poupança c/ Campanha</p>
+                            <p className="text-3xl font-bold text-amber-400">{formatCurrency(resultado.poupancaMensalComCampanha)}</p>
+                            <p className="text-dark-300 text-sm">
+                              Sem campanha:{' '}
+                              {resultado.poupancaMensal >= 0 ? (
+                                <span className="text-green-400 font-semibold">{formatCurrency(resultado.poupancaMensal)}/mês</span>
+                              ) : (
+                                <span className="text-red-400 font-semibold">+{formatCurrency(Math.abs(resultado.poupancaMensal))}/mês (sem poupança)</span>
+                              )}
+                            </p>
+                          </>
+                        )
+                      ) : resultado.poupancaMensal < 0 ? (
                         <>
-                          <p className="text-dark-400 text-sm mb-1">Custo Adicional Mensal</p>
-                          <p className="text-3xl font-bold text-red-400">+{formatCurrency(Math.abs(resultado.poupancaMensalComCampanha))}</p>
+                          <p className="text-dark-400 text-sm mb-1">Acréscimo Mensal</p>
+                          <p className="text-3xl font-bold text-red-400">+{formatCurrency(Math.abs(resultado.poupancaMensal))}</p>
                           <p className="text-dark-300 text-sm">
-                            Anual: <span className="text-red-400 font-semibold">+{formatCurrency(Math.abs(resultado.poupancaAnualComCampanha))}</span>
-                          </p>
-                        </>
-                      ) : resultado.descontoMensalCampanha > 0 ? (
-                        <>
-                          <p className="text-dark-400 text-sm mb-1">Poupança c/ Campanha</p>
-                          <p className="text-3xl font-bold text-amber-400">{formatCurrency(resultado.poupancaMensalComCampanha)}</p>
-                          <p className="text-dark-300 text-sm">
-                            Sem campanha: <span className={resultado.poupancaMensal >= 0 ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>{resultado.poupancaMensal >= 0 ? formatCurrency(resultado.poupancaMensal) : `+${formatCurrency(Math.abs(resultado.poupancaMensal))}`}/mês</span>
+                            Anual: <span className="text-red-400 font-semibold">+{formatCurrency(Math.abs(resultado.poupancaAnual))}</span>
                           </p>
                         </>
                       ) : (
@@ -887,10 +1034,23 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                               <div>
                                 <h5 className="font-semibold text-amber-300 mb-2">Campanha Especial Disponível!</h5>
                                 <div className="text-sm text-amber-200 space-y-1">
-                                  <p>Desconto adicional: <strong>{formatCurrency(resultado.descontoMensalCampanha)}/mês</strong></p>
-                                  <p>Duração: <strong>{resultado.duracaoCampanha} meses</strong></p>
+                                  {resultado.descontoMensalElet > 0 && resultado.descontoMensalGas > 0 ? (
+                                    <>
+                                      <p>Desconto eletricidade: <strong>{formatCurrency(resultado.descontoMensalElet)}/mês</strong> durante <strong>{resultado.duracaoCampanhaElet} meses</strong></p>
+                                      <p>Desconto gás: <strong>{formatCurrency(resultado.descontoMensalGas)}/mês</strong> durante <strong>{resultado.duracaoCampanhaGas} meses</strong></p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p>Desconto adicional: <strong>{formatCurrency(resultado.descontoMensalCampanha)}/mês</strong></p>
+                                      <p>Duração: <strong>{resultado.duracaoCampanha} meses</strong></p>
+                                    </>
+                                  )}
                                   <p>Custo mensal com campanha: <strong className="text-amber-100">{formatCurrency(resultado.custoComCampanha)}</strong></p>
-                                  <p>Poupança com campanha: <strong className="text-amber-100">{formatCurrency(resultado.poupancaMensalComCampanha)}/mês</strong></p>
+                                  {resultado.poupancaMensalComCampanha >= 0 ? (
+                                    <p>Poupança com campanha: <strong className="text-amber-100">{formatCurrency(resultado.poupancaMensalComCampanha)}/mês</strong></p>
+                                  ) : (
+                                    <p>Acréscimo com campanha: <strong className="text-red-300">+{formatCurrency(Math.abs(resultado.poupancaMensalComCampanha))}/mês</strong></p>
+                                  )}
                                   {(resultado.detalhesCalculo.eletricidade?.campanha?.descricao_desconto_temporario || resultado.detalhesCalculo.gas?.campanha?.descricao_desconto_temporario) && (
                                     <p className="italic opacity-80">{resultado.detalhesCalculo.eletricidade?.campanha?.descricao_desconto_temporario || resultado.detalhesCalculo.gas?.campanha?.descricao_desconto_temporario}</p>
                                   )}
