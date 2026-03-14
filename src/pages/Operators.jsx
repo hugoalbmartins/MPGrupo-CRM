@@ -1029,21 +1029,44 @@ const Operators = ({ user }) => {
                     {editOperatorData.requires_additional_services && (
                       <div className="ml-6 space-y-2">
                         <p className="text-xs text-slate-500">Adicione os serviços adicionais disponíveis para esta operadora. Aparecerão como picklist na criação de venda.</p>
-                        {(editOperatorData.additional_services_list || []).map((service, idx) => (
-                          <div key={idx} className="flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2">
-                            <span className="text-sm text-white flex-1 truncate">{service}</span>
-                            <button
-                              type="button"
-                              onClick={() => setEditOperatorData(prev => ({
-                                ...prev,
-                                additional_services_list: prev.additional_services_list.filter((_, i) => i !== idx)
-                              }))}
-                              className="text-red-400 hover:text-red-300 shrink-0"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
+                        {(editOperatorData.additional_services_list || []).map((service, idx) => {
+                          const svc = typeof service === 'string' ? { name: service, applies_to: 'todos' } : service;
+                          const isEnergia = selectedOperator?.scope === 'energia';
+                          return (
+                            <div key={idx} className="flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2">
+                              <span className="text-sm text-white flex-1 truncate">{svc.name}</span>
+                              {isEnergia && (
+                                <select
+                                  value={svc.applies_to || 'todos'}
+                                  onChange={(e) => setEditOperatorData(prev => ({
+                                    ...prev,
+                                    additional_services_list: prev.additional_services_list.map((s, i) => {
+                                      if (i !== idx) return s;
+                                      const base = typeof s === 'string' ? { name: s } : { ...s };
+                                      return { ...base, applies_to: e.target.value };
+                                    })
+                                  }))}
+                                  className="text-xs bg-dark-800 border border-dark-600 rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-cyber-500 shrink-0"
+                                >
+                                  <option value="todos">Todos</option>
+                                  <option value="eletricidade">Eletricidade</option>
+                                  <option value="gas">Gás</option>
+                                  <option value="dual">Dual</option>
+                                </select>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setEditOperatorData(prev => ({
+                                  ...prev,
+                                  additional_services_list: prev.additional_services_list.filter((_, i) => i !== idx)
+                                }))}
+                                className="text-red-400 hover:text-red-300 shrink-0"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          );
+                        })}
                         <div className="flex gap-2">
                           <Input
                             type="text"
@@ -1054,10 +1077,11 @@ const Operators = ({ user }) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
                                 const name = newServiceName.trim();
-                                if (name && !(editOperatorData.additional_services_list || []).includes(name)) {
+                                const existing = (editOperatorData.additional_services_list || []).map(s => typeof s === 'string' ? s : s.name);
+                                if (name && !existing.includes(name)) {
                                   setEditOperatorData(prev => ({
                                     ...prev,
-                                    additional_services_list: [...(prev.additional_services_list || []), name]
+                                    additional_services_list: [...(prev.additional_services_list || []), { name, applies_to: 'todos' }]
                                   }));
                                   setNewServiceName("");
                                 }
@@ -1070,10 +1094,11 @@ const Operators = ({ user }) => {
                             size="sm"
                             onClick={() => {
                               const name = newServiceName.trim();
-                              if (name && !(editOperatorData.additional_services_list || []).includes(name)) {
+                              const existing = (editOperatorData.additional_services_list || []).map(s => typeof s === 'string' ? s : s.name);
+                              if (name && !existing.includes(name)) {
                                 setEditOperatorData(prev => ({
                                   ...prev,
-                                  additional_services_list: [...(prev.additional_services_list || []), name]
+                                  additional_services_list: [...(prev.additional_services_list || []), { name, applies_to: 'todos' }]
                                 }));
                                 setNewServiceName("");
                               }
