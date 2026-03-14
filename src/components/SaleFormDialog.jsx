@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, CircleAlert as AlertCircle, Trash2, Info, MailX } from 'lucide-react';
+import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, CircleAlert as AlertCircle, Trash2, Info, MailX, TriangleAlert } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -865,6 +865,37 @@ const SaleFormDialog = ({
                                 })}
                               </div>
                             )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-dark-700">
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            id="tratar_oop"
+                            checked={formData.tratar_oop || false}
+                            onChange={(e) => setFormData({ ...formData, tratar_oop: e.target.checked })}
+                            className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                          />
+                          <Label htmlFor="tratar_oop" className="cursor-pointer font-medium text-white">
+                            Tratar desligamento OOP?
+                          </Label>
+                        </div>
+                        {formData.tratar_oop && (
+                          <div className="mt-3 space-y-2">
+                            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                              <TriangleAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                              <p className="text-xs text-amber-300 leading-relaxed">
+                                O desligamento OOP só deve ser solicitado <strong>após a instalação do novo serviço</strong>.
+                              </p>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
+                              <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                              <p className="text-xs text-blue-300 leading-relaxed">
+                                <strong>Obrigatório:</strong> Anexar fatura OOP nos documentos desta venda.
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>

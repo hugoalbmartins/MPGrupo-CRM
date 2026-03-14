@@ -367,6 +367,7 @@ export const salesService = {
       fix_cvp: saleData.fix_ported ? (saleData.fix_cvp || null) : null,
       mobile_count: (saleData.activation_type === 'M4' || saleData.activation_type === 'Movel') ? (parseInt(saleData.mobile_count) || 0) : 0,
       mobile_numbers: (saleData.activation_type === 'M4' || saleData.activation_type === 'Movel') ? (saleData.mobile_numbers || []) : [],
+      tratar_oop: saleData.scope === 'telecomunicacoes' ? (saleData.tratar_oop || false) : false,
       calculated_commission: commission,
       attachments,
       is_bulk_import: saleData.is_bulk_import === true,
@@ -394,7 +395,7 @@ export const salesService = {
     if (!oldSale) throw new Error('Sale not found');
 
     const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
-    const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint'];
+    const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint', 'tratar_oop'];
     const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'fix_number', 'fix_operator', 'fix_cvp'];
 
     const updates = {};
@@ -717,6 +718,7 @@ export const salesService = {
       fix_cvp: sale.fix_cvp,
       mobile_count: sale.mobile_count,
       mobile_numbers: sale.mobile_numbers,
+      tratar_oop: sale.tratar_oop || false,
       observations: sale.observations,
       email_fields: sale.operator?.email_fields || null,
       voltage_type: sale.voltage_type,

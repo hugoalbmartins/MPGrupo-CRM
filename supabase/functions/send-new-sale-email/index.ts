@@ -70,6 +70,7 @@ interface SaleEmailPayload {
   from_smtp_user?: string | null;
   from_smtp_pass?: string | null;
   operator_requires_additional_services?: boolean;
+  tratar_oop?: boolean;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -180,6 +181,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           })() : ""}
           ${hasField(payload, 'direct_debit') && payload.has_direct_debit ? `<tr><td>Debito Direto:</td><td>Sim</td></tr>` : ""}
           ${hasField(payload, 'electronic_invoice') && payload.has_electronic_invoice ? `<tr><td>Fatura Eletronica:</td><td>Sim</td></tr>` : ""}
+          ${payload.tratar_oop ? `<tr><td>Desligamento OOP:</td><td style="color:#d97706; font-weight:600;">Sim (fatura OOP obrigatoria)</td></tr>` : ""}
           ` : ""}
 
           ${payload.scope === "energia" || payload.scope === "energias" ? `
