@@ -339,7 +339,7 @@ const SaleFormDialog = ({
                         </Label>
                         <Select
                           value={formData.energy_sale_type}
-                          onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: ''})}
+                          onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: '', additional_services: ''})}
                         >
                           <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                             <SelectValue placeholder="Selecione o tipo de adesão..." />
@@ -927,17 +927,20 @@ const SaleFormDialog = ({
 
                         {currentOperator?.requires_additional_services && (currentOperator?.additional_services_list || []).length > 0 && (
                           <div className="mt-4">
-                            <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais</Label>
+                            <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais *</Label>
                             <Select
                               value={formData.additional_services || ""}
-                              onValueChange={(v) => setFormData({...formData, additional_services: v === "__none__" ? "" : v})}
+                              onValueChange={(v) => setFormData({...formData, additional_services: v === "__none__" ? "Sem serviços adicionais" : v})}
                             >
                               <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="__none__">Nenhum</SelectItem>
-                                {(currentOperator.additional_services_list || []).map((service, idx) => {
+                                <SelectItem value="__none__">Sem serviços adicionais</SelectItem>
+                                {(currentOperator.additional_services_list || []).filter((service) => {
+                                  const applies = typeof service === 'string' ? 'todos' : (service.applies_to || 'todos');
+                                  return applies === 'todos' || applies === formData.energy_sale_type;
+                                }).map((service, idx) => {
                                   const name = typeof service === 'string' ? service : service.name;
                                   return <SelectItem key={idx} value={name}>{name}</SelectItem>;
                                 })}

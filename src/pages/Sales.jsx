@@ -280,6 +280,10 @@ const Sales = ({ user }) => {
       }
 
       const selectedEnergyOperator = operators.find(op => op.id === formData.operator_id);
+      if (selectedEnergyOperator?.requires_additional_services && (selectedEnergyOperator?.additional_services_list || []).length > 0 && !formData.additional_services?.trim()) {
+        toast.error("Serviços Adicionais são obrigatórios para esta operadora!");
+        return;
+      }
       if (selectedEnergyOperator?.requires_voltage_type && !formData.voltage_type) {
         toast.error("Tipo de Tensao e obrigatorio para esta operadora!");
         return;
