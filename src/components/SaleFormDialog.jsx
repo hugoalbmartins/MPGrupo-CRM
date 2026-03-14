@@ -930,13 +930,13 @@ const SaleFormDialog = ({
                             <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais *</Label>
                             <Select
                               value={formData.additional_services || ""}
-                              onValueChange={(v) => setFormData({...formData, additional_services: v === "__none__" ? "Sem serviços adicionais" : v})}
+                              onValueChange={(v) => setFormData({...formData, additional_services: v})}
                             >
                               <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="__none__">Sem serviços adicionais</SelectItem>
+                                <SelectItem value="Sem serviços adicionais">Sem serviços adicionais</SelectItem>
                                 {(currentOperator.additional_services_list || []).filter((service) => {
                                   const applies = typeof service === 'string' ? 'todos' : (service.applies_to || 'todos');
                                   return applies === 'todos' || applies === formData.energy_sale_type;

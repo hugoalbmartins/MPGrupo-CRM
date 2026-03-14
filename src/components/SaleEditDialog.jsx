@@ -720,14 +720,14 @@ const SaleEditDialog = ({
                         <div className="mt-4">
                           <FieldGroup label="Serviços Adicionais *">
                             <Select
-                              value={editFormData.additional_services || "Nenhum"}
+                              value={editFormData.additional_services || ""}
                               onValueChange={(v) => update('additional_services', v)}
                             >
                               <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Nenhum">Nenhum</SelectItem>
+                                <SelectItem value="Sem serviços adicionais">Sem serviços adicionais</SelectItem>
                                 {(currentOperator.additional_services_list || []).map(service => (
                                   <SelectItem key={service} value={service}>{service}</SelectItem>
                                 ))}
