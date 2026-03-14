@@ -165,8 +165,7 @@ export const alertsService = {
     const { error } = await supabase
       .from('alerts')
       .update({ archived_at: new Date().toISOString() })
-      .in('id', ids)
-      .is('archived_at', null);
+      .in('id', ids);
 
     if (error) throw error;
   },
