@@ -15,6 +15,14 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
   const formDataEl = simulationData.formData?.eletricidade || simulationData.formData || {};
   const formDataGas = simulationData.formData?.gas || simulationData.formData || {};
 
+  const allResults = todosResultados || resultados || [];
+  const melhorProposta3MesesId = allResults.length > 0
+    ? allResults.reduce((best, r) => r.poupanca3Meses > best.poupanca3Meses ? r : best, allResults[0]).operadora.id
+    : null;
+  const melhorProposta12MesesId = allResults.length > 0
+    ? allResults.reduce((best, r) => r.poupancaAnualComCampanha > best.poupancaAnualComCampanha ? r : best, allResults[0]).operadora.id
+    : null;
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-PT', {
       style: 'currency',
@@ -785,10 +793,13 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                         />
                       )}
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center flex-wrap gap-2 mb-1">
                           <h4 className="text-xl font-bold text-white">{resultado.operadora.nome}</h4>
-                          {index === 0 && resultado.poupancaComCampanha >= 0 && (
-                            <Badge className="bg-green-500 text-white">Melhor Opção</Badge>
+                          {resultado.operadora.id === melhorProposta3MesesId && resultado.poupanca3Meses >= 0 && (
+                            <Badge className="bg-blue-500 text-white text-xs">Melhor proposta nos próximos 3 meses</Badge>
+                          )}
+                          {resultado.operadora.id === melhorProposta12MesesId && resultado.poupancaAnualComCampanha >= 0 && (
+                            <Badge className="bg-green-600 text-white text-xs">Melhor proposta prolongada</Badge>
                           )}
                           {resultado.poupancaComCampanha < 0 && (
                             <Badge className="bg-red-600 text-white">Custo Superior</Badge>
@@ -837,8 +848,15 @@ const ResultsStep = ({ simulationData, onBack, onNewSimulation, user }) => {
                         ) : (
                           <>
                             <p className="text-dark-400 text-sm mb-1">Poupança c/ Campanha</p>
-                            <p className="text-3xl font-bold text-amber-400">{formatCurrency(resultado.poupancaMensalComCampanha)}</p>
+                            <p className="text-3xl font-bold text-amber-400">{formatCurrency(resultado.poupancaMensalComCampanha)}/mês</p>
                             <p className="text-dark-300 text-sm">
+                              {resultado.poupancaAnualComCampanha >= 0 ? (
+                                <>Anual c/ campanha: <span className="text-green-400 font-semibold">{formatCurrency(resultado.poupancaAnualComCampanha)}</span></>
+                              ) : (
+                                <>Acréscimo anual c/ campanha: <span className="text-red-400 font-semibold">+{formatCurrency(Math.abs(resultado.poupancaAnualComCampanha))}</span></>
+                              )}
+                            </p>
+                            <p className="text-dark-300 text-xs mt-0.5">
                               Sem campanha:{' '}
                               {resultado.poupancaMensal >= 0 ? (
                                 <span className="text-green-400 font-semibold">{formatCurrency(resultado.poupancaMensal)}/mês</span>

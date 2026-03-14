@@ -549,6 +549,10 @@ export const energySimulatorService = {
           + (descontoMensalElet * duracaoCampanhaElet)
           + (descontoMensalGas * duracaoCampanhaGas);
 
+        const poupanca3Meses =
+          (poupancaComCampanha * Math.min(3, duracaoCampanha)) +
+          (poupanca * Math.max(0, 3 - duracaoCampanha));
+
         resultados.push({
           operadora,
           custoAtual,
@@ -573,6 +577,7 @@ export const energySimulatorService = {
           poupancaComCampanhaGas,
           poupancaMensalComCampanha: poupancaComCampanha,
           poupancaAnualComCampanha,
+          poupanca3Meses,
           detalhesCalculo
         });
       }
