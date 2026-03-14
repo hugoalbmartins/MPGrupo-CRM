@@ -284,10 +284,6 @@ const Sales = ({ user }) => {
         toast.error("Tipo de Tensao e obrigatorio para esta operadora!");
         return;
       }
-      if (selectedEnergyOperator?.requires_additional_services && !formData.additional_services?.trim()) {
-        toast.error("Servicos Adicionais sao obrigatorios para esta operadora!");
-        return;
-      }
 
       if (uploadFiles.length === 0) {
         toast.error("E obrigatorio adicionar pelo menos um anexo para vendas de energia!");

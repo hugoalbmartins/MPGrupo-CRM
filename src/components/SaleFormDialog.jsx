@@ -927,19 +927,20 @@ const SaleFormDialog = ({
 
                         {currentOperator?.requires_additional_services && (currentOperator?.additional_services_list || []).length > 0 && (
                           <div className="mt-4">
-                            <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais *</Label>
+                            <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais</Label>
                             <Select
-                              value={formData.additional_services || "Nenhum"}
-                              onValueChange={(v) => setFormData({...formData, additional_services: v})}
+                              value={formData.additional_services || ""}
+                              onValueChange={(v) => setFormData({...formData, additional_services: v === "__none__" ? "" : v})}
                             >
                               <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                                 <SelectValue placeholder="Selecione..." />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Nenhum">Nenhum</SelectItem>
-                                {(currentOperator.additional_services_list || []).map(service => (
-                                  <SelectItem key={service} value={service}>{service}</SelectItem>
-                                ))}
+                                <SelectItem value="__none__">Nenhum</SelectItem>
+                                {(currentOperator.additional_services_list || []).map((service, idx) => {
+                                  const name = typeof service === 'string' ? service : service.name;
+                                  return <SelectItem key={idx} value={name}>{name}</SelectItem>;
+                                })}
                               </SelectContent>
                             </Select>
                           </div>
