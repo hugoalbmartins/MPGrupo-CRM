@@ -126,6 +126,9 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('requires_additional_services')) {
       updateData.requires_additional_services = settingsData.requires_additional_services;
     }
+    if (settingsData.hasOwnProperty('additional_services_list')) {
+      updateData.additional_services_list = settingsData.additional_services_list;
+    }
     if (settingsData.hasOwnProperty('notification_emails')) {
       updateData.notification_emails = settingsData.notification_emails;
     }
