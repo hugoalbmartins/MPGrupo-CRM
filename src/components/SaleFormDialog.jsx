@@ -139,15 +139,24 @@ const SaleFormDialog = ({
 
   const updateMobileNumber = (index, field, value) => {
     const updated = [...mobileNumbers];
-    if (!updated[index]) updated[index] = { number: '', ported: false, novo: false, cvp: '' };
+    if (!updated[index]) updated[index] = { number: '', ported: false, novo: false, cvp: '', tem_provisorios: false, numero_provisorio: '' };
     updated[index] = { ...updated[index], [field]: value };
     if (field === 'novo' && value === true) {
       updated[index].number = '';
       updated[index].ported = false;
       updated[index].cvp = '';
+      updated[index].tem_provisorios = false;
+      updated[index].numero_provisorio = '';
     }
     if (field === 'ported' && value === true) {
       updated[index].novo = false;
+    }
+    if (field === 'ported' && value === false) {
+      updated[index].tem_provisorios = false;
+      updated[index].numero_provisorio = '';
+    }
+    if (field === 'tem_provisorios' && value === false) {
+      updated[index].numero_provisorio = '';
     }
     setFormData({ ...formData, mobile_numbers: updated });
   };
@@ -155,7 +164,7 @@ const SaleFormDialog = ({
   const ensureMobileSlots = (count) => {
     const current = formData.mobile_numbers || [];
     const updated = [...current];
-    while (updated.length < count) updated.push({ number: '', ported: false, novo: false, cvp: '' });
+    while (updated.length < count) updated.push({ number: '', ported: false, novo: false, cvp: '', tem_provisorios: false, numero_provisorio: '' });
     return updated.slice(0, count);
   };
 
@@ -768,7 +777,7 @@ const SaleFormDialog = ({
                             {mobileCount > 0 && (
                               <div className="space-y-3">
                                 {Array.from({ length: mobileCount }).map((_, idx) => {
-                                  const mob = mobileNumbers[idx] || { number: '', ported: false, novo: false, cvp: '' };
+                                  const mob = mobileNumbers[idx] || { number: '', ported: false, novo: false, cvp: '', tem_provisorios: false, numero_provisorio: '' };
                                   return (
                                     <div key={idx} className="p-4 bg-dark-900/80 border border-dark-600 rounded-xl">
                                       <div className="flex items-center gap-3 mb-3">
@@ -825,6 +834,32 @@ const SaleFormDialog = ({
                                           </div>
                                         )}
                                       </div>
+                                      {mob.ported && !mob.novo && (
+                                        <div className="mt-3 pt-3 border-t border-dark-600 space-y-3">
+                                          <div className="flex items-center space-x-2">
+                                            <input
+                                              type="checkbox"
+                                              id={`mob_provisorios_${idx}`}
+                                              checked={mob.tem_provisorios || false}
+                                              onChange={(e) => updateMobileNumber(idx, 'tem_provisorios', e.target.checked)}
+                                              className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                                            />
+                                            <Label htmlFor={`mob_provisorios_${idx}`} className="cursor-pointer text-white text-sm">Já tem número provisório atribuído?</Label>
+                                          </div>
+                                          {mob.tem_provisorios && (
+                                            <div className="sm:w-1/3">
+                                              <Label className="text-xs font-semibold mb-1 text-slate-400">Número provisório</Label>
+                                              <Input
+                                                value={mob.numero_provisorio || ''}
+                                                onChange={(e) => updateMobileNumber(idx, 'numero_provisorio', e.target.value)}
+                                                placeholder="9XXXXXXXX"
+                                                maxLength={9}
+                                                className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}

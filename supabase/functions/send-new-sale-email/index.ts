@@ -17,6 +17,8 @@ interface MobileNumber {
   number: string;
   ported: boolean;
   cvp?: string;
+  tem_provisorios?: boolean;
+  numero_provisorio?: string;
 }
 
 interface SaleEmailPayload {
@@ -162,15 +164,16 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
             const total = payload.mobile_count || numbers.length;
             if (total === 0) return "";
             const rows = numbers.map((m, i) => {
-              let lineDesc = "";
               if (m.ported) {
-                lineDesc = `Portado: ${m.number || ""}`;
-                if (m.cvp && m.cvp !== "") lineDesc += ` — CVP: ${m.cvp}`;
+                const cvpPart = m.cvp && m.cvp !== "" ? ` — CVP: ${m.cvp}` : "";
+                const provisorioPart = m.tem_provisorios && m.numero_provisorio && m.numero_provisorio !== ""
+                  ? ` — Provisorio: ${m.numero_provisorio}`
+                  : m.tem_provisorios ? " — Provisorio: (pendente)" : "";
+                return `<tr><td style="padding-left:12px; color:#6b7280;">Cartao ${i + 1}:</td><td>Portado: ${m.number || ""}${cvpPart}${provisorioPart}</td></tr>`;
               } else {
-                lineDesc = "Novo";
-                if (m.number && m.number !== "") lineDesc += ` (${m.number})`;
+                const newDesc = m.number && m.number !== "" ? `Novo (${m.number})` : "Novo";
+                return `<tr><td style="padding-left:12px; color:#6b7280;">Cartao ${i + 1}:</td><td>${newDesc}</td></tr>`;
               }
-              return `<tr><td style="padding-left:12px; color:#6b7280;">Cartao ${i + 1}:</td><td>${lineDesc}</td></tr>`;
             });
             const header = `<tr><td>Cartoes Moveis:</td><td>${total} cartao${total > 1 ? "es" : ""}</td></tr>`;
             return header + (rows.length > 0 ? rows.join("") : "");
