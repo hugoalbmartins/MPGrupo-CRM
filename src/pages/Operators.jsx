@@ -97,6 +97,7 @@ const Operators = ({ user }) => {
     pays_electronic_invoice: false,
     requires_voltage_type: false,
     requires_additional_services: false,
+    additional_services_list: [],
     notification_emails: [],
     notification_user_ids: [],
     email_fields: null,
@@ -105,6 +106,7 @@ const Operators = ({ user }) => {
   });
   const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [newNotifEmail, setNewNotifEmail] = useState("");
+  const [newServiceName, setNewServiceName] = useState("");
   const [adminBoUsers, setAdminBoUsers] = useState([]);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -268,6 +270,7 @@ const Operators = ({ user }) => {
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
         requires_voltage_type: freshData.requires_voltage_type || false,
         requires_additional_services: freshData.requires_additional_services || false,
+        additional_services_list: freshData.additional_services_list || [],
         notification_emails: freshData.notification_emails || [],
         notification_user_ids: freshData.notification_user_ids || [],
         email_fields: initialEmailFields,
@@ -276,6 +279,7 @@ const Operators = ({ user }) => {
       });
       setShowEmailPassword(false);
       setNewNotifEmail("");
+      setNewServiceName("");
       setEditOperatorDialogOpen(true);
     } catch (error) {
       toast.error("Erro ao carregar dados da operadora");
@@ -1009,17 +1013,78 @@ const Operators = ({ user }) => {
                       Requer Tipo de Tensão (Monofásico / Trifásico)
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="edit_requires_additional_services"
-                      checked={editOperatorData.requires_additional_services}
-                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, requires_additional_services: e.target.checked }))}
-                      className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
-                    />
-                    <Label htmlFor="edit_requires_additional_services" className="cursor-pointer font-normal text-slate-300">
-                      Requer Serviços Adicionais
-                    </Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="edit_requires_additional_services"
+                        checked={editOperatorData.requires_additional_services}
+                        onChange={(e) => setEditOperatorData(prev => ({ ...prev, requires_additional_services: e.target.checked }))}
+                        className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                      />
+                      <Label htmlFor="edit_requires_additional_services" className="cursor-pointer font-normal text-slate-300">
+                        Ativar Serviços Adicionais
+                      </Label>
+                    </div>
+                    {editOperatorData.requires_additional_services && (
+                      <div className="ml-6 space-y-2">
+                        <p className="text-xs text-slate-500">Adicione os serviços adicionais disponíveis para esta operadora. Aparecerão como picklist na criação de venda.</p>
+                        {(editOperatorData.additional_services_list || []).map((service, idx) => (
+                          <div key={idx} className="flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2">
+                            <span className="text-sm text-white flex-1 truncate">{service}</span>
+                            <button
+                              type="button"
+                              onClick={() => setEditOperatorData(prev => ({
+                                ...prev,
+                                additional_services_list: prev.additional_services_list.filter((_, i) => i !== idx)
+                              }))}
+                              className="text-red-400 hover:text-red-300 shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            placeholder="Nome do serviço adicional"
+                            value={newServiceName}
+                            onChange={(e) => setNewServiceName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const name = newServiceName.trim();
+                                if (name && !(editOperatorData.additional_services_list || []).includes(name)) {
+                                  setEditOperatorData(prev => ({
+                                    ...prev,
+                                    additional_services_list: [...(prev.additional_services_list || []), name]
+                                  }));
+                                  setNewServiceName("");
+                                }
+                              }
+                            }}
+                            className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white placeholder:text-slate-500 flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => {
+                              const name = newServiceName.trim();
+                              if (name && !(editOperatorData.additional_services_list || []).includes(name)) {
+                                setEditOperatorData(prev => ({
+                                  ...prev,
+                                  additional_services_list: [...(prev.additional_services_list || []), name]
+                                }));
+                                setNewServiceName("");
+                              }
+                            }}
+                            className="bg-gradient-to-r from-cyber-500 to-cyber-600 hover:from-cyber-400 hover:to-cyber-500 text-white shadow-lg shadow-cyber-500/20"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

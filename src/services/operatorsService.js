@@ -232,6 +232,7 @@ export const operatorsService = {
         d2d_level: config.partner_type === 'D2D' ? (config.d2d_level || 'Nv1') : null,
         rev_level: (config.partner_type === 'REV' || config.partner_type === 'Rev+') ? (config.rev_level || 1) : null,
         power_value: config.tier_mode === 'by_power' ? (config.power_value || null) : null,
+        additional_service_name: config.service_type === 'additional_service' ? (config.additional_service_name || null) : null,
         created_by: user?.id,
         updated_by: user?.id
       };

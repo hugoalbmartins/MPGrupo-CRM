@@ -693,6 +693,52 @@ const SaleEditDialog = ({
                     </>
                   )}
                 </div>
+
+                {(() => {
+                  const currentOperator = operators.find(op => op.id === editFormData.operator_id);
+                  return (
+                    <>
+                      {currentOperator?.requires_voltage_type && (
+                        <div className="mt-4">
+                          <FieldGroup label="Tipo de Tensão *">
+                            <Select
+                              value={editFormData.voltage_type || ""}
+                              onValueChange={(v) => update('voltage_type', v)}
+                            >
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Monofásico">Monofásico</SelectItem>
+                                <SelectItem value="Trifásico">Trifásico</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FieldGroup>
+                        </div>
+                      )}
+                      {currentOperator?.requires_additional_services && (currentOperator?.additional_services_list || []).length > 0 && (
+                        <div className="mt-4">
+                          <FieldGroup label="Serviços Adicionais *">
+                            <Select
+                              value={editFormData.additional_services || "Nenhum"}
+                              onValueChange={(v) => update('additional_services', v)}
+                            >
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Nenhum">Nenhum</SelectItem>
+                                {(currentOperator.additional_services_list || []).map(service => (
+                                  <SelectItem key={service} value={service}>{service}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FieldGroup>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </FormSection>
             )}
 

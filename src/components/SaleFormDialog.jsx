@@ -925,16 +925,23 @@ const SaleFormDialog = ({
                           )}
                         </div>
 
-                        {currentOperator?.requires_additional_services && (
+                        {currentOperator?.requires_additional_services && (currentOperator?.additional_services_list || []).length > 0 && (
                           <div className="mt-4">
                             <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais *</Label>
-                            <Textarea
-                              value={formData.additional_services}
-                              onChange={(e) => setFormData({...formData, additional_services: e.target.value})}
-                              placeholder="Descreva os serviços adicionais contratados..."
-                              rows={3}
-                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white resize-none"
-                            />
+                            <Select
+                              value={formData.additional_services || "Nenhum"}
+                              onValueChange={(v) => setFormData({...formData, additional_services: v})}
+                            >
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Nenhum">Nenhum</SelectItem>
+                                {(currentOperator.additional_services_list || []).map(service => (
+                                  <SelectItem key={service} value={service}>{service}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         )}
                       </>

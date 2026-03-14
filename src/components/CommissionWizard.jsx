@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Trash2, Plus, Check, X, Edit2, Layers } from "lucide-react";
+import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { operatorsService } from "../services/operatorsService";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -85,6 +85,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const isTelecom = operator?.scope === 'telecomunicacoes';
   const isEnergy = operator?.scope === 'energia';
+  const additionalServicesList = operator?.additional_services_list || [];
+  const hasAdditionalServices = operator?.requires_additional_services && additionalServicesList.length > 0;
 
   const getServiceTypes = () => {
     if (isTelecom) return ['NI', 'MC', 'REFID'];
@@ -158,6 +160,55 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     newConfigs.splice(index, 1);
     setConfigs(newConfigs);
     toast.success('Configuracao removida');
+  };
+
+  const getAdditionalServiceConfig = (partnerType, d2dLevel, revLevel, clientType, serviceName) => {
+    return configs.find(c =>
+      c.partner_type === partnerType &&
+      c.service_type === 'additional_service' &&
+      c.additional_service_name === serviceName &&
+      c.client_type === clientType &&
+      (partnerType === 'D2D' ? c.d2d_level === d2dLevel : c.rev_level === revLevel)
+    );
+  };
+
+  const updateAdditionalServiceConfig = (partnerType, d2dLevel, revLevel, clientType, serviceName, value) => {
+    const existing = configs.findIndex(c =>
+      c.partner_type === partnerType &&
+      c.service_type === 'additional_service' &&
+      c.additional_service_name === serviceName &&
+      c.client_type === clientType &&
+      (partnerType === 'D2D' ? c.d2d_level === d2dLevel : c.rev_level === revLevel)
+    );
+    if (existing >= 0) {
+      const newConfigs = [...configs];
+      newConfigs[existing] = { ...newConfigs[existing], commission_value: parseFloat(value) || 0 };
+      setConfigs(newConfigs);
+    } else {
+      setConfigs(prev => [...prev, {
+        partner_type: partnerType,
+        d2d_level: partnerType === 'D2D' ? d2dLevel : null,
+        rev_level: (partnerType === 'REV' || partnerType === 'Rev+') ? revLevel : null,
+        client_type: clientType,
+        service_type: 'additional_service',
+        service_types: ['additional_service'],
+        additional_service_name: serviceName,
+        commission_mode: 'fixed_value',
+        commission_value: parseFloat(value) || 0,
+        min_sales: 0,
+        has_retention: false,
+        retention_percentage: 0,
+        retention_months: 0,
+        direct_debit_bonus: 0,
+        electronic_invoice_bonus: 0,
+        tier_mode: 'by_quantity',
+        monthly_value_min: 0,
+        monthly_value_max: 0,
+        refid_operation_type: null,
+        activation_type: null,
+        power_value: null,
+      }]);
+    }
   };
 
   const addD2DLevel = () => {
@@ -516,6 +567,68 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
           </Tabs>
         </div>
       </div>
+
+      {hasAdditionalServices && (
+        <div className="bg-dark-850 border border-white/[0.06] rounded-lg">
+          <div className="border-b border-dark-700 bg-dark-900 p-6 rounded-t-lg">
+            <h3 className="text-lg font-bold text-white">Comissões - Serviços Adicionais</h3>
+            <p className="text-xs text-slate-500 mt-1">Valor adicionado à comissão base quando o serviço adicional é selecionado na venda.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            {getPartnerTypes().map((partnerType) => {
+              const levels = partnerType === 'D2D' ? d2dLevels : (partnerType === 'REV' ? revLevels : revPlusLevels);
+              return (
+                <div key={partnerType} className="space-y-3">
+                  <h4 className="text-sm font-semibold text-slate-300 border-b border-dark-700 pb-2">{partnerType}</h4>
+                  {levels.map((level) => {
+                    const d2dLvl = partnerType === 'D2D' ? level : null;
+                    const revLvl = partnerType !== 'D2D' ? level : null;
+                    return (
+                      <div key={level} className="space-y-2">
+                        <p className="text-xs text-slate-500">{partnerType === 'D2D' ? level : `Nível ${level}`}</p>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-dark-700">
+                                <th className="text-left text-xs text-slate-500 font-medium py-2 pr-4">Serviço Adicional</th>
+                                {getClientTypes().map(ct => (
+                                  <th key={ct} className="text-left text-xs text-slate-500 font-medium py-2 pr-4 capitalize">{ct} (€)</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {additionalServicesList.map((serviceName) => (
+                                <tr key={serviceName} className="border-b border-dark-700/50">
+                                  <td className="py-2 pr-4 text-white text-sm">{serviceName}</td>
+                                  {getClientTypes().map(clientType => {
+                                    const cfg = getAdditionalServiceConfig(partnerType, d2dLvl, revLvl, clientType, serviceName);
+                                    return (
+                                      <td key={clientType} className="py-2 pr-4">
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          value={cfg ? cfg.commission_value : 0}
+                                          onChange={(e) => updateAdditionalServiceConfig(partnerType, d2dLvl, revLvl, clientType, serviceName, e.target.value)}
+                                          className="bg-dark-900 border-dark-700 focus:border-cyber-500 text-white w-28 h-8 text-sm"
+                                        />
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-between items-center pt-6 border-t-2 border-dark-700">
         <Button

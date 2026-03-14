@@ -21,6 +21,7 @@ import { operatorsService } from "../services/operatorsService";
 import { energyPointsService } from "../services/energyPointsService";
 import { recalculateAllCommissions, recalculateSaleCommission } from "../services/commissionRecalculator";
 import { supabase } from "../lib/supabase";
+import { generateSaleCode } from "../lib/utils-crm";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import SalesImport from "../components/SalesImport";
 import SaleFormDialog from "../components/SaleFormDialog";
@@ -869,7 +870,21 @@ const Sales = ({ user }) => {
         }
       }
 
-      await salesService.update(editingSale.id, editFormData);
+      const updatedData = { ...editFormData };
+
+      const originalPartnerId = editingSale.partner_id || null;
+      const newPartnerId = editFormData.partner_id === 'admin_commissioned' ? null : (editFormData.partner_id || null);
+
+      if (newPartnerId !== originalPartnerId) {
+        try {
+          const newCode = await generateSaleCode(newPartnerId, editFormData.date || editingSale.date, supabase);
+          updatedData.sale_code = newCode;
+        } catch (codeError) {
+          console.error('Error generating new sale code:', codeError);
+        }
+      }
+
+      await salesService.update(editingSale.id, updatedData);
 
       if (!editFormData.manual_commission) {
         try {

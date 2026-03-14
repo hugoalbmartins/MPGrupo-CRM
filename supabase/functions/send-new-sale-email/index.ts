@@ -67,6 +67,7 @@ interface SaleEmailPayload {
   from_email?: string | null;
   from_smtp_user?: string | null;
   from_smtp_pass?: string | null;
+  operator_requires_additional_services?: boolean;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -187,7 +188,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
           ${hasField(payload, 'direct_debit') ? `<tr><td>Debito Direto:</td><td>${payload.has_direct_debit ? "Sim" : "Nao"}</td></tr>` : ""}
           ${hasField(payload, 'electronic_invoice') ? `<tr><td>Fatura Eletronica:</td><td>${payload.has_electronic_invoice ? "Sim" : "Nao"}</td></tr>` : ""}
-          ${hasField(payload, 'additional_services') && payload.additional_services ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services}</td></tr>` : ""}
+          ${(payload.operator_requires_additional_services || (hasField(payload, 'additional_services') && payload.additional_services)) ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services || "Nenhum"}</td></tr>` : ""}
           ` : ""}
 
           ${payload.scope === "solar" ? `

@@ -522,7 +522,25 @@ export async function calculateCommission(operator, saleData, supabase) {
     bonuses += parseFloat(applicableTier.electronic_invoice_bonus || 0);
   }
 
-  return baseCommission + bonuses;
+  let additionalServiceBonus = 0;
+  if (saleData.additional_services && saleData.additional_services !== 'Nenhum') {
+    const { data: addlServiceConfig } = await supabase
+      .from('commission_configurations')
+      .select('commission_value')
+      .eq('operator_id', operator.id)
+      .eq('service_type', 'additional_service')
+      .eq('additional_service_name', saleData.additional_services)
+      .eq('client_type', clientType)
+      .eq('partner_type', partnerType)
+      .eq(partnerType === 'D2D' ? 'd2d_level' : 'rev_level', partnerType === 'D2D' ? d2dLevel : revLevel)
+      .maybeSingle();
+
+    if (addlServiceConfig) {
+      additionalServiceBonus = parseFloat(addlServiceConfig.commission_value || 0);
+    }
+  }
+
+  return baseCommission + bonuses + additionalServiceBonus;
 }
 
 export function formatCurrency(value) {

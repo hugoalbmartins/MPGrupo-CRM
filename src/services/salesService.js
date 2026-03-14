@@ -658,7 +658,7 @@ export const salesService = {
       .select(`
         *,
         partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
-        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields, email_envio, email_envio_password)
+        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields, email_envio, email_envio_password, requires_additional_services)
       `)
       .eq('id', saleId)
       .maybeSingle();
@@ -721,6 +721,7 @@ export const salesService = {
       email_fields: sale.operator?.email_fields || null,
       voltage_type: sale.voltage_type,
       additional_services: sale.additional_services,
+      operator_requires_additional_services: sale.operator?.requires_additional_services || false,
       from_email: fromEmail,
       from_smtp_user: fromEmail,
       from_smtp_pass: fromSmtpPass,
