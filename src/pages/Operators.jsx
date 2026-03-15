@@ -276,6 +276,8 @@ const Operators = ({ user }) => {
         email_fields: initialEmailFields,
         email_envio: freshData.email_envio || '',
         email_envio_password: freshData.email_envio_password || '',
+        refidelizacao_prazo: freshData.refidelizacao_prazo || '',
+        refidelizacao_unidade: freshData.refidelizacao_unidade || 'dias',
       });
       setShowEmailPassword(false);
       setNewNotifEmail("");
@@ -993,6 +995,40 @@ const Operators = ({ user }) => {
                     <Label htmlFor="edit_pays_electronic_invoice" className="cursor-pointer font-normal text-slate-300">
                       Paga adesão a Fatura Eletrónica
                     </Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-dark-700 pt-4">
+                <Label className="text-slate-300 text-sm font-semibold block mb-1">Prazo de Refidelização</Label>
+                <p className="text-xs text-slate-500 mb-3">Número de dias ou meses após a ativação a partir dos quais o cliente pode ser refidelizado. Deixe vazio para não gerar alertas de refidelização.</p>
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1">
+                    <Label htmlFor="edit_refidelizacao_prazo" className="text-slate-400 text-xs mb-1 block">Prazo</Label>
+                    <Input
+                      id="edit_refidelizacao_prazo"
+                      type="number"
+                      min="1"
+                      placeholder="Ex: 30"
+                      value={editOperatorData.refidelizacao_prazo}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, refidelizacao_prazo: e.target.value ? parseInt(e.target.value) : '' }))}
+                      className="bg-dark-900 border-dark-700 text-white"
+                    />
+                  </div>
+                  <div className="w-36">
+                    <Label className="text-slate-400 text-xs mb-1 block">Unidade</Label>
+                    <Select
+                      value={editOperatorData.refidelizacao_unidade}
+                      onValueChange={(v) => setEditOperatorData(prev => ({ ...prev, refidelizacao_unidade: v }))}
+                    >
+                      <SelectTrigger className="bg-dark-900 border-dark-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-dark-800 border-dark-700">
+                        <SelectItem value="dias" className="text-white hover:bg-dark-700">Dias</SelectItem>
+                        <SelectItem value="meses" className="text-white hover:bg-dark-700">Meses</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>

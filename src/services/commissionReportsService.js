@@ -197,5 +197,33 @@ export const commissionReportsService = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  async getPendingChargebacksForPartner(partnerId) {
+    const { data, error } = await supabase
+      .from('chargebacks')
+      .select(`
+        *,
+        sale:sales!chargebacks_sale_id_fkey(
+          id, sale_code, customer_name, client_nif, calculated_commission,
+          manual_commission, operator_name, request_number, activated_at
+        )
+      `)
+      .eq('partner_id', partnerId)
+      .is('commission_report_id', null)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async settleChargebacks(chargebackIds, commissionReportId) {
+    if (!chargebackIds || chargebackIds.length === 0) return;
+    const { error } = await supabase
+      .from('chargebacks')
+      .update({ commission_report_id: commissionReportId })
+      .in('id', chargebackIds);
+
+    if (error) throw error;
   }
 };

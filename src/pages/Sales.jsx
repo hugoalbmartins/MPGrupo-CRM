@@ -859,7 +859,11 @@ const Sales = ({ user }) => {
       fix_operator: sale.fix_operator || "",
       fix_cvp: sale.fix_cvp || "",
       observations: sale.observations || "",
-      attachments: sale.attachments || []
+      attachments: sale.attachments || [],
+      activated_at: sale.activated_at ? sale.activated_at.split('T')[0] : "",
+      refidelizacao_prazo: sale.refidelizacao_prazo || null,
+      refidelizacao_unidade: sale.refidelizacao_unidade || 'dias',
+      has_chargeback: Boolean(sale.has_chargeback),
     });
     setEditDialogOpen(true);
   };

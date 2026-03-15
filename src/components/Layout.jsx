@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet, SquareCheck as CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus, Banknote } from "lucide-react";
+import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet, SquareCheck as CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus, Banknote, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
@@ -88,6 +88,7 @@ const Layout = ({ children, user, onLogout }) => {
     { path: "/sales", label: "Vendas", icon: ShoppingCart, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
     { path: "/forms", label: "Formularios", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
     { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], badge: unreadCount, excludeD2D: true, section: "MENU PRINCIPAL" },
+    { path: "/refidelizacoes", label: "Refidelizacao", icon: RotateCcw, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
     { path: "/simulador-energia", label: "Simulador Energia", icon: Zap, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
   ];
 

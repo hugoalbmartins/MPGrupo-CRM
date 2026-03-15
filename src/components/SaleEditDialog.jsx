@@ -1,6 +1,6 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { TriangleAlert as AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap, Paperclip, Upload, X, Download } from "lucide-react";
+import { TriangleAlert as AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap, Paperclip, Upload, X, Download, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
+import { chargebackService } from "@/services/chargebackService";
 
 const CVP_REGEX = /^(\d{7}[A-Za-z]{4}\d{1}|\d{12})$/;
 function validateCVP(value) {
@@ -149,11 +150,53 @@ const SaleEditDialog = ({
     }
   };
 
+  const [chargebackDialogOpen, setChargebackDialogOpen] = useState(false);
+  const [chargebackForm, setChargebackForm] = useState({ reason: '', reason_date: '', percentage: 100 });
+  const [chargebackPaidReport, setChargebackPaidReport] = useState(null);
+  const [savingChargeback, setSavingChargeback] = useState(false);
+
   const saleOperator = operators.find(op => op.id === editFormData.operator_id);
   const canEditCommission = user?.role === 'admin';
   const hasAutomaticCommission = saleOperator?.commission_mode !== 'manual' && editFormData.scope !== 'solar';
   const commissionChanged = editFormData.manual_commission !== (editingSale?.manual_commission || '');
   const isRefid = editFormData.service_type === 'REFID' || editFormData.service_type === 'Refid';
+
+  const openChargebackDialog = async () => {
+    setChargebackForm({ reason: '', reason_date: '', percentage: 100 });
+    setChargebackPaidReport(null);
+    try {
+      const paidReport = await chargebackService.checkSaleInPaidReport(editingSale?.id);
+      setChargebackPaidReport(paidReport);
+    } catch {}
+    setChargebackDialogOpen(true);
+  };
+
+  const handleSaveChargeback = async () => {
+    if (!chargebackForm.reason.trim()) { toast.error('Motivo é obrigatório'); return; }
+    if (!chargebackForm.reason_date) { toast.error('Data do motivo é obrigatória'); return; }
+    if (!chargebackForm.percentage || chargebackForm.percentage <= 0 || chargebackForm.percentage > 100) {
+      toast.error('Percentagem deve ser entre 1 e 100'); return;
+    }
+    setSavingChargeback(true);
+    try {
+      const commissionAmount = parseFloat(editingSale?.calculated_commission || editingSale?.manual_commission || 0);
+      await chargebackService.create({
+        saleId: editingSale.id,
+        partnerId: editingSale.partner_id,
+        reason: chargebackForm.reason,
+        reasonDate: chargebackForm.reason_date,
+        percentage: parseFloat(chargebackForm.percentage),
+        commissionAmount,
+        createdBy: user?.id,
+      });
+      toast.success('Chargeback registado com sucesso');
+      setChargebackDialogOpen(false);
+    } catch (err) {
+      toast.error('Erro ao registar chargeback: ' + err.message);
+    } finally {
+      setSavingChargeback(false);
+    }
+  };
 
   const mobileNumbers = editFormData.mobile_numbers || [];
   const mobileCount = parseInt(editFormData.mobile_count) || 0;
@@ -182,6 +225,7 @@ const SaleEditDialog = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden bg-dark-850 border border-cyber-500/10 flex flex-col p-0 min-w-0">
         <div className="sticky top-0 z-10 bg-dark-850 border-b border-dark-700 px-4 sm:px-8 py-4 sm:py-6">
@@ -809,6 +853,46 @@ const SaleEditDialog = ({
             </FormSection>
             )}
 
+            {(user?.role === 'admin' || user?.role === 'bo') && (
+            <FormSection icon={RotateCcw} title="Refidelização" gradient="from-emerald-500 to-emerald-600">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <FieldGroup label="Data de Ativação">
+                  <Input
+                    type="date"
+                    value={editFormData.activated_at ? editFormData.activated_at.split('T')[0] : ''}
+                    onChange={(e) => update('activated_at', e.target.value || null)}
+                    className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                  />
+                </FieldGroup>
+                <div />
+                <FieldGroup label="Prazo de Refidelização (override)" hint="Deixe vazio para usar o prazo definido na operadora">
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="Ex: 30"
+                    value={editFormData.refidelizacao_prazo || ''}
+                    onChange={(e) => update('refidelizacao_prazo', e.target.value ? parseInt(e.target.value) : null)}
+                    className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                  />
+                </FieldGroup>
+                <FieldGroup label="Unidade do Prazo">
+                  <Select
+                    value={editFormData.refidelizacao_unidade || 'dias'}
+                    onValueChange={(v) => update('refidelizacao_unidade', v)}
+                  >
+                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dias">Dias</SelectItem>
+                      <SelectItem value="meses">Meses</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldGroup>
+              </div>
+            </FormSection>
+            )}
+
             <FormSection icon={DollarSign} title="Comissão" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="col-span-1 sm:col-span-2">
@@ -901,18 +985,108 @@ const SaleEditDialog = ({
 
           {/* Actions */}
           <div className="sticky bottom-0 bg-dark-850 border-t border-dark-700 px-4 sm:px-8 py-4">
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800">
-                Cancelar
-              </Button>
-              <Button type="submit" className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white font-semibold hover:shadow-lg hover:shadow-cyber-500/25">
-                Guardar Alteracoes
-              </Button>
+            <div className="flex justify-between gap-3">
+              <div>
+                {(user?.role === 'admin' || user?.role === 'bo') && editFormData.status === 'Ativo' && !editingSale?.has_chargeback && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openChargebackDialog}
+                    className="bg-dark-900 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-400 gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Registar Chargeback
+                  </Button>
+                )}
+                {editingSale?.has_chargeback && (
+                  <span className="text-xs text-red-400 flex items-center gap-1">
+                    <RotateCcw className="w-3 h-3" />
+                    Chargeback registado
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800">
+                  Cancelar
+                </Button>
+                <Button type="submit" className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white font-semibold hover:shadow-lg hover:shadow-cyber-500/25">
+                  Guardar Alteracoes
+                </Button>
+              </div>
             </div>
           </div>
         </form>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={chargebackDialogOpen} onOpenChange={setChargebackDialogOpen}>
+      <DialogContent className="max-w-md bg-dark-850 border border-red-500/20">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <RotateCcw className="w-5 h-5 text-red-400" />
+            Registar Chargeback
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Venda: {editingSale?.sale_code} — {editingSale?.customer_name}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          {chargebackPaidReport && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300">
+              <AlertTriangle className="w-4 h-4 inline mr-1.5 mb-0.5" />
+              Esta venda já consta do auto {chargebackPaidReport.month}/{chargebackPaidReport.year} (v{chargebackPaidReport.version}) que foi pago. O chargeback será incluído no próximo auto de comissões.
+            </div>
+          )}
+          <div>
+            <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Motivo *</Label>
+            <Textarea
+              value={chargebackForm.reason}
+              onChange={(e) => setChargebackForm(prev => ({ ...prev, reason: e.target.value }))}
+              placeholder="Descreva o motivo do chargeback..."
+              rows={3}
+              className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Data do Motivo *</Label>
+            <Input
+              type="date"
+              value={chargebackForm.reason_date}
+              onChange={(e) => setChargebackForm(prev => ({ ...prev, reason_date: e.target.value }))}
+              className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Percentagem de Chargeback (%)</Label>
+            <Input
+              type="number"
+              min="1"
+              max="100"
+              step="0.01"
+              value={chargebackForm.percentage}
+              onChange={(e) => setChargebackForm(prev => ({ ...prev, percentage: parseFloat(e.target.value) || 100 }))}
+              className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white"
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              Valor a descontar: {((parseFloat(editingSale?.calculated_commission || editingSale?.manual_commission || 0)) * (chargebackForm.percentage / 100)).toFixed(2)} €
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="outline" onClick={() => setChargebackDialogOpen(false)} className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800">
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSaveChargeback}
+            disabled={savingChargeback}
+            className="bg-red-600 hover:bg-red-500 text-white font-semibold gap-2"
+          >
+            {savingChargeback ? 'A guardar...' : 'Confirmar Chargeback'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

@@ -30,6 +30,7 @@ const BOWebsite = lazy(() => import("./pages/BOWebsite.jsx"));
 const EnergySimulatorNew = lazy(() => import("./pages/EnergySimulatorNew.jsx"));
 const EnergySimulatorAdmin = lazy(() => import("./pages/EnergySimulatorAdmin.jsx"));
 const Advances = lazy(() => import("./pages/Advances.jsx"));
+const Refidelizacoes = lazy(() => import("./pages/Refidelizacoes.jsx"));
 
 export { supabase };
 
@@ -370,6 +371,7 @@ function App() {
                 <Route path="/forms" element={<Forms user={user} />} />
                 <Route path="/forms/:operatorId" element={<Forms user={user} />} />
                 <Route path="/simulador-energia" element={<EnergySimulatorNew user={user} />} />
+                <Route path="/refidelizacoes" element={<Refidelizacoes user={user} />} />
                 {user?.role === "partner" && (
                   <Route path="/my-reports" element={<CommissionReportsPartner user={user} />} />
                 )}

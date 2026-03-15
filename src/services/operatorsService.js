@@ -88,6 +88,12 @@ export const operatorsService = {
     if (operatorData.hasOwnProperty('pays_electronic_invoice')) {
       updateData.pays_electronic_invoice = operatorData.pays_electronic_invoice;
     }
+    if (operatorData.hasOwnProperty('refidelizacao_prazo')) {
+      updateData.refidelizacao_prazo = operatorData.refidelizacao_prazo || null;
+    }
+    if (operatorData.hasOwnProperty('refidelizacao_unidade')) {
+      updateData.refidelizacao_unidade = operatorData.refidelizacao_unidade || 'dias';
+    }
 
     const { data, error } = await supabase
       .from('operators')

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { FileDown, Download, FileText, Trash2, Calendar, CheckCircle, Loader2, Banknote, X } from "lucide-react";
+import { FileDown, Download, FileText, Trash2, Calendar, CircleCheck as CheckCircle, Loader as Loader2, Banknote, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -219,6 +219,8 @@ const CommissionReports = ({ user }) => {
       return;
     }
 
+    const pendingChargebacks = await commissionReportsService.getPendingChargebacksForPartner(partnerId);
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error("Sessao expirada."); return; }
 
@@ -239,6 +241,7 @@ const CommissionReports = ({ user }) => {
     let totalCommissions = 0;
     let totalRetentions = 0;
     let totalRefunds = 0;
+    let totalChargebacks = 0;
 
     const salesRowsData = finalSales.map(sale => {
       const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
@@ -257,9 +260,11 @@ const CommissionReports = ({ user }) => {
     });
     refundSales.forEach(sale => { totalRefunds += parseFloat(sale.retention_value || 0); });
 
+    pendingChargebacks.forEach(cb => { totalChargebacks += parseFloat(cb.chargeback_amount || 0); });
+
     const totalAdvancesSettled = (settledAdvances || []).reduce((sum, a) => sum + a.settle_amount, 0);
 
-    const totalSemIVA = totalCommissions - totalRetentions - totalAdvancesSettled + totalRefunds;
+    const totalSemIVA = totalCommissions - totalRetentions - totalAdvancesSettled + totalRefunds - totalChargebacks;
     const iva = totalSemIVA * 0.23;
     const totalComIVA = totalSemIVA * 1.23;
 
@@ -304,6 +309,50 @@ const CommissionReports = ({ user }) => {
       </div>
     ` : '';
 
+    const chargebackTableHtml = pendingChargebacks.length > 0 ? `
+      <div style="margin-top:18px;">
+        <table style="width:100%;border-collapse:collapse;font-size:9px;">
+          <thead>
+            <tr>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">Nome Cliente</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">NIF</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">REQ</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">Motivo</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">Data Motivo</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">Comissao Orig. (\u20AC)</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">% CB</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">A Descontar (\u20AC)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pendingChargebacks.map(cb => `
+              <tr>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${cb.sale?.customer_name || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;font-family:monospace;">${cb.sale?.client_nif || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${cb.sale?.request_number || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${cb.reason || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${cb.reason_date ? new Date(cb.reason_date).toLocaleDateString('pt-PT') : '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;">\u20AC${parseFloat(cb.commission_amount || 0).toFixed(2)}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;">${parseFloat(cb.percentage || 0).toFixed(0)}%</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#b91c1c;font-weight:bold;">-\u20AC${parseFloat(cb.chargeback_amount || 0).toFixed(2)}</td>
+              </tr>
+            `).join('')}
+            <tr style="background:#fee2e2;font-weight:bold;">
+              <td colspan="7" style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">TOTAL CHARGEBACKS:</td>
+              <td style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">-\u20AC${totalChargebacks.toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    ` : '';
+
+    const chargebacksLineHtml = totalChargebacks > 0 ? `
+      <tr style="background-color:#fee2e2 !important;">
+        <td colspan="6" style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">Chargebacks:</td>
+        <td style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">-\u20AC${totalChargebacks.toFixed(2)}</td>
+      </tr>
+    ` : '';
+
     const advancesLineHtml = totalAdvancesSettled > 0 ? `
       <tr style="background-color:#fff3cd !important;">
         <td colspan="6" style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">Adiantamentos:</td>
@@ -340,6 +389,7 @@ const CommissionReports = ({ user }) => {
       accessToken: session.access_token,
       salesIds,
       settledAdvances: settledAdvances || [],
+      chargebackIds: pendingChargebacks.map(cb => cb.id),
     };
 
     const htmlContent = `
@@ -409,6 +459,7 @@ const CommissionReports = ({ user }) => {
               <td style="text-align:right;font-weight:bold;">\u20AC${totalCommissions.toFixed(2)}</td>
               <td style="text-align:right;font-weight:bold;color:#991b1b;">${totalRetentions > 0 ? '-\u20AC' + totalRetentions.toFixed(2) : '-'}</td>
             </tr>
+            ${chargebacksLineHtml}
             ${advancesLineHtml}
             ${retentionsLineHtml}
             ${refundsLineHtml}
@@ -420,6 +471,8 @@ const CommissionReports = ({ user }) => {
         </table>
 
         ${refundTableHtml}
+
+        ${chargebackTableHtml}
 
         <div class="iva-section" style="margin-top:10px;">
           <div style="font-size:10px;font-weight:bold;color:#475569;margin-bottom:6px;">
@@ -535,6 +588,24 @@ const CommissionReports = ({ user }) => {
                     headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
                     body: JSON.stringify(updateBody)
                   });
+                }
+              }
+
+              if (data.chargebackIds && data.chargebackIds.length > 0) {
+                btn.textContent = 'Liquidando chargebacks...';
+                const reportInsertResp = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&order=version.desc&limit=1\`, {
+                  headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\` }
+                });
+                const reportRows = await reportInsertResp.json();
+                const reportId = reportRows && reportRows[0] ? reportRows[0].id : null;
+                if (reportId) {
+                  for (const cbId of data.chargebackIds) {
+                    await fetch(\`\${data.supabaseUrl}/rest/v1/chargebacks?id=eq.\${cbId}\`, {
+                      method: 'PATCH',
+                      headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                      body: JSON.stringify({ commission_report_id: reportId })
+                    });
+                  }
                 }
               }
 

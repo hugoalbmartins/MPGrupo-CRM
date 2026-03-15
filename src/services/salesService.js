@@ -397,7 +397,7 @@ export const salesService = {
 
     const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
     const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint', 'tratar_oop'];
-    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'fix_number', 'fix_operator', 'fix_cvp'];
+    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'refidelizacao_prazo', 'refidelizacao_unidade'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
