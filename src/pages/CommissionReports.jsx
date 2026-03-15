@@ -19,13 +19,13 @@ const CommissionReports = ({ user }) => {
   const queryClient = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const [selectedPartner, setSelectedPartner] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterMonth, setFilterMonth] = useState(null);
-  const [availableMonths, setAvailableMonths] = useState([]);
-  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [partnerTypeFilter, setPartnerTypeFilter] = useState("all");
+  const [cutoffDate, setCutoffDate] = useState("");
 
   const [advanceDialog, setAdvanceDialog] = useState(null);
   const [advanceSelections, setAdvanceSelections] = useState({});
@@ -85,46 +85,13 @@ const CommissionReports = ({ user }) => {
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 
   useEffect(() => {
-    initializeFilters();
-  }, []);
-
-  useEffect(() => {
-    checkAvailableMonths();
-  }, [selectedYear]);
-
-  const initializeFilters = async () => {
-    const latestReport = await commissionReportsService.getLatestEmittedReport();
-    if (latestReport) {
-      setFilterYear(latestReport.year);
-      setFilterMonth(latestReport.month);
-    }
-  };
-
-  const checkAvailableMonths = async () => {
-    setCheckingAvailability(true);
-    const available = [];
-
-    for (let month = 1; month <= 12; month++) {
-      try {
-        const isAvailable = await commissionReportsService.isMonthAvailableForEmission(month, selectedYear);
-        if (isAvailable) {
-          available.push(month);
-        }
-      } catch (error) {
-        console.error(`Erro ao verificar mes ${month}:`, error);
+    commissionReportsService.getLatestEmittedReport().then(latestReport => {
+      if (latestReport) {
+        setFilterYear(latestReport.year);
+        setFilterMonth(latestReport.month);
       }
-    }
-
-    setAvailableMonths(available);
-
-    if (available.length > 0 && !selectedMonth) {
-      setSelectedMonth(available[available.length - 1]);
-    } else if (selectedMonth && !available.includes(selectedMonth)) {
-      setSelectedMonth(available[available.length - 1] || null);
-    }
-
-    setCheckingAvailability(false);
-  };
+    });
+  }, []);
 
   const handleValidatePayment = async (reportId) => {
     const ok = await confirm({
@@ -176,12 +143,11 @@ const CommissionReports = ({ user }) => {
   };
 
   const filterSalesByMonth = (sales) => {
+    const cutoff = cutoffDate ? new Date(cutoffDate + 'T23:59:59') : null;
+
     return sales.filter(sale => {
       const dateField = sale.activation_date || sale.paid_date || sale.date;
-
-      if (!dateField) {
-        return false;
-      }
+      if (!dateField) return false;
 
       let saleDate;
       if (typeof dateField === 'string' && dateField.includes('T')) {
@@ -191,11 +157,22 @@ const CommissionReports = ({ user }) => {
         saleDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
       }
 
+      if (cutoff) {
+        return saleDate <= cutoff;
+      }
+
       const saleMonth = saleDate.getMonth() + 1;
       const saleYear = saleDate.getFullYear();
-
       return saleMonth === selectedMonth && saleYear === selectedYear;
     });
+  };
+
+  const getFilteredPartners = () => {
+    if (partnerTypeFilter === 'all') return partners;
+    if (partnerTypeFilter === 'individual') {
+      return selectedPartner ? partners.filter(p => p.id === selectedPartner) : [];
+    }
+    return partners.filter(p => p.partner_type === partnerTypeFilter);
   };
 
   const openPrintWindow = async (partnerId, settledAdvances) => {
@@ -645,16 +622,8 @@ const CommissionReports = ({ user }) => {
   const printCommissionReport = async (partnerId) => {
     setLoading(true);
     try {
-      if (!selectedMonth) {
-        toast.error("Por favor, selecione um mes disponivel");
-        setLoading(false);
-        return;
-      }
-
-      const isAvailable = await commissionReportsService.isMonthAvailableForEmission(selectedMonth, selectedYear);
-      if (!isAvailable) {
-        const monthName = months.find(m => m.value === selectedMonth)?.label;
-        toast.error(`O mes de ${monthName}/${selectedYear} ainda nao esta disponivel para emissao. Autos so podem ser emitidos apos o dia 22 do mes seguinte.`);
+      if (!cutoffDate && !selectedMonth) {
+        toast.error("Por favor, selecione um mes ou data limite");
         setLoading(false);
         return;
       }
@@ -781,35 +750,33 @@ const CommissionReports = ({ user }) => {
   };
 
   const handleBulkPrintCommissionReports = async () => {
-    if (!selectedMonth) {
-      toast.error("Por favor, selecione um mes");
+    if (!cutoffDate && !selectedMonth) {
+      toast.error("Por favor, selecione um mes ou data limite");
       return;
     }
 
     setLoading(true);
     try {
-      const isAvailable = await commissionReportsService.isMonthAvailableForEmission(selectedMonth, selectedYear);
-      if (!isAvailable) {
-        const monthName = months.find(m => m.value === selectedMonth)?.label;
-        toast.error(`O mes de ${monthName}/${selectedYear} ainda nao esta disponivel para emissao. Autos so podem ser emitidos apos o dia 22 do mes seguinte.`);
+      const allSales = await salesService.getAll(null, true);
+      const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+      const filteredByPeriod = filterSalesByMonth(paidSales);
+
+      const filteredPartners = getFilteredPartners();
+      const filteredPartnerIds = new Set(filteredPartners.map(p => p.id));
+
+      const partnerIdsSales = [...new Set(filteredByPeriod.filter(s => filteredPartnerIds.has(s.partner_id)).map(s => s.partner_id))];
+
+      if (partnerIdsSales.length === 0) {
+        const periodLabel = cutoffDate ? `até ${new Date(cutoffDate).toLocaleDateString('pt-PT')}` : `${months.find(m => m.value === selectedMonth)?.label}/${selectedYear}`;
+        toast.error(`Nao existem parceiros com vendas elegiveis para emissao no periodo ${periodLabel}`);
         setLoading(false);
         return;
       }
 
-      const partnersWithSales = await commissionReportsService.getPartnersWithSalesForMonth(selectedMonth, selectedYear);
-
-      if (!partnersWithSales || partnersWithSales.length === 0) {
-        const monthName = months.find(m => m.value === selectedMonth)?.label;
-        toast.error(`Nao existem parceiros com vendas elegiveis para emissao no mes de ${monthName}/${selectedYear}`);
-        setLoading(false);
-        return;
-      }
-
-      const monthName = months.find(m => m.value === selectedMonth)?.label;
-      const partnersList = partnersWithSales.map(p => `${p.partner_name} (${p.sales_count} venda(s), €${parseFloat(p.total_commission).toFixed(2)})`).join(', ');
+      const periodLabel = cutoffDate ? `até ${new Date(cutoffDate).toLocaleDateString('pt-PT')}` : `${months.find(m => m.value === selectedMonth)?.label}/${selectedYear}`;
       const ok = await confirm({
-        title: `Emitir autos — ${monthName}/${selectedYear}`,
-        description: `Serao abertas ${partnersWithSales.length} janela(s) individuais para: ${partnersList}`,
+        title: `Emitir autos — ${periodLabel}`,
+        description: `Serao abertas ${partnerIdsSales.length} janela(s) individuais para ${partnerIdsSales.length} parceiro(s) com vendas no periodo.`,
         confirmLabel: 'Continuar',
         confirmVariant: 'success',
       });
@@ -819,21 +786,19 @@ const CommissionReports = ({ user }) => {
       }
 
       let openedWindows = 0;
-      for (const partnerData of partnersWithSales) {
+      for (const pid of partnerIdsSales) {
         await new Promise(resolve => setTimeout(resolve, 500));
-
         try {
-          await printCommissionReport(partnerData.partner_id);
+          await printCommissionReport(pid);
           openedWindows++;
         } catch (error) {
-          console.error(`Erro ao gerar auto para ${partnerData.partner_name}:`, error);
-          toast.error(`Erro ao gerar auto para ${partnerData.partner_name}`);
+          const pName = partners.find(p => p.id === pid)?.name || pid;
+          toast.error(`Erro ao gerar auto para ${pName}`);
         }
       }
 
       toast.success(`${openedWindows} janela(s) de auto aberta(s) com sucesso`);
     } catch (error) {
-      console.error("Erro ao emitir autos em massa:", error);
       toast.error("Erro ao emitir autos em massa: " + error.message);
     } finally {
       setLoading(false);
@@ -1027,180 +992,150 @@ const CommissionReports = ({ user }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-dark-850 border border-white/[0.06] hover:scale-[1.01] transition-transform duration-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <FileDown className="w-5 h-5 text-cyber-400" />
-              Auto Individual
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Gere auto de comissoes para um parceiro especifico
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <Card className="bg-dark-850 border border-white/[0.06]">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-white">
+            <FileDown className="w-5 h-5 text-cyber-400" />
+            Emissao de Autos
+          </CardTitle>
+          <CardDescription className="text-slate-400">
+            Configure o periodo e selecione os parceiros para emitir autos de comissoes
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <Label className="text-slate-300">Selecionar Parceiro</Label>
-              <Select value={selectedPartner} onValueChange={setSelectedPartner}>
+              <Label className="text-slate-300 text-sm mb-1.5 block">Mes de Referencia</Label>
+              <Select
+                value={selectedMonth?.toString() || ""}
+                onValueChange={(v) => { setSelectedMonth(parseInt(v)); setCutoffDate(""); }}
+              >
                 <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
-                  <SelectValue placeholder="Escolha um parceiro..." />
+                  <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {partners.map(partner => (
-                    <SelectItem key={partner.id} value={partner.id}>
-                      {partner.name}
+                  {months.map(month => (
+                    <SelectItem key={month.value} value={month.value.toString()}>
+                      {month.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-slate-300 text-sm mb-1.5 block">Ano</Label>
+              <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(year => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-slate-300 text-sm mb-1.5 block">
+                Data Limite (opcional)
+              </Label>
+              <Input
+                type="date"
+                value={cutoffDate}
+                onChange={(e) => { setCutoffDate(e.target.value); if (e.target.value) setSelectedMonth(null); }}
+                className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+              />
+              {cutoffDate && (
+                <p className="text-xs text-cyber-400 mt-1">
+                  Apenas vendas ate {new Date(cutoffDate).toLocaleDateString('pt-PT')} (ignora mes/ano)
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-slate-300 text-sm mb-1.5 block">Filtrar por Tipo de Parceiro</Label>
+              <Select value={partnerTypeFilter} onValueChange={(v) => { setPartnerTypeFilter(v); setSelectedPartner(""); }}>
+                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Parceiros</SelectItem>
+                  <SelectItem value="D2D">D2D</SelectItem>
+                  <SelectItem value="REV">REV</SelectItem>
+                  <SelectItem value="Rev+">Rev+</SelectItem>
+                  <SelectItem value="individual">Parceiro Individual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {partnerTypeFilter === 'individual' && (
               <div>
-                <Label className="text-slate-300">
-                  Mes {checkingAvailability && <span className="text-xs text-slate-500">(verificando...)</span>}
-                </Label>
-                <Select
-                  value={selectedMonth?.toString() || ""}
-                  onValueChange={(v) => setSelectedMonth(parseInt(v))}
-                  disabled={checkingAvailability || availableMonths.length === 0}
-                >
+                <Label className="text-slate-300 text-sm mb-1.5 block">Selecionar Parceiro</Label>
+                <Select value={selectedPartner} onValueChange={setSelectedPartner}>
                   <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
-                    <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mes disponivel" : "Selecione..."} />
+                    <SelectValue placeholder="Escolha um parceiro..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {months
-                      .filter(month => availableMonths.includes(month.value))
-                      .map(month => (
-                        <SelectItem key={month.value} value={month.value.toString()}>
-                          {month.label}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {availableMonths.length === 0 && !checkingAvailability && (
-                  <p className="text-xs text-cyber-400 mt-1">Autos so podem ser emitidos apos o dia 22 do mes seguinte</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-slate-300">Ano</Label>
-                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map(year => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
+                    {partners.map(partner => (
+                      <SelectItem key={partner.id} value={partner.id}>
+                        {partner.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+            )}
+          </div>
+
+          <div className="border-t border-dark-700 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
+              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">PDF Interativo</p>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => printCommissionReport(selectedPartner)}
-                  disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
+                  onClick={() => {
+                    const pid = partnerTypeFilter === 'individual' ? selectedPartner : null;
+                    if (!pid && partnerTypeFilter === 'individual') { toast.error("Selecione um parceiro"); return; }
+                    if (pid) {
+                      printCommissionReport(pid);
+                    } else {
+                      handleBulkPrintCommissionReports();
+                    }
+                  }}
+                  disabled={loading || (!cutoffDate && !selectedMonth) || (partnerTypeFilter === 'individual' && !selectedPartner)}
                   className="flex-1 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
                 >
-                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Pre-visualizar
-                </Button>
-                <Button
-                  onClick={() => generateCommissionReport(selectedPartner)}
-                  disabled={!selectedPartner || !selectedMonth || loading || checkingAvailability}
-                  className="flex-1 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Excel
+                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                  {partnerTypeFilter === 'individual' ? 'Pre-visualizar PDF' : 'Emitir PDFs'}
                 </Button>
               </div>
+              <p className="text-xs text-slate-500">
+                {partnerTypeFilter === 'individual'
+                  ? 'Abre janela de pre-visualizacao para o parceiro selecionado'
+                  : 'Abre uma janela individual para cada parceiro com vendas no periodo'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Exportar Excel</p>
               <Button
-                onClick={handleBulkPrintCommissionReports}
-                disabled={!selectedMonth || loading || checkingAvailability}
+                onClick={() => {
+                  const pid = partnerTypeFilter === 'individual' ? selectedPartner : null;
+                  generateCommissionReport(pid === '' ? null : pid);
+                }}
+                disabled={loading || (!cutoffDate && !selectedMonth) || (partnerTypeFilter === 'individual' && !selectedPartner)}
                 className="w-full bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
               >
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                Emitir PDFs para Todos os Parceiros
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Excel
               </Button>
-              <p className="text-xs text-slate-500 text-center">
-                Abre janela individual para cada parceiro com vendas no mes
-              </p>
+              <p className="text-xs text-slate-500">Gera ficheiro .xlsx com todos os parceiros filtrados</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-dark-850 border border-white/[0.06] hover:scale-[1.01] transition-transform duration-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <FileDown className="w-5 h-5 text-neon-400" />
-              Autos de Todos os Parceiros
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Gere autos de comissoes para todos os parceiros (um ficheiro com multiplas abas)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-slate-300">
-                  Mes {checkingAvailability && <span className="text-xs text-slate-500">(verificando...)</span>}
-                </Label>
-                <Select
-                  value={selectedMonth?.toString() || ""}
-                  onValueChange={(v) => setSelectedMonth(parseInt(v))}
-                  disabled={checkingAvailability || availableMonths.length === 0}
-                >
-                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
-                    <SelectValue placeholder={availableMonths.length === 0 ? "Nenhum mes disponivel" : "Selecione..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months
-                      .filter(month => availableMonths.includes(month.value))
-                      .map(month => (
-                        <SelectItem key={month.value} value={month.value.toString()}>
-                          {month.label}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {availableMonths.length === 0 && !checkingAvailability && (
-                  <p className="text-xs text-cyber-400 mt-1">Autos so podem ser emitidos apos o dia 22 do mes seguinte</p>
-                )}
-              </div>
-              <div>
-                <Label className="text-slate-300">Ano</Label>
-                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map(year => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="bg-cyber-500/10 border border-cyber-500/20 rounded-lg p-4">
-              <p className="text-sm text-cyber-400">
-                Sera criado um ficheiro Excel com uma aba para cada parceiro que tenha vendas pagas no periodo selecionado.
-              </p>
-            </div>
-            <Button
-              onClick={() => generateCommissionReport(null)}
-              disabled={!selectedMonth || loading || checkingAvailability}
-              className="w-full bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
-            >
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-              Gerar Todos os Autos
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="bg-dark-850 border border-white/[0.06]">
         <CardHeader>
@@ -1329,13 +1264,14 @@ const CommissionReports = ({ user }) => {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-slate-400">
           <p><strong className="text-white">Regras de Emissao:</strong></p>
-          <p>-- Autos so podem ser emitidos apos o dia 22 do mes seguinte (ex: auto de Novembro so apos 22 de Dezembro)</p>
-          <p>-- Apenas vendas com data de ativacao no periodo selecionado e pagas pelo operador sao incluidas</p>
+          <p>-- Autos podem ser emitidos em qualquer altura, sem restricao de datas</p>
+          <p>-- Selecione um mes/ano OU uma data limite para filtrar as vendas a incluir</p>
+          <p>-- Apenas vendas pagas pelo operador sao incluidas no auto</p>
           <p>-- Vendas ja incluidas em autos validados como pagos nao serao duplicadas em novos autos do mesmo mes</p>
 
           <p className="pt-2"><strong className="text-white">Processo:</strong></p>
-          <p>-- Selecione o mes e ano disponiveis para gerar o auto</p>
-          <p>-- Clique em "Pre-visualizar" para rever o auto antes de aprovar</p>
+          <p>-- Configure o periodo (mes/ano ou data limite) e o filtro de parceiros</p>
+          <p>-- Clique em "Pre-visualizar PDF" (parceiro individual) ou "Emitir PDFs" (todos/tipo)</p>
           <p>-- No popup, clique em "Aprovar e Registrar Auto" para registar e enviar email ao parceiro</p>
 
           <p className="pt-2"><strong className="text-white">Validacao de Pagamento:</strong></p>
