@@ -150,6 +150,12 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('email_envio_password')) {
       updateData.email_envio_password = settingsData.email_envio_password || null;
     }
+    if (settingsData.hasOwnProperty('refidelizacao_prazo')) {
+      updateData.refidelizacao_prazo = settingsData.refidelizacao_prazo || null;
+    }
+    if (settingsData.hasOwnProperty('refidelizacao_unidade')) {
+      updateData.refidelizacao_unidade = settingsData.refidelizacao_unidade || 'dias';
+    }
 
     const { data, error } = await supabase
       .from('operators')

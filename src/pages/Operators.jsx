@@ -1000,8 +1000,8 @@ const Operators = ({ user }) => {
               </div>
 
               <div className="border-t border-dark-700 pt-4">
-                <Label className="text-slate-300 text-sm font-semibold block mb-1">Prazo de Refidelização</Label>
-                <p className="text-xs text-slate-500 mb-3">Número de dias ou meses após a ativação a partir dos quais o cliente pode ser refidelizado. Deixe vazio para não gerar alertas de refidelização.</p>
+                <Label className="text-slate-300 text-sm font-semibold block mb-1">Tempo de Intervenção com Cliente</Label>
+                <p className="text-xs text-slate-500 mb-3">Número de dias ou meses após a ativação a partir dos quais o cliente pode ser contactado para refidelização. Deixe vazio para não gerar alertas de refidelização.</p>
                 <div className="flex gap-3 items-end">
                   <div className="flex-1">
                     <Label htmlFor="edit_refidelizacao_prazo" className="text-slate-400 text-xs mb-1 block">Prazo</Label>
