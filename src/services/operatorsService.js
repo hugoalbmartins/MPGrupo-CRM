@@ -203,11 +203,8 @@ export const operatorsService = {
   },
 
   async saveCommissionConfigs(operatorId, configs) {
-    const { data: { user } } = await supabase.auth.getUser();
-
     const seen = new Set();
     const deduplicatedConfigs = configs.filter(config => {
-      const serviceTypes = config.service_types || [config.service_type];
       const key = [
         config.partner_type || 'D2D',
         config.partner_type === 'D2D' ? (config.d2d_level || 'Nv1') : null,
@@ -228,13 +225,14 @@ export const operatorsService = {
       return true;
     });
 
-    const configsToInsert = deduplicatedConfigs.map(config => {
-      const serviceTypes = config.service_types || [config.service_type];
+    const configsPayload = deduplicatedConfigs.map(config => {
+      const serviceTypes = config.service_types?.length > 0
+        ? config.service_types
+        : (config.service_type ? [config.service_type] : []);
       const hasRefid = serviceTypes.includes('REFID');
       const hasNIorMC = serviceTypes.includes('NI') || serviceTypes.includes('MC');
 
       return {
-        operator_id: operatorId,
         partner_type: config.partner_type || 'D2D',
         client_type: config.client_type,
         service_type: config.service_type,
@@ -256,26 +254,15 @@ export const operatorsService = {
         rev_level: (config.partner_type === 'REV' || config.partner_type === 'Rev+') ? (config.rev_level || 1) : null,
         power_value: config.tier_mode === 'by_power' ? (config.power_value || null) : null,
         additional_service_name: config.service_type === 'additional_service' ? (config.additional_service_name || null) : null,
-        created_by: user?.id,
-        updated_by: user?.id
       };
     });
 
-    const { error: deleteError } = await supabase
-      .from('commission_configurations')
-      .delete()
-      .eq('operator_id', operatorId);
-
-    if (deleteError) throw deleteError;
-
-    if (configsToInsert.length === 0) return [];
-
-    const { data, error } = await supabase
-      .from('commission_configurations')
-      .insert(configsToInsert)
-      .select();
+    const { error } = await supabase.rpc('save_commission_configs', {
+      p_operator_id: operatorId,
+      p_configs: configsPayload,
+    });
 
     if (error) throw error;
-    return data;
+    return configsPayload;
   }
 };
