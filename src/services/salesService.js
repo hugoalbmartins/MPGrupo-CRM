@@ -372,6 +372,8 @@ export const salesService = {
       calculated_commission: commission,
       attachments,
       is_bulk_import: saleData.is_bulk_import === true,
+      sale_type: saleData.sale_type || 'normal',
+      parent_sale_id: saleData.parent_sale_id || null,
     };
 
     const { data, error } = await supabase
@@ -641,7 +643,7 @@ export const salesService = {
     return { success: true };
   },
 
-  async resendNewSaleEmail(saleId) {
+  async resendNewSaleEmail(saleId, overridePayload = {}) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
@@ -728,6 +730,7 @@ export const salesService = {
       from_email: fromEmail,
       from_smtp_user: fromEmail,
       from_smtp_pass: fromSmtpPass,
+      sale_type: sale.sale_type || 'normal',
     };
 
     const sendEmail = async (extraPayload) => {
@@ -737,7 +740,7 @@ export const salesService = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${supabaseAnonKey}`,
         },
-        body: JSON.stringify({ ...basePayload, ...extraPayload }),
+        body: JSON.stringify({ ...basePayload, ...overridePayload, ...extraPayload }),
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));

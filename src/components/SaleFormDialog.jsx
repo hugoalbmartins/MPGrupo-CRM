@@ -57,7 +57,9 @@ const SaleFormDialog = ({
   user,
   skipEmail,
   setSkipEmail,
-  isSubmitting
+  isSubmitting,
+  energySaleMode,
+  setEnergySaleMode,
 }) => {
   const [pendingFile, setPendingFile] = useState(null);
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
@@ -944,14 +946,48 @@ const SaleFormDialog = ({
 
                     return (
                       <>
+                        <div className="bg-dark-900 border border-dark-700 rounded-xl p-4 mb-4">
+                          <Label className="text-sm font-semibold mb-3 block text-white">Tipo de Venda *</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { value: 'normal', label: 'Venda Normal', desc: 'Um local, um CPE/CUI' },
+                              { value: 'multiponto', label: 'Multiponto', desc: 'Varios CPEs, so eletricidade', disabled: saleType !== 'eletricidade' },
+                              { value: 'multilocal', label: 'Multilocal', desc: 'Varios locais, qualquer tipo' },
+                            ].map(opt => (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                disabled={opt.disabled}
+                                onClick={() => {
+                                  if (!opt.disabled) {
+                                    setEnergySaleMode(opt.value);
+                                    setFormData({...formData, energy_points: []});
+                                  }
+                                }}
+                                className={`p-3 rounded-lg border text-left transition-all ${
+                                  energySaleMode === opt.value
+                                    ? 'border-cyber-500 bg-cyber-500/10 text-white'
+                                    : opt.disabled
+                                    ? 'border-dark-700 bg-dark-900/50 text-slate-600 cursor-not-allowed opacity-50'
+                                    : 'border-dark-700 bg-dark-900 text-slate-400 hover:border-cyber-500/50'
+                                }`}
+                              >
+                                <div className="text-xs font-semibold">{opt.label}</div>
+                                <div className="text-xs mt-0.5 opacity-70">{opt.desc}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         <EnergyPointsManager
                           saleType={saleType}
                           points={formData.energy_points}
-                          onChange={(points) => {
+                          onChange={(points, mode) => {
                             setFormData({...formData, energy_points: points});
                           }}
                           isNew={true}
                           user={user}
+                          energySaleMode={energySaleMode}
                         />
 
                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1177,6 +1213,12 @@ const SaleFormDialog = ({
           </div>
 
           <div className="sticky bottom-0 z-10 bg-dark-850 border-t border-dark-700 px-4 sm:px-8 py-4 sm:py-6">
+            {uploadFiles.length === 0 && (
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <TriangleAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                <p className="text-xs text-amber-400">E obrigatorio adicionar pelo menos 1 anexo para criar a venda.</p>
+              </div>
+            )}
             <div className="flex flex-wrap justify-end gap-3 sm:gap-4">
               <Button
                 type="button"
@@ -1190,7 +1232,7 @@ const SaleFormDialog = ({
                 <Button
                   type="button"
                   onClick={(e) => handleSubmitWithCheck(e, true)}
-                  disabled={isSubmitting || (formData.operator_id && operatorCommissions.length === 0)}
+                  disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
                   variant="outline"
                   className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500 disabled:opacity-50"
                 >
@@ -1201,7 +1243,7 @@ const SaleFormDialog = ({
               <Button
                 type="submit"
                 onClick={handleSubmitWithCheck}
-                disabled={isSubmitting || (formData.operator_id && operatorCommissions.length === 0)}
+                disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
                 className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25 disabled:opacity-50"
               >
                 {isSubmitting ? (

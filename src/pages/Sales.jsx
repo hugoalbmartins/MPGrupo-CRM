@@ -86,6 +86,7 @@ const Sales = ({ user }) => {
   const [availableActivationTypes, setAvailableActivationTypes] = useState([]);
   const [recalcDialogOpen, setRecalcDialogOpen] = useState(false);
   const [recalcStartDate, setRecalcStartDate] = useState("");
+  const [energySaleMode, setEnergySaleMode] = useState('normal');
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -219,12 +220,17 @@ const Sales = ({ user }) => {
       return;
     }
 
+    if (uploadFiles.length === 0) {
+      toast.error("E obrigatorio adicionar pelo menos 1 anexo para criar a venda!");
+      return;
+    }
+
     if (formData.scope === 'energia') {
       const selectedOperator = operators.find(op => op.id === formData.operator_id);
       const energyType = selectedOperator?.energy_type;
       const saleType = energyType === 'dual' ? formData.energy_sale_type : energyType;
 
-      if (energyType === 'dual' && !formData.energy_sale_type) {
+      if (energyType === 'dual' && !formData.energy_sale_type && energySaleMode !== 'multilocal') {
         toast.error("Selecione o tipo de adesao (Eletricidade, Gas ou Ambos)!");
         return;
       }
@@ -236,19 +242,19 @@ const Sales = ({ user }) => {
         c.service_type === 'gas' || (c.service_types && c.service_types.includes('gas'))
       );
 
-      if (saleType === 'eletricidade' && !hasEletricidadeCommission) {
-        toast.error("Nao ha comissoes configuradas para vendas de eletricidade nesta operadora!");
-        return;
-      }
-
-      if (saleType === 'gas' && !hasGasCommission) {
-        toast.error("Nao ha comissoes configuradas para vendas de gas nesta operadora!");
-        return;
-      }
-
-      if (saleType === 'dual' && (!hasEletricidadeCommission || !hasGasCommission)) {
-        toast.error("Nao ha comissoes configuradas para vendas dual (eletricidade + gas) nesta operadora!");
-        return;
+      if (energySaleMode === 'normal') {
+        if (saleType === 'eletricidade' && !hasEletricidadeCommission) {
+          toast.error("Nao ha comissoes configuradas para vendas de eletricidade nesta operadora!");
+          return;
+        }
+        if (saleType === 'gas' && !hasGasCommission) {
+          toast.error("Nao ha comissoes configuradas para vendas de gas nesta operadora!");
+          return;
+        }
+        if (saleType === 'dual' && (!hasEletricidadeCommission || !hasGasCommission)) {
+          toast.error("Nao ha comissoes configuradas para vendas dual nesta operadora!");
+          return;
+        }
       }
 
       if (!formData.energy_points || formData.energy_points.length === 0) {
@@ -256,23 +262,56 @@ const Sales = ({ user }) => {
         return;
       }
 
-      const cpePoints = formData.energy_points.filter(p => p.point_type === 'cpe' || (!p.point_type && (saleType === 'eletricidade' || saleType === 'dual')));
-      const cuiPoints = formData.energy_points.filter(p => p.point_type === 'cui' || (!p.point_type && saleType === 'gas'));
-
-      if (saleType === 'eletricidade' || saleType === 'dual') {
+      if (energySaleMode === 'multiponto') {
+        const cpePoints = formData.energy_points.filter(p => p.point_type === 'cpe');
+        if (cpePoints.length < 2) {
+          toast.error("Venda Multiponto requer pelo menos 2 CPEs!");
+          return;
+        }
         for (let i = 0; i < cpePoints.length; i++) {
           if (!cpePoints[i].point_code || !cpePoints[i].power_kva) {
-            toast.error(`Ponto ${i + 1}: CPE e Potencia sao obrigatorios!`);
+            toast.error(`CPE ${i + 1}: Codigo e Potencia sao obrigatorios!`);
             return;
           }
         }
-      }
-
-      if (saleType === 'gas' || saleType === 'dual') {
+      } else if (energySaleMode === 'multilocal') {
+        const cpePoints = formData.energy_points.filter(p => p.point_type === 'cpe');
+        const cuiPoints = formData.energy_points.filter(p => p.point_type === 'cui');
+        if (cpePoints.length === 0 && cuiPoints.length === 0) {
+          toast.error("Adicione pelo menos um local com CPE ou CUI!");
+          return;
+        }
+        for (let i = 0; i < cpePoints.length; i++) {
+          if (!cpePoints[i].point_code || !cpePoints[i].power_kva) {
+            toast.error(`Local CPE ${i + 1}: Codigo e Potencia sao obrigatorios!`);
+            return;
+          }
+        }
         for (let i = 0; i < cuiPoints.length; i++) {
           if (!cuiPoints[i].point_code || !cuiPoints[i].tier) {
-            toast.error(`Ponto ${i + 1}: CUI e Escalao sao obrigatorios!`);
+            toast.error(`Local CUI ${i + 1}: Codigo e Escalao sao obrigatorios!`);
             return;
+          }
+        }
+      } else {
+        const cpePoints = formData.energy_points.filter(p => p.point_type === 'cpe');
+        const cuiPoints = formData.energy_points.filter(p => p.point_type === 'cui');
+
+        if (saleType === 'eletricidade' || saleType === 'dual') {
+          for (let i = 0; i < cpePoints.length; i++) {
+            if (!cpePoints[i].point_code || !cpePoints[i].power_kva) {
+              toast.error(`Ponto ${i + 1}: CPE e Potencia sao obrigatorios!`);
+              return;
+            }
+          }
+        }
+
+        if (saleType === 'gas' || saleType === 'dual') {
+          for (let i = 0; i < cuiPoints.length; i++) {
+            if (!cuiPoints[i].point_code || !cuiPoints[i].tier) {
+              toast.error(`Ponto ${i + 1}: CUI e Escalao sao obrigatorios!`);
+              return;
+            }
           }
         }
       }
@@ -284,16 +323,11 @@ const Sales = ({ user }) => {
 
       const selectedEnergyOperator = operators.find(op => op.id === formData.operator_id);
       if (selectedEnergyOperator?.requires_additional_services && (selectedEnergyOperator?.additional_services_list || []).length > 0 && !formData.additional_services?.trim()) {
-        toast.error("Serviços Adicionais são obrigatórios para esta operadora!");
+        toast.error("Servicos Adicionais sao obrigatorios para esta operadora!");
         return;
       }
       if (selectedEnergyOperator?.requires_voltage_type && !formData.voltage_type) {
         toast.error("Tipo de Tensao e obrigatorio para esta operadora!");
-        return;
-      }
-
-      if (uploadFiles.length === 0) {
-        toast.error("E obrigatorio adicionar pelo menos um anexo para vendas de energia!");
         return;
       }
     }
@@ -312,13 +346,150 @@ const Sales = ({ user }) => {
         delete submitData.contracted_monthly_fee;
       }
 
-      if (formData.scope === 'energia' && formData.energy_points && formData.energy_points.length > 0) {
+      const energyPoints = submitData.energy_points || [];
+      delete submitData.energy_points;
+
+      if (formData.scope === 'energia' && (energySaleMode === 'multiponto' || energySaleMode === 'multilocal')) {
+        const selectedOperator = operators.find(op => op.id === formData.operator_id);
+        const energyType = selectedOperator?.energy_type;
+
+        let allPointsForEmail = [...energyPoints];
+
+        if (energySaleMode === 'multiponto') {
+          const cpePoints = energyPoints.filter(p => p.point_type === 'cpe');
+          let parentSaleId = null;
+          let createdCount = 0;
+
+          for (let i = 0; i < cpePoints.length; i++) {
+            const pt = cpePoints[i];
+            const salePayload = {
+              ...submitData,
+              cpe: pt.point_code?.toUpperCase() || '',
+              power: formatPowerForEdit(pt.power_kva) || '',
+              energy_sale_type: 'eletricidade',
+              sale_type: 'multiponto',
+              parent_sale_id: parentSaleId,
+              is_bulk_import: true,
+            };
+
+            try {
+              const result = await salesService.create(salePayload, i === 0 ? uploadFiles : []);
+              if (i === 0) {
+                parentSaleId = result.id;
+              }
+              createdCount++;
+            } catch (err) {
+              toast.error(`Erro ao criar venda para CPE ${i + 1}: ${err.message}`);
+            }
+          }
+
+          if (parentSaleId && allPointsForEmail.length > 0) {
+            energyPointsService.replacePointsForSale(parentSaleId, allPointsForEmail).catch(() => {});
+          }
+
+          if (parentSaleId && !shouldSkipEmail) {
+            const emailPoints = cpePoints.map(p => ({
+              point_type: 'cpe',
+              point_code: p.point_code?.toUpperCase() || '',
+              power_kva: p.power_kva || null,
+            }));
+            salesService.resendNewSaleEmail(parentSaleId, {
+              sale_type: 'multiponto',
+              energy_points_list: emailPoints,
+            }).catch(() => {});
+          }
+
+          toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multiponto)!`);
+        } else if (energySaleMode === 'multilocal') {
+          const cpePoints = energyPoints.filter(p => p.point_type === 'cpe');
+          const cuiPoints = energyPoints.filter(p => p.point_type === 'cui');
+
+          const localeSales = [];
+          for (const pt of cpePoints) {
+            localeSales.push({
+              type: 'cpe', point: pt,
+              energy_sale_type: cuiPoints.find(c => c.installation_address && pt.installation_address && c.installation_address === pt.installation_address) ? 'dual' : 'eletricidade'
+            });
+          }
+          for (const pt of cuiPoints) {
+            const hasCPEAtSameLocation = pt.installation_address && cpePoints.some(c => c.installation_address === pt.installation_address);
+            if (!hasCPEAtSameLocation) {
+              localeSales.push({ type: 'cui', point: pt, energy_sale_type: 'gas' });
+            }
+          }
+
+          if (localeSales.length === 0) {
+            for (const pt of cuiPoints) {
+              localeSales.push({ type: 'cui', point: pt, energy_sale_type: 'gas' });
+            }
+          }
+
+          let parentSaleId = null;
+          let createdCount = 0;
+
+          for (let i = 0; i < localeSales.length; i++) {
+            const { type, point, energy_sale_type } = localeSales[i];
+            const salePayload = {
+              ...submitData,
+              cpe: type === 'cpe' ? (point.point_code?.toUpperCase() || '') : '',
+              power: type === 'cpe' ? (formatPowerForEdit(point.power_kva) || '') : '',
+              cui: type === 'cui' ? (point.point_code?.toUpperCase() || '') : '',
+              tier: type === 'cui' ? (point.tier || '') : '',
+              energy_sale_type,
+              installation_address: point.installation_address || submitData.installation_address || '',
+              sale_type: 'multilocal',
+              parent_sale_id: parentSaleId,
+              is_bulk_import: true,
+            };
+
+            try {
+              const result = await salesService.create(salePayload, i === 0 ? uploadFiles : []);
+              if (i === 0) {
+                parentSaleId = result.id;
+              }
+              createdCount++;
+            } catch (err) {
+              toast.error(`Erro ao criar venda para local ${i + 1}: ${err.message}`);
+            }
+          }
+
+          if (parentSaleId && allPointsForEmail.length > 0) {
+            energyPointsService.replacePointsForSale(parentSaleId, allPointsForEmail).catch(() => {});
+          }
+
+          if (parentSaleId && !shouldSkipEmail) {
+            const emailPoints = localeSales.map(({ type, point, energy_sale_type }) => ({
+              point_type: type,
+              point_code: point.point_code?.toUpperCase() || '',
+              power_kva: type === 'cpe' ? (point.power_kva || null) : null,
+              tier: type === 'cui' ? (point.tier || null) : null,
+              installation_address: point.installation_address || null,
+              billing_address: point.billing_address || null,
+              energy_type: energy_sale_type,
+            }));
+            salesService.resendNewSaleEmail(parentSaleId, {
+              sale_type: 'multilocal',
+              energy_points_list: emailPoints,
+            }).catch(() => {});
+          }
+
+          toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multilocal)!`);
+        }
+
+        setDialogOpen(false);
+        resetForm();
+        setSkipEmail(false);
+        navigate('/dashboard');
+        return;
+      }
+
+      if (formData.scope === 'energia' && energyPoints.length > 0) {
         const selectedOperator = operators.find(op => op.id === formData.operator_id);
         const energyType = selectedOperator?.energy_type;
         const saleType = energyType === 'dual' ? formData.energy_sale_type : energyType;
 
-        const firstCPE = formData.energy_points.find(p => p.point_type === 'cpe') || formData.energy_points[0];
-        const firstCUI = formData.energy_points.find(p => p.point_type === 'cui');
+        const firstCPE = energyPoints.find(p => p.point_type === 'cpe') || energyPoints[0];
+        const firstCUI = energyPoints.find(p => p.point_type === 'cui');
 
         if (saleType === 'eletricidade' || saleType === 'dual') {
           submitData.cpe = firstCPE?.point_code || '';
@@ -333,9 +504,6 @@ const Sales = ({ user }) => {
           submitData.tier = firstCUI?.tier || '';
         }
       }
-
-      const energyPoints = submitData.energy_points;
-      delete submitData.energy_points;
 
       if (!pendingSubmit) {
         const result = await salesService.checkWarningsAndCreateSale(submitData, uploadFiles);
@@ -452,6 +620,7 @@ const Sales = ({ user }) => {
     setOperatorCommissions([]);
     setAvailableServiceTypes([]);
     setAvailableActivationTypes([]);
+    setEnergySaleMode('normal');
   };
 
   const fetchOperatorCommissions = async (operatorId, partnerId = null, clientType = null) => {
@@ -589,7 +758,9 @@ const Sales = ({ user }) => {
         sale.sale_code?.toLowerCase().includes(query) ||
         sale.client_name?.toLowerCase().includes(query) ||
         sale.client_nif?.toLowerCase().includes(query) ||
-        sale.client_contact?.toLowerCase().includes(query)
+        sale.client_contact?.toLowerCase().includes(query) ||
+        sale.cpe?.toLowerCase().includes(query) ||
+        sale.cui?.toLowerCase().includes(query)
       );
     }
     return true;
@@ -1084,6 +1255,12 @@ const Sales = ({ user }) => {
               <div className="flex items-center gap-3">
                 <span className="font-bold text-lg text-white">{sale.sale_code}</span>
                 <span className="text-sm text-slate-500">{new Date(sale.date).toLocaleDateString('pt-PT')}</span>
+                {sale.sale_type === 'multiponto' && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/25">Multiponto</span>
+                )}
+                {sale.sale_type === 'multilocal' && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Multilocal</span>
+                )}
               </div>
               <Badge className={getStatusBadge(sale.status)}>{sale.status}</Badge>
             </div>
@@ -1338,6 +1515,8 @@ const Sales = ({ user }) => {
             skipEmail={skipEmail}
             setSkipEmail={setSkipEmail}
             isSubmitting={isSubmitting}
+            energySaleMode={energySaleMode}
+            setEnergySaleMode={setEnergySaleMode}
           />
         </div>
       </motion.div>
@@ -1497,7 +1676,7 @@ const Sales = ({ user }) => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input
-                  placeholder="Codigo, Cliente, NIF, Contacto..."
+                  placeholder="Codigo, Cliente, NIF, Contacto, CPE, CUI..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 focus:ring-cyan-500/20 focus:border-cyan-500 text-white placeholder:text-slate-600"

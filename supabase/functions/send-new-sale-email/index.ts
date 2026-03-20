@@ -71,6 +71,15 @@ interface SaleEmailPayload {
   from_smtp_pass?: string | null;
   operator_requires_additional_services?: boolean;
   tratar_oop?: boolean;
+  sale_type?: string;
+  energy_points_list?: Array<{
+    point_type: string;
+    point_code: string;
+    power_kva?: number | null;
+    tier?: string | null;
+    installation_address?: string | null;
+    billing_address?: string | null;
+  }>;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -185,12 +194,26 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           ` : ""}
 
           ${payload.scope === "energia" || payload.scope === "energias" ? `
-          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia</strong></td></tr>
+          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia${payload.sale_type === 'multiponto' ? ' — Venda Multiponto' : payload.sale_type === 'multilocal' ? ' — Venda Multilocal' : ''}</strong></td></tr>
           ${hasField(payload, 'energy_sale_type') && payload.energy_sale_type ? `<tr><td>Tipo de Energia:</td><td>${payload.energy_sale_type === 'eletricidade' ? 'Eletricidade' : payload.energy_sale_type === 'gas' ? 'Gas' : payload.energy_sale_type === 'dual' ? 'Eletricidade + Gas (Dual)' : payload.energy_sale_type}</td></tr>` : ""}
           ${hasField(payload, 'entry_type') && payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
           ${hasField(payload, 'voltage_type') ? `<tr><td>Tipo de Tensao:</td><td>${payload.voltage_type || "N/A"}</td></tr>` : ""}
-          ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
-          ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
+          ${payload.sale_type === 'multiponto' && payload.energy_points_list && payload.energy_points_list.length > 0 ? `
+            <tr><td colspan="2" style="padding-top: 8px; padding-bottom: 4px;"><strong style="color: #374151;">CPEs (${payload.energy_points_list.length} pontos):</strong></td></tr>
+            ${payload.energy_points_list.map((pt, i) => `
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE ${i+1}:</td><td style="font-size:13px;">${pt.point_code}${pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}</td></tr>
+            `).join('')}
+          ` : ""}
+          ${payload.sale_type === 'multilocal' && payload.energy_points_list && payload.energy_points_list.length > 0 ? `
+            <tr><td colspan="2" style="padding-top: 8px; padding-bottom: 4px;"><strong style="color: #374151;">Locais (${payload.energy_points_list.length} pontos):</strong></td></tr>
+            ${payload.energy_points_list.map((pt, i) => `
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Local ${i+1} (${pt.point_type.toUpperCase()}):</td><td style="font-size:13px;">${pt.point_code}${pt.point_type === 'cpe' && pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}${pt.point_type === 'cui' && pt.tier ? ` / Esc. ${pt.tier}` : ''}${pt.installation_address ? `<br><span style="color:#9ca3af;font-size:12px;">${pt.installation_address}</span>` : ''}</td></tr>
+            `).join('')}
+          ` : ""}
+          ${(!payload.sale_type || payload.sale_type === 'normal') ? `
+            ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
+            ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
+          ` : ""}
           ${hasField(payload, 'direct_debit') ? `<tr><td>Debito Direto:</td><td>${payload.has_direct_debit ? "Sim" : "Nao"}</td></tr>` : ""}
           ${hasField(payload, 'electronic_invoice') ? `<tr><td>Fatura Eletronica:</td><td>${payload.has_electronic_invoice ? "Sim" : "Nao"}</td></tr>` : ""}
           ${(payload.operator_requires_additional_services || (hasField(payload, 'additional_services') && payload.additional_services)) ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services || "Nenhum"}</td></tr>` : ""}
