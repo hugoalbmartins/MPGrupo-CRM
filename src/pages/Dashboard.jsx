@@ -148,7 +148,7 @@ const Dashboard = ({ user }) => {
   const [proposalFilter, setProposalFilter] = useState(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState(null);
-  const [partnerTableFilterMode, setPartnerTableFilterMode] = useState('month');
+  const [partnerTableFilterMode, setPartnerTableFilterMode] = useState('mensal');
   const [partnerTableFilterKey, setPartnerTableFilterKey] = useState(null);
 
   /* ---- data hooks ---- */
@@ -183,8 +183,9 @@ const Dashboard = ({ user }) => {
     if (partnerTableFilterMode === 'day') {
       return availableDays.find(d => d.key === partnerTableFilterKey)?.label || availableDays[0]?.label || 'hoje';
     }
-    if (partnerTableFilterMode === 'specificMonth') {
-      return availableMonths.find(m => m.key === partnerTableFilterKey)?.label || '';
+    if (partnerTableFilterMode === 'mensal') {
+      const key = partnerTableFilterKey || availableMonths[0]?.key;
+      return availableMonths.find(m => m.key === key)?.label || '';
     }
     const now = new Date();
     return now.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
@@ -971,7 +972,7 @@ const Dashboard = ({ user }) => {
       </div>
 
       {/* ---- Partner stats table ---- */}
-      {partnerStats.length > 0 && (
+      {(partnerStats.length > 0 || partnerTableFilterMode) && (
         <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
             <div>
@@ -982,8 +983,7 @@ const Dashboard = ({ user }) => {
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex rounded-lg overflow-hidden border border-cyber-500/20">
                   {[
-                    { mode: 'month', label: 'Mes' },
-                    { mode: 'specificMonth', label: 'Meses' },
+                    { mode: 'mensal', label: 'Mensal' },
                     { mode: 'week', label: 'Semana' },
                     { mode: 'day', label: 'Dia' },
                   ].map(({ mode, label }) => (
@@ -991,10 +991,9 @@ const Dashboard = ({ user }) => {
                       key={mode}
                       onClick={() => {
                         setPartnerTableFilterMode(mode);
-                        if (mode === 'week' && !partnerTableFilterKey) setPartnerTableFilterKey(availableWeeks[0]?.key || null);
-                        else if (mode === 'day' && !partnerTableFilterKey) setPartnerTableFilterKey(availableDays[0]?.key || null);
-                        else if (mode === 'specificMonth') setPartnerTableFilterKey(availableMonths[1]?.key || availableMonths[0]?.key || null);
-                        else if (mode === 'month') setPartnerTableFilterKey(null);
+                        if (mode === 'week') setPartnerTableFilterKey(availableWeeks[0]?.key || null);
+                        else if (mode === 'day') setPartnerTableFilterKey(availableDays[0]?.key || null);
+                        else if (mode === 'mensal') setPartnerTableFilterKey(availableMonths[0]?.key || null);
                       }}
                       className={`px-3 py-1.5 text-xs font-medium transition-colors ${partnerTableFilterMode === mode ? 'bg-cyber-500/20 text-cyber-400' : 'text-slate-500 hover:text-slate-300'}`}
                     >
@@ -1002,6 +1001,17 @@ const Dashboard = ({ user }) => {
                     </button>
                   ))}
                 </div>
+                {partnerTableFilterMode === 'mensal' && (
+                  <select
+                    value={partnerTableFilterKey || availableMonths[0]?.key || ''}
+                    onChange={(e) => setPartnerTableFilterKey(e.target.value)}
+                    className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    {availableMonths.map(m => (
+                      <option key={m.key} value={m.key}>{m.label}</option>
+                    ))}
+                  </select>
+                )}
                 {partnerTableFilterMode === 'week' && (
                   <select
                     value={partnerTableFilterKey || availableWeeks[0]?.key || ''}
@@ -1021,17 +1031,6 @@ const Dashboard = ({ user }) => {
                   >
                     {availableDays.map(d => (
                       <option key={d.key} value={d.key}>{d.label}</option>
-                    ))}
-                  </select>
-                )}
-                {partnerTableFilterMode === 'specificMonth' && (
-                  <select
-                    value={partnerTableFilterKey || availableMonths[1]?.key || ''}
-                    onChange={(e) => setPartnerTableFilterKey(e.target.value)}
-                    className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
-                  >
-                    {availableMonths.filter((_, i) => i > 0).map(m => (
-                      <option key={m.key} value={m.key}>{m.label}</option>
                     ))}
                   </select>
                 )}

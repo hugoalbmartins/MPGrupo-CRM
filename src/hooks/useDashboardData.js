@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboardService';
 import { supabase } from '../lib/supabase';
 
@@ -115,9 +115,10 @@ export const getAvailableDays = () => {
   return days;
 };
 
-export const usePartnerStats = (user, filterMode = 'month', filterKey = null) => {
+export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) => {
   return useQuery({
     queryKey: ['partnerStats', filterMode, filterKey],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       let startDate, endDate;
 
@@ -129,7 +130,7 @@ export const usePartnerStats = (user, filterMode = 'month', filterKey = null) =>
         const range = getDayRange(filterKey);
         startDate = range.start;
         endDate = range.end;
-      } else if (filterMode === 'specificMonth' && filterKey) {
+      } else if (filterMode === 'mensal' && filterKey) {
         const [year, month] = filterKey.split('-').map(Number);
         startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
         endDate = new Date(year, month, 0).toISOString().split('T')[0];
