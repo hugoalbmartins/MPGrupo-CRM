@@ -85,7 +85,9 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const isTelecom = operator?.scope === 'telecomunicacoes';
   const isEnergy = operator?.scope === 'energia';
-  const additionalServicesList = operator?.additional_services_list || [];
+  const additionalServicesList = (operator?.additional_services_list || []).map(s =>
+    typeof s === 'string' ? s : s?.name
+  ).filter(Boolean);
   const hasAdditionalServices = operator?.requires_additional_services && additionalServicesList.length > 0;
 
   const getServiceTypes = () => {
