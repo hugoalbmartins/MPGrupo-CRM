@@ -225,7 +225,8 @@ async function getLast12MonthsData(partnerId = null) {
   let query = supabase
     .from('sales')
     .select('date, scope')
-    .gte('date', twelveMonthsAgo.toISOString().split('T')[0]);
+    .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
+    .neq('status', 'Em proposta');
 
   if (partnerId) {
     query = query.eq('partner_id', partnerId);
@@ -247,11 +248,14 @@ async function getLast12MonthsData(partnerId = null) {
           telecomunicacoes: 0,
           energia: 0,
           solar: 0,
-          dual: 0
+          mobilidade_eletrica: 0
         };
       }
 
-      monthlyData[key][sale.scope] = (monthlyData[key][sale.scope] || 0) + 1;
+      const scope = sale.scope || '';
+      if (scope) {
+        monthlyData[key][scope] = (monthlyData[key][scope] || 0) + 1;
+      }
     });
   }
 
@@ -266,7 +270,7 @@ async function getLast12MonthsData(partnerId = null) {
       telecomunicacoes: 0,
       energia: 0,
       solar: 0,
-      dual: 0
+      mobilidade_eletrica: 0
     });
   }
 
@@ -312,7 +316,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
-    dual: { count: 0 },
+    mobilidade_eletrica: { count: 0 },
     by_status: {},
     by_partner: {},
     by_operator: {},
@@ -360,8 +364,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
         }
       } else if (scope === 'solar') {
         stats.solar.count++;
-      } else if (scope === 'dual') {
-        stats.dual.count++;
+      } else if (scope === 'mobilidade_eletrica') {
+        stats.mobilidade_eletrica.count++;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
@@ -441,7 +445,7 @@ async function getBODashboard(year, month) {
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
-    dual: { count: 0 },
+    mobilidade_eletrica: { count: 0 },
     by_status: {},
     by_partner: {},
     selected_month: month,
@@ -474,8 +478,8 @@ async function getBODashboard(year, month) {
         }
       } else if (scope === 'solar') {
         stats.solar.count++;
-      } else if (scope === 'dual') {
-        stats.dual.count++;
+      } else if (scope === 'mobilidade_eletrica') {
+        stats.mobilidade_eletrica.count++;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
@@ -521,7 +525,7 @@ async function getPartnerDashboard(partnerId, year, month) {
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
-    dual: { count: 0 },
+    mobilidade_eletrica: { count: 0 },
     by_status: {},
     by_operator: {},
     total_commission_gross: netCommissions.gross,
@@ -564,8 +568,8 @@ async function getPartnerDashboard(partnerId, year, month) {
         }
       } else if (scope === 'solar') {
         stats.solar.count++;
-      } else if (scope === 'dual') {
-        stats.dual.count++;
+      } else if (scope === 'mobilidade_eletrica') {
+        stats.mobilidade_eletrica.count++;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
@@ -615,7 +619,7 @@ async function getCommercialDashboard(userId, year, month) {
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
-    dual: { count: 0 },
+    mobilidade_eletrica: { count: 0 },
     by_status: {},
     selected_month: month,
     selected_year: year,
@@ -640,8 +644,8 @@ async function getCommercialDashboard(userId, year, month) {
         else if (energyType === 'dual') { stats.energia.dual++; stats.energia.electricity++; stats.energia.gas++; }
       } else if (scope === 'solar') {
         stats.solar.count++;
-      } else if (scope === 'dual') {
-        stats.dual.count++;
+      } else if (scope === 'mobilidade_eletrica') {
+        stats.mobilidade_eletrica.count++;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
@@ -798,6 +802,7 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
+    mobilidade_eletrica: { count: 0 },
     own_commission_gross: ownCommissionGross,
     own_retention: ownRetention,
     objectives_progress: objectivesProgress,
@@ -830,6 +835,8 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
         }
       } else if (scope === 'solar') {
         stats.solar.count++;
+      } else if (scope === 'mobilidade_eletrica') {
+        stats.mobilidade_eletrica.count++;
       }
 
       if (sale.has_direct_debit) stats.dd_count++;
@@ -870,7 +877,7 @@ async function getAdminProposalStats(adminId, isCommissioned, adminPartnerId = n
       telecomunicacoes: 0,
       energia: 0,
       solar: 0,
-      dual: 0
+      mobilidade_eletrica: 0
     },
     by_partner: {}
   };
@@ -940,7 +947,7 @@ async function getBOProposalStats() {
       telecomunicacoes: 0,
       energia: 0,
       solar: 0,
-      dual: 0
+      mobilidade_eletrica: 0
     },
     by_partner: {}
   };
@@ -1044,7 +1051,7 @@ async function getManagerProposalStats(managerId) {
       telecomunicacoes: 0,
       energia: 0,
       solar: 0,
-      dual: 0
+      mobilidade_eletrica: 0
     },
     by_partner: {}
   };

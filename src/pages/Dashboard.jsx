@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight, Download } from "lucide-react";
+import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight, Download, Car } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import SaleDetailDialog from "../components/SaleDetailDialog";
-import { useDashboardStats, useProposalStats, usePartnerStats, useProposals, getAvailableWeeks } from "@/hooks/useDashboardData";
+import { useDashboardStats, useProposalStats, usePartnerStats, useProposals, getAvailableWeeks, getAvailableMonths, getAvailableDays } from "@/hooks/useDashboardData";
 import { AnimatedNumber } from "@/hooks/useAnimatedCounter";
 
 /* ---------------------------------------------------------------------------
@@ -149,12 +149,12 @@ const Dashboard = ({ user }) => {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [partnerTableFilterMode, setPartnerTableFilterMode] = useState('month');
-  const [partnerTableWeekKey, setPartnerTableWeekKey] = useState(null);
+  const [partnerTableFilterKey, setPartnerTableFilterKey] = useState(null);
 
   /* ---- data hooks ---- */
   const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedYear, selectedMonth);
   const { data: proposalStats } = useProposalStats();
-  const { data: partnerData } = usePartnerStats(user, partnerTableFilterMode, partnerTableWeekKey);
+  const { data: partnerData } = usePartnerStats(user, partnerTableFilterMode, partnerTableFilterKey);
   const { data: filteredProposals = [] } = useProposals(proposalFilter);
 
   const partnerStats = partnerData?.stats || [];
@@ -173,9 +173,25 @@ const Dashboard = ({ user }) => {
   ];
 
   const availableWeeks = getAvailableWeeks();
+  const availableMonths = getAvailableMonths();
+  const availableDays = getAvailableDays();
+
+  const getFilterLabel = () => {
+    if (partnerTableFilterMode === 'week') {
+      return availableWeeks.find(w => w.key === partnerTableFilterKey)?.label || availableWeeks[0]?.label || 'semana';
+    }
+    if (partnerTableFilterMode === 'day') {
+      return availableDays.find(d => d.key === partnerTableFilterKey)?.label || availableDays[0]?.label || 'hoje';
+    }
+    if (partnerTableFilterMode === 'specificMonth') {
+      return availableMonths.find(m => m.key === partnerTableFilterKey)?.label || '';
+    }
+    const now = new Date();
+    return now.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+  };
 
   const exportPartnerStatsToExcel = () => {
-    const weekLabel = availableWeeks.find(w => w.key === partnerTableWeekKey)?.label || availableWeeks[0]?.label || 'semana';
+    const label = getFilterLabel();
     const headers = ['Parceiro', ...operators.map(op => op.name), 'Total Comissoes (EUR)'];
     const rows = partnerStats.map(partner => [
       partner.name,
@@ -189,7 +205,7 @@ const Dashboard = ({ user }) => {
     ws['!cols'] = colWidths;
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Vendas por Parceiro');
-    XLSX.writeFile(wb, `vendas_parceiro_${weekLabel.replace(/\//g, '-').replace(/ /g, '_')}.xlsx`);
+    XLSX.writeFile(wb, `vendas_parceiro_${label.replace(/\//g, '-').replace(/ /g, '_')}.xlsx`);
   };
 
   const getAvailableYears = () => {
@@ -301,34 +317,23 @@ const Dashboard = ({ user }) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
-          index={7}
-          label="Telecomunicacoes"
-          value={stats?.telecomunicacoes?.count || 0}
-          subtitle={`€${stats?.telecomunicacoes?.monthly_total?.toFixed(2) || "0.00"}/mes`}
-          icon={Phone}
-          iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600"
-          valueColor="text-cyan-400"
-        />
-        <StatCard
-          index={8}
-          label="Energia"
-          value={stats?.energia?.count || 0}
-          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
-          icon={Zap}
-          iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
-          valueColor="text-amber-400"
-        />
-        <StatCard
-          index={9}
-          label="Solar"
-          value={stats?.solar?.count || 0}
-          icon={Sun}
-          iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600"
-          valueColor="text-emerald-400"
-        />
-      </div>
+      {[
+        stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+        stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+        stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+        stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+      ].filter(Boolean).length > 0 && (
+        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
+          {[
+            stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+            stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+            stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+            stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+          ].filter(Boolean).map(card => (
+            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+          ))}
+        </div>
+      )}
     </>
   );
 
@@ -410,20 +415,23 @@ const Dashboard = ({ user }) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard index={7} label="Telecomunicacoes" value={stats?.telecomunicacoes?.count || 0} icon={Phone} iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600" valueColor="text-cyan-400" />
-        <StatCard
-          index={8}
-          label="Energia"
-          value={stats?.energia?.count || 0}
-          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
-          icon={Zap}
-          iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
-          valueColor="text-amber-400"
-        />
-        <StatCard index={9} label="Solar" value={stats?.solar?.count || 0} icon={Sun} iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600" valueColor="text-emerald-400" />
-        <StatCard index={10} label="Dual" value={stats?.dual?.count || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-dark-500 to-dark-600" valueColor="text-dark-200" />
-      </div>
+      {[
+        stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+        stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+        stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+        stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+      ].filter(Boolean).length > 0 && (
+        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
+          {[
+            stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+            stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+            stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+            stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+          ].filter(Boolean).map(card => (
+            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+          ))}
+        </div>
+      )}
     </>
   );
 
@@ -432,18 +440,25 @@ const Dashboard = ({ user }) => {
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard index={0} label="Minhas Vendas" value={stats?.total_sales || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600" valueColor="text-white" />
-        <StatCard index={1} label="Telecomunicacoes" value={stats?.telecomunicacoes?.count || 0} icon={Phone} iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600" valueColor="text-cyan-400" />
-        <StatCard
-          index={2}
-          label="Energia"
-          value={stats?.energia?.count || 0}
-          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
-          icon={Zap}
-          iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
-          valueColor="text-amber-400"
-        />
-        <StatCard index={3} label="Solar" value={stats?.solar?.count || 0} icon={Sun} iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600" valueColor="text-emerald-400" />
       </div>
+
+      {[
+        stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+        stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+        stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+        stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+      ].filter(Boolean).length > 0 && (
+        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
+          {[
+            stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+            stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+            stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+            stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+          ].filter(Boolean).map(card => (
+            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+          ))}
+        </div>
+      )}
 
       {stats?.operator_stats && stats.operator_stats.length > 0 && (
         <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
@@ -469,20 +484,29 @@ const Dashboard = ({ user }) => {
 
   // ---- Back-office ----
   const renderBODashboard = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatCard index={0} label="Total Vendas" value={stats?.total_sales || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600" valueColor="text-white" />
-      <StatCard index={1} label="Telecomunicacoes" value={stats?.telecomunicacoes?.count || 0} icon={Phone} iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600" valueColor="text-cyan-400" />
-      <StatCard
-        index={2}
-        label="Energia"
-        value={stats?.energia?.count || 0}
-        subtitle={`DD: ${stats?.dd_count || 0} · FE: ${stats?.fe_count || 0}`}
-        icon={Zap}
-        iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
-        valueColor="text-amber-400"
-      />
-      <StatCard index={3} label="Solar" value={stats?.solar?.count || 0} icon={Sun} iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600" valueColor="text-emerald-400" />
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard index={0} label="Total Vendas" value={stats?.total_sales || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600" valueColor="text-white" />
+      </div>
+
+      {[
+        stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+        stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `DD: ${stats?.dd_count || 0} · FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+        stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+        stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+      ].filter(Boolean).length > 0 && (
+        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
+          {[
+            stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+            stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `DD: ${stats?.dd_count || 0} · FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+            stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+            stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+          ].filter(Boolean).map(card => (
+            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+          ))}
+        </div>
+      )}
+    </>
   );
 
   // ---- Commercial ----
@@ -629,34 +653,23 @@ const Dashboard = ({ user }) => {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
-          index={4}
-          label="Telecomunicacoes"
-          value={stats?.telecomunicacoes?.count || 0}
-          subtitle={`€${stats?.telecomunicacoes?.monthly_total?.toFixed(2) || "0.00"}/mes`}
-          icon={Phone}
-          iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600"
-          valueColor="text-cyan-400"
-        />
-        <StatCard
-          index={5}
-          label="Energia"
-          value={stats?.energia?.count || 0}
-          subtitle={`${stats?.energia?.electricity || 0} elet. / ${stats?.energia?.gas || 0} gas (${stats?.energia?.dual || 0} dual) · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`}
-          icon={Zap}
-          iconGradient="bg-gradient-to-br from-amber-500 to-amber-600"
-          valueColor="text-amber-400"
-        />
-        <StatCard
-          index={6}
-          label="Solar"
-          value={stats?.solar?.count || 0}
-          icon={Sun}
-          iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600"
-          valueColor="text-emerald-400"
-        />
-      </div>
+      {[
+        stats?.telecomunicacoes?.count > 0 && { index: 4, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+        stats?.energia?.count > 0 && { index: 5, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+        stats?.solar?.count > 0 && { index: 6, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+        stats?.mobilidade_eletrica?.count > 0 && { index: 7, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+      ].filter(Boolean).length > 0 && (
+        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
+          {[
+            stats?.telecomunicacoes?.count > 0 && { index: 4, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+            stats?.energia?.count > 0 && { index: 5, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+            stats?.solar?.count > 0 && { index: 6, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+            stats?.mobilidade_eletrica?.count > 0 && { index: 7, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+          ].filter(Boolean).map(card => (
+            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+          ))}
+        </div>
+      )}
     </>
   );
 
@@ -752,12 +765,23 @@ const Dashboard = ({ user }) => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard index={5} label="Telecomunicacoes" value={proposalStats.by_scope?.telecomunicacoes || 0} icon={Phone} iconGradient="bg-gradient-to-br from-cyan-500 to-cyan-600" valueColor="text-cyan-400" />
-          <StatCard index={6} label="Energia" value={proposalStats.by_scope?.energia || 0} icon={Zap} iconGradient="bg-gradient-to-br from-amber-500 to-amber-600" valueColor="text-amber-400" />
-          <StatCard index={7} label="Solar" value={proposalStats.by_scope?.solar || 0} icon={Sun} iconGradient="bg-gradient-to-br from-emerald-500 to-emerald-600" valueColor="text-emerald-400" />
-          <StatCard index={8} label="Dual" value={proposalStats.by_scope?.dual || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-dark-500 to-dark-600" valueColor="text-dark-200" />
-        </div>
+        {[
+          proposalStats.by_scope?.telecomunicacoes > 0 && { index: 5, label: "Telecomunicacoes", value: proposalStats.by_scope.telecomunicacoes, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+          proposalStats.by_scope?.energia > 0 && { index: 6, label: "Energia", value: proposalStats.by_scope.energia, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+          proposalStats.by_scope?.solar > 0 && { index: 7, label: "Solar", value: proposalStats.by_scope.solar, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+          proposalStats.by_scope?.mobilidade_eletrica > 0 && { index: 8, label: "Mobilidade Eletrica", value: proposalStats.by_scope.mobilidade_eletrica, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+        ].filter(Boolean).length > 0 && (
+          <div className={`grid grid-cols-1 md:grid-cols-${Math.min([proposalStats.by_scope?.telecomunicacoes > 0, proposalStats.by_scope?.energia > 0, proposalStats.by_scope?.solar > 0, proposalStats.by_scope?.mobilidade_eletrica > 0].filter(Boolean).length, 4)} gap-4`}>
+            {[
+              proposalStats.by_scope?.telecomunicacoes > 0 && { index: 5, label: "Telecomunicacoes", value: proposalStats.by_scope.telecomunicacoes, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
+              proposalStats.by_scope?.energia > 0 && { index: 6, label: "Energia", value: proposalStats.by_scope.energia, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
+              proposalStats.by_scope?.solar > 0 && { index: 7, label: "Solar", value: proposalStats.by_scope.solar, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
+              proposalStats.by_scope?.mobilidade_eletrica > 0 && { index: 8, label: "Mobilidade Eletrica", value: proposalStats.by_scope.mobilidade_eletrica, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
+            ].filter(Boolean).map(card => (
+              <StatCard key={card.index} index={card.index} label={card.label} value={card.value} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+            ))}
+          </div>
+        )}
 
         {/* Partners with open proposals */}
         {partnersList.length > 0 && (
@@ -808,8 +832,19 @@ const Dashboard = ({ user }) => {
       Telecom: item.telecomunicacoes,
       Energia: item.energia,
       Solar: item.solar,
-      Dual: item.dual,
+      Mobilidade: item.mobilidade_eletrica || 0,
     }));
+  };
+
+  const get12MonthsActiveScopes = () => {
+    const data = prepare12MonthsData();
+    const scopes = [
+      { key: 'Telecom', label: 'Telecomunicacoes', color: '#06b6d4', gradId: 'gradTelecom' },
+      { key: 'Energia', label: 'Energia', color: '#f59e0b', gradId: 'gradEnergia' },
+      { key: 'Solar', label: 'Solar', color: '#10b981', gradId: 'gradSolar' },
+      { key: 'Mobilidade', label: 'Mobilidade Eletrica', color: '#a78bfa', gradId: 'gradMobilidade' },
+    ];
+    return scopes.filter(s => data.some(d => (d[s.key] || 0) > 0));
   };
 
   /* ====================================================================
@@ -888,167 +923,208 @@ const Dashboard = ({ user }) => {
           </motion.div>
         )}
 
-        {/* ---- Bar Chart: Vendas por Ambito ---- */}
-        <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
-          <h3 className="text-base font-bold text-white mb-1">Vendas por Ambito</h3>
-          <p className="text-xs text-slate-500 mb-4">Comparacao mensal</p>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart
-              data={[
-                { name: "Telecom", value: stats?.telecomunicacoes?.count || 0 },
-                { name: "Energia", value: stats?.energia?.count || 0 },
-                { name: "Solar", value: stats?.solar?.count || 0 },
-                { name: "Dual", value: stats?.dual?.count || 0 },
-              ]}
-            >
-              <defs>
-                <linearGradient id="barGrad0" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.6} />
-                </linearGradient>
-                <linearGradient id="barGrad1" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0.6} />
-                </linearGradient>
-                <linearGradient id="barGrad2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.6} />
-                </linearGradient>
-                <linearGradient id="barGrad3" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f43f5e" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.6} />
-                </linearGradient>
-                {/* Glow filter for bars */}
-                <filter id="barGlow">
-                  <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                  <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(51, 65, 85, 0.4)" vertical={false} />
-              <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 12, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} />
-              <YAxis stroke="#64748b" tick={{ fontSize: 12, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} />
-              <Tooltip content={<CyberTooltip />} />
-              <Bar dataKey="value" radius={[8, 8, 0, 0]} animationDuration={1200} filter="url(#barGlow)">
-                {[0, 1, 2, 3].map((index) => (
-                  <Cell key={`cell-${index}`} fill={`url(#barGrad${index})`} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
+        {/* ---- Bar Chart: Vendas por Ambito (only scopes with data) ---- */}
+        {(() => {
+          const scopeColors = ['#06b6d4', '#f59e0b', '#10b981', '#a78bfa'];
+          const allScopes = [
+            { name: 'Telecom', value: stats?.telecomunicacoes?.count || 0 },
+            { name: 'Energia', value: stats?.energia?.count || 0 },
+            { name: 'Solar', value: stats?.solar?.count || 0 },
+            { name: 'Mobilidade', value: stats?.mobilidade_eletrica?.count || 0 },
+          ].filter(s => s.value > 0);
+          if (allScopes.length === 0) return null;
+          return (
+            <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
+              <h3 className="text-base font-bold text-white mb-1">Vendas por Ambito</h3>
+              <p className="text-xs text-slate-500 mb-4">Comparacao mensal</p>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={allScopes}>
+                  <defs>
+                    {scopeColors.map((color, i) => (
+                      <linearGradient key={i} id={`barGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={color} stopOpacity={1} />
+                        <stop offset="100%" stopColor={color} stopOpacity={0.6} />
+                      </linearGradient>
+                    ))}
+                    <filter id="barGlow">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                      <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(51, 65, 85, 0.4)" vertical={false} />
+                  <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 12, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} />
+                  <YAxis stroke="#64748b" tick={{ fontSize: 12, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} />
+                  <Tooltip content={<CyberTooltip />} />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} animationDuration={1200} filter="url(#barGlow)">
+                    {allScopes.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={`url(#barGrad${index % scopeColors.length})`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
+          );
+        })()}
       </div>
 
       {/* ---- Partner stats table ---- */}
-      {partnerStats.length > 0 && operators.length > 0 && (
+      {partnerStats.length > 0 && (
         <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
             <div>
               <h3 className="text-base font-bold text-white mb-1">Vendas por Parceiro</h3>
-              <p className="text-xs text-slate-500">
-                {partnerTableFilterMode === 'week'
-                  ? (availableWeeks.find(w => w.key === partnerTableWeekKey)?.label || availableWeeks[0]?.label || '')
-                  : `${months[new Date().getMonth()]} ${new Date().getFullYear()}`}
-              </p>
+              <p className="text-xs text-slate-500">{getFilterLabel()}</p>
             </div>
             {user?.role === 'admin' && (
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex rounded-lg overflow-hidden border border-cyber-500/20">
-                  <button
-                    onClick={() => setPartnerTableFilterMode('month')}
-                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${partnerTableFilterMode === 'month' ? 'bg-cyber-500/20 text-cyber-400' : 'text-slate-500 hover:text-slate-300'}`}
-                  >
-                    Mes
-                  </button>
-                  <button
-                    onClick={() => { setPartnerTableFilterMode('week'); if (!partnerTableWeekKey) setPartnerTableWeekKey(availableWeeks[0]?.key || null); }}
-                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${partnerTableFilterMode === 'week' ? 'bg-cyber-500/20 text-cyber-400' : 'text-slate-500 hover:text-slate-300'}`}
-                  >
-                    Semana
-                  </button>
+                  {[
+                    { mode: 'month', label: 'Mes' },
+                    { mode: 'specificMonth', label: 'Meses' },
+                    { mode: 'week', label: 'Semana' },
+                    { mode: 'day', label: 'Dia' },
+                  ].map(({ mode, label }) => (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        setPartnerTableFilterMode(mode);
+                        if (mode === 'week' && !partnerTableFilterKey) setPartnerTableFilterKey(availableWeeks[0]?.key || null);
+                        else if (mode === 'day' && !partnerTableFilterKey) setPartnerTableFilterKey(availableDays[0]?.key || null);
+                        else if (mode === 'specificMonth') setPartnerTableFilterKey(availableMonths[1]?.key || availableMonths[0]?.key || null);
+                        else if (mode === 'month') setPartnerTableFilterKey(null);
+                      }}
+                      className={`px-3 py-1.5 text-xs font-medium transition-colors ${partnerTableFilterMode === mode ? 'bg-cyber-500/20 text-cyber-400' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
                 {partnerTableFilterMode === 'week' && (
-                  <>
-                    <select
-                      value={partnerTableWeekKey || availableWeeks[0]?.key || ''}
-                      onChange={(e) => setPartnerTableWeekKey(e.target.value)}
-                      className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
-                    >
-                      {availableWeeks.map(w => (
-                        <option key={w.key} value={w.key}>{w.label}</option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={exportPartnerStatsToExcel}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors duration-200"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Exportar Excel
-                    </button>
-                  </>
+                  <select
+                    value={partnerTableFilterKey || availableWeeks[0]?.key || ''}
+                    onChange={(e) => setPartnerTableFilterKey(e.target.value)}
+                    className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    {availableWeeks.map(w => (
+                      <option key={w.key} value={w.key}>{w.label}</option>
+                    ))}
+                  </select>
                 )}
+                {partnerTableFilterMode === 'day' && (
+                  <select
+                    value={partnerTableFilterKey || availableDays[0]?.key || ''}
+                    onChange={(e) => setPartnerTableFilterKey(e.target.value)}
+                    className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    {availableDays.map(d => (
+                      <option key={d.key} value={d.key}>{d.label}</option>
+                    ))}
+                  </select>
+                )}
+                {partnerTableFilterMode === 'specificMonth' && (
+                  <select
+                    value={partnerTableFilterKey || availableMonths[1]?.key || ''}
+                    onChange={(e) => setPartnerTableFilterKey(e.target.value)}
+                    className="bg-dark-800/80 border border-cyber-500/20 text-slate-300 px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-cyber-500/40 transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    {availableMonths.filter((_, i) => i > 0).map(m => (
+                      <option key={m.key} value={m.key}>{m.label}</option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  onClick={exportPartnerStatsToExcel}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-colors duration-200"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Excel
+                </button>
               </div>
             )}
           </div>
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th className="text-cyber-400">Parceiro</th>
-                  {operators.map((op) => (
-                    <th key={op.id} className="text-center text-cyber-400">
-                      {op.name}
-                    </th>
-                  ))}
-                  <th className="text-right text-cyber-400">Total Comissoes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {partnerStats.map((partner, index) => (
-                  <tr key={index} className="hover:bg-cyber-500/5 transition-colors duration-200">
-                    <td className="font-medium text-white">{partner.name}</td>
+          {operators.length > 0 ? (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="text-cyber-400">Parceiro</th>
                     {operators.map((op) => (
-                      <td key={op.id} className="text-center">
-                        {partner.operators[op.name] || "-"}
-                      </td>
+                      <th key={op.id} className="text-center text-cyber-400">
+                        {op.name}
+                      </th>
                     ))}
-                    <td className="text-right font-bold text-cyber-400">
-                      €{partner.total.toFixed(2)}
-                    </td>
+                    <th className="text-right text-cyber-400">Total Comissoes</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {partnerStats.map((partner, index) => (
+                    <tr key={index} className="hover:bg-cyber-500/5 transition-colors duration-200">
+                      <td className="font-medium text-white">{partner.name}</td>
+                      {operators.map((op) => (
+                        <td key={op.id} className="text-center">
+                          {partner.operators[op.name] || "-"}
+                        </td>
+                      ))}
+                      <td className="text-right font-bold text-cyber-400">
+                        €{partner.total.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="text-cyber-400">Parceiro</th>
+                    <th className="text-right text-cyber-400">Total Comissoes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {partnerStats.map((partner, index) => (
+                    <tr key={index} className="hover:bg-cyber-500/5 transition-colors duration-200">
+                      <td className="font-medium text-white">{partner.name}</td>
+                      <td className="text-right font-bold text-cyber-400">
+                        €{partner.total.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </motion.div>
       )}
 
-      {/* ---- Area Chart: 12-month evolution ---- */}
-      {stats?.last_12_months && stats.last_12_months.length > 0 && (
+      {/* ---- Area Chart: 12-month evolution (only active scopes) ---- */}
+      {stats?.last_12_months && stats.last_12_months.length > 0 && get12MonthsActiveScopes().length > 0 && (
         <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
           <h3 className="text-base font-bold text-white mb-1">Evolucao Ultimos 12 Meses</h3>
           <p className="text-xs text-slate-500 mb-4">Tendencia por ambito</p>
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={prepare12MonthsData()}>
               <defs>
-                {/* Telecom gradient -- cyber-500/30 to transparent */}
                 <linearGradient id="gradTelecom" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
                   <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                 </linearGradient>
-                {/* Energia gradient */}
                 <linearGradient id="gradEnergia" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
                   <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                 </linearGradient>
-                {/* Solar gradient */}
                 <linearGradient id="gradSolar" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
-                {/* Glow filter for area strokes */}
+                <linearGradient id="gradMobilidade" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
+                </linearGradient>
                 <filter id="areaGlow">
                   <feGaussianBlur stdDeviation="2" result="coloredBlur" />
                   <feMerge>
@@ -1061,45 +1137,22 @@ const Dashboard = ({ user }) => {
               <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} />
               <YAxis stroke="#64748b" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} />
               <Tooltip content={<CyberTooltip />} />
-              <Legend
-                formatter={(value) => (
-                  <span style={{ color: "#94a3b8", fontSize: "12px" }}>{value}</span>
-                )}
-              />
-              <Area
-                type="monotone"
-                dataKey="Telecom"
-                stroke="#06b6d4"
-                fill="url(#gradTelecom)"
-                strokeWidth={2.5}
-                name="Telecomunicacoes"
-                animationDuration={1500}
-                dot={false}
-                activeDot={{ r: 5, stroke: "#06b6d4", strokeWidth: 2, fill: "#0a121e" }}
-                filter="url(#areaGlow)"
-              />
-              <Area
-                type="monotone"
-                dataKey="Energia"
-                stroke="#f59e0b"
-                fill="url(#gradEnergia)"
-                strokeWidth={2.5}
-                name="Energia"
-                animationDuration={1500}
-                dot={false}
-                activeDot={{ r: 5, stroke: "#f59e0b", strokeWidth: 2, fill: "#0a121e" }}
-              />
-              <Area
-                type="monotone"
-                dataKey="Solar"
-                stroke="#10b981"
-                fill="url(#gradSolar)"
-                strokeWidth={2.5}
-                name="Solar"
-                animationDuration={1500}
-                dot={false}
-                activeDot={{ r: 5, stroke: "#10b981", strokeWidth: 2, fill: "#0a121e" }}
-              />
+              <Legend formatter={(value) => <span style={{ color: "#94a3b8", fontSize: "12px" }}>{value}</span>} />
+              {get12MonthsActiveScopes().map((scope, i) => (
+                <Area
+                  key={scope.key}
+                  type="monotone"
+                  dataKey={scope.key}
+                  stroke={scope.color}
+                  fill={`url(#${scope.gradId})`}
+                  strokeWidth={2.5}
+                  name={scope.label}
+                  animationDuration={1500}
+                  dot={false}
+                  activeDot={{ r: 5, stroke: scope.color, strokeWidth: 2, fill: "#0a121e" }}
+                  filter={i === 0 ? "url(#areaGlow)" : undefined}
+                />
+              ))}
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>

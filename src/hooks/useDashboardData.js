@@ -79,67 +79,107 @@ export const getAvailableWeeks = () => {
   return weeks;
 };
 
-export const usePartnerStats = (user, filterMode = 'month', weekKey = null) => {
+export const getAvailableMonths = () => {
+  const months = [];
+  const now = new Date();
+  for (let i = 0; i < 24; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+      year: date.getFullYear(),
+      month: date.getMonth() + 1,
+      label: date.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }),
+    });
+  }
+  return months;
+};
+
+const getDayRange = (dayKey) => {
+  const date = dayKey ? new Date(dayKey) : new Date();
+  const start = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return { start, end: start };
+};
+
+export const getAvailableDays = () => {
+  const days = [];
+  const now = new Date();
+  for (let i = 0; i < 90; i++) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - i);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    days.push({
+      key,
+      label: date.toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }),
+    });
+  }
+  return days;
+};
+
+export const usePartnerStats = (user, filterMode = 'month', filterKey = null) => {
   return useQuery({
-    queryKey: ['partnerStats', filterMode, weekKey],
+    queryKey: ['partnerStats', filterMode, filterKey],
     queryFn: async () => {
       let startDate, endDate;
 
       if (filterMode === 'week') {
-        const range = getWeekRange(weekKey);
+        const range = getWeekRange(filterKey);
         startDate = range.start;
         endDate = range.end;
+      } else if (filterMode === 'day') {
+        const range = getDayRange(filterKey);
+        startDate = range.start;
+        endDate = range.end;
+      } else if (filterMode === 'specificMonth' && filterKey) {
+        const [year, month] = filterKey.split('-').map(Number);
+        startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
+        endDate = new Date(year, month, 0).toISOString().split('T')[0];
       } else {
-        const currentMonth = new Date().getMonth() + 1;
-        const currentYear = new Date().getFullYear();
-        startDate = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
-        endDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+        const now = new Date();
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
       }
 
-      const [salesResult, partnersResult, operatorsResult] = await Promise.all([
+      const [salesResult, partnersResult] = await Promise.all([
         supabase
           .from('sales')
-          .select('*, partners(name), operators(name)')
+          .select('*, partners(name), operators(name, id)')
           .gte('date', startDate)
           .lte('date', endDate)
           .neq('status', 'Em proposta'),
         supabase.from('partners').select('id, name'),
-        supabase.from('operators').select('id, name').eq('hidden', false)
       ]);
 
-      const currentMonthSales = salesResult.data || [];
+      const currentSales = salesResult.data || [];
       const partners = partnersResult.data || [];
-      const allOperators = operatorsResult.data || [];
 
       const partnerMap = {};
+      const operatorSet = {};
 
-      currentMonthSales.forEach(sale => {
+      currentSales.forEach(sale => {
         const partnerId = sale.partner_id || 'admin_commissioned';
 
         if (!partnerMap[partnerId]) {
           let partnerName = 'Desconhecido';
-
           if (partnerId === 'admin_commissioned') {
             partnerName = user?.name ? `${user.name} (Admin)` : 'Admin Comissionado';
           } else {
             const partner = sale.partners || partners.find(p => p.id === partnerId);
             partnerName = partner?.name || 'Desconhecido';
           }
-
-          partnerMap[partnerId] = {
-            name: partnerName,
-            operators: {},
-            total: 0
-          };
+          partnerMap[partnerId] = { name: partnerName, operators: {}, total: 0 };
         }
 
         const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
         const operatorName = sale.operators?.name || 'Desconhecido';
+        const operatorId = sale.operators?.id || sale.operator_id;
+
+        if (operatorId && operatorName !== 'Desconhecido') {
+          operatorSet[operatorId] = operatorName;
+        }
 
         if (!partnerMap[partnerId].operators[operatorName]) {
           partnerMap[partnerId].operators[operatorName] = 0;
         }
-
         partnerMap[partnerId].operators[operatorName]++;
         partnerMap[partnerId].total += commission;
       });
@@ -148,7 +188,10 @@ export const usePartnerStats = (user, filterMode = 'month', weekKey = null) => {
         .filter(p => p.total > 0 || Object.values(p.operators).some(v => v > 0))
         .sort((a, b) => b.total - a.total);
 
-      return { stats: sortedStats, operators: allOperators };
+      const activeOperators = Object.entries(operatorSet).map(([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      return { stats: sortedStats, operators: activeOperators };
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
