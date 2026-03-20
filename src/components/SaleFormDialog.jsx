@@ -461,23 +461,43 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-slate-400">Email</Label>
+                    <Label className={`text-sm font-semibold mb-2 ${formData.has_electronic_invoice ? 'text-white' : 'text-slate-400'}`}>
+                      Email{formData.has_electronic_invoice ? ' *' : ''}
+                    </Label>
                     <Input
                       type="email"
                       value={formData.client_email}
                       onChange={(e) => setFormData({...formData, client_email: e.target.value})}
-                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                      className={`bg-dark-900 focus:ring-cyber-500/20 text-white ${
+                        formData.has_electronic_invoice && !formData.client_email?.trim()
+                          ? 'border-red-500 focus:border-red-500'
+                          : formData.client_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.client_email.trim())
+                          ? 'border-red-500 focus:border-red-500'
+                          : 'border-dark-700 focus:border-cyber-500'
+                      }`}
                       placeholder="cliente@exemplo.com"
                     />
+                    {formData.client_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.client_email.trim()) && (
+                      <p className="text-xs text-red-400 mt-1">Formato de email inválido</p>
+                    )}
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-slate-400">IBAN</Label>
+                    <Label className={`text-sm font-semibold mb-2 ${formData.has_direct_debit ? 'text-white' : 'text-slate-400'}`}>
+                      IBAN{formData.has_direct_debit ? ' *' : ''}
+                    </Label>
                     <Input
                       value={formData.client_iban}
                       onChange={(e) => setFormData({...formData, client_iban: e.target.value})}
-                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                      className={`bg-dark-900 focus:ring-cyber-500/20 text-white ${
+                        formData.has_direct_debit && !formData.client_iban?.trim()
+                          ? 'border-red-500 focus:border-red-500'
+                          : 'border-dark-700 focus:border-cyber-500'
+                      }`}
                       placeholder="PT50..."
                     />
+                    {formData.has_direct_debit && !formData.client_iban?.trim() && (
+                      <p className="text-xs text-red-400 mt-1">IBAN obrigatório para Débito Direto</p>
+                    )}
                   </div>
                   <div className="col-span-1 sm:col-span-2">
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Autoriza cópia dos documentos pessoais? *</Label>
