@@ -156,6 +156,11 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('refidelizacao_unidade')) {
       updateData.refidelizacao_unidade = settingsData.refidelizacao_unidade || 'dias';
     }
+    if (settingsData.hasOwnProperty('allowed_sale_types')) {
+      updateData.allowed_sale_types = settingsData.allowed_sale_types && settingsData.allowed_sale_types.length > 0
+        ? settingsData.allowed_sale_types
+        : ['normal', 'multiponto', 'multilocal'];
+    }
 
     const { data, error } = await supabase
       .from('operators')

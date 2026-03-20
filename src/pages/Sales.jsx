@@ -1169,6 +1169,8 @@ const Sales = ({ user }) => {
       refidelizacao_prazo: sale.refidelizacao_prazo || null,
       refidelizacao_unidade: sale.refidelizacao_unidade || 'dias',
       has_chargeback: Boolean(sale.has_chargeback),
+      voltage_type: sale.voltage_type || "",
+      additional_services: sale.additional_services || "",
     });
     setEditDialogOpen(true);
   };

@@ -265,6 +265,7 @@ const Operators = ({ user }) => {
       setEditOperatorData({
         activation_types: freshData.activation_types || [],
         allowed_energy_types: freshData.allowed_energy_types || [],
+        allowed_sale_types: freshData.allowed_sale_types || ['normal', 'multiponto', 'multilocal'],
         allowed_client_types: freshData.allowed_client_types || ['particular', 'empresarial'],
         pays_direct_debit: freshData.pays_direct_debit || false,
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
@@ -338,6 +339,15 @@ const Operators = ({ user }) => {
       allowed_client_types: prev.allowed_client_types.includes(type)
         ? prev.allowed_client_types.filter(t => t !== type)
         : [...prev.allowed_client_types, type]
+    }));
+  };
+
+  const toggleEditSaleType = (type) => {
+    setEditOperatorData(prev => ({
+      ...prev,
+      allowed_sale_types: prev.allowed_sale_types.includes(type)
+        ? prev.allowed_sale_types.filter(t => t !== type)
+        : [...prev.allowed_sale_types, type]
     }));
   };
 
@@ -945,6 +955,31 @@ const Operators = ({ user }) => {
                           className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
                         />
                         <Label htmlFor={`edit-energy-${type}`} className="cursor-pointer font-normal capitalize text-slate-300">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedOperator.scope === 'energia' && (
+                <div>
+                  <Label className="text-slate-300 text-sm font-semibold">Tipos de Venda Permitidos</Label>
+                  <p className="text-xs text-slate-500 mt-0.5 mb-2">Selecione quais os tipos de venda disponíveis para esta operadora</p>
+                  <div className="mt-2 space-y-2">
+                    {[
+                      { value: 'normal', label: 'Venda Normal' },
+                      { value: 'multiponto', label: 'Multiponto' },
+                      { value: 'multilocal', label: 'Multilocal' },
+                    ].map(({ value, label }) => (
+                      <div key={value} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id={`edit-sale-type-${value}`}
+                          checked={editOperatorData.allowed_sale_types.includes(value)}
+                          onChange={() => toggleEditSaleType(value)}
+                          className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                        />
+                        <Label htmlFor={`edit-sale-type-${value}`} className="cursor-pointer font-normal text-slate-300">{label}</Label>
                       </div>
                     ))}
                   </div>

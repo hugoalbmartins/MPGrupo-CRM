@@ -353,7 +353,11 @@ const SaleFormDialog = ({
                               { value: 'normal', label: 'Venda Normal', desc: 'Um local, um CPE/CUI' },
                               { value: 'multiponto', label: 'Multiponto', desc: 'Vários CPEs, só eletricidade', disabled: operatorEnergyType === 'gas' },
                               { value: 'multilocal', label: 'Multilocal', desc: 'Vários locais, qualquer tipo' },
-                            ].map(opt => (
+                            ].filter(opt => {
+                              const allowedTypes = currentOperator?.allowed_sale_types;
+                              if (!allowedTypes || allowedTypes.length === 0) return true;
+                              return allowedTypes.includes(opt.value);
+                            }).map(opt => (
                               <button
                                 key={opt.value}
                                 type="button"

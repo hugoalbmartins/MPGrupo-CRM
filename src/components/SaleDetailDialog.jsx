@@ -786,17 +786,19 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                         </div>
                       )}
 
-                      {sale.cpe && (
-                        <div>
-                          <Label className="text-slate-500 text-xs uppercase">CPE</Label>
-                          <p className="font-semibold text-white mt-1">{sale.cpe}</p>
-                        </div>
-                      )}
-
-                      {sale.cui && (
-                        <div>
-                          <Label className="text-slate-500 text-xs uppercase">CUI</Label>
-                          <p className="font-semibold text-white mt-1">{sale.cui}</p>
+                      {(sale.cpe || sale.cui) && (
+                        <div className={sale.cpe && sale.cui ? "col-span-2" : ""}>
+                          <Label className="text-slate-500 text-xs uppercase">
+                            {sale.cpe && sale.cui ? 'CPE / CUI' : sale.cpe ? 'CPE' : 'CUI'}
+                          </Label>
+                          <div className="flex flex-wrap gap-3 mt-1">
+                            {sale.cpe && (
+                              <span className="font-semibold text-white font-mono text-sm bg-dark-900 border border-dark-700 rounded px-2 py-0.5">{sale.cpe}</span>
+                            )}
+                            {sale.cui && (
+                              <span className="font-semibold text-white font-mono text-sm bg-dark-900 border border-dark-700 rounded px-2 py-0.5">{sale.cui}</span>
+                            )}
+                          </div>
                         </div>
                       )}
 
@@ -815,6 +817,53 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                       )}
                     </div>
                   </div>
+
+                  {sale.scope === 'energia' && (sale.energy_sale_type || sale.entry_type || sale.power || sale.tier || sale.voltage_type || sale.additional_services) && (
+                    <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
+                      <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-cyber-500 rounded"></div>
+                        Detalhes Energia
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {sale.energy_sale_type && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Tipo de Adesao</Label>
+                            <p className="font-semibold text-white mt-1 capitalize">{sale.energy_sale_type === 'dual' ? 'Eletricidade + Gas (Dual)' : sale.energy_sale_type === 'eletricidade' ? 'Eletricidade' : 'Gas'}</p>
+                          </div>
+                        )}
+                        {sale.entry_type && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Tipo de Entrada</Label>
+                            <p className="font-semibold text-white mt-1">{sale.entry_type}</p>
+                          </div>
+                        )}
+                        {sale.power && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Potencia</Label>
+                            <p className="font-semibold text-white mt-1">{sale.power}</p>
+                          </div>
+                        )}
+                        {sale.tier && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Escalao (Gas)</Label>
+                            <p className="font-semibold text-white mt-1">{sale.tier}</p>
+                          </div>
+                        )}
+                        {sale.voltage_type && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Tipo de Tensao</Label>
+                            <p className="font-semibold text-white mt-1">{sale.voltage_type}</p>
+                          </div>
+                        )}
+                        {sale.additional_services && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Servicos Adicionais</Label>
+                            <p className="font-semibold text-white mt-1">{sale.additional_services}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {sale.scope === 'telecomunicacoes' && (sale.service_type || sale.activation_type || sale.has_tv || sale.has_net || sale.has_lr || (sale.mobile_numbers && sale.mobile_numbers.length > 0)) && (
                     <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
