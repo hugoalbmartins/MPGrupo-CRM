@@ -32,7 +32,7 @@ Deno.serve(async (req: Request) => {
     const payload: EmailPayload = await req.json();
     const { partnerId, partnerEmail, partnerName, month, year, userId, filePath, fileName, version, salesIds } = payload;
 
-    if (!partnerId || !partnerEmail || !partnerName || !month || !year || !userId || !filePath || !fileName || !version) {
+    if (!partnerId || !partnerName || !month || !year || !userId || !filePath || !fileName || !version) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -155,25 +155,29 @@ Deno.serve(async (req: Request) => {
 </html>
     `;
 
-    console.log(`[CommissionReport] Sending email to: ${partnerEmail}`);
+    if (partnerEmail) {
+      console.log(`[CommissionReport] Sending email to: ${partnerEmail}`);
 
-    await sendEmail(
-      partnerEmail,
-      subject,
-      emailHtml,
-      {
-        from: "noreply@mpgrupo.pt",
-        fromName: "MP Grupo - Departamento Financeiro",
-        replyTo: "financeira@mpgrupo.pt"
-      }
-    );
+      await sendEmail(
+        partnerEmail,
+        subject,
+        emailHtml,
+        {
+          from: "noreply@mpgrupo.pt",
+          fromName: "MP Grupo - Departamento Financeiro",
+          replyTo: "financeira@mpgrupo.pt"
+        }
+      );
 
-    console.log(`[CommissionReport] Email sent successfully`);
+      console.log(`[CommissionReport] Email sent successfully`);
 
-    await supabase
-      .from("commission_reports")
-      .update({ emailed_at: new Date().toISOString() })
-      .eq("id", reportData.id);
+      await supabase
+        .from("commission_reports")
+        .update({ emailed_at: new Date().toISOString() })
+        .eq("id", reportData.id);
+    } else {
+      console.log(`[CommissionReport] No email configured for partner, skipping email`);
+    }
 
     console.log(`[CommissionReport] Database updated`);
 
