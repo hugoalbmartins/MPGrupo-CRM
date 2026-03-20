@@ -205,16 +205,30 @@ export const operatorsService = {
   async saveCommissionConfigs(operatorId, configs) {
     const { data: { user } } = await supabase.auth.getUser();
 
-    await supabase
-      .from('commission_configurations')
-      .delete()
-      .eq('operator_id', operatorId);
+    const seen = new Set();
+    const deduplicatedConfigs = configs.filter(config => {
+      const serviceTypes = config.service_types || [config.service_type];
+      const key = [
+        config.partner_type || 'D2D',
+        config.partner_type === 'D2D' ? (config.d2d_level || 'Nv1') : null,
+        (config.partner_type === 'REV' || config.partner_type === 'Rev+') ? (config.rev_level || 1) : null,
+        config.client_type,
+        config.service_type,
+        config.tier_mode || 'by_quantity',
+        config.min_sales || 0,
+        config.monthly_value_min || 0,
+        config.monthly_value_max || 0,
+        config.activation_type || null,
+        config.refid_operation_type || null,
+        config.tier_mode === 'by_power' ? (config.power_value || null) : null,
+        config.service_type === 'additional_service' ? (config.additional_service_name || null) : null,
+      ].join('|');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
-    if (configs.length === 0) {
-      return [];
-    }
-
-    const configsToInsert = configs.map(config => {
+    const configsToInsert = deduplicatedConfigs.map(config => {
       const serviceTypes = config.service_types || [config.service_type];
       const hasRefid = serviceTypes.includes('REFID');
       const hasNIorMC = serviceTypes.includes('NI') || serviceTypes.includes('MC');
@@ -246,6 +260,15 @@ export const operatorsService = {
         updated_by: user?.id
       };
     });
+
+    const { error: deleteError } = await supabase
+      .from('commission_configurations')
+      .delete()
+      .eq('operator_id', operatorId);
+
+    if (deleteError) throw deleteError;
+
+    if (configsToInsert.length === 0) return [];
 
     const { data, error } = await supabase
       .from('commission_configurations')

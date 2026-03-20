@@ -338,5 +338,70 @@ export const partnersService = {
       ...op,
       levels: Array.from(op.levels).sort(),
     }));
+  },
+
+  async getREVLevels(partnerId) {
+    const { data, error } = await supabase
+      .from('partner_rev_operator_levels')
+      .select('*, operators(name)')
+      .eq('partner_id', partnerId);
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async saveREVLevels(partnerId, levels) {
+    await supabase
+      .from('partner_rev_operator_levels')
+      .delete()
+      .eq('partner_id', partnerId);
+
+    if (!levels || levels.length === 0) return [];
+
+    const rows = levels
+      .filter(l => l.rev_level)
+      .map(l => ({
+        partner_id: partnerId,
+        operator_id: l.operator_id,
+        rev_level: l.rev_level,
+      }));
+
+    if (rows.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('partner_rev_operator_levels')
+      .insert(rows)
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getOperatorsWithREVConfigs() {
+    const { data, error } = await supabase
+      .from('commission_configurations')
+      .select('operator_id, rev_level, partner_type, operators(id, name)')
+      .in('partner_type', ['REV', 'Rev+'])
+      .not('rev_level', 'is', null);
+
+    if (error) throw error;
+
+    const operatorMap = {};
+    (data || []).forEach(row => {
+      const opId = row.operator_id;
+      if (!operatorMap[opId]) {
+        operatorMap[opId] = {
+          id: opId,
+          name: row.operators?.name || opId,
+          levels: new Set(),
+        };
+      }
+      operatorMap[opId].levels.add(row.rev_level);
+    });
+
+    return Object.values(operatorMap).map(op => ({
+      ...op,
+      levels: Array.from(op.levels).sort((a, b) => a - b),
+    }));
   }
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader2, Building2, ShoppingCart } from "lucide-react";
+import { Plus, Search, Upload, File, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Loader as Loader2, Building2, ShoppingCart } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ const Partners = ({ user }) => {
   const [selectedPartnerForDocs, setSelectedPartnerForDocs] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [d2dLevels, setD2dLevels] = useState([]);
+  const [revLevels, setRevLevels] = useState([]);
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [formData, setFormData] = useState({
     partner_type: "D2D",
@@ -64,6 +65,12 @@ const Partners = ({ user }) => {
   const { data: operatorsWithD2D = [] } = useQuery({
     queryKey: ['operators-d2d-configs'],
     queryFn: () => partnersService.getOperatorsWithD2DConfigs(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: operatorsWithREV = [] } = useQuery({
+    queryKey: ['operators-rev-configs'],
+    queryFn: () => partnersService.getOperatorsWithREVConfigs(),
     staleTime: 10 * 60 * 1000,
   });
 
@@ -105,6 +112,8 @@ const Partners = ({ user }) => {
         await partnersService.update(editingPartner.id, submitData);
         if (editingPartner.partner_type === 'D2D') {
           await partnersService.saveD2DLevels(editingPartner.id, d2dLevels);
+        } else if (editingPartner.partner_type === 'REV' || editingPartner.partner_type === 'Rev+') {
+          await partnersService.saveREVLevels(editingPartner.id, revLevels);
         }
         toast.success("Parceiro atualizado com sucesso!");
       } else {
@@ -160,14 +169,33 @@ const Partners = ({ user }) => {
           operator_id: l.operator_id,
           d2d_level: l.d2d_level,
         })));
+        setRevLevels([]);
       } catch (err) {
         console.error('Failed to load D2D levels:', err);
+        setD2dLevels([]);
+        setRevLevels([]);
+      } finally {
+        setLoadingLevels(false);
+      }
+    } else if (partner.partner_type === 'REV' || partner.partner_type === 'Rev+') {
+      setLoadingLevels(true);
+      try {
+        const levels = await partnersService.getREVLevels(partner.id);
+        setRevLevels(levels.map(l => ({
+          operator_id: l.operator_id,
+          rev_level: l.rev_level,
+        })));
+        setD2dLevels([]);
+      } catch (err) {
+        console.error('Failed to load REV levels:', err);
+        setRevLevels([]);
         setD2dLevels([]);
       } finally {
         setLoadingLevels(false);
       }
     } else {
       setD2dLevels([]);
+      setRevLevels([]);
     }
   };
 
@@ -209,6 +237,7 @@ const Partners = ({ user }) => {
     setEditingPartner(null);
     setGeneratedPassword("");
     setD2dLevels([]);
+    setRevLevels([]);
     setFormData({
       partner_type: "D2D",
       name: "",
@@ -563,6 +592,54 @@ const Partners = ({ user }) => {
                                   <SelectItem value="none">Sem nivel atribuido</SelectItem>
                                   {op.levels.map(level => (
                                     <SelectItem key={level} value={level}>{level}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          );
+                        })}
+                        <p className="text-xs text-slate-500 mt-2">
+                          Operadoras sem nivel atribuido nao permitem registar vendas para este parceiro
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {editingPartner && (editingPartner.partner_type === 'REV' || editingPartner.partner_type === 'Rev+') && operatorsWithREV.length > 0 && (
+                  <div className="border border-dark-700 rounded-xl p-4 bg-dark-900">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Building2 className="w-4 h-4 text-cyan-400" />
+                      <Label className="text-sm font-semibold text-slate-300">Niveis de Comissao {editingPartner.partner_type} por Operadora</Label>
+                    </div>
+                    {loadingLevels ? (
+                      <div className="flex items-center gap-2 py-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+                        <span className="text-sm text-slate-400">A carregar niveis...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {operatorsWithREV.map(op => {
+                          const currentLevel = revLevels.find(l => l.operator_id === op.id);
+                          return (
+                            <div key={op.id} className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-slate-300 w-40 truncate">{op.name}</span>
+                              <Select
+                                value={currentLevel ? String(currentLevel.rev_level) : "none"}
+                                onValueChange={(v) => {
+                                  const newLevels = revLevels.filter(l => l.operator_id !== op.id);
+                                  if (v !== "none") {
+                                    newLevels.push({ operator_id: op.id, rev_level: parseInt(v) });
+                                  }
+                                  setRevLevels(newLevels);
+                                }}
+                              >
+                                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 flex-1 h-9">
+                                  <SelectValue placeholder="Sem nivel" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Sem nivel atribuido</SelectItem>
+                                  {op.levels.map(level => (
+                                    <SelectItem key={level} value={String(level)}>Nivel {level}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>

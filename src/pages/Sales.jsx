@@ -457,15 +457,35 @@ const Sales = ({ user }) => {
   const fetchOperatorCommissions = async (operatorId, partnerId = null, clientType = null) => {
     try {
       let partnerType = 'D2D';
+      let assignedD2DLevel = null;
+      let assignedREVLevel = null;
       const partnerIdToUse = partnerId || formData.partner_id;
       const clientTypeToUse = clientType || formData.client_type;
 
       if (partnerIdToUse === '__admin__') {
-        partnerType = 'Rev1';
+        partnerType = 'Rev+';
       } else if (partnerIdToUse) {
         const selectedPartner = partners.find(p => p.id === partnerIdToUse);
         if (selectedPartner) {
           partnerType = selectedPartner.partner_type;
+
+          if (partnerType === 'D2D') {
+            const { data: d2dLevelData } = await supabase
+              .from('partner_d2d_operator_levels')
+              .select('d2d_level')
+              .eq('partner_id', partnerIdToUse)
+              .eq('operator_id', operatorId)
+              .maybeSingle();
+            assignedD2DLevel = d2dLevelData?.d2d_level || null;
+          } else if (partnerType === 'REV' || partnerType === 'Rev+') {
+            const { data: revLevelData } = await supabase
+              .from('partner_rev_operator_levels')
+              .select('rev_level')
+              .eq('partner_id', partnerIdToUse)
+              .eq('operator_id', operatorId)
+              .maybeSingle();
+            assignedREVLevel = revLevelData?.rev_level ?? (selectedPartner.rev_level || 1);
+          }
         }
       }
 
@@ -474,6 +494,12 @@ const Sales = ({ user }) => {
         .select('*')
         .eq('operator_id', operatorId)
         .eq('partner_type', partnerType);
+
+      if (partnerType === 'D2D' && assignedD2DLevel) {
+        query = query.eq('d2d_level', assignedD2DLevel);
+      } else if ((partnerType === 'REV' || partnerType === 'Rev+') && assignedREVLevel) {
+        query = query.eq('rev_level', assignedREVLevel);
+      }
 
       if (clientTypeToUse) {
         query = query.eq('client_type', clientTypeToUse);
