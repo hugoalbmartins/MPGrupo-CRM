@@ -304,7 +304,7 @@ const CommissionReports = ({ user }) => {
           <tbody>
             ${pendingChargebacks.map(cb => `
               <tr>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${cb.sale?.customer_name || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${cb.sale?.client_name || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;font-family:monospace;">${cb.sale?.client_nif || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${cb.sale?.request_number || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${cb.reason || '-'}</td>

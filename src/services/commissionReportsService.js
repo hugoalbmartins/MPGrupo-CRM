@@ -205,7 +205,7 @@ export const commissionReportsService = {
       .select(`
         *,
         sale:sales!chargebacks_sale_id_fkey(
-          id, sale_code, customer_name, client_nif, calculated_commission,
+          id, sale_code, client_name, client_nif, calculated_commission,
           manual_commission, operator_name, request_number, activated_at
         )
       `)
