@@ -130,7 +130,12 @@ const Sales = ({ user }) => {
     is_proposal: false,
     energy_points: [],
     voltage_type: "",
-    additional_services: ""
+    additional_services: "",
+    billing_address: "",
+    ev_outlet_count: "",
+    ev_monthly_fee: "",
+    ev_margin: "",
+    ev_fidelization_months: ""
   });
 
   useEffect(() => {
@@ -209,15 +214,32 @@ const Sales = ({ user }) => {
       return;
     }
 
-    if (!formData.street || !formData.postal_code || !formData.locality) {
-      toast.error("Morada, codigo postal e localidade sao obrigatorios!");
-      return;
+    if (energySaleMode !== 'multiponto' && energySaleMode !== 'multilocal') {
+      if (!formData.street || !formData.postal_code || !formData.locality) {
+        toast.error("Morada de instalação, código postal e localidade são obrigatórios!");
+        return;
+      }
+
+      const postalCodeRegex = /^\d{4}-\d{3}$/;
+      if (!postalCodeRegex.test(formData.postal_code)) {
+        toast.error("Código postal inválido! Use o formato: 0000-000");
+        return;
+      }
     }
 
-    const postalCodeRegex = /^\d{4}-\d{3}$/;
-    if (!postalCodeRegex.test(formData.postal_code)) {
-      toast.error("Codigo postal invalido! Use o formato: 0000-000");
-      return;
+    if (formData.scope === 'mobilidade_eletrica') {
+      if (!formData.ev_outlet_count || parseInt(formData.ev_outlet_count) < 1) {
+        toast.error("Quantidade de tomadas instaladas é obrigatória!");
+        return;
+      }
+      if (!formData.ev_monthly_fee || parseFloat(formData.ev_monthly_fee) < 0) {
+        toast.error("Mensalidade negociada é obrigatória!");
+        return;
+      }
+      if (!formData.ev_fidelization_months || parseInt(formData.ev_fidelization_months) < 1) {
+        toast.error("Prazo de fidelização é obrigatório!");
+        return;
+      }
     }
 
     if (uploadFiles.length === 0) {
@@ -369,6 +391,7 @@ const Sales = ({ user }) => {
         if (energySaleMode === 'multiponto') {
           const cpePoints = energyPoints.filter(p => p.point_type === 'cpe');
           let parentSaleId = null;
+          let baseCode = null;
           let createdCount = 0;
 
           for (let i = 0; i < cpePoints.length; i++) {
@@ -380,13 +403,19 @@ const Sales = ({ user }) => {
               energy_sale_type: 'eletricidade',
               sale_type: 'multiponto',
               parent_sale_id: parentSaleId,
+              installation_address: pt.installation_address || submitData.street || '',
+              billing_address: pt.billing_address || submitData.billing_address || '',
+              street: pt.installation_address || submitData.street || '',
               is_bulk_import: true,
+              _multipoint_index: i + 1,
+              _multipoint_base_code: baseCode,
             };
 
             try {
               const result = await salesService.create(salePayload, i === 0 ? uploadFiles : []);
               if (i === 0) {
                 parentSaleId = result.id;
+                baseCode = result.sale_code?.replace(/_\d+$/, '') || result.sale_code;
               }
               createdCount++;
             } catch (err) {
@@ -403,6 +432,8 @@ const Sales = ({ user }) => {
               point_type: 'cpe',
               point_code: p.point_code?.toUpperCase() || '',
               power_kva: p.power_kva || null,
+              installation_address: p.installation_address || null,
+              billing_address: p.billing_address || null,
             }));
             salesService.resendNewSaleEmail(parentSaleId, {
               sale_type: 'multiponto',
@@ -436,6 +467,7 @@ const Sales = ({ user }) => {
           }
 
           let parentSaleId = null;
+          let baseCode = null;
           let createdCount = 0;
 
           for (let i = 0; i < localeSales.length; i++) {
@@ -447,19 +479,24 @@ const Sales = ({ user }) => {
               cui: type === 'cui' ? (point.point_code?.toUpperCase() || '') : '',
               tier: type === 'cui' ? (point.tier || '') : '',
               energy_sale_type,
-              installation_address: point.installation_address || submitData.installation_address || '',
+              street: point.installation_address || submitData.street || '',
+              installation_address: point.installation_address || '',
+              billing_address: point.billing_address || '',
               entry_type: point.entry_type || submitData.entry_type || '',
               voltage_type: point.voltage_type || submitData.voltage_type || '',
               additional_services: point.additional_services || submitData.additional_services || '',
               sale_type: 'multilocal',
               parent_sale_id: parentSaleId,
               is_bulk_import: true,
+              _multipoint_index: i + 1,
+              _multipoint_base_code: baseCode,
             };
 
             try {
               const result = await salesService.create(salePayload, i === 0 ? uploadFiles : []);
               if (i === 0) {
                 parentSaleId = result.id;
+                baseCode = result.sale_code?.replace(/_\d+$/, '') || result.sale_code;
               }
               createdCount++;
             } catch (err) {

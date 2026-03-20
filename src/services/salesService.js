@@ -263,25 +263,65 @@ export const salesService = {
     const actualPartnerId = saleData.partner_id || null;
 
     let saleCode;
-    let retries = 0;
-    const maxRetries = 5;
+    const multipointIndex = saleData._multipoint_index || null;
+    const multipointBaseCode = saleData._multipoint_base_code || null;
 
-    while (retries < maxRetries) {
-      saleCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
+    if (multipointIndex && multipointBaseCode) {
+      saleCode = `${multipointBaseCode}_${multipointIndex}`;
       const { data: existing } = await supabase
         .from('sales')
         .select('id')
         .eq('sale_code', saleCode)
         .maybeSingle();
-
-      if (!existing) break;
-
-      retries++;
-      if (retries >= maxRetries) {
-        throw new Error('Failed to generate unique sale code after multiple attempts');
+      if (existing) {
+        saleCode = `${multipointBaseCode}_${multipointIndex}_${Date.now()}`;
       }
+    } else if (multipointIndex === 1 || multipointIndex === null) {
+      let retries = 0;
+      const maxRetries = 5;
 
-      await new Promise(resolve => setTimeout(resolve, 100 * retries));
+      while (retries < maxRetries) {
+        const baseCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
+        const codeToCheck = multipointIndex ? `${baseCode}_1` : baseCode;
+        const { data: existing } = await supabase
+          .from('sales')
+          .select('id')
+          .eq('sale_code', codeToCheck)
+          .maybeSingle();
+
+        if (!existing) {
+          saleCode = codeToCheck;
+          break;
+        }
+
+        retries++;
+        if (retries >= maxRetries) {
+          throw new Error('Failed to generate unique sale code after multiple attempts');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100 * retries));
+      }
+    } else {
+      let retries = 0;
+      const maxRetries = 5;
+
+      while (retries < maxRetries) {
+        saleCode = await generateSaleCode(actualPartnerId, saleData.date, supabase);
+        const { data: existing } = await supabase
+          .from('sales')
+          .select('id')
+          .eq('sale_code', saleCode)
+          .maybeSingle();
+
+        if (!existing) break;
+
+        retries++;
+        if (retries >= maxRetries) {
+          throw new Error('Failed to generate unique sale code after multiple attempts');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100 * retries));
+      }
     }
 
     let status;
@@ -374,6 +414,11 @@ export const salesService = {
       is_bulk_import: saleData.is_bulk_import === true,
       sale_type: saleData.sale_type || 'normal',
       parent_sale_id: saleData.parent_sale_id || null,
+      billing_address: saleData.billing_address || null,
+      ev_outlet_count: saleData.ev_outlet_count ? parseInt(saleData.ev_outlet_count) : null,
+      ev_monthly_fee: saleData.ev_monthly_fee ? parseFloat(saleData.ev_monthly_fee) : null,
+      ev_margin: saleData.ev_margin ? parseFloat(saleData.ev_margin) : null,
+      ev_fidelization_months: saleData.ev_fidelization_months ? parseInt(saleData.ev_fidelization_months) : null,
     };
 
     const { data, error } = await supabase
@@ -397,9 +442,9 @@ export const salesService = {
 
     if (!oldSale) throw new Error('Sale not found');
 
-    const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address'];
+    const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address', 'billing_address'];
     const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint', 'tratar_oop'];
-    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'refidelizacao_prazo', 'refidelizacao_unidade'];
+    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'refidelizacao_prazo', 'refidelizacao_unidade', 'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
@@ -698,6 +743,11 @@ export const salesService = {
       client_iban: sale.client_iban,
       address: [sale.street, sale.postal_code, sale.locality].filter(Boolean).join(', '),
       installation_address: sale.installation_address,
+      billing_address: sale.billing_address,
+      ev_outlet_count: sale.ev_outlet_count,
+      ev_monthly_fee: sale.ev_monthly_fee,
+      ev_margin: sale.ev_margin,
+      ev_fidelization_months: sale.ev_fidelization_months,
       entry_type: sale.entry_type,
       energy_sale_type: sale.energy_sale_type,
       cpe: sale.cpe,

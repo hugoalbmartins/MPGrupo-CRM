@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, CircleAlert as AlertCircle, Trash2, Info, MailX, TriangleAlert } from 'lucide-react';
+import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, CircleAlert as AlertCircle, Trash2, Info, MailX, TriangleAlert, Car } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -254,6 +254,7 @@ const SaleFormDialog = ({
                         <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
                         <SelectItem value="energia">Energia</SelectItem>
                         <SelectItem value="solar">Solar</SelectItem>
+                        <SelectItem value="mobilidade_eletrica">Mobilidade Elétrica</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -498,10 +499,11 @@ const SaleFormDialog = ({
 
               <div className="border-t border-dark-700 my-6" />
 
+              {energySaleMode !== 'multiponto' && energySaleMode !== 'multilocal' && (
               <FormSection icon={MapPin} title="Morada" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="col-span-1 sm:col-span-2">
-                    <Label className="text-sm font-semibold mb-2 text-slate-400">Morada Completa *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Morada de Instalação *</Label>
                     <Input
                       value={formData.street}
                       onChange={(e) => setFormData({...formData, street: e.target.value})}
@@ -532,17 +534,18 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div className="col-span-1 sm:col-span-2">
-                    <Label className="text-sm font-semibold mb-2 text-slate-400">Morada de Instalação/Fornecimento</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Morada de Faturação</Label>
                     <Input
-                      value={formData.installation_address}
-                      onChange={(e) => setFormData({...formData, installation_address: e.target.value})}
+                      value={formData.billing_address || ''}
+                      onChange={(e) => setFormData({...formData, billing_address: e.target.value})}
                       className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
-                      placeholder="Se diferente da morada do cliente"
+                      placeholder="Se diferente da morada de instalação"
                     />
-                    <p className="text-xs mt-1 text-slate-500">Apenas preencher se for diferente da morada principal</p>
+                    <p className="text-xs mt-1 text-slate-500">Opcional — se não preenchida, será indicado "Mesma" no email</p>
                   </div>
                 </div>
               </FormSection>
+              )}
 
               <div className="border-t border-dark-700 my-6" />
 
@@ -941,6 +944,64 @@ const SaleFormDialog = ({
                     </FormSection>
                   )}
                 </>
+              )}
+
+              {formData.scope === 'mobilidade_eletrica' && (
+                <FormSection icon={Car} title="Detalhes Mobilidade Elétrica" gradient="from-emerald-500 to-emerald-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">Quantidade de Tomadas Instaladas *</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={formData.ev_outlet_count || ''}
+                        onChange={(e) => setFormData({...formData, ev_outlet_count: e.target.value ? parseInt(e.target.value) : ''})}
+                        required
+                        placeholder="Ex: 2"
+                        className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">Mensalidade Negociada (€) *</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.ev_monthly_fee || ''}
+                        onChange={(e) => setFormData({...formData, ev_monthly_fee: e.target.value})}
+                        required
+                        placeholder="Ex: 29.99"
+                        className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">Margem Negociada (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={formData.ev_margin || ''}
+                        onChange={(e) => setFormData({...formData, ev_margin: e.target.value})}
+                        placeholder="Ex: 15.00"
+                        className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                      />
+                      <p className="text-xs mt-1 text-slate-500">Opcional</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">Prazo de Fidelização (meses) *</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={formData.ev_fidelization_months || ''}
+                        onChange={(e) => setFormData({...formData, ev_fidelization_months: e.target.value ? parseInt(e.target.value) : ''})}
+                        required
+                        placeholder="Ex: 24"
+                        className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                      />
+                    </div>
+                  </div>
+                </FormSection>
               )}
 
               {formData.scope === 'solar' && (

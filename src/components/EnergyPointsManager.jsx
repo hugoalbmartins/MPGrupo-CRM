@@ -29,6 +29,8 @@ const createEmptyMultipuntoPoint = () => ({
   id: crypto.randomUUID(),
   point_code: '',
   power_kva: '',
+  installation_address: '',
+  billing_address: '',
 });
 
 const createEmptyMultilocalLocation = () => ({
@@ -155,6 +157,8 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
     const expanded = pts.map(p => ({
       id: p.id, point_type: 'cpe', point_code: p.point_code,
       power_kva: parsePowerKva(p.power_kva), tier: null,
+      installation_address: p.installation_address || null,
+      billing_address: p.billing_address || null,
       activation_status: 'pending', activation_date: null, operator_paid: false,
     }));
     onChange(expanded, 'multiponto');
@@ -442,6 +446,24 @@ const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew }) => 
                   </SelectContent>
                 </Select>
               </div>
+              <div className="col-span-1 sm:col-span-2">
+                <Label className="text-slate-400 text-xs">Morada de Instalação *</Label>
+                <Input
+                  className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                  value={point.installation_address || ''}
+                  onChange={(e) => handlePointChange(index, 'installation_address', e.target.value)}
+                  placeholder="Rua, número, código postal, localidade"
+                />
+              </div>
+              <div className="col-span-1 sm:col-span-2">
+                <Label className="text-slate-400 text-xs">Morada de Faturação</Label>
+                <Input
+                  className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                  value={point.billing_address || ''}
+                  onChange={(e) => handlePointChange(index, 'billing_address', e.target.value)}
+                  placeholder="Se diferente da morada de instalação"
+                />
+              </div>
             </div>
           </Card>
         ))}
@@ -583,21 +605,21 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label className="text-slate-400 text-xs">Morada de Instalacao</Label>
+                <Label className="text-slate-400 text-xs">Morada de Instalação *</Label>
                 <Input
                   className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
                   value={loc.installation_address}
                   onChange={(e) => handleLocationChange(index, 'installation_address', e.target.value)}
-                  placeholder="Morada do local de consumo"
+                  placeholder="Rua, número, código postal, localidade"
                 />
               </div>
               <div>
-                <Label className="text-slate-400 text-xs">Morada de Faturacao</Label>
+                <Label className="text-slate-400 text-xs">Morada de Faturação</Label>
                 <Input
                   className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
                   value={loc.billing_address}
                   onChange={(e) => handleLocationChange(index, 'billing_address', e.target.value)}
-                  placeholder="Morada de faturacao (se diferente)"
+                  placeholder="Se diferente da morada de instalação"
                 />
               </div>
             </div>

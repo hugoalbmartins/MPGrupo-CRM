@@ -360,17 +360,17 @@ const SaleEditDialog = ({
 
               <FormSection icon={MapPin} title="Morada" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <FieldGroup label="Morada" colSpan={2} locked={!isAddressEditable('street')}>
+                  <FieldGroup label="Morada de Instalação" colSpan={2} locked={!isAddressEditable('street')}>
                     <Input
                       value={editFormData.street || ''}
                       disabled={!isAddressEditable('street')}
                       onChange={(e) => update('street', e.target.value)}
-                      placeholder="Rua, Avenida, numero, andar, etc."
+                      placeholder="Rua, Avenida, número, andar, etc."
                       className={!isAddressEditable('street') ? "bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" : "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"}
                     />
                   </FieldGroup>
 
-                  <FieldGroup label="Codigo Postal" locked={!isAddressEditable('postal_code')}>
+                  <FieldGroup label="Código Postal" locked={!isAddressEditable('postal_code')}>
                     <Input
                       value={editFormData.postal_code || ''}
                       disabled={!isAddressEditable('postal_code')}
@@ -390,13 +390,12 @@ const SaleEditDialog = ({
                     />
                   </FieldGroup>
 
-                  <FieldGroup label="Morada de Instalacao" colSpan={2} locked={!isAddressEditable('installation_address')}>
+                  <FieldGroup label="Morada de Faturação" colSpan={2}>
                     <Input
-                      value={editFormData.installation_address || ''}
-                      disabled={!isAddressEditable('installation_address')}
-                      onChange={(e) => update('installation_address', e.target.value)}
-                      placeholder="Se diferente da morada do cliente"
-                      className={!isAddressEditable('installation_address') ? "bg-dark-900 border-dark-700 text-slate-500 opacity-60 cursor-not-allowed" : "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"}
+                      value={editFormData.billing_address || ''}
+                      onChange={(e) => update('billing_address', e.target.value)}
+                      placeholder="Se diferente da morada de instalação"
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                     />
                   </FieldGroup>
                 </div>
@@ -639,6 +638,50 @@ const SaleEditDialog = ({
                       </div>
                     )}
                   </div>
+                </div>
+              </FormSection>
+            )}
+
+            {/* Mobilidade Eletrica fields */}
+            {editFormData.scope === 'mobilidade_eletrica' && (
+              <FormSection icon={Zap} title="Detalhes Mobilidade Elétrica" gradient="from-emerald-500 to-emerald-600">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <FieldGroup label="Quantidade de Tomadas">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={editFormData.ev_outlet_count || ''}
+                      onChange={(e) => update('ev_outlet_count', e.target.value ? parseInt(e.target.value) : null)}
+                      className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Mensalidade Negociada (€)">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editFormData.ev_monthly_fee || ''}
+                      onChange={(e) => update('ev_monthly_fee', e.target.value)}
+                      className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Margem Negociada (%)">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editFormData.ev_margin || ''}
+                      onChange={(e) => update('ev_margin', e.target.value)}
+                      className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Prazo de Fidelização (meses)">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={editFormData.ev_fidelization_months || ''}
+                      onChange={(e) => update('ev_fidelization_months', e.target.value ? parseInt(e.target.value) : null)}
+                      className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
+                    />
+                  </FieldGroup>
                 </div>
               </FormSection>
             )}

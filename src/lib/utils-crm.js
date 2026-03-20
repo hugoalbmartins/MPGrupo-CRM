@@ -161,7 +161,11 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   let maxSequence = 0;
   if (allSales && allSales.length > 0) {
     for (const sale of allSales) {
-      const code = sale.sale_code || '';
+      let code = sale.sale_code || '';
+      const underscoreIdx = code.lastIndexOf('_');
+      if (underscoreIdx > 0) {
+        code = code.substring(0, underscoreIdx);
+      }
       if (code.length >= 9) {
         const seqStr = code.substring(3, 7);
         const seq = parseInt(seqStr, 10);

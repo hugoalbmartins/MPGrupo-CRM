@@ -72,6 +72,11 @@ interface SaleEmailPayload {
   operator_requires_additional_services?: boolean;
   tratar_oop?: boolean;
   sale_type?: string;
+  billing_address?: string | null;
+  ev_outlet_count?: number | null;
+  ev_monthly_fee?: number | string | null;
+  ev_margin?: number | string | null;
+  ev_fidelization_months?: number | null;
   energy_points_list?: Array<{
     point_type: string;
     point_code: string;
@@ -141,8 +146,8 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
 
           ${hasField(payload, 'address') && payload.address ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Morada</strong></td></tr>
-          <tr><td>Morada:</td><td>${payload.address}</td></tr>
-          <tr><td>Local de Instalacao:</td><td>${payload.installation_address || "Mesma"}</td></tr>
+          <tr><td>Morada de Instalação:</td><td>${payload.address}</td></tr>
+          <tr><td>Morada de Faturação:</td><td>${payload.billing_address || "Mesma"}</td></tr>
           ` : ""}
 
           ${hasField(payload, 'autoriza_documentos') && payload.autoriza_documentos ? `<tr><td>Autoriza docs. pessoais:</td><td>${payload.autoriza_documentos}</td></tr>` : ""}
@@ -201,13 +206,19 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           ${payload.sale_type === 'multiponto' && payload.energy_points_list && payload.energy_points_list.length > 0 ? `
             <tr><td colspan="2" style="padding-top: 8px; padding-bottom: 4px;"><strong style="color: #374151;">CPEs (${payload.energy_points_list.length} pontos):</strong></td></tr>
             ${payload.energy_points_list.map((pt, i) => `
-              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE ${i+1}:</td><td style="font-size:13px;">${pt.point_code}${pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}</td></tr>
+              <tr><td colspan="2" style="padding: 8px 0 2px 0; border-top: 1px dashed #e5e7eb;"><strong style="color:#1e3a8a; font-size:13px;">— Local ${i+1} —</strong></td></tr>
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE:</td><td style="font-size:13px;">${pt.point_code}${pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}</td></tr>
+              ${pt.installation_address ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${pt.installation_address}</td></tr>` : ''}
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
             `).join('')}
           ` : ""}
           ${payload.sale_type === 'multilocal' && payload.energy_points_list && payload.energy_points_list.length > 0 ? `
             <tr><td colspan="2" style="padding-top: 8px; padding-bottom: 4px;"><strong style="color: #374151;">Locais (${payload.energy_points_list.length} pontos):</strong></td></tr>
             ${payload.energy_points_list.map((pt, i) => `
-              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Local ${i+1} (${pt.point_type.toUpperCase()}):</td><td style="font-size:13px;">${pt.point_code}${pt.point_type === 'cpe' && pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}${pt.point_type === 'cui' && pt.tier ? ` / Esc. ${pt.tier}` : ''}${pt.installation_address ? `<br><span style="color:#9ca3af;font-size:12px;">${pt.installation_address}</span>` : ''}</td></tr>
+              <tr><td colspan="2" style="padding: 8px 0 2px 0; border-top: 1px dashed #e5e7eb;"><strong style="color:#1e3a8a; font-size:13px;">— Local ${i+1} (${pt.point_type.toUpperCase()}) —</strong></td></tr>
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">${pt.point_type === 'cpe' ? 'CPE' : 'CUI'}:</td><td style="font-size:13px;">${pt.point_code}${pt.point_type === 'cpe' && pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}${pt.point_type === 'cui' && pt.tier ? ` / Esc. ${pt.tier}` : ''}</td></tr>
+              ${pt.installation_address ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${pt.installation_address}</td></tr>` : ''}
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
             `).join('')}
           ` : ""}
           ${(!payload.sale_type || payload.sale_type === 'normal') ? `
@@ -222,6 +233,14 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           ${payload.scope === "solar" ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Solar</strong></td></tr>
           ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
+          ` : ""}
+
+          ${payload.scope === "mobilidade_eletrica" ? `
+          <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #059669;">Detalhes Mobilidade Elétrica</strong></td></tr>
+          ${payload.ev_outlet_count ? `<tr><td>Tomadas Instaladas:</td><td>${payload.ev_outlet_count}</td></tr>` : ""}
+          ${payload.ev_monthly_fee ? `<tr><td>Mensalidade Negociada:</td><td>${payload.ev_monthly_fee}€</td></tr>` : ""}
+          ${payload.ev_margin ? `<tr><td>Margem Negociada:</td><td>${payload.ev_margin}%</td></tr>` : ""}
+          ${payload.ev_fidelization_months ? `<tr><td>Prazo de Fidelização:</td><td>${payload.ev_fidelization_months} meses</td></tr>` : ""}
           ` : ""}
 
           ${hasField(payload, 'observations') && payload.observations ? `
