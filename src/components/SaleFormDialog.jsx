@@ -334,7 +334,7 @@ const SaleFormDialog = ({
                   </div>
                 </div>
 
-                {formData.scope === 'energia' && formData.operator_id && operatorEnergyType === 'dual' && (
+                {formData.scope === 'energia' && formData.operator_id && (
                   <>
                     {operatorCommissions.length === 0 ? (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
@@ -344,45 +344,82 @@ const SaleFormDialog = ({
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-dark-900 border border-dark-700 rounded-xl p-5">
-                        <Label className="text-base font-bold mb-3 block text-white">
-                          O que o cliente pretende contratar? *
-                        </Label>
-                        <Select
-                          value={formData.energy_sale_type}
-                          onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: '', additional_services: ''})}
-                        >
-                          <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                            <SelectValue placeholder="Selecione o tipo de adesão..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(() => {
-                              const hasEletricidade = operatorCommissions.some(c =>
-                                c.service_type === 'eletricidade' || (c.service_types && c.service_types.includes('eletricidade'))
-                              );
-                              const hasGas = operatorCommissions.some(c =>
-                                c.service_type === 'gas' || (c.service_types && c.service_types.includes('gas'))
-                              );
-                              return (
-                                <>
-                                  {hasEletricidade && (
-                                    <SelectItem value="eletricidade">Apenas Eletricidade</SelectItem>
-                                  )}
-                                  {hasGas && (
-                                    <SelectItem value="gas">Apenas Gás</SelectItem>
-                                  )}
-                                  {hasEletricidade && hasGas && (
-                                    <SelectItem value="dual">Eletricidade + Gás (Dual)</SelectItem>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs mt-2 text-slate-500">
-                          Selecione se o cliente está a aderir apenas a eletricidade, apenas a gás, ou a ambos os serviços.
-                        </p>
-                      </div>
+                      <>
+                        <div className="bg-dark-900 border border-dark-700 rounded-xl p-4">
+                          <Label className="text-sm font-semibold mb-3 block text-white">Tipo de Venda *</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {[
+                              { value: 'normal', label: 'Venda Normal', desc: 'Um local, um CPE/CUI' },
+                              { value: 'multiponto', label: 'Multiponto', desc: 'Vários CPEs, só eletricidade', disabled: operatorEnergyType === 'gas' },
+                              { value: 'multilocal', label: 'Multilocal', desc: 'Vários locais, qualquer tipo' },
+                            ].map(opt => (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                disabled={opt.disabled}
+                                onClick={() => {
+                                  if (!opt.disabled) {
+                                    setEnergySaleMode(opt.value);
+                                    setFormData({...formData, energy_points: [], energy_sale_type: opt.value === 'multilocal' ? '' : formData.energy_sale_type});
+                                  }
+                                }}
+                                className={`p-3 rounded-lg border text-left transition-all ${
+                                  energySaleMode === opt.value
+                                    ? 'border-cyber-500 bg-cyber-500/10 text-white'
+                                    : opt.disabled
+                                    ? 'border-dark-700 bg-dark-900/50 text-slate-600 cursor-not-allowed opacity-50'
+                                    : 'border-dark-700 bg-dark-900 text-slate-400 hover:border-cyber-500/50'
+                                }`}
+                              >
+                                <div className="text-xs font-semibold">{opt.label}</div>
+                                <div className="text-xs mt-0.5 opacity-70">{opt.desc}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {operatorEnergyType === 'dual' && energySaleMode !== 'multilocal' && (
+                          <div className="bg-dark-900 border border-dark-700 rounded-xl p-5">
+                            <Label className="text-base font-bold mb-3 block text-white">
+                              O que o cliente pretende contratar? *
+                            </Label>
+                            <Select
+                              value={formData.energy_sale_type}
+                              onValueChange={(v) => setFormData({...formData, energy_sale_type: v, cpe: '', power: '', cui: '', tier: '', additional_services: ''})}
+                            >
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                <SelectValue placeholder="Selecione o tipo de adesão..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(() => {
+                                  const hasEletricidade = operatorCommissions.some(c =>
+                                    c.service_type === 'eletricidade' || (c.service_types && c.service_types.includes('eletricidade'))
+                                  );
+                                  const hasGas = operatorCommissions.some(c =>
+                                    c.service_type === 'gas' || (c.service_types && c.service_types.includes('gas'))
+                                  );
+                                  return (
+                                    <>
+                                      {hasEletricidade && (
+                                        <SelectItem value="eletricidade">Apenas Eletricidade</SelectItem>
+                                      )}
+                                      {hasGas && (
+                                        <SelectItem value="gas">Apenas Gás</SelectItem>
+                                      )}
+                                      {hasEletricidade && hasGas && (energySaleMode !== 'multiponto') && (
+                                        <SelectItem value="dual">Eletricidade + Gás (Dual)</SelectItem>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs mt-2 text-slate-500">
+                              Selecione se o cliente está a aderir apenas a eletricidade, apenas a gás, ou a ambos os serviços.
+                            </p>
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 )}
@@ -937,118 +974,90 @@ const SaleFormDialog = ({
                 </FormSection>
               )}
 
-              {formData.scope === 'energia' && formData.operator_id && (
+              {formData.scope === 'energia' && formData.operator_id && (energySaleMode === 'multilocal' || (operatorEnergyType === 'dual' ? formData.energy_sale_type : operatorEnergyType)) && (
                 <FormSection icon={Zap} title="Detalhes Energia" gradient="from-cyber-500 to-cyber-600">
                   {(() => {
-                    const saleType = operatorEnergyType === 'dual' ? formData.energy_sale_type : operatorEnergyType;
+                    const saleType = energySaleMode === 'multilocal' ? 'multilocal' : (operatorEnergyType === 'dual' ? formData.energy_sale_type : operatorEnergyType);
 
                     if (!saleType) return null;
 
                     return (
                       <>
-                        <div className="bg-dark-900 border border-dark-700 rounded-xl p-4 mb-4">
-                          <Label className="text-sm font-semibold mb-3 block text-white">Tipo de Venda *</Label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {[
-                              { value: 'normal', label: 'Venda Normal', desc: 'Um local, um CPE/CUI' },
-                              { value: 'multiponto', label: 'Multiponto', desc: 'Varios CPEs, so eletricidade', disabled: saleType !== 'eletricidade' },
-                              { value: 'multilocal', label: 'Multilocal', desc: 'Varios locais, qualquer tipo' },
-                            ].map(opt => (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                disabled={opt.disabled}
-                                onClick={() => {
-                                  if (!opt.disabled) {
-                                    setEnergySaleMode(opt.value);
-                                    setFormData({...formData, energy_points: []});
-                                  }
-                                }}
-                                className={`p-3 rounded-lg border text-left transition-all ${
-                                  energySaleMode === opt.value
-                                    ? 'border-cyber-500 bg-cyber-500/10 text-white'
-                                    : opt.disabled
-                                    ? 'border-dark-700 bg-dark-900/50 text-slate-600 cursor-not-allowed opacity-50'
-                                    : 'border-dark-700 bg-dark-900 text-slate-400 hover:border-cyber-500/50'
-                                }`}
-                              >
-                                <div className="text-xs font-semibold">{opt.label}</div>
-                                <div className="text-xs mt-0.5 opacity-70">{opt.desc}</div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
                         <EnergyPointsManager
-                          saleType={saleType}
+                          saleType={saleType === 'multilocal' ? 'dual' : saleType}
                           points={formData.energy_points}
-                          onChange={(points, mode) => {
+                          onChange={(points) => {
                             setFormData({...formData, energy_points: points});
                           }}
                           isNew={true}
                           user={user}
                           energySaleMode={energySaleMode}
+                          currentOperator={currentOperator}
                         />
 
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className={currentOperator?.requires_voltage_type ? "col-span-1" : "col-span-1 sm:col-span-2"}>
-                            <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Entrada *</Label>
-                            <Select
-                              value={formData.entry_type}
-                              onValueChange={(v) => setFormData({...formData, entry_type: v})}
-                            >
-                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
-                                <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
-                                <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        {energySaleMode !== 'multilocal' && (
+                          <>
+                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className={currentOperator?.requires_voltage_type ? "col-span-1" : "col-span-1 sm:col-span-2"}>
+                                <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Entrada *</Label>
+                                <Select
+                                  value={formData.entry_type}
+                                  onValueChange={(v) => setFormData({...formData, entry_type: v})}
+                                >
+                                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                    <SelectValue placeholder="Selecione..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
+                                    <SelectItem value="Alteração de comercializadora com alteração de titular">Alteração de comercializadora com alteração de titular</SelectItem>
+                                    <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
-                          {currentOperator?.requires_voltage_type && (
-                            <div>
-                              <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Tensão *</Label>
-                              <Select
-                                value={formData.voltage_type}
-                                onValueChange={(v) => setFormData({...formData, voltage_type: v})}
-                              >
-                                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                                  <SelectValue placeholder="Selecione..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Monofásico">Monofásico</SelectItem>
-                                  <SelectItem value="Trifásico">Trifásico</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              {currentOperator?.requires_voltage_type && (
+                                <div>
+                                  <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Tensão *</Label>
+                                  <Select
+                                    value={formData.voltage_type}
+                                    onValueChange={(v) => setFormData({...formData, voltage_type: v})}
+                                  >
+                                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                      <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Monofásico">Monofásico</SelectItem>
+                                      <SelectItem value="Trifásico">Trifásico</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        {currentOperator?.requires_additional_services && (currentOperator?.additional_services_list || []).length > 0 && (
-                          <div className="mt-4">
-                            <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais *</Label>
-                            <Select
-                              value={formData.additional_services || ""}
-                              onValueChange={(v) => setFormData({...formData, additional_services: v})}
-                            >
-                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Sem serviços adicionais">Sem serviços adicionais</SelectItem>
-                                {(currentOperator.additional_services_list || []).filter((service) => {
-                                  const applies = typeof service === 'string' ? 'todos' : (service.applies_to || 'todos');
-                                  return applies === 'todos' || applies === formData.energy_sale_type;
-                                }).map((service, idx) => {
-                                  const name = typeof service === 'string' ? service : service.name;
-                                  return <SelectItem key={idx} value={name}>{name}</SelectItem>;
-                                })}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                            {currentOperator?.requires_additional_services && (currentOperator?.additional_services_list || []).length > 0 && (
+                              <div className="mt-4">
+                                <Label className="text-sm font-semibold mb-2 text-slate-400">Serviços Adicionais *</Label>
+                                <Select
+                                  value={formData.additional_services || ""}
+                                  onValueChange={(v) => setFormData({...formData, additional_services: v})}
+                                >
+                                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                    <SelectValue placeholder="Selecione..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Sem serviços adicionais">Sem serviços adicionais</SelectItem>
+                                    {(currentOperator.additional_services_list || []).filter((service) => {
+                                      const applies = typeof service === 'string' ? 'todos' : (service.applies_to || 'todos');
+                                      return applies === 'todos' || applies === formData.energy_sale_type;
+                                    }).map((service, idx) => {
+                                      const name = typeof service === 'string' ? service : service.name;
+                                      return <SelectItem key={idx} value={name}>{name}</SelectItem>;
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                          </>
                         )}
                       </>
                     );

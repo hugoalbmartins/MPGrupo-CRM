@@ -40,9 +40,12 @@ const createEmptyMultilocalLocation = () => ({
   tier: '',
   installation_address: '',
   billing_address: '',
+  entry_type: '',
+  voltage_type: '',
+  additional_services: '',
 });
 
-const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, energySaleMode, onEnergySaleModeChange }) => {
+const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, energySaleMode, onEnergySaleModeChange, currentOperator }) => {
   const canSeeOperatorPaid = user?.role === 'admin' || user?.role === 'bo';
 
   const createNormalPoint = () => {
@@ -160,13 +163,19 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
   const emitMultilocalChange = (locs) => {
     const expanded = [];
     locs.forEach(loc => {
+      const locMeta = {
+        installation_address: loc.installation_address || null,
+        billing_address: loc.billing_address || null,
+        entry_type: loc.entry_type || null,
+        voltage_type: loc.voltage_type || null,
+        additional_services: loc.additional_services || null,
+        activation_status: 'pending', activation_date: null, operator_paid: false,
+      };
       if (loc.energy_type === 'eletricidade' || loc.energy_type === 'dual') {
         expanded.push({
           id: loc.id, point_type: 'cpe', point_code: loc.cpe,
           power_kva: parsePowerKva(loc.power_kva), tier: null,
-          installation_address: loc.installation_address || null,
-          billing_address: loc.billing_address || null,
-          activation_status: 'pending', activation_date: null, operator_paid: false,
+          ...locMeta,
         });
       }
       if (loc.energy_type === 'gas' || loc.energy_type === 'dual') {
@@ -174,9 +183,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
           id: loc.energy_type === 'dual' ? crypto.randomUUID() : loc.id,
           point_type: 'cui', point_code: loc.cui,
           power_kva: null, tier: loc.tier || null,
-          installation_address: loc.installation_address || null,
-          billing_address: loc.billing_address || null,
-          activation_status: 'pending', activation_date: null, operator_paid: false,
+          ...locMeta,
         });
       }
     });
@@ -202,6 +209,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
         locations={multilocalLocations}
         setLocations={(locs) => { setMultilocalLocations(locs); emitMultilocalChange(locs); }}
         isNew={isNew}
+        currentOperator={currentOperator}
       />
     );
   }
@@ -452,7 +460,7 @@ const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew }) => 
   );
 };
 
-const MultiLocalManager = ({ locations, setLocations, isNew }) => {
+const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) => {
   const handleLocationChange = (index, field, value) => {
     const updated = [...locations];
     updated[index] = { ...updated[index], [field]: value };
@@ -593,6 +601,66 @@ const MultiLocalManager = ({ locations, setLocations, isNew }) => {
                 />
               </div>
             </div>
+
+            <div className={`grid grid-cols-1 gap-3 ${currentOperator?.requires_voltage_type ? 'sm:grid-cols-2' : ''}`}>
+              <div>
+                <Label className="text-slate-400 text-xs">Tipo de Entrada *</Label>
+                <Select
+                  value={loc.entry_type}
+                  onValueChange={(v) => handleLocationChange(index, 'entry_type', v)}
+                >
+                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Alteração de comercializadora">Alteração de comercializadora</SelectItem>
+                    <SelectItem value="Alteração de comercializadora com alteração de titular">Alt. comercializadora com alt. de titular</SelectItem>
+                    <SelectItem value="Entrada Direta">Entrada Direta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {currentOperator?.requires_voltage_type && (
+                <div>
+                  <Label className="text-slate-400 text-xs">Tipo de Tensão *</Label>
+                  <Select
+                    value={loc.voltage_type}
+                    onValueChange={(v) => handleLocationChange(index, 'voltage_type', v)}
+                  >
+                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Monofásico">Monofásico</SelectItem>
+                      <SelectItem value="Trifásico">Trifásico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {currentOperator?.requires_additional_services && (currentOperator?.additional_services_list || []).length > 0 && (
+              <div>
+                <Label className="text-slate-400 text-xs">Serviços Adicionais *</Label>
+                <Select
+                  value={loc.additional_services || ''}
+                  onValueChange={(v) => handleLocationChange(index, 'additional_services', v)}
+                >
+                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sem serviços adicionais">Sem serviços adicionais</SelectItem>
+                    {(currentOperator.additional_services_list || []).filter((service) => {
+                      const applies = typeof service === 'string' ? 'todos' : (service.applies_to || 'todos');
+                      return applies === 'todos' || applies === loc.energy_type;
+                    }).map((service, idx) => {
+                      const name = typeof service === 'string' ? service : service.name;
+                      return <SelectItem key={idx} value={name}>{name}</SelectItem>;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </Card>
         ))}
       </div>

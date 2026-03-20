@@ -286,10 +286,19 @@ const Sales = ({ user }) => {
             toast.error(`Local CPE ${i + 1}: Codigo e Potencia sao obrigatorios!`);
             return;
           }
+          if (!cpePoints[i].entry_type) {
+            toast.error(`Local ${i + 1}: Tipo de Entrada e obrigatorio!`);
+            return;
+          }
         }
         for (let i = 0; i < cuiPoints.length; i++) {
           if (!cuiPoints[i].point_code || !cuiPoints[i].tier) {
             toast.error(`Local CUI ${i + 1}: Codigo e Escalao sao obrigatorios!`);
+            return;
+          }
+          const hasCPEatSameLoc = cpePoints.some(c => c.installation_address && c.installation_address === cuiPoints[i].installation_address);
+          if (!hasCPEatSameLoc && !cuiPoints[i].entry_type) {
+            toast.error(`Local CUI ${i + 1}: Tipo de Entrada e obrigatorio!`);
             return;
           }
         }
@@ -316,19 +325,21 @@ const Sales = ({ user }) => {
         }
       }
 
-      if (!formData.entry_type) {
-        toast.error("Tipo de Entrada e obrigatorio!");
-        return;
-      }
+      if (energySaleMode !== 'multilocal') {
+        if (!formData.entry_type) {
+          toast.error("Tipo de Entrada e obrigatorio!");
+          return;
+        }
 
-      const selectedEnergyOperator = operators.find(op => op.id === formData.operator_id);
-      if (selectedEnergyOperator?.requires_additional_services && (selectedEnergyOperator?.additional_services_list || []).length > 0 && !formData.additional_services?.trim()) {
-        toast.error("Servicos Adicionais sao obrigatorios para esta operadora!");
-        return;
-      }
-      if (selectedEnergyOperator?.requires_voltage_type && !formData.voltage_type) {
-        toast.error("Tipo de Tensao e obrigatorio para esta operadora!");
-        return;
+        const selectedEnergyOperator = operators.find(op => op.id === formData.operator_id);
+        if (selectedEnergyOperator?.requires_additional_services && (selectedEnergyOperator?.additional_services_list || []).length > 0 && !formData.additional_services?.trim()) {
+          toast.error("Servicos Adicionais sao obrigatorios para esta operadora!");
+          return;
+        }
+        if (selectedEnergyOperator?.requires_voltage_type && !formData.voltage_type) {
+          toast.error("Tipo de Tensao e obrigatorio para esta operadora!");
+          return;
+        }
       }
     }
 
@@ -437,6 +448,9 @@ const Sales = ({ user }) => {
               tier: type === 'cui' ? (point.tier || '') : '',
               energy_sale_type,
               installation_address: point.installation_address || submitData.installation_address || '',
+              entry_type: point.entry_type || submitData.entry_type || '',
+              voltage_type: point.voltage_type || submitData.voltage_type || '',
+              additional_services: point.additional_services || submitData.additional_services || '',
               sale_type: 'multilocal',
               parent_sale_id: parentSaleId,
               is_bulk_import: true,
