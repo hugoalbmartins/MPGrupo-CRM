@@ -25,11 +25,18 @@ const formatPowerKvaForDisplay = (value) => {
   return match || '';
 };
 
+const buildInstallationAddress = (street, postalCode, locality) => {
+  const parts = [street, postalCode, locality].map(s => (s || '').trim()).filter(Boolean);
+  return parts.join(', ');
+};
+
 const createEmptyMultipuntoPoint = () => ({
   id: crypto.randomUUID(),
   point_code: '',
   power_kva: '',
-  installation_address: '',
+  inst_street: '',
+  inst_postal_code: '',
+  inst_locality: '',
   billing_address: '',
 });
 
@@ -40,7 +47,9 @@ const createEmptyMultilocalLocation = () => ({
   power_kva: '',
   cui: '',
   tier: '',
-  installation_address: '',
+  inst_street: '',
+  inst_postal_code: '',
+  inst_locality: '',
   billing_address: '',
   entry_type: '',
   voltage_type: '',
@@ -157,7 +166,10 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
     const expanded = pts.map(p => ({
       id: p.id, point_type: 'cpe', point_code: p.point_code,
       power_kva: parsePowerKva(p.power_kva), tier: null,
-      installation_address: p.installation_address || null,
+      installation_address: buildInstallationAddress(p.inst_street, p.inst_postal_code, p.inst_locality) || null,
+      inst_street: p.inst_street || null,
+      inst_postal_code: p.inst_postal_code || null,
+      inst_locality: p.inst_locality || null,
       billing_address: p.billing_address || null,
       activation_status: 'pending', activation_date: null, operator_paid: false,
     }));
@@ -168,7 +180,10 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
     const expanded = [];
     locs.forEach(loc => {
       const locMeta = {
-        installation_address: loc.installation_address || null,
+        installation_address: buildInstallationAddress(loc.inst_street, loc.inst_postal_code, loc.inst_locality) || null,
+        inst_street: loc.inst_street || null,
+        inst_postal_code: loc.inst_postal_code || null,
+        inst_locality: loc.inst_locality || null,
         billing_address: loc.billing_address || null,
         entry_type: loc.entry_type || null,
         voltage_type: loc.voltage_type || null,
@@ -446,14 +461,37 @@ const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew }) => 
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-1 sm:col-span-2">
-                <Label className="text-slate-400 text-xs">Morada de Instalação *</Label>
-                <Input
-                  className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
-                  value={point.installation_address || ''}
-                  onChange={(e) => handlePointChange(index, 'installation_address', e.target.value)}
-                  placeholder="Rua, número, código postal, localidade"
-                />
+              <div className="col-span-1 sm:col-span-2 pt-1 border-t border-dark-700">
+                <p className="text-xs font-semibold text-slate-300 mb-2">Morada de Instalação *</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="sm:col-span-2">
+                    <Label className="text-slate-400 text-xs">Rua *</Label>
+                    <Input
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                      value={point.inst_street || ''}
+                      onChange={(e) => handlePointChange(index, 'inst_street', e.target.value)}
+                      placeholder="Rua, Avenida, número, andar..."
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-slate-400 text-xs">Código Postal *</Label>
+                    <Input
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                      value={point.inst_postal_code || ''}
+                      onChange={(e) => handlePointChange(index, 'inst_postal_code', e.target.value)}
+                      placeholder="0000-000"
+                    />
+                  </div>
+                  <div className="sm:col-span-3">
+                    <Label className="text-slate-400 text-xs">Localidade *</Label>
+                    <Input
+                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                      value={point.inst_locality || ''}
+                      onChange={(e) => handlePointChange(index, 'inst_locality', e.target.value)}
+                      placeholder="Ex: Lisboa, Porto..."
+                    />
+                  </div>
+                </div>
               </div>
               <div className="col-span-1 sm:col-span-2">
                 <Label className="text-slate-400 text-xs">Morada de Faturação</Label>
@@ -461,7 +499,7 @@ const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew }) => 
                   className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
                   value={point.billing_address || ''}
                   onChange={(e) => handlePointChange(index, 'billing_address', e.target.value)}
-                  placeholder="Se diferente da morada de instalação"
+                  placeholder="Se diferente da morada de instalação (linha única)"
                 />
               </div>
             </div>
@@ -603,25 +641,46 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-slate-400 text-xs">Morada de Instalação *</Label>
-                <Input
-                  className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
-                  value={loc.installation_address}
-                  onChange={(e) => handleLocationChange(index, 'installation_address', e.target.value)}
-                  placeholder="Rua, número, código postal, localidade"
-                />
+            <div className="pt-1 border-t border-dark-700/60">
+              <p className="text-xs font-semibold text-slate-300 mb-2">Morada de Instalação *</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="sm:col-span-2">
+                  <Label className="text-slate-400 text-xs">Rua *</Label>
+                  <Input
+                    className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                    value={loc.inst_street || ''}
+                    onChange={(e) => handleLocationChange(index, 'inst_street', e.target.value)}
+                    placeholder="Rua, Avenida, número, andar..."
+                  />
+                </div>
+                <div>
+                  <Label className="text-slate-400 text-xs">Código Postal *</Label>
+                  <Input
+                    className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                    value={loc.inst_postal_code || ''}
+                    onChange={(e) => handleLocationChange(index, 'inst_postal_code', e.target.value)}
+                    placeholder="0000-000"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <Label className="text-slate-400 text-xs">Localidade *</Label>
+                  <Input
+                    className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                    value={loc.inst_locality || ''}
+                    onChange={(e) => handleLocationChange(index, 'inst_locality', e.target.value)}
+                    placeholder="Ex: Lisboa, Porto..."
+                  />
+                </div>
               </div>
-              <div>
-                <Label className="text-slate-400 text-xs">Morada de Faturação</Label>
-                <Input
-                  className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
-                  value={loc.billing_address}
-                  onChange={(e) => handleLocationChange(index, 'billing_address', e.target.value)}
-                  placeholder="Se diferente da morada de instalação"
-                />
-              </div>
+            </div>
+            <div>
+              <Label className="text-slate-400 text-xs">Morada de Faturação</Label>
+              <Input
+                className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
+                value={loc.billing_address}
+                onChange={(e) => handleLocationChange(index, 'billing_address', e.target.value)}
+                placeholder="Se diferente da morada de instalação (linha única)"
+              />
             </div>
 
             <div className={`grid grid-cols-1 gap-3 ${currentOperator?.requires_voltage_type ? 'sm:grid-cols-2' : ''}`}>

@@ -284,6 +284,7 @@ const Sales = ({ user }) => {
         return;
       }
 
+      const cpRegex = /^\d{4}-\d{3}$/;
       if (energySaleMode === 'multiponto') {
         const cpePoints = formData.energy_points.filter(p => p.point_type === 'cpe');
         if (cpePoints.length < 2) {
@@ -292,7 +293,15 @@ const Sales = ({ user }) => {
         }
         for (let i = 0; i < cpePoints.length; i++) {
           if (!cpePoints[i].point_code || !cpePoints[i].power_kva) {
-            toast.error(`CPE ${i + 1}: Codigo e Potencia sao obrigatorios!`);
+            toast.error(`CPE ${i + 1}: Código e Potência são obrigatórios!`);
+            return;
+          }
+          if (!cpePoints[i].inst_street || !cpePoints[i].inst_postal_code || !cpePoints[i].inst_locality) {
+            toast.error(`CPE ${i + 1}: Rua, Código Postal e Localidade são obrigatórios!`);
+            return;
+          }
+          if (!cpRegex.test(cpePoints[i].inst_postal_code)) {
+            toast.error(`CPE ${i + 1}: Código postal inválido! Use o formato: 0000-000`);
             return;
           }
         }
@@ -303,24 +312,36 @@ const Sales = ({ user }) => {
           toast.error("Adicione pelo menos um local com CPE ou CUI!");
           return;
         }
+        const allLocPoints = [...cpePoints, ...cuiPoints];
+        for (let i = 0; i < allLocPoints.length; i++) {
+          const pt = allLocPoints[i];
+          if (!pt.inst_street || !pt.inst_postal_code || !pt.inst_locality) {
+            toast.error(`Local ${i + 1}: Rua, Código Postal e Localidade são obrigatórios!`);
+            return;
+          }
+          if (!cpRegex.test(pt.inst_postal_code)) {
+            toast.error(`Local ${i + 1}: Código postal inválido! Use o formato: 0000-000`);
+            return;
+          }
+        }
         for (let i = 0; i < cpePoints.length; i++) {
           if (!cpePoints[i].point_code || !cpePoints[i].power_kva) {
-            toast.error(`Local CPE ${i + 1}: Codigo e Potencia sao obrigatorios!`);
+            toast.error(`Local CPE ${i + 1}: Código e Potência são obrigatórios!`);
             return;
           }
           if (!cpePoints[i].entry_type) {
-            toast.error(`Local ${i + 1}: Tipo de Entrada e obrigatorio!`);
+            toast.error(`Local ${i + 1}: Tipo de Entrada é obrigatório!`);
             return;
           }
         }
         for (let i = 0; i < cuiPoints.length; i++) {
           if (!cuiPoints[i].point_code || !cuiPoints[i].tier) {
-            toast.error(`Local CUI ${i + 1}: Codigo e Escalao sao obrigatorios!`);
+            toast.error(`Local CUI ${i + 1}: Código e Escalão são obrigatórios!`);
             return;
           }
           const hasCPEatSameLoc = cpePoints.some(c => c.installation_address && c.installation_address === cuiPoints[i].installation_address);
           if (!hasCPEatSameLoc && !cuiPoints[i].entry_type) {
-            toast.error(`Local CUI ${i + 1}: Tipo de Entrada e obrigatorio!`);
+            toast.error(`Local CUI ${i + 1}: Tipo de Entrada é obrigatório!`);
             return;
           }
         }
@@ -403,9 +424,11 @@ const Sales = ({ user }) => {
               energy_sale_type: 'eletricidade',
               sale_type: 'multiponto',
               parent_sale_id: parentSaleId,
-              installation_address: pt.installation_address || submitData.street || '',
-              billing_address: pt.billing_address || submitData.billing_address || '',
-              street: pt.installation_address || submitData.street || '',
+              street: pt.inst_street || '',
+              postal_code: pt.inst_postal_code || '',
+              locality: pt.inst_locality || '',
+              installation_address: pt.installation_address || '',
+              billing_address: pt.billing_address || '',
               is_bulk_import: true,
               _multipoint_index: i + 1,
               _multipoint_base_code: baseCode,
@@ -432,6 +455,9 @@ const Sales = ({ user }) => {
               point_type: 'cpe',
               point_code: p.point_code?.toUpperCase() || '',
               power_kva: p.power_kva || null,
+              inst_street: p.inst_street || null,
+              inst_postal_code: p.inst_postal_code || null,
+              inst_locality: p.inst_locality || null,
               installation_address: p.installation_address || null,
               billing_address: p.billing_address || null,
             }));
@@ -479,7 +505,9 @@ const Sales = ({ user }) => {
               cui: type === 'cui' ? (point.point_code?.toUpperCase() || '') : '',
               tier: type === 'cui' ? (point.tier || '') : '',
               energy_sale_type,
-              street: point.installation_address || submitData.street || '',
+              street: point.inst_street || '',
+              postal_code: point.inst_postal_code || '',
+              locality: point.inst_locality || '',
               installation_address: point.installation_address || '',
               billing_address: point.billing_address || '',
               entry_type: point.entry_type || submitData.entry_type || '',
@@ -514,9 +542,15 @@ const Sales = ({ user }) => {
               point_code: point.point_code?.toUpperCase() || '',
               power_kva: type === 'cpe' ? (point.power_kva || null) : null,
               tier: type === 'cui' ? (point.tier || null) : null,
+              inst_street: point.inst_street || null,
+              inst_postal_code: point.inst_postal_code || null,
+              inst_locality: point.inst_locality || null,
               installation_address: point.installation_address || null,
               billing_address: point.billing_address || null,
               energy_type: energy_sale_type,
+              entry_type: point.entry_type || null,
+              voltage_type: point.voltage_type || null,
+              additional_services: point.additional_services || null,
             }));
             salesService.resendNewSaleEmail(parentSaleId, {
               sale_type: 'multilocal',

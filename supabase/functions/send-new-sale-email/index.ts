@@ -82,8 +82,15 @@ interface SaleEmailPayload {
     point_code: string;
     power_kva?: number | null;
     tier?: string | null;
+    inst_street?: string | null;
+    inst_postal_code?: string | null;
+    inst_locality?: string | null;
     installation_address?: string | null;
     billing_address?: string | null;
+    energy_type?: string | null;
+    entry_type?: string | null;
+    voltage_type?: string | null;
+    additional_services?: string | null;
   }>;
 }
 
@@ -144,7 +151,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           ${hasField(payload, 'client_iban') && payload.client_iban ? `<tr><td>IBAN:</td><td>${payload.client_iban}</td></tr>` : ""}
           ` : ""}
 
-          ${hasField(payload, 'address') && payload.address ? `
+          ${hasField(payload, 'address') && payload.address && payload.sale_type !== 'multiponto' && payload.sale_type !== 'multilocal' ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Morada</strong></td></tr>
           <tr><td>Morada de Instalação:</td><td>${payload.address}</td></tr>
           <tr><td>Morada de Faturação:</td><td>${payload.billing_address || "Mesma"}</td></tr>
@@ -200,26 +207,38 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
 
           ${payload.scope === "energia" || payload.scope === "energias" ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Detalhes Energia${payload.sale_type === 'multiponto' ? ' — Venda Multiponto' : payload.sale_type === 'multilocal' ? ' — Venda Multilocal' : ''}</strong></td></tr>
-          ${hasField(payload, 'energy_sale_type') && payload.energy_sale_type ? `<tr><td>Tipo de Energia:</td><td>${payload.energy_sale_type === 'eletricidade' ? 'Eletricidade' : payload.energy_sale_type === 'gas' ? 'Gas' : payload.energy_sale_type === 'dual' ? 'Eletricidade + Gas (Dual)' : payload.energy_sale_type}</td></tr>` : ""}
-          ${hasField(payload, 'entry_type') && payload.entry_type ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
-          ${hasField(payload, 'voltage_type') ? `<tr><td>Tipo de Tensao:</td><td>${payload.voltage_type || "N/A"}</td></tr>` : ""}
+          ${hasField(payload, 'energy_sale_type') && payload.energy_sale_type && payload.sale_type !== 'multiponto' && payload.sale_type !== 'multilocal' ? `<tr><td>Tipo de Energia:</td><td>${payload.energy_sale_type === 'eletricidade' ? 'Eletricidade' : payload.energy_sale_type === 'gas' ? 'Gas' : payload.energy_sale_type === 'dual' ? 'Eletricidade + Gas (Dual)' : payload.energy_sale_type}</td></tr>` : ""}
+          ${hasField(payload, 'entry_type') && payload.entry_type && payload.sale_type !== 'multiponto' && payload.sale_type !== 'multilocal' ? `<tr><td>Tipo de Entrada:</td><td>${payload.entry_type}</td></tr>` : ""}
+          ${hasField(payload, 'voltage_type') && payload.sale_type !== 'multiponto' && payload.sale_type !== 'multilocal' ? `<tr><td>Tipo de Tensao:</td><td>${payload.voltage_type || "N/A"}</td></tr>` : ""}
           ${payload.sale_type === 'multiponto' && payload.energy_points_list && payload.energy_points_list.length > 0 ? `
             <tr><td colspan="2" style="padding-top: 8px; padding-bottom: 4px;"><strong style="color: #374151;">CPEs (${payload.energy_points_list.length} pontos):</strong></td></tr>
-            ${payload.energy_points_list.map((pt, i) => `
-              <tr><td colspan="2" style="padding: 8px 0 2px 0; border-top: 1px dashed #e5e7eb;"><strong style="color:#1e3a8a; font-size:13px;">— Local ${i+1} —</strong></td></tr>
-              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE:</td><td style="font-size:13px;">${pt.point_code}${pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}</td></tr>
-              ${pt.installation_address ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${pt.installation_address}</td></tr>` : ''}
+            ${payload.energy_points_list.map((pt, i) => {
+              const instAddr = pt.inst_street
+                ? [pt.inst_street, pt.inst_postal_code, pt.inst_locality].filter(Boolean).join(', ')
+                : (pt.installation_address || '');
+              return `
+              <tr><td colspan="2" style="padding: 10px 0 4px 0; border-top: 2px solid #d1d5db;"><strong style="color:#1e3a8a; font-size:13px;">Local ${i+1}</strong></td></tr>
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE / Potência:</td><td style="font-size:13px;">${pt.point_code}${pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}</td></tr>
+              ${instAddr ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${instAddr}</td></tr>` : ''}
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
-            `).join('')}
+            `}).join('')}
           ` : ""}
           ${payload.sale_type === 'multilocal' && payload.energy_points_list && payload.energy_points_list.length > 0 ? `
             <tr><td colspan="2" style="padding-top: 8px; padding-bottom: 4px;"><strong style="color: #374151;">Locais (${payload.energy_points_list.length} pontos):</strong></td></tr>
-            ${payload.energy_points_list.map((pt, i) => `
-              <tr><td colspan="2" style="padding: 8px 0 2px 0; border-top: 1px dashed #e5e7eb;"><strong style="color:#1e3a8a; font-size:13px;">— Local ${i+1} (${pt.point_type.toUpperCase()}) —</strong></td></tr>
-              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">${pt.point_type === 'cpe' ? 'CPE' : 'CUI'}:</td><td style="font-size:13px;">${pt.point_code}${pt.point_type === 'cpe' && pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}${pt.point_type === 'cui' && pt.tier ? ` / Esc. ${pt.tier}` : ''}</td></tr>
-              ${pt.installation_address ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${pt.installation_address}</td></tr>` : ''}
+            ${payload.energy_points_list.map((pt, i) => {
+              const instAddr = pt.inst_street
+                ? [pt.inst_street, pt.inst_postal_code, pt.inst_locality].filter(Boolean).join(', ')
+                : (pt.installation_address || '');
+              const energyLabel = pt.energy_type === 'eletricidade' ? 'Eletricidade' : pt.energy_type === 'gas' ? 'Gás' : pt.energy_type === 'dual' ? 'Eletricidade + Gás' : (pt.energy_type || '');
+              return `
+              <tr><td colspan="2" style="padding: 10px 0 4px 0; border-top: 2px solid #d1d5db;"><strong style="color:#1e3a8a; font-size:13px;">Local ${i+1}${energyLabel ? ` — ${energyLabel}` : ''}</strong></td></tr>
+              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">${pt.point_type === 'cpe' ? 'CPE / Potência' : 'CUI / Escalão'}:</td><td style="font-size:13px;">${pt.point_code}${pt.point_type === 'cpe' && pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}${pt.point_type === 'cui' && pt.tier ? ` / Esc. ${pt.tier}` : ''}</td></tr>
+              ${instAddr ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${instAddr}</td></tr>` : ''}
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
-            `).join('')}
+              ${pt.entry_type ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tipo de Entrada:</td><td style="font-size:13px;">${pt.entry_type}</td></tr>` : ''}
+              ${pt.voltage_type ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tipo de Tensão:</td><td style="font-size:13px;">${pt.voltage_type}</td></tr>` : ''}
+              ${pt.additional_services ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Serviços Adicionais:</td><td style="font-size:13px;">${pt.additional_services}</td></tr>` : ''}
+            `}).join('')}
           ` : ""}
           ${(!payload.sale_type || payload.sale_type === 'normal') ? `
             ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
