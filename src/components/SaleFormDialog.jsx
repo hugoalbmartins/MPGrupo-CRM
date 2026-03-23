@@ -466,14 +466,14 @@ const SaleFormDialog = ({
                   </div>
                   <div>
                     <Label className="text-sm font-semibold mb-2 text-white">
-                      Email *
+                      Email {currentOperator?.requires_email ? '*' : ''}
                     </Label>
                     <Input
                       type="email"
                       value={formData.client_email}
                       onChange={(e) => setFormData({...formData, client_email: e.target.value})}
                       className={`bg-dark-900 focus:ring-cyber-500/20 text-white ${
-                        !formData.client_email?.trim()
+                        currentOperator?.requires_email && !formData.client_email?.trim()
                           ? 'border-red-500 focus:border-red-500'
                           : formData.client_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.client_email.trim())
                           ? 'border-red-500 focus:border-red-500'
@@ -481,7 +481,7 @@ const SaleFormDialog = ({
                       }`}
                       placeholder="cliente@exemplo.com"
                     />
-                    {!formData.client_email?.trim() && (
+                    {currentOperator?.requires_email && !formData.client_email?.trim() && (
                       <p className="text-xs text-red-400 mt-1">Email obrigatório</p>
                     )}
                     {formData.client_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.client_email.trim()) && (

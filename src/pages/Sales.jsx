@@ -243,13 +243,18 @@ const Sales = ({ user }) => {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const selectedOperatorForEmail = operators.find(op => op.id === formData.operator_id);
 
-    if (!formData.client_email?.trim()) {
-      toast.error("Email do cliente é obrigatório!");
-      return;
-    }
-
-    if (!emailRegex.test(formData.client_email.trim())) {
+    if (selectedOperatorForEmail?.requires_email) {
+      if (!formData.client_email?.trim()) {
+        toast.error("Email do cliente é obrigatório!");
+        return;
+      }
+      if (!emailRegex.test(formData.client_email.trim())) {
+        toast.error("Formato de email inválido!");
+        return;
+      }
+    } else if (formData.client_email?.trim() && !emailRegex.test(formData.client_email.trim())) {
       toast.error("Formato de email inválido!");
       return;
     }

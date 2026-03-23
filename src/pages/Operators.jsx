@@ -97,6 +97,7 @@ const Operators = ({ user }) => {
     pays_electronic_invoice: false,
     requires_voltage_type: false,
     requires_additional_services: false,
+    requires_email: false,
     additional_services_list: [],
     notification_emails: [],
     notification_user_ids: [],
@@ -271,6 +272,7 @@ const Operators = ({ user }) => {
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
         requires_voltage_type: freshData.requires_voltage_type || false,
         requires_additional_services: freshData.requires_additional_services || false,
+        requires_email: freshData.requires_email || false,
         additional_services_list: freshData.additional_services_list || [],
         notification_emails: freshData.notification_emails || [],
         notification_user_ids: freshData.notification_user_ids || [],
@@ -1082,6 +1084,18 @@ const Operators = ({ user }) => {
                     />
                     <Label htmlFor="edit_requires_voltage_type" className="cursor-pointer font-normal text-slate-300">
                       Requer Tipo de Tensão (Monofásico / Trifásico)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit_requires_email"
+                      checked={editOperatorData.requires_email}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, requires_email: e.target.checked }))}
+                      className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                    />
+                    <Label htmlFor="edit_requires_email" className="cursor-pointer font-normal text-slate-300">
+                      Requer Email do Cliente
                     </Label>
                   </div>
                   <div className="space-y-3">
