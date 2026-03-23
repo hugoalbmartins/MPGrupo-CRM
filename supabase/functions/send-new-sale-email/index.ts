@@ -144,11 +144,12 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           <tr><td>NIF:</td><td>${payload.customer_nif || "N/A"}</td></tr>
           <tr><td>Operadora:</td><td>${payload.operator_name}</td></tr>
 
-          ${(hasField(payload, 'client_contact') && payload.client_contact) || (hasField(payload, 'client_email') && payload.client_email) || (hasField(payload, 'client_iban') && payload.client_iban) ? `
+          ${(hasField(payload, 'client_contact') && payload.client_contact) || payload.client_email || payload.client_iban ? `
           <tr><td colspan="2" style="padding-top: 16px; padding-bottom: 8px; border-top: 1px solid #e5e7eb;"><strong style="color: #1e3a8a;">Dados de Contacto</strong></td></tr>
           ${hasField(payload, 'client_contact') && payload.client_contact ? `<tr><td>Contacto:</td><td>${payload.client_contact}</td></tr>` : ""}
-          ${hasField(payload, 'client_email') && payload.client_email ? `<tr><td>Email:</td><td>${payload.client_email}</td></tr>` : ""}
-          ${hasField(payload, 'client_iban') && payload.client_iban ? `<tr><td>IBAN:</td><td>${payload.client_iban}</td></tr>` : ""}
+          <tr><td>Email:</td><td>${payload.client_email || "—"}</td></tr>
+          ${hasField(payload, 'direct_debit') ? `<tr><td>Débito Direto:</td><td>${payload.has_direct_debit ? `<strong>SIM</strong>${payload.client_iban ? ` (${payload.client_iban})` : ""}` : "Não"}</td></tr>` : (payload.client_iban ? `<tr><td>IBAN:</td><td>${payload.client_iban}</td></tr>` : "")}
+          ${hasField(payload, 'electronic_invoice') ? `<tr><td>Fatura Eletrónica:</td><td>${payload.has_electronic_invoice ? "<strong>SIM</strong>" : "Não"}</td></tr>` : ""}
           ` : ""}
 
           ${hasField(payload, 'address') && payload.address && payload.sale_type !== 'multiponto' && payload.sale_type !== 'multilocal' ? `
@@ -200,8 +201,6 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
             const header = `<tr><td>Cartoes Moveis:</td><td>${total} cartao${total > 1 ? "es" : ""}</td></tr>`;
             return header + (rows.length > 0 ? rows.join("") : "");
           })() : ""}
-          ${hasField(payload, 'direct_debit') && payload.has_direct_debit ? `<tr><td>Debito Direto:</td><td>Sim</td></tr>` : ""}
-          ${hasField(payload, 'electronic_invoice') && payload.has_electronic_invoice ? `<tr><td>Fatura Eletronica:</td><td>Sim</td></tr>` : ""}
           ${payload.tratar_oop ? `<tr><td>Desligamento OOP:</td><td style="color:#d97706; font-weight:600;">Sim (fatura OOP obrigatoria)</td></tr>` : ""}
           ` : ""}
 
@@ -244,8 +243,6 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
             ${hasField(payload, 'cpe_power') ? (payload.cpe && payload.power ? `<tr><td>CPE / Potencia:</td><td>${payload.cpe} / ${payload.power}</td></tr>` : payload.cpe ? `<tr><td>CPE:</td><td>${payload.cpe}</td></tr>` : payload.power ? `<tr><td>Potencia:</td><td>${payload.power}</td></tr>` : "") : ""}
             ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
           ` : ""}
-          ${hasField(payload, 'direct_debit') ? `<tr><td>Debito Direto:</td><td>${payload.has_direct_debit ? "Sim" : "Nao"}</td></tr>` : ""}
-          ${hasField(payload, 'electronic_invoice') ? `<tr><td>Fatura Eletronica:</td><td>${payload.has_electronic_invoice ? "Sim" : "Nao"}</td></tr>` : ""}
           ${(payload.operator_requires_additional_services || (hasField(payload, 'additional_services') && payload.additional_services)) ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services || "Nenhum"}</td></tr>` : ""}
           ` : ""}
 

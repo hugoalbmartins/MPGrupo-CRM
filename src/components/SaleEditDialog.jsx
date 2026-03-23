@@ -339,7 +339,7 @@ const SaleEditDialog = ({
                     />
                   </FieldGroup>
 
-                  <FieldGroup label="Email">
+                  <FieldGroup label="Email *">
                     <Input
                       type="email"
                       value={editFormData.client_email}
@@ -348,13 +348,60 @@ const SaleEditDialog = ({
                     />
                   </FieldGroup>
 
-                  <FieldGroup label="IBAN" colSpan={2}>
-                    <Input
-                      value={editFormData.client_iban}
-                      onChange={(e) => update('client_iban', e.target.value)}
-                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
-                    />
-                  </FieldGroup>
+                  {saleOperator?.pays_direct_debit && (
+                    <div className="col-span-1 sm:col-span-2">
+                      <Label className="text-sm font-semibold mb-2 text-white">Adere a Débito Direto?</Label>
+                      <div className="flex gap-3 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => update('has_direct_debit', true)}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${editFormData.has_direct_debit === true ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
+                        >
+                          Sim
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { update('has_direct_debit', false); update('client_iban', ''); }}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${editFormData.has_direct_debit === false ? 'bg-dark-700 border-dark-600 text-white' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-dark-600'}`}
+                        >
+                          Não
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {(saleOperator?.pays_direct_debit ? editFormData.has_direct_debit : true) && (
+                    <FieldGroup label={saleOperator?.pays_direct_debit ? "IBAN *" : "IBAN"} colSpan={saleOperator?.pays_direct_debit ? 2 : 2}>
+                      <Input
+                        value={editFormData.client_iban}
+                        onChange={(e) => update('client_iban', e.target.value)}
+                        placeholder="PT50..."
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                      />
+                    </FieldGroup>
+                  )}
+
+                  {saleOperator?.pays_electronic_invoice && (
+                    <div className="col-span-1 sm:col-span-2">
+                      <Label className="text-sm font-semibold mb-2 text-white">Adere a Fatura Eletrónica?</Label>
+                      <div className="flex gap-3 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => update('has_electronic_invoice', true)}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${editFormData.has_electronic_invoice === true ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
+                        >
+                          Sim
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => update('has_electronic_invoice', false)}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${editFormData.has_electronic_invoice === false ? 'bg-dark-700 border-dark-600 text-white' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-dark-600'}`}
+                        >
+                          Não
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </FormSection>
 
@@ -828,21 +875,6 @@ const SaleEditDialog = ({
                 })()}
               </FormSection>
             )}
-
-            <FormSection icon={CreditCard} title="Serviços Adicionais" gradient="from-cyber-500 to-cyber-600">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="col-span-1 sm:col-span-2 flex flex-wrap items-center gap-4 sm:gap-6">
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="edit_direct_debit" checked={editFormData.has_direct_debit} onChange={(e) => update('has_direct_debit', e.target.checked)} className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900" />
-                    <Label htmlFor="edit_direct_debit" className="cursor-pointer text-white font-normal">Debito Direto (DD)</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="edit_electronic_invoice" checked={editFormData.has_electronic_invoice} onChange={(e) => update('has_electronic_invoice', e.target.checked)} className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900" />
-                    <Label htmlFor="edit_electronic_invoice" className="cursor-pointer text-white font-normal">Fatura Eletronica (FE)</Label>
-                  </div>
-                </div>
-              </div>
-            </FormSection>
 
             <FormSection icon={FileText} title="Observações" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

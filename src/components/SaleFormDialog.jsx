@@ -465,15 +465,15 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className={`text-sm font-semibold mb-2 ${formData.has_electronic_invoice ? 'text-white' : 'text-slate-400'}`}>
-                      Email{formData.has_electronic_invoice ? ' *' : ''}
+                    <Label className="text-sm font-semibold mb-2 text-white">
+                      Email *
                     </Label>
                     <Input
                       type="email"
                       value={formData.client_email}
                       onChange={(e) => setFormData({...formData, client_email: e.target.value})}
                       className={`bg-dark-900 focus:ring-cyber-500/20 text-white ${
-                        formData.has_electronic_invoice && !formData.client_email?.trim()
+                        !formData.client_email?.trim()
                           ? 'border-red-500 focus:border-red-500'
                           : formData.client_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.client_email.trim())
                           ? 'border-red-500 focus:border-red-500'
@@ -481,28 +481,76 @@ const SaleFormDialog = ({
                       }`}
                       placeholder="cliente@exemplo.com"
                     />
+                    {!formData.client_email?.trim() && (
+                      <p className="text-xs text-red-400 mt-1">Email obrigatório</p>
+                    )}
                     {formData.client_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.client_email.trim()) && (
                       <p className="text-xs text-red-400 mt-1">Formato de email inválido</p>
                     )}
                   </div>
-                  <div>
-                    <Label className={`text-sm font-semibold mb-2 ${formData.has_direct_debit ? 'text-white' : 'text-slate-400'}`}>
-                      IBAN{formData.has_direct_debit ? ' *' : ''}
-                    </Label>
-                    <Input
-                      value={formData.client_iban}
-                      onChange={(e) => setFormData({...formData, client_iban: e.target.value})}
-                      className={`bg-dark-900 focus:ring-cyber-500/20 text-white ${
-                        formData.has_direct_debit && !formData.client_iban?.trim()
-                          ? 'border-red-500 focus:border-red-500'
-                          : 'border-dark-700 focus:border-cyber-500'
-                      }`}
-                      placeholder="PT50..."
-                    />
-                    {formData.has_direct_debit && !formData.client_iban?.trim() && (
-                      <p className="text-xs text-red-400 mt-1">IBAN obrigatório para Débito Direto</p>
-                    )}
-                  </div>
+
+                  {currentOperator?.pays_direct_debit && (
+                    <div className="col-span-1 sm:col-span-2">
+                      <Label className="text-sm font-semibold mb-2 text-white">Adere a Débito Direto?</Label>
+                      <div className="flex gap-3 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, has_direct_debit: true})}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_direct_debit === true ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
+                        >
+                          Sim
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, has_direct_debit: false, client_iban: ''})}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_direct_debit === false ? 'bg-dark-700 border-dark-600 text-white' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-dark-600'}`}
+                        >
+                          Não
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentOperator?.pays_direct_debit && formData.has_direct_debit && (
+                    <div className="col-span-1 sm:col-span-2">
+                      <Label className="text-sm font-semibold mb-2 text-white">IBAN *</Label>
+                      <Input
+                        value={formData.client_iban}
+                        onChange={(e) => setFormData({...formData, client_iban: e.target.value})}
+                        className={`bg-dark-900 focus:ring-cyber-500/20 text-white ${
+                          !formData.client_iban?.trim()
+                            ? 'border-red-500 focus:border-red-500'
+                            : 'border-dark-700 focus:border-cyber-500'
+                        }`}
+                        placeholder="PT50..."
+                      />
+                      {!formData.client_iban?.trim() && (
+                        <p className="text-xs text-red-400 mt-1">IBAN obrigatório para Débito Direto</p>
+                      )}
+                    </div>
+                  )}
+
+                  {currentOperator?.pays_electronic_invoice && (
+                    <div className="col-span-1 sm:col-span-2">
+                      <Label className="text-sm font-semibold mb-2 text-white">Adere a Fatura Eletrónica?</Label>
+                      <div className="flex gap-3 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, has_electronic_invoice: true})}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_electronic_invoice === true ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
+                        >
+                          Sim
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, has_electronic_invoice: false})}
+                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_electronic_invoice === false ? 'bg-dark-700 border-dark-600 text-white' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-dark-600'}`}
+                        >
+                          Não
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="col-span-1 sm:col-span-2">
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Autoriza cópia dos documentos pessoais? *</Label>
                     <Select
@@ -1150,45 +1198,6 @@ const SaleFormDialog = ({
                 </FormSection>
               )}
 
-              {currentOperator && (currentOperator.pays_direct_debit || currentOperator.pays_electronic_invoice) && (
-                <div className="border-t border-dark-700 pt-6">
-                  <FormSection icon={CreditCard} title="Adesões do Cliente" gradient="from-cyber-500 to-cyber-600">
-                    <div className="bg-dark-900 border border-dark-700 rounded-xl p-5 space-y-3">
-                      {currentOperator.pays_direct_debit && (
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            id="has_direct_debit"
-                            checked={formData.has_direct_debit}
-                            onChange={(e) => setFormData({...formData, has_direct_debit: e.target.checked})}
-                            className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
-                          />
-                          <Label htmlFor="has_direct_debit" className="cursor-pointer font-medium text-white">
-                            Cliente aderiu a Débito Direto (DD)
-                          </Label>
-                        </div>
-                      )}
-                      {currentOperator.pays_electronic_invoice && (
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            id="has_electronic_invoice"
-                            checked={formData.has_electronic_invoice}
-                            onChange={(e) => setFormData({...formData, has_electronic_invoice: e.target.checked})}
-                            className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
-                          />
-                          <Label htmlFor="has_electronic_invoice" className="cursor-pointer font-medium text-white">
-                            Cliente aderiu a Fatura Eletrónica (FE)
-                          </Label>
-                        </div>
-                      )}
-                      <p className="text-xs mt-3 text-slate-500">
-                        Valores adicionais serão somados à comissão conforme configuração da operadora
-                      </p>
-                    </div>
-                  </FormSection>
-                </div>
-              )}
 
               <div className="border-t border-dark-700 my-6" />
 

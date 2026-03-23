@@ -244,24 +244,18 @@ const Sales = ({ user }) => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (formData.has_direct_debit && !formData.client_iban?.trim()) {
-      toast.error("IBAN é obrigatório quando o cliente adere a Débito Direto!");
+    if (!formData.client_email?.trim()) {
+      toast.error("Email do cliente é obrigatório!");
       return;
     }
 
-    if (formData.has_electronic_invoice) {
-      if (!formData.client_email?.trim()) {
-        toast.error("Email é obrigatório quando o cliente adere a Fatura Eletrónica!");
-        return;
-      }
-      if (!emailRegex.test(formData.client_email.trim())) {
-        toast.error("Formato de email inválido!");
-        return;
-      }
+    if (!emailRegex.test(formData.client_email.trim())) {
+      toast.error("Formato de email inválido!");
+      return;
     }
 
-    if (formData.client_email?.trim() && !emailRegex.test(formData.client_email.trim())) {
-      toast.error("Formato de email inválido!");
+    if (formData.has_direct_debit && !formData.client_iban?.trim()) {
+      toast.error("IBAN é obrigatório quando o cliente adere a Débito Direto!");
       return;
     }
 
