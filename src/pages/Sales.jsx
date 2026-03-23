@@ -555,29 +555,30 @@ const Sales = ({ user }) => {
             }
           }
 
-          if (parentSaleId && allPointsForEmail.length > 0) {
-            energyPointsService.replacePointsForSale(parentSaleId, allPointsForEmail).catch(() => {});
+          const multilocalEmailPoints = localeSales.map(({ type, point, energy_sale_type }) => ({
+            point_type: type,
+            point_code: point.point_code?.toUpperCase() || '',
+            power_kva: type === 'cpe' ? (point.power_kva || null) : null,
+            tier: type === 'cui' ? (point.tier || null) : null,
+            inst_street: point.inst_street || null,
+            inst_postal_code: point.inst_postal_code || null,
+            inst_locality: point.inst_locality || null,
+            installation_address: point.installation_address || null,
+            billing_address: point.billing_address || null,
+            energy_type: energy_sale_type,
+            entry_type: point.entry_type || null,
+            voltage_type: point.voltage_type || null,
+            additional_services: point.additional_services || null,
+          }));
+
+          if (parentSaleId && multilocalEmailPoints.length > 0) {
+            energyPointsService.replacePointsForSale(parentSaleId, multilocalEmailPoints).catch(() => {});
           }
 
           if (parentSaleId && !shouldSkipEmail) {
-            const emailPoints = localeSales.map(({ type, point, energy_sale_type }) => ({
-              point_type: type,
-              point_code: point.point_code?.toUpperCase() || '',
-              power_kva: type === 'cpe' ? (point.power_kva || null) : null,
-              tier: type === 'cui' ? (point.tier || null) : null,
-              inst_street: point.inst_street || null,
-              inst_postal_code: point.inst_postal_code || null,
-              inst_locality: point.inst_locality || null,
-              installation_address: point.installation_address || null,
-              billing_address: point.billing_address || null,
-              energy_type: energy_sale_type,
-              entry_type: point.entry_type || null,
-              voltage_type: point.voltage_type || null,
-              additional_services: point.additional_services || null,
-            }));
             salesService.resendNewSaleEmail(parentSaleId, {
               sale_type: 'multilocal',
-              energy_points_list: emailPoints,
+              energy_points_list: multilocalEmailPoints,
             }).catch(() => {});
           }
 
