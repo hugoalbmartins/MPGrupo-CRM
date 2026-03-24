@@ -190,15 +190,15 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
               if (m.ported) {
                 const cvpPart = m.cvp && m.cvp !== "" ? ` — CVP: ${m.cvp}` : "";
                 const provisorioPart = m.tem_provisorios && m.numero_provisorio && m.numero_provisorio !== ""
-                  ? ` — Provisorio: ${m.numero_provisorio}`
-                  : m.tem_provisorios ? " — Provisorio: (pendente)" : "";
-                return `<tr><td style="padding-left:12px; color:#6b7280;">Cartao ${i + 1}:</td><td>Portado: ${m.number || ""}${cvpPart}${provisorioPart}</td></tr>`;
+                  ? ` — Provisório: ${m.numero_provisorio}`
+                  : m.tem_provisorios ? " — Provisório: (pendente)" : "";
+                return `<tr><td style="padding-left:12px; color:#6b7280;">Cartão ${i + 1}:</td><td>Portado: ${m.number || ""}${cvpPart}${provisorioPart}</td></tr>`;
               } else {
-                const newDesc = m.number && m.number !== "" ? `Novo (${m.number})` : "Novo";
-                return `<tr><td style="padding-left:12px; color:#6b7280;">Cartao ${i + 1}:</td><td>${newDesc}</td></tr>`;
+                const newDesc = m.number && m.number !== "" ? `Existente (${m.number})` : "Novo";
+                return `<tr><td style="padding-left:12px; color:#6b7280;">Cartão ${i + 1}:</td><td>${newDesc}</td></tr>`;
               }
             });
-            const header = `<tr><td>Cartoes Moveis:</td><td>${total} cartao${total > 1 ? "es" : ""}</td></tr>`;
+            const header = `<tr><td>Cartões Móveis:</td><td>${total} cartão${total > 1 ? "s" : ""}</td></tr>`;
             return header + (rows.length > 0 ? rows.join("") : "");
           })() : ""}
           ${payload.tratar_oop ? `<tr><td>Desligamento OOP:</td><td style="color:#d97706; font-weight:600;">Sim (fatura OOP obrigatoria)</td></tr>` : ""}
