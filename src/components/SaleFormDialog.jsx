@@ -489,9 +489,8 @@ const SaleFormDialog = ({
                     )}
                   </div>
 
-                  {currentOperator?.pays_direct_debit && (
-                    <div className="col-span-1 sm:col-span-2">
-                      <Label className="text-sm font-semibold mb-2 text-white">Adere a Débito Direto?</Label>
+                  <div className="col-span-1 sm:col-span-2">
+                    <Label className="text-sm font-semibold mb-2 text-white">Adere a Débito Direto?</Label>
                       <div className="flex gap-3 mt-1">
                         <button
                           type="button"
@@ -508,10 +507,9 @@ const SaleFormDialog = ({
                           Não
                         </button>
                       </div>
-                    </div>
-                  )}
+                  </div>
 
-                  {currentOperator?.pays_direct_debit && formData.has_direct_debit && (
+                  {formData.has_direct_debit && (
                     <div className="col-span-1 sm:col-span-2">
                       <Label className="text-sm font-semibold mb-2 text-white">IBAN *</Label>
                       <Input
@@ -530,27 +528,25 @@ const SaleFormDialog = ({
                     </div>
                   )}
 
-                  {currentOperator?.pays_electronic_invoice && (
-                    <div className="col-span-1 sm:col-span-2">
-                      <Label className="text-sm font-semibold mb-2 text-white">Adere a Fatura Eletrónica?</Label>
-                      <div className="flex gap-3 mt-1">
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, has_electronic_invoice: true})}
-                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_electronic_invoice === true ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
-                        >
-                          Sim
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, has_electronic_invoice: false})}
-                          className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_electronic_invoice === false ? 'bg-dark-700 border-dark-600 text-white' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-dark-600'}`}
-                        >
-                          Não
-                        </button>
-                      </div>
+                  <div className="col-span-1 sm:col-span-2">
+                    <Label className="text-sm font-semibold mb-2 text-white">Adere a Fatura Eletrónica?</Label>
+                    <div className="flex gap-3 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, has_electronic_invoice: true})}
+                        className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_electronic_invoice === true ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
+                      >
+                        Sim
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, has_electronic_invoice: false})}
+                        className={`flex-1 py-2 px-4 rounded-lg border text-sm font-semibold transition-all ${formData.has_electronic_invoice === false ? 'bg-dark-700 border-dark-600 text-white' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-dark-600'}`}
+                      >
+                        Não
+                      </button>
                     </div>
-                  )}
+                  </div>
                   <div className="col-span-1 sm:col-span-2">
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Autoriza cópia dos documentos pessoais? *</Label>
                     <Select
