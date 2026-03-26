@@ -688,18 +688,20 @@ export const salesService = {
     return { success: true };
   },
 
-  async resendNewSaleEmail(saleId, overridePayload = {}) {
+  async resendNewSaleEmail(saleId, overridePayload = {}, internal = false) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { data: currentUser } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle();
+    if (!internal) {
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    if (!currentUser || !['admin', 'bo'].includes(currentUser.role)) {
-      throw new Error('Only administrators and backoffice can resend emails');
+      if (!currentUser || !['admin', 'bo'].includes(currentUser.role)) {
+        throw new Error('Only administrators and backoffice can resend emails');
+      }
     }
 
     const { data: sale, error: saleError } = await supabase

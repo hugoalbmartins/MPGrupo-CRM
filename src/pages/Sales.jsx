@@ -486,7 +486,7 @@ const Sales = ({ user }) => {
             salesService.resendNewSaleEmail(parentSaleId, {
               sale_type: 'multiponto',
               energy_points_list: emailPoints,
-            }).catch(() => {});
+            }, true).catch(() => {});
           }
 
           toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multiponto)!`);
@@ -578,7 +578,7 @@ const Sales = ({ user }) => {
             salesService.resendNewSaleEmail(parentSaleId, {
               sale_type: 'multilocal',
               energy_points_list: multilocalEmailPoints,
-            }).catch(() => {});
+            }, true).catch(() => {});
           }
 
           toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multilocal)!`);
