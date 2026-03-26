@@ -12,7 +12,9 @@ function calcContactDate(activatedAt, prazo, unidade) {
 }
 
 export const refidelizacoesService = {
-  async getAll({ partnerId = null, operatorId = null } = {}) {
+  async getAll({ user = null, partnerId = null, operatorId = null } = {}) {
+    const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
+
     let query = supabase
       .from('sales')
       .select(`
@@ -26,7 +28,9 @@ export const refidelizacoesService = {
       .eq('status', 'Ativo')
       .not('activated_at', 'is', null);
 
-    if (partnerId) {
+    if (isPartner && user?.partner_id) {
+      query = query.eq('partner_id', user.partner_id);
+    } else if (partnerId) {
       query = query.eq('partner_id', partnerId);
     }
 
@@ -69,6 +73,16 @@ export const refidelizacoesService = {
     result.sort((a, b) => new Date(a.contact_date) - new Date(b.contact_date));
 
     return result;
+  },
+
+  async getPartners() {
+    const { data, error } = await supabase
+      .from('partners')
+      .select('id, name')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
   },
 
   async getSaleDetail(saleId) {

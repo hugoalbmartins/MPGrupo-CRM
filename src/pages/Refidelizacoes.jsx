@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { RotateCcw, Calendar, User, Building2, Phone, ChevronRight, Search, ListFilter as Filter, Clock, CircleCheck as CheckCircle2, Loader as Loader2 } from "lucide-react";
+import { RotateCcw, Calendar, User, ChevronRight, Search, Clock, CircleCheck as CheckCircle2, Loader as Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { refidelizacoesService } from "../services/refidelizacoesService";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 
@@ -31,25 +29,39 @@ const StatusBadge = ({ status }) => {
 const Refidelizacoes = ({ user }) => {
   const [search, setSearch] = useState("");
   const [filterOperator, setFilterOperator] = useState("all");
+  const [filterPartner, setFilterPartner] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
   const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
+  const isAdminOrBo = user?.role === 'admin' || user?.role === 'bo';
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ['refidelizacoes'],
-    queryFn: () => refidelizacoesService.getAll(),
+    queryKey: ['refidelizacoes', user?.id, user?.role, user?.partner_id],
+    queryFn: () => refidelizacoesService.getAll({ user }),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
+  });
+
+  const { data: allPartners = [] } = useQuery({
+    queryKey: ['refidelizacoes-partners'],
+    queryFn: () => refidelizacoesService.getPartners(),
+    enabled: isAdminOrBo,
+    staleTime: 10 * 60 * 1000,
   });
 
   const operators = [...new Map(
     items.map(i => [i.operator_id, { id: i.operator_id, name: i.operator_name }])
   ).values()];
 
+  const partners = [...new Map(
+    items.map(i => [i.partner_id, { id: i.partner_id, name: i.partner_name }])
+  ).values()].filter(p => p.id);
+
   const filtered = items.filter(item => {
     if (filterOperator !== 'all' && item.operator_id !== filterOperator) return false;
+    if (filterPartner !== 'all' && item.partner_id !== filterPartner) return false;
     if (filterStatus !== 'all' && item.status_refidelizacao !== filterStatus) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -127,8 +139,8 @@ const Refidelizacoes = ({ user }) => {
 
       <Card className="bg-dark-850 border-dark-700">
         <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <Input
                 placeholder="Pesquisar por cliente, NIF, operadora..."
@@ -156,6 +168,19 @@ const Refidelizacoes = ({ user }) => {
                   <SelectItem value="all" className="text-white">Todas as operadoras</SelectItem>
                   {operators.map(op => (
                     <SelectItem key={op.id} value={op.id} className="text-white">{op.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {isAdminOrBo && partners.length > 0 && (
+              <Select value={filterPartner} onValueChange={setFilterPartner}>
+                <SelectTrigger className="w-full sm:w-48 bg-dark-900 border-dark-700 text-white">
+                  <SelectValue placeholder="Parceiro" />
+                </SelectTrigger>
+                <SelectContent className="bg-dark-800 border-dark-700">
+                  <SelectItem value="all" className="text-white">Todos os parceiros</SelectItem>
+                  {partners.map(p => (
+                    <SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -1,12 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle, Download, Clock } from "lucide-react";
+import { Upload, FileSpreadsheet, CircleCheck as CheckCircle, Circle as XCircle, TriangleAlert as AlertTriangle, Download, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 
+const ALL_STATUSES = [
+  "Para registo",
+  "Pendente",
+  "Registado",
+  "Ativo",
+  "Concluido",
+  "Cancelado",
+  "Recusado",
+  "Em proposta",
+];
+
 const OperatorValidations = ({ user }) => {
   const [file, setFile] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState("Ativo");
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [validationHistory, setValidationHistory] = useState([]);
@@ -120,6 +133,8 @@ const OperatorValidations = ({ user }) => {
     setCurrentReport(null);
     setProgress({ current: 0, total: 0 });
 
+    const isAtivo = selectedStatus === 'Ativo';
+
     try {
       const excelRows = await parseExcelFile(file);
 
@@ -173,31 +188,35 @@ const OperatorValidations = ({ user }) => {
 
       for (let i = 0; i < matchedSales.length; i++) {
         const { sale, row } = matchedSales[i];
-        const activationDate = row.date || new Date().toISOString().split('T')[0];
 
         const updateData = {
-          status: 'Ativo',
-          operator_validated: true,
-          operator_validation_date: new Date().toISOString()
+          status: selectedStatus,
         };
 
-        if (row.paidByOperator) {
-          updateData.paid_to_operator = true;
-          updateData.payment_date = activationDate;
+        if (isAtivo) {
+          const activationDate = row.date || new Date().toISOString().split('T')[0];
+          updateData.operator_validated = true;
+          updateData.operator_validation_date = new Date().toISOString();
+          updateData.activated_at = activationDate;
 
-          if (sale.scope === 'energia') {
-            if (sale.energy_sale_type === 'dual') {
-              updateData.electricity_paid = true;
-              updateData.electricity_payment_date = activationDate;
-              updateData.gas_paid = true;
-              updateData.gas_payment_date = activationDate;
-              updateData.is_partial_payment = false;
-            } else if (sale.energy_sale_type === 'eletricidade') {
-              updateData.electricity_paid = true;
-              updateData.electricity_payment_date = activationDate;
-            } else if (sale.energy_sale_type === 'gas') {
-              updateData.gas_paid = true;
-              updateData.gas_payment_date = activationDate;
+          if (row.paidByOperator) {
+            updateData.paid_to_operator = true;
+            updateData.payment_date = activationDate;
+
+            if (sale.scope === 'energia') {
+              if (sale.energy_sale_type === 'dual') {
+                updateData.electricity_paid = true;
+                updateData.electricity_payment_date = activationDate;
+                updateData.gas_paid = true;
+                updateData.gas_payment_date = activationDate;
+                updateData.is_partial_payment = false;
+              } else if (sale.energy_sale_type === 'eletricidade') {
+                updateData.electricity_paid = true;
+                updateData.electricity_payment_date = activationDate;
+              } else if (sale.energy_sale_type === 'gas') {
+                updateData.gas_paid = true;
+                updateData.gas_payment_date = activationDate;
+              }
             }
           }
         }
@@ -217,8 +236,8 @@ const OperatorValidations = ({ user }) => {
             cpe: row.cpe,
             cui: row.cui,
             req: row.req,
-            paid: row.paidByOperator,
-            date: activationDate
+            paid: isAtivo ? row.paidByOperator : null,
+            date: isAtivo ? (row.date || new Date().toISOString().split('T')[0]) : null
           });
         }
 
@@ -248,7 +267,7 @@ const OperatorValidations = ({ user }) => {
         toast.warning(`${results.notFound.length} registo(s) nao encontrado(s)`);
       }
       if (results.updated.length > 0) {
-        toast.success(`${results.updated.length} venda(s) atualizada(s) com sucesso!`);
+        toast.success(`${results.updated.length} venda(s) atualizada(s) para "${selectedStatus}" com sucesso!`);
       }
 
       setFile(null);
@@ -281,6 +300,8 @@ const OperatorValidations = ({ user }) => {
     );
   }
 
+  const isAtivo = selectedStatus === 'Ativo';
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -300,35 +321,70 @@ const OperatorValidations = ({ user }) => {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-cyber-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-slate-300">
-              <strong className="text-white">Formato do ficheiro Excel:</strong> O ficheiro deve conter as colunas:
+              <strong className="text-white">Formato do ficheiro Excel:</strong> O ficheiro deve conter as colunas de identificacao:
               <ul className="list-disc list-inside mt-2 space-y-1 text-slate-400">
                 <li><strong className="text-slate-300">CPE</strong>: Codigo do ponto de entrega (eletricidade)</li>
                 <li><strong className="text-slate-300">CUI</strong>: Codigo unico de instalacao (gas)</li>
                 <li><strong className="text-slate-300">REQ</strong>: Numero de requisicao (telecomunicacoes)</li>
-                <li><strong className="text-slate-300">Data</strong>: Data de ativacao</li>
-                <li><strong className="text-slate-300">Pago pelo operador</strong>: SIM ou NAO</li>
               </ul>
+              <div className="mt-3 p-3 rounded-lg bg-dark-800 border border-dark-700 space-y-1.5">
+                <p className="font-semibold text-white text-xs uppercase tracking-wider">Colunas adicionais por estado</p>
+                <p className="text-slate-400">
+                  <span className="text-emerald-400 font-semibold">Estado "Ativo":</span> As colunas <strong className="text-slate-300">Data</strong> (data de ativacao) e <strong className="text-slate-300">Pago pelo operador</strong> (SIM/NAO) sao processadas. A data e registada como data de ativacao e o pagamento e atualizado nas vendas.
+                </p>
+                <p className="text-slate-400">
+                  <span className="text-slate-300 font-semibold">Outros estados:</span> Apenas o estado da venda e atualizado. As colunas Data e Pago pelo operador sao ignoradas.
+                </p>
+              </div>
               <p className="mt-2 text-slate-500">
-                O sistema pesquisa vendas dos ultimos 90 dias e marca como Ativo as que constam no ficheiro.
+                O sistema pesquisa vendas dos ultimos 90 dias e atualiza as que constam no ficheiro.
               </p>
             </div>
           </div>
         </div>
 
-        <div>
-          <input
-            id="excel-file-input"
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20"
-          />
-          {file && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-slate-300">
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>{file.name}</span>
-            </div>
-          )}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Estado a aplicar</label>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-full sm:w-64 bg-dark-900 border-dark-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-dark-800 border-dark-700">
+                {ALL_STATUSES.map(s => (
+                  <SelectItem key={s} value={s} className="text-white">{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {isAtivo && (
+              <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Data de ativacao e pagamento serao registados a partir do ficheiro
+              </p>
+            )}
+            {!isAtivo && (
+              <p className="text-xs text-slate-500 mt-1.5">
+                Apenas o estado sera atualizado — Data e Pago pelo operador sao ignorados
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Ficheiro Excel</label>
+            <input
+              id="excel-file-input"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20"
+            />
+            {file && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-slate-300">
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>{file.name}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <Button
@@ -344,7 +400,7 @@ const OperatorValidations = ({ user }) => {
           ) : (
             <span className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              Processar Validacao
+              Processar e Aplicar Estado "{selectedStatus}"
             </span>
           )}
         </Button>
@@ -385,8 +441,12 @@ const OperatorValidations = ({ user }) => {
                     <tr className="border-b border-dark-700">
                       <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Codigo</th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Cliente</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Pago</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Data</th>
+                      {isAtivo && (
+                        <>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Pago</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Data Ativacao</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -394,14 +454,18 @@ const OperatorValidations = ({ user }) => {
                       <tr key={idx} className="border-b border-dark-800">
                         <td className="px-4 py-2 text-white">{item.saleCode}</td>
                         <td className="px-4 py-2 text-slate-300">{item.clientName || '-'}</td>
-                        <td className="px-4 py-2">
-                          {item.paid ? (
-                            <span className="text-green-400">Sim</span>
-                          ) : (
-                            <span className="text-slate-400">Nao</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2 text-slate-300">{item.date || '-'}</td>
+                        {isAtivo && (
+                          <>
+                            <td className="px-4 py-2">
+                              {item.paid ? (
+                                <span className="text-green-400">Sim</span>
+                              ) : (
+                                <span className="text-slate-400">Nao</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2 text-slate-300">{item.date || '-'}</td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
