@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertCircle } from "lucide-react";
+import { CircleAlert as AlertCircle } from "lucide-react";
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -22,41 +22,42 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-2xl w-full mx-auto p-6">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertCircle className="w-8 h-8 text-red-500" />
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Erro na Aplicação
-                </h1>
-              </div>
-              <p className="text-gray-600 mb-4">
-                Ocorreu um erro ao carregar esta página.
-              </p>
-              {this.state.error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <p className="font-semibold text-red-800 mb-2">Erro:</p>
-                  <p className="text-red-700 text-sm font-mono">
-                    {this.state.error.toString()}
-                  </p>
-                </div>
-              )}
-              {this.state.errorInfo && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <p className="font-semibold text-gray-700 mb-2">Stack Trace:</p>
-                  <pre className="text-xs text-gray-600 overflow-auto max-h-64">
-                    {this.state.errorInfo.componentStack}
-                  </pre>
-                </div>
-              )}
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Recarregar Página
-              </button>
+        <div className="flex flex-col items-center justify-center p-6 bg-dark-900 rounded-lg border border-red-500/30">
+          <div className="w-full max-w-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-red-400 shrink-0" />
+              <h2 className="text-lg font-bold text-white">
+                Erro ao carregar
+              </h2>
             </div>
+            {this.state.error && (
+              <div className="bg-red-950/50 border border-red-500/30 rounded-lg p-4 mb-4">
+                <p className="font-semibold text-red-400 mb-2 text-sm">Erro:</p>
+                <p className="text-red-300 text-xs font-mono break-all">
+                  {this.state.error.toString()}
+                </p>
+              </div>
+            )}
+            {this.state.errorInfo && (
+              <div className="bg-dark-800 rounded-lg p-4 mb-4">
+                <p className="font-semibold text-slate-400 mb-2 text-sm">Stack:</p>
+                <pre className="text-xs text-slate-500 overflow-auto max-h-48 whitespace-pre-wrap">
+                  {this.state.errorInfo.componentStack}
+                </pre>
+              </div>
+            )}
+            <button
+              onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm mr-2"
+            >
+              Tentar novamente
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-dark-700 text-white px-4 py-2 rounded-lg hover:bg-dark-600 transition-colors text-sm border border-dark-600"
+            >
+              Recarregar Página
+            </button>
           </div>
         </div>
       );

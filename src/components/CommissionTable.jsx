@@ -167,7 +167,7 @@ const PowerCommissionSubTable = ({
                       onChange={(e) => onUpdateConfig(actualIndex, 'commission_value', e.target.value)}
                     />
                   ) : (
-                    <span className="text-cyber-400 font-semibold">{(existing.commission_value || 0).toFixed(2)}€</span>
+                    <span className="text-cyber-400 font-semibold">{(parseFloat(existing.commission_value) || 0).toFixed(2)}€</span>
                   )}
                 </td>
                 <td className="p-2.5">
@@ -182,7 +182,7 @@ const PowerCommissionSubTable = ({
                     />
                   ) : (
                     <span className="text-slate-300 text-xs">
-                      {existing.direct_debit_bonus > 0 ? `${(existing.direct_debit_bonus).toFixed(2)}€` : <span className="text-slate-600">—</span>}
+                      {parseFloat(existing.direct_debit_bonus) > 0 ? `${parseFloat(existing.direct_debit_bonus).toFixed(2)}€` : <span className="text-slate-600">—</span>}
                     </span>
                   )}
                 </td>
@@ -198,7 +198,7 @@ const PowerCommissionSubTable = ({
                     />
                   ) : (
                     <span className="text-slate-300 text-xs">
-                      {existing.electronic_invoice_bonus > 0 ? `${(existing.electronic_invoice_bonus).toFixed(2)}€` : <span className="text-slate-600">—</span>}
+                      {parseFloat(existing.electronic_invoice_bonus) > 0 ? `${parseFloat(existing.electronic_invoice_bonus).toFixed(2)}€` : <span className="text-slate-600">—</span>}
                     </span>
                   )}
                 </td>
@@ -406,7 +406,7 @@ const CommissionTable = ({
                               onChange={(e) => onUpdateConfig(actualIndex, 'commission_value', e.target.value)}
                             />
                           ) : (
-                            <span className="text-cyber-400 font-medium">{config.commission_value?.toFixed(2) || '0.00'}</span>
+                            <span className="text-cyber-400 font-medium">{(parseFloat(config.commission_value) || 0).toFixed(2)}</span>
                           )
                         ) : (
                           <span className="text-xs text-slate-500">Manual</span>
@@ -467,7 +467,7 @@ const CommissionTable = ({
                                 </div>
                               ) : (
                                 <span className="text-xs text-slate-300">
-                                  {config.monthly_value_min?.toFixed(2) || '0.00'} - {config.monthly_value_max > 0 ? `${config.monthly_value_max.toFixed(2)}` : '\u221E'}
+                                  {(parseFloat(config.monthly_value_min) || 0).toFixed(2)} - {parseFloat(config.monthly_value_max) > 0 ? `${parseFloat(config.monthly_value_max).toFixed(2)}` : '\u221E'}
                                 </span>
                               )
                             )}
@@ -540,11 +540,11 @@ const CommissionTable = ({
                           </div>
                         ) : (
                           <span className="text-xs text-slate-300">
-                            {config.direct_debit_bonus > 0 || config.electronic_invoice_bonus > 0 ? (
+                            {parseFloat(config.direct_debit_bonus) > 0 || parseFloat(config.electronic_invoice_bonus) > 0 ? (
                               <>
-                                {config.direct_debit_bonus > 0 && `DD: ${config.direct_debit_bonus.toFixed(2)}\u20AC`}
-                                {config.direct_debit_bonus > 0 && config.electronic_invoice_bonus > 0 && ' | '}
-                                {config.electronic_invoice_bonus > 0 && `FE: ${config.electronic_invoice_bonus.toFixed(2)}\u20AC`}
+                                {parseFloat(config.direct_debit_bonus) > 0 && `DD: ${parseFloat(config.direct_debit_bonus).toFixed(2)}\u20AC`}
+                                {parseFloat(config.direct_debit_bonus) > 0 && parseFloat(config.electronic_invoice_bonus) > 0 && ' | '}
+                                {parseFloat(config.electronic_invoice_bonus) > 0 && `FE: ${parseFloat(config.electronic_invoice_bonus).toFixed(2)}\u20AC`}
                               </>
                             ) : (
                               <span className="text-slate-500">-</span>
