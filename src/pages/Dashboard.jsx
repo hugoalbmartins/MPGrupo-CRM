@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import SaleDetailDialog from "../components/SaleDetailDialog";
-import { useDashboardStats, useProposalStats, usePartnerStats, useProposals, getAvailableWeeks, getAvailableMonths, getAvailableDays } from "@/hooks/useDashboardData";
+import { useDashboardStats, useProposalStats, usePartnerStats, useProposals, useMonthlySalesByOperator, getAvailableWeeks, getAvailableMonths, getAvailableDays } from "@/hooks/useDashboardData";
 import { AnimatedNumber } from "@/hooks/useAnimatedCounter";
 
 /* ---------------------------------------------------------------------------
@@ -156,6 +156,7 @@ const Dashboard = ({ user }) => {
   const { data: proposalStats } = useProposalStats();
   const { data: partnerData } = usePartnerStats(user, partnerTableFilterMode, partnerTableFilterKey);
   const { data: filteredProposals = [] } = useProposals(proposalFilter);
+  const { data: monthlyByOperatorData } = useMonthlySalesByOperator(user);
 
   const partnerStats = partnerData?.stats || [];
   const operators = partnerData?.operators || [];
@@ -849,6 +850,62 @@ const Dashboard = ({ user }) => {
   };
 
   /* ====================================================================
+     Monthly sales by operator chart
+  ==================================================================== */
+  const OPERATOR_COLORS = [
+    "#06b6d4", "#10b981", "#f59e0b", "#f43f5e",
+    "#22d3ee", "#34d399", "#fbbf24", "#fb7185",
+    "#67e8f9", "#6ee7b7", "#fcd34d", "#fda4af",
+  ];
+
+  const renderMonthlySalesByOperatorChart = () => {
+    const chartData = monthlyByOperatorData?.chartData || [];
+    const activeOperators = monthlyByOperatorData?.operators || [];
+
+    if (chartData.length === 0 || activeOperators.length === 0) return null;
+
+    const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
+    const title = isPartner ? "Minhas Vendas Mensais por Operadora" : "Vendas Mensais por Operadora";
+
+    return (
+      <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
+        <div className="mb-4">
+          <h3 className="text-base font-bold text-white mb-1">{title}</h3>
+          <p className="text-xs text-slate-500">Ultimos 12 meses — apenas operadoras com vendas registadas</p>
+        </div>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={chartData} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+            <defs>
+              {activeOperators.map((op, i) => (
+                <linearGradient key={op.id} id={`opGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={OPERATOR_COLORS[i % OPERATOR_COLORS.length]} stopOpacity={1} />
+                  <stop offset="100%" stopColor={OPERATOR_COLORS[i % OPERATOR_COLORS.length]} stopOpacity={0.6} />
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(51, 65, 85, 0.4)" vertical={false} />
+            <XAxis dataKey="month" stroke="#64748b" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "rgba(51, 65, 85, 0.4)" }} allowDecimals={false} />
+            <Tooltip content={<CyberTooltip />} />
+            <Legend formatter={(value) => <span style={{ color: "#94a3b8", fontSize: "12px" }}>{value}</span>} />
+            {activeOperators.map((op, i) => (
+              <Bar
+                key={op.id}
+                dataKey={op.name}
+                name={op.name}
+                fill={`url(#opGrad${i})`}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={28}
+                animationDuration={1200}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
+    );
+  };
+
+  /* ====================================================================
      Charts section  --  spectacular cyber-styled Recharts
   ==================================================================== */
   const renderCharts = () => (
@@ -1156,6 +1213,9 @@ const Dashboard = ({ user }) => {
           </ResponsiveContainer>
         </motion.div>
       )}
+
+      {/* ---- Grouped Bar Chart: Monthly sales by operator ---- */}
+      {renderMonthlySalesByOperatorChart()}
     </>
   );
 

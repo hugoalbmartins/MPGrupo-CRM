@@ -199,6 +199,76 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
   });
 };
 
+export const useMonthlySalesByOperator = (user) => {
+  return useQuery({
+    queryKey: ['monthlySalesByOperator', user?.id, user?.role, user?.partner_id],
+    queryFn: async () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+      const startStr = start.toISOString().split('T')[0];
+
+      let query = supabase
+        .from('sales')
+        .select('date, operator_id, operators(id, name)')
+        .gte('date', startStr)
+        .neq('status', 'Em proposta');
+
+      const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
+      if (isPartner && user?.partner_id) {
+        query = query.eq('partner_id', user.partner_id);
+      }
+
+      const { data: sales, error } = await query;
+      if (error || !sales) return { chartData: [], operators: [] };
+
+      const monthKeys = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        monthKeys.push({
+          key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+          label: d.toLocaleDateString('pt-PT', { month: 'short', year: '2-digit' }).replace('.', '').replace(' ', '/'),
+        });
+      }
+
+      const operatorMap = {};
+      sales.forEach(sale => {
+        const op = sale.operators;
+        if (!op) return;
+        if (!operatorMap[op.id]) operatorMap[op.id] = op.name;
+      });
+
+      const activeOperators = Object.entries(operatorMap).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+
+      if (activeOperators.length === 0) return { chartData: [], operators: [] };
+
+      const countMap = {};
+      sales.forEach(sale => {
+        if (!sale.operators) return;
+        const monthKey = sale.date?.substring(0, 7);
+        if (!monthKey) return;
+        const opName = sale.operators.name;
+        if (!countMap[monthKey]) countMap[monthKey] = {};
+        countMap[monthKey][opName] = (countMap[monthKey][opName] || 0) + 1;
+      });
+
+      const chartData = monthKeys.map(({ key, label }) => {
+        const entry = { month: label };
+        activeOperators.forEach(op => {
+          entry[op.name] = countMap[key]?.[op.name] || 0;
+        });
+        return entry;
+      });
+
+      const hasData = chartData.some(row => activeOperators.some(op => row[op.name] > 0));
+      if (!hasData) return { chartData: [], operators: [] };
+
+      return { chartData, operators: activeOperators };
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+};
+
 export const useProposals = (filterType) => {
   return useQuery({
     queryKey: ['proposals', filterType],
