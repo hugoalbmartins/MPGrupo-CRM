@@ -37,9 +37,10 @@ const getServiceTypeLabel = (config) => {
   const types = config.service_types || [config.service_type];
   if (!types || types.length === 0) return 'N/A';
   return types.map(t => {
-    if (t === 'eletricidade') return 'Eletr.';
-    if (t === 'gas') return 'Gas';
-    return t;
+    const tStr = typeof t === 'string' ? t : (t?.name || '');
+    if (tStr === 'eletricidade') return 'Eletr.';
+    if (tStr === 'gas') return 'Gas';
+    return tStr;
   }).join('+');
 };
 
@@ -624,11 +625,14 @@ const CommissionTable = ({
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getServiceTypes().map(st => (
-                    <SelectItem key={st} value={st}>
-                      {st === 'eletricidade' ? 'Eletricidade' : st === 'gas' ? 'Gas' : st}
-                    </SelectItem>
-                  ))}
+                  {getServiceTypes().map((st, i) => {
+                    const stStr = typeof st === 'string' ? st : (st?.name || String(i));
+                    return (
+                      <SelectItem key={stStr} value={stStr}>
+                        {stStr === 'eletricidade' ? 'Eletricidade' : stStr === 'gas' ? 'Gas' : stStr}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

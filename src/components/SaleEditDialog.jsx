@@ -931,45 +931,6 @@ const SaleEditDialog = ({
             </FormSection>
             )}
 
-            {(user?.role === 'admin' || user?.role === 'bo') && (
-            <FormSection icon={RotateCcw} title="Refidelização" gradient="from-emerald-500 to-emerald-600">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <FieldGroup label="Data de Ativação">
-                  <Input
-                    type="date"
-                    value={editFormData.activated_at ? editFormData.activated_at.split('T')[0] : ''}
-                    onChange={(e) => update('activated_at', e.target.value || null)}
-                    className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
-                  />
-                </FieldGroup>
-                <div />
-                <FieldGroup label="Prazo de Refidelização (override)" hint="Deixe vazio para usar o prazo definido na operadora">
-                  <Input
-                    type="number"
-                    min="1"
-                    placeholder="Ex: 30"
-                    value={editFormData.refidelizacao_prazo || ''}
-                    onChange={(e) => update('refidelizacao_prazo', e.target.value ? parseInt(e.target.value) : null)}
-                    className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white"
-                  />
-                </FieldGroup>
-                <FieldGroup label="Unidade do Prazo">
-                  <Select
-                    value={editFormData.refidelizacao_unidade || 'dias'}
-                    onValueChange={(v) => update('refidelizacao_unidade', v)}
-                  >
-                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-emerald-500 focus:ring-emerald-500/20 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dias">Dias</SelectItem>
-                      <SelectItem value="meses">Meses</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FieldGroup>
-              </div>
-            </FormSection>
-            )}
 
             <FormSection icon={DollarSign} title="Comissão" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

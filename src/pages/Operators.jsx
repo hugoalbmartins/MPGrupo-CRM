@@ -13,6 +13,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { operatorsService } from "../services/operatorsService";
 import CommissionWizard from "../components/CommissionWizard";
 import { supabase } from "../lib/supabase";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 const EMAIL_FIELDS_BY_SCOPE = {
   telecomunicacoes: [
@@ -899,14 +900,16 @@ const Operators = ({ user }) => {
             </DialogTitle>
           </DialogHeader>
           {selectedOperator && (
-            <CommissionWizard
-              operator={selectedOperator}
-              onSave={handleCommissionSave}
-              onCancel={() => {
-                setCommissionDialogOpen(false);
-                setSelectedOperator(null);
-              }}
-            />
+            <ErrorBoundary>
+              <CommissionWizard
+                operator={selectedOperator}
+                onSave={handleCommissionSave}
+                onCancel={() => {
+                  setCommissionDialogOpen(false);
+                  setSelectedOperator(null);
+                }}
+              />
+            </ErrorBoundary>
           )}
         </DialogContent>
       </Dialog>
