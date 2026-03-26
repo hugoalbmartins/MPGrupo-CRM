@@ -862,9 +862,12 @@ const SaleEditDialog = ({
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Sem serviços adicionais">Sem serviços adicionais</SelectItem>
-                                {(currentOperator.additional_services_list || []).map(service => (
-                                  <SelectItem key={service} value={service}>{service}</SelectItem>
-                                ))}
+                                {(currentOperator.additional_services_list || []).map((service, idx) => {
+                                  const svcName = typeof service === 'string' ? service : (service?.name || '');
+                                  return (
+                                    <SelectItem key={svcName || idx} value={svcName}>{svcName}</SelectItem>
+                                  );
+                                })}
                               </SelectContent>
                             </Select>
                           </FieldGroup>
