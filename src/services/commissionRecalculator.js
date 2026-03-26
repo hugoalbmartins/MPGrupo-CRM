@@ -1,43 +1,65 @@
 import { supabase } from '../lib/supabase';
 import { calculateCommission } from '../lib/utils-crm';
 
-export const recalculateAllCommissions = async () => {
+async function callRecalculateEdgeFunction(filters = {}) {
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recalculate-commissions`;
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ force: true, ...filters }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to recalculate commissions: ${errorText}`);
+  }
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.error || 'Unknown error');
+  }
+
+  return {
+    total: result.total,
+    success: result.success_count,
+    failed: result.failed,
+    skipped: result.skipped,
+  };
+}
+
+export const recalculateAllCommissions = async (filters = {}) => {
   try {
-    console.log('Starting commission recalculation via edge function...');
-
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recalculate-commissions`;
-    const { data: { session } } = await supabase.auth.getSession();
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to recalculate commissions: ${errorText}`);
-    }
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.error || 'Unknown error');
-    }
-
+    console.log('Starting commission recalculation via edge function...', filters);
+    const result = await callRecalculateEdgeFunction(filters);
     console.log('Commission recalculation complete:', result);
-
-    return {
-      total: result.total,
-      success: result.success_count,
-      failed: result.failed,
-      skipped: result.skipped
-    };
+    return result;
   } catch (error) {
     console.error('Error in recalculateAllCommissions:', error);
     throw error;
+  }
+};
+
+export const recalculatePartnerCommissions = async (partnerId, operatorIds = []) => {
+  try {
+    console.log(`Auto-recalculating commissions for partner ${partnerId}...`);
+
+    if (operatorIds.length === 0) {
+      await callRecalculateEdgeFunction({ partnerId });
+    } else {
+      for (const operatorId of operatorIds) {
+        await callRecalculateEdgeFunction({ partnerId, operatorId });
+      }
+    }
+
+    console.log(`Auto-recalculation complete for partner ${partnerId}`);
+  } catch (error) {
+    console.error('Error in recalculatePartnerCommissions:', error);
   }
 };
 

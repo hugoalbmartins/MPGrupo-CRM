@@ -86,6 +86,9 @@ const Sales = ({ user }) => {
   const [availableActivationTypes, setAvailableActivationTypes] = useState([]);
   const [recalcDialogOpen, setRecalcDialogOpen] = useState(false);
   const [recalcStartDate, setRecalcStartDate] = useState("");
+  const [recalcEndDate, setRecalcEndDate] = useState("");
+  const [recalcOperatorId, setRecalcOperatorId] = useState("all");
+  const [recalcPartnerType, setRecalcPartnerType] = useState("all");
   const [energySaleMode, setEnergySaleMode] = useState('normal');
 
   const [formData, setFormData] = useState({
@@ -1084,7 +1087,11 @@ const Sales = ({ user }) => {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/recalculate-commissions`;
       const { data: { session } } = await supabase.auth.getSession();
 
-      const requestBody = { force: true, ...(recalcStartDate ? { startDate: recalcStartDate } : {}) };
+      const requestBody = { force: true };
+      if (recalcStartDate) requestBody.startDate = recalcStartDate;
+      if (recalcEndDate) requestBody.endDate = recalcEndDate;
+      if (recalcOperatorId && recalcOperatorId !== 'all') requestBody.operatorId = recalcOperatorId;
+      if (recalcPartnerType && recalcPartnerType !== 'all') requestBody.partnerType = recalcPartnerType;
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -1110,6 +1117,9 @@ const Sales = ({ user }) => {
 
       setRecalcDialogOpen(false);
       setRecalcStartDate("");
+      setRecalcEndDate("");
+      setRecalcOperatorId("all");
+      setRecalcPartnerType("all");
       await fetchData();
     } catch (error) {
       console.error('Erro ao recalcular comissoes:', error);
@@ -2238,44 +2248,92 @@ const Sales = ({ user }) => {
       />
 
       {/* Recalculate Commissions Dialog */}
-      <Dialog open={recalcDialogOpen} onOpenChange={setRecalcDialogOpen}>
+      <Dialog open={recalcDialogOpen} onOpenChange={(open) => {
+        setRecalcDialogOpen(open);
+        if (!open) {
+          setRecalcStartDate("");
+          setRecalcEndDate("");
+          setRecalcOperatorId("all");
+          setRecalcPartnerType("all");
+        }
+      }}>
         <DialogContent style={{ backgroundColor: '#111d2e', borderColor: 'rgba(255,255,255,0.06)' }}>
           <DialogHeader>
             <DialogTitle className="text-white">Recalcular Comissoes</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Escolha a data a partir da qual as comissoes devem ser recalculadas. Vendas anteriores a esta data nao serao afetadas.
+              Filtre por intervalo de datas, operadora e/ou tipo de parceiro. Sem filtros, todas as comissoes serao recalculadas.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-slate-400 text-xs mb-1 block">Data de Inicio (opcional)</Label>
+                <Input
+                  type="date"
+                  value={recalcStartDate}
+                  max={recalcEndDate || todayDate}
+                  onChange={(e) => setRecalcStartDate(e.target.value)}
+                  className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                  style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+                />
+              </div>
+              <div>
+                <Label className="text-slate-400 text-xs mb-1 block">Data de Fim (opcional)</Label>
+                <Input
+                  type="date"
+                  value={recalcEndDate}
+                  min={recalcStartDate || undefined}
+                  max={todayDate}
+                  onChange={(e) => setRecalcEndDate(e.target.value)}
+                  className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                  style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+                />
+              </div>
+            </div>
             <div>
-              <Label className="text-slate-400">Data de Inicio (opcional)</Label>
-              <Input
-                type="date"
-                value={recalcStartDate}
-                max={todayDate}
-                onChange={(e) => setRecalcStartDate(e.target.value)}
-                placeholder="Deixe vazio para recalcular todas"
-                className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
-                style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Se deixar vazio, todas as comissoes serao recalculadas desde sempre.
-                Se selecionar uma data (ex: 01/01/2024), apenas vendas a partir desta data serao recalculadas.
-              </p>
+              <Label className="text-slate-400 text-xs mb-1 block">Operadora (opcional)</Label>
+              <Select value={recalcOperatorId} onValueChange={setRecalcOperatorId}>
+                <SelectTrigger className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white" style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}>
+                  <SelectValue placeholder="Todas as operadoras" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as operadoras</SelectItem>
+                  {operators.map(op => (
+                    <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-slate-400 text-xs mb-1 block">Tipo de Parceiro (opcional)</Label>
+              <Select value={recalcPartnerType} onValueChange={setRecalcPartnerType}>
+                <SelectTrigger className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white" style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}>
+                  <SelectValue placeholder="Todos os tipos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value="D2D">D2D</SelectItem>
+                  <SelectItem value="REV">REV</SelectItem>
+                  <SelectItem value="Rev+">Rev+</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Alert className="bg-cyan-500/10 border border-cyan-500/20">
               <AlertTriangle className="w-4 h-4 text-cyan-400" />
-              <AlertDescription className="text-slate-300">
-                Esta operacao pode demorar alguns minutos dependendo do numero de vendas.
-                As comissoes serao recalculadas com base nas configuracoes atuais.
+              <AlertDescription className="text-slate-300 text-xs">
+                O recalculo e feito em lotes para evitar erros de limite de recursos.
+                As comissoes serao atualizadas com base nas configuracoes atuais.
               </AlertDescription>
             </Alert>
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 variant="outline"
                 onClick={() => {
                   setRecalcDialogOpen(false);
                   setRecalcStartDate("");
+                  setRecalcEndDate("");
+                  setRecalcOperatorId("all");
+                  setRecalcPartnerType("all");
                 }}
                 className="text-slate-300 hover:text-white"
                 style={{ backgroundColor: 'transparent', borderColor: '#1e3a5f' }}
@@ -2286,7 +2344,7 @@ const Sales = ({ user }) => {
                 onClick={handleRecalculateCommissions}
                 disabled={loading}
                 className="text-white font-semibold"
-                style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', border: 'none' }}
+                style={{ background: 'linear-gradient(135deg, #0ea5e9, #0369a1)', border: 'none' }}
               >
                 <ArrowUpDown className="w-4 h-4 mr-2" />
                 <span className="text-white">{loading ? "A recalcular..." : "Recalcular"}</span>

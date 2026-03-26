@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { partnersService } from "../services/partnersService";
 import { usersService } from "../services/usersService";
 import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
+import { recalculatePartnerCommissions } from "../services/commissionRecalculator";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const Partners = ({ user }) => {
@@ -110,12 +111,19 @@ const Partners = ({ user }) => {
 
       if (editingPartner) {
         await partnersService.update(editingPartner.id, submitData);
+        let affectedOperatorIds = [];
         if (editingPartner.partner_type === 'D2D') {
           await partnersService.saveD2DLevels(editingPartner.id, d2dLevels);
+          affectedOperatorIds = d2dLevels.map(l => l.operator_id).filter(Boolean);
         } else if (editingPartner.partner_type === 'REV' || editingPartner.partner_type === 'Rev+') {
           await partnersService.saveREVLevels(editingPartner.id, revLevels);
+          affectedOperatorIds = revLevels.map(l => l.operator_id).filter(Boolean);
         }
         toast.success("Parceiro atualizado com sucesso!");
+        if (affectedOperatorIds.length > 0) {
+          toast.info("A atualizar comissoes do parceiro em segundo plano...");
+          recalculatePartnerCommissions(editingPartner.id, affectedOperatorIds);
+        }
       } else {
         const result = await partnersService.create(submitData);
         if (result.initial_password) {

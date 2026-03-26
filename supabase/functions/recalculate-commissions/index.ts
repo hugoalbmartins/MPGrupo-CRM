@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const BATCH_SIZE = 30;
+
 interface CommissionConfig {
   id: string;
   operator_id: string;
@@ -385,6 +387,86 @@ async function calculateSingleEnergyCommission(
   return { base: baseCommission, bonuses: bonuses, config: applicableTier };
 }
 
+async function processBatch(
+  sales: any[],
+  operatorsMap: { [key: string]: any },
+  supabase: any,
+  forceUpdate: boolean
+): Promise<{ success: number; failed: number; skipped: number }> {
+  let successCount = 0;
+  let failedCount = 0;
+  let skippedCount = 0;
+
+  for (const sale of sales) {
+    try {
+      if (!forceUpdate && sale.manual_commission && parseFloat(sale.manual_commission) > 0) {
+        skippedCount++;
+        continue;
+      }
+
+      const operator = operatorsMap[sale.operator_id];
+      if (!operator) {
+        console.warn(`Operator not found for sale ${sale.sale_code}`);
+        failedCount++;
+        continue;
+      }
+
+      if (!forceUpdate && operator.commission_mode === "manual") {
+        skippedCount++;
+        continue;
+      }
+
+      let energySaleType = sale.energy_sale_type;
+      if (sale.scope === "energia" && !energySaleType) {
+        if (operator.energy_type) {
+          energySaleType = operator.energy_type;
+        } else {
+          energySaleType = "eletricidade";
+        }
+      }
+
+      const saleData = {
+        ...sale,
+        energy_sale_type: energySaleType,
+        isAdminSale: !sale.partner_id,
+        isCommissioned: true,
+      };
+
+      const newCommission = await calculateCommission(operator, saleData, supabase);
+      const oldCommission = parseFloat(sale.calculated_commission || 0);
+
+      if (forceUpdate || Math.abs(newCommission - oldCommission) > 0.01) {
+        const updateData: any = {
+          calculated_commission: newCommission,
+        };
+
+        if (sale.scope === "energia" && !sale.energy_sale_type && energySaleType) {
+          updateData.energy_sale_type = energySaleType;
+        }
+
+        const { error: updateError } = await supabase
+          .from("sales")
+          .update(updateData)
+          .eq("id", sale.id);
+
+        if (updateError) {
+          console.error(`Failed to update sale ${sale.sale_code}:`, updateError);
+          failedCount++;
+        } else {
+          successCount++;
+        }
+      } else {
+        skippedCount++;
+      }
+    } catch (error) {
+      console.error(`Error processing sale ${sale.sale_code}:`, error);
+      failedCount++;
+    }
+  }
+
+  return { success: successCount, failed: failedCount, skipped: skippedCount };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -407,13 +489,56 @@ Deno.serve(async (req: Request) => {
     }
 
     const forceUpdate = body.force === true;
+    const startDate: string | null = body.startDate || null;
+    const endDate: string | null = body.endDate || null;
+    const filterOperatorId: string | null = body.operatorId || null;
+    const filterPartnerType: string | null = body.partnerType || null;
+    const filterPartnerId: string | null = body.partnerId || null;
 
-    console.log(`Iniciando recalculo de comissoes... force=${forceUpdate}`);
+    console.log(`Iniciando recalculo de comissoes... force=${forceUpdate}, startDate=${startDate}, endDate=${endDate}, operatorId=${filterOperatorId}, partnerType=${filterPartnerType}, partnerId=${filterPartnerId}`);
 
-    const { data: allSales, error: salesError } = await supabaseClient
+    let salesQuery = supabaseClient
       .from("sales")
       .select("*")
       .order("created_at", { ascending: true });
+
+    if (startDate) {
+      salesQuery = salesQuery.gte("date", startDate);
+    }
+    if (endDate) {
+      salesQuery = salesQuery.lte("date", endDate);
+    }
+    if (filterOperatorId) {
+      salesQuery = salesQuery.eq("operator_id", filterOperatorId);
+    }
+    if (filterPartnerId) {
+      salesQuery = salesQuery.eq("partner_id", filterPartnerId);
+    }
+
+    if (filterPartnerType && !filterPartnerId) {
+      const { data: partnerIds } = await supabaseClient
+        .from("partners")
+        .select("id")
+        .eq("partner_type", filterPartnerType);
+
+      if (partnerIds && partnerIds.length > 0) {
+        salesQuery = salesQuery.in("partner_id", partnerIds.map((p: any) => p.id));
+      } else {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Nenhuma venda encontrada para o tipo de parceiro selecionado",
+            total: 0,
+            success_count: 0,
+            failed: 0,
+            skipped: 0,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    const { data: allSales, error: salesError } = await salesQuery;
 
     if (salesError) {
       throw salesError;
@@ -433,7 +558,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(`Encontradas ${allSales.length} vendas para processar`);
+    console.log(`Encontradas ${allSales.length} vendas para processar em lotes de ${BATCH_SIZE}`);
 
     const { data: operators, error: operatorsError } = await supabaseClient
       .from("operators")
@@ -448,85 +573,27 @@ Deno.serve(async (req: Request) => {
       operatorsMap[op.id] = op;
     });
 
-    let successCount = 0;
-    let failedCount = 0;
-    let skippedCount = 0;
+    let totalSuccess = 0;
+    let totalFailed = 0;
+    let totalSkipped = 0;
 
-    for (const sale of allSales) {
-      try {
-        if (!forceUpdate && sale.manual_commission && parseFloat(sale.manual_commission) > 0) {
-          skippedCount++;
-          continue;
-        }
+    for (let i = 0; i < allSales.length; i += BATCH_SIZE) {
+      const batch = allSales.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(allSales.length / BATCH_SIZE)} (${batch.length} sales)`);
 
-        const operator = operatorsMap[sale.operator_id];
-        if (!operator) {
-          console.warn(`Operator not found for sale ${sale.sale_code}`);
-          failedCount++;
-          continue;
-        }
-
-        if (!forceUpdate && operator.commission_mode === "manual") {
-          skippedCount++;
-          continue;
-        }
-
-        let energySaleType = sale.energy_sale_type;
-        if (sale.scope === "energia" && !energySaleType) {
-          if (operator.energy_type) {
-            energySaleType = operator.energy_type;
-          } else {
-            energySaleType = "eletricidade";
-          }
-        }
-
-        const saleData = {
-          ...sale,
-          energy_sale_type: energySaleType,
-          isAdminSale: !sale.partner_id,
-          isCommissioned: true,
-        };
-
-        const newCommission = await calculateCommission(operator, saleData, supabaseClient);
-        const oldCommission = parseFloat(sale.calculated_commission || 0);
-
-        if (forceUpdate || Math.abs(newCommission - oldCommission) > 0.01) {
-          const updateData: any = {
-            calculated_commission: newCommission,
-          };
-
-          if (sale.scope === "energia" && !sale.energy_sale_type && energySaleType) {
-            updateData.energy_sale_type = energySaleType;
-          }
-
-          const { error: updateError } = await supabaseClient
-            .from("sales")
-            .update(updateData)
-            .eq("id", sale.id);
-
-          if (updateError) {
-            console.error(`Failed to update sale ${sale.sale_code}:`, updateError);
-            failedCount++;
-          } else {
-            console.log(`Updated sale ${sale.sale_code}: ${oldCommission} -> ${newCommission}`);
-            successCount++;
-          }
-        } else {
-          skippedCount++;
-        }
-      } catch (error) {
-        console.error(`Error processing sale ${sale.sale_code}:`, error);
-        failedCount++;
-      }
+      const batchResult = await processBatch(batch, operatorsMap, supabaseClient, forceUpdate);
+      totalSuccess += batchResult.success;
+      totalFailed += batchResult.failed;
+      totalSkipped += batchResult.skipped;
     }
 
     const result = {
       success: true,
       message: "Recalculo concluido",
       total: allSales.length,
-      success_count: successCount,
-      failed: failedCount,
-      skipped: skippedCount,
+      success_count: totalSuccess,
+      failed: totalFailed,
+      skipped: totalSkipped,
     };
 
     console.log("Commission recalculation complete:", result);
