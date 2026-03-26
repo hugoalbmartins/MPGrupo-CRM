@@ -94,6 +94,7 @@ const Operators = ({ user }) => {
     activation_types: [],
     allowed_energy_types: [],
     allowed_client_types: [],
+    allowed_sale_types: ['normal', 'multiponto', 'multilocal'],
     pays_direct_debit: false,
     pays_electronic_invoice: false,
     requires_voltage_type: false,
