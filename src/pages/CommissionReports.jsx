@@ -241,6 +241,7 @@ const CommissionReports = ({ user }) => {
 
     const totalAdvancesSettled = (settledAdvances || []).reduce((sum, a) => sum + a.settle_amount, 0);
 
+    const isVatExempt = partner.is_vat_exempt === true;
     const totalSemIVA = totalCommissions - totalRetentions - totalAdvancesSettled + totalRefunds - totalChargebacks;
     const iva = totalSemIVA * 0.23;
     const totalComIVA = totalSemIVA * 1.23;
@@ -441,7 +442,7 @@ const CommissionReports = ({ user }) => {
             ${retentionsLineHtml}
             ${refundsLineHtml}
             <tr class="total-row" style="font-size:12px;">
-              <td colspan="6" style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">TOTAL S/IVA:</td>
+              <td colspan="6" style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">${isVatExempt ? 'TOTAL:' : 'TOTAL S/IVA:'}</td>
               <td style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">\u20AC${totalSemIVA.toFixed(2)}</td>
             </tr>
           </tbody>
@@ -451,10 +452,12 @@ const CommissionReports = ({ user }) => {
 
         ${chargebackTableHtml}
 
+        ${isVatExempt ? `
+        <div style="margin-top:10px;padding:8px;background:#fef3c7;border:1px solid #d97706;border-radius:6px;font-size:9px;color:#92400e;font-weight:bold;">
+          Parceiro isento de IVA — valores apresentados sem IVA
+        </div>
+        ` : `
         <div class="iva-section" style="margin-top:10px;">
-          <div style="font-size:10px;font-weight:bold;color:#475569;margin-bottom:6px;">
-            &#9888;&#65039; Desconsiderar os valores abaixo se o parceiro for isento de IVA
-          </div>
           <table style="margin:0;">
             <tbody>
               <tr style="background:#e2e8f0;">
@@ -468,6 +471,7 @@ const CommissionReports = ({ user }) => {
             </tbody>
           </table>
         </div>
+        `}
 
         <div class="footer">
           Documento gerado em ${new Date().toLocaleDateString('pt-PT')} as ${new Date().toLocaleTimeString('pt-PT')}

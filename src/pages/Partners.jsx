@@ -49,6 +49,7 @@ const Partners = ({ user }) => {
     iban: "",
     manager_id: "",
     email_bcc_enabled: false,
+    is_vat_exempt: false,
   });
 
   const { data: partners = [], isLoading: partnersLoading, refetch: refetchPartners } = useQuery({
@@ -166,6 +167,7 @@ const Partners = ({ user }) => {
       crc: partner.crc || "",
       iban: partner.iban || "",
       email_bcc_enabled: partner.email_bcc_enabled || false,
+      is_vat_exempt: partner.is_vat_exempt || false,
     });
     setDialogOpen(true);
 
@@ -262,6 +264,7 @@ const Partners = ({ user }) => {
       manager_id: "",
       iban: "",
       email_bcc_enabled: false,
+      is_vat_exempt: false,
     });
   };
 
@@ -565,6 +568,27 @@ const Partners = ({ user }) => {
                     <p className="text-xs text-slate-500 mt-1">Gestor que tera acesso as vendas deste parceiro</p>
                   </div>
                 </div>
+
+                <div className="border border-amber-500/20 rounded-xl p-4 bg-amber-500/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-slate-300 font-semibold">Isencao de IVA</Label>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Se ativo, os autos emitidos para este parceiro nao incluem IVA nem Total com IVA
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.is_vat_exempt}
+                      onCheckedChange={(v) => setFormData({...formData, is_vat_exempt: v})}
+                    />
+                  </div>
+                  {formData.is_vat_exempt && (
+                    <p className="text-xs text-amber-400 mt-2">
+                      Os autos deste parceiro calcularao apenas: comissoes, retencoes, restituicoes e chargebacks — sem IVA.
+                    </p>
+                  )}
+                </div>
+
                 {editingPartner && editingPartner.partner_type === 'D2D' && operatorsWithD2D.length > 0 && (
                   <div className="border border-dark-700 rounded-xl p-4 bg-dark-900">
                     <div className="flex items-center gap-2 mb-3">
