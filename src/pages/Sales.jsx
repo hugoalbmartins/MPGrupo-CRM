@@ -1389,6 +1389,9 @@ const Sales = ({ user }) => {
               <div>
                 <span className="text-slate-500 text-xs uppercase tracking-wide">Cliente</span>
                 <p className="text-white font-semibold truncate">{sale.client_name || '-'}</p>
+                {sale.client_nif && (
+                  <p className="text-slate-400 font-mono text-xs mt-0.5">{sale.client_nif}</p>
+                )}
               </div>
               <div>
                 <span className="text-slate-500 text-xs uppercase tracking-wide">Parceiro</span>
