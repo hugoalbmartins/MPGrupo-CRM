@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -15,8 +15,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { TableSkeleton } from "@/components/ui/responsive-table";
 import { Card } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
@@ -1868,92 +1866,24 @@ const Sales = ({ user }) => {
 
             <div>
               <Label className="text-slate-400">Data de Inicio</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal text-white hover:text-white hover:bg-transparent"
-                    style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 text-slate-500" />
-                    {filterStartDate ? new Date(filterStartDate + 'T00:00:00').toLocaleDateString('pt-PT') : <span className="text-slate-500">Selecionar data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }} align="start">
-                  <Calendar
-                    mode="single"
-                    selected={filterStartDate ? new Date(filterStartDate + 'T00:00:00') : undefined}
-                    onSelect={(date) => setFilterStartDate(date ? date.toISOString().split('T')[0] : "")}
-                    disabled={(date) => date > new Date()}
-                    initialFocus
-                    classNames={{
-                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center text-white",
-                      caption_label: "text-sm font-medium text-white",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100 border border-slate-700 rounded text-white hover:bg-slate-700 inline-flex items-center justify-center",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-slate-500 rounded-md w-8 font-normal text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "relative p-0 text-center text-sm [&:has([aria-selected])]:bg-cyan-500/20 rounded-md",
-                      day: "h-8 w-8 p-0 font-normal text-white hover:bg-slate-700 rounded-md inline-flex items-center justify-center",
-                      day_selected: "bg-cyan-500 text-white hover:bg-cyan-600 hover:text-white focus:bg-cyan-500 focus:text-white rounded-md",
-                      day_today: "bg-slate-700 text-cyan-400",
-                      day_outside: "text-slate-600 opacity-50",
-                      day_disabled: "text-slate-600 opacity-30 cursor-not-allowed",
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                type="date"
+                value={filterStartDate}
+                max={todayDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+              />
             </div>
 
             <div>
               <Label className="text-slate-400">Data de Fim</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal text-white hover:text-white hover:bg-transparent"
-                    style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 text-slate-500" />
-                    {filterEndDate ? new Date(filterEndDate + 'T00:00:00').toLocaleDateString('pt-PT') : <span className="text-slate-500">Selecionar data</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }} align="start">
-                  <Calendar
-                    mode="single"
-                    selected={filterEndDate ? new Date(filterEndDate + 'T00:00:00') : undefined}
-                    onSelect={(date) => setFilterEndDate(date ? date.toISOString().split('T')[0] : "")}
-                    disabled={(date) => date > new Date()}
-                    initialFocus
-                    classNames={{
-                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center text-white",
-                      caption_label: "text-sm font-medium text-white",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100 border border-slate-700 rounded text-white hover:bg-slate-700 inline-flex items-center justify-center",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-slate-500 rounded-md w-8 font-normal text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "relative p-0 text-center text-sm [&:has([aria-selected])]:bg-cyan-500/20 rounded-md",
-                      day: "h-8 w-8 p-0 font-normal text-white hover:bg-slate-700 rounded-md inline-flex items-center justify-center",
-                      day_selected: "bg-cyan-500 text-white hover:bg-cyan-600 hover:text-white focus:bg-cyan-500 focus:text-white rounded-md",
-                      day_today: "bg-slate-700 text-cyan-400",
-                      day_outside: "text-slate-600 opacity-50",
-                      day_disabled: "text-slate-600 opacity-30 cursor-not-allowed",
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                type="date"
+                value={filterEndDate}
+                max={todayDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+              />
             </div>
           </div>
 
