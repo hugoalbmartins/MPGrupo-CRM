@@ -1312,7 +1312,7 @@ const SaleFormDialog = ({
           </div>
 
           <div className="sticky bottom-0 z-10 bg-dark-850 border-t border-dark-700 px-4 sm:px-8 py-4 sm:py-6">
-            {uploadFiles.length === 0 && (
+            {currentOperator?.requires_attachment !== false && uploadFiles.length === 0 && (
               <div className="flex items-center gap-2 mb-3 px-1">
                 <TriangleAlert className="w-4 h-4 text-amber-400 shrink-0" />
                 <p className="text-xs text-amber-400">E obrigatorio adicionar pelo menos 1 anexo para criar a venda.</p>
@@ -1331,7 +1331,7 @@ const SaleFormDialog = ({
                 <Button
                   type="button"
                   onClick={(e) => handleSubmitWithCheck(e, true)}
-                  disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
+                  disabled={isSubmitting || (currentOperator?.requires_attachment !== false && uploadFiles.length === 0) || (formData.operator_id && operatorCommissions.length === 0)}
                   variant="outline"
                   className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500 disabled:opacity-50"
                 >
@@ -1342,7 +1342,7 @@ const SaleFormDialog = ({
               <Button
                 type="submit"
                 onClick={handleSubmitWithCheck}
-                disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
+                disabled={isSubmitting || (currentOperator?.requires_attachment !== false && uploadFiles.length === 0) || (formData.operator_id && operatorCommissions.length === 0)}
                 className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25 disabled:opacity-50"
               >
                 {isSubmitting ? (

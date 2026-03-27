@@ -275,6 +275,7 @@ const Operators = ({ user }) => {
         requires_voltage_type: freshData.requires_voltage_type || false,
         requires_additional_services: freshData.requires_additional_services || false,
         requires_email: freshData.requires_email || false,
+        requires_attachment: freshData.requires_attachment !== undefined ? freshData.requires_attachment : true,
         additional_services_list: freshData.additional_services_list || [],
         notification_emails: freshData.notification_emails || [],
         notification_user_ids: freshData.notification_user_ids || [],
@@ -1100,6 +1101,18 @@ const Operators = ({ user }) => {
                     />
                     <Label htmlFor="edit_requires_email" className="cursor-pointer font-normal text-slate-300">
                       Requer Email do Cliente
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit_requires_attachment"
+                      checked={editOperatorData.requires_attachment}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, requires_attachment: e.target.checked }))}
+                      className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                    />
+                    <Label htmlFor="edit_requires_attachment" className="cursor-pointer font-normal text-slate-300">
+                      Requer Anexo Obrigatório
                     </Label>
                   </div>
                   <div className="space-y-3">

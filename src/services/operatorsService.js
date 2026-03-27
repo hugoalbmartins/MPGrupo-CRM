@@ -135,6 +135,9 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('requires_email')) {
       updateData.requires_email = settingsData.requires_email;
     }
+    if (settingsData.hasOwnProperty('requires_attachment')) {
+      updateData.requires_attachment = settingsData.requires_attachment;
+    }
     if (settingsData.hasOwnProperty('additional_services_list')) {
       updateData.additional_services_list = settingsData.additional_services_list;
     }
