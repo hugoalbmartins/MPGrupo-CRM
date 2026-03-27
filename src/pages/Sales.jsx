@@ -624,6 +624,8 @@ const Sales = ({ user }) => {
         }
       }
 
+      let createdSale;
+
       if (!pendingSubmit) {
         const result = await salesService.checkWarningsAndCreateSale(submitData, uploadFiles);
 
@@ -634,32 +636,31 @@ const Sales = ({ user }) => {
           return;
         }
 
-        toast.success("Venda criada com sucesso!");
-        setDialogOpen(false);
-        resetForm();
-        setSkipEmail(false);
-
-        if (result && result.id && energyPoints && energyPoints.length > 0) {
-          energyPointsService.replacePointsForSale(result.id, energyPoints).catch(() => {});
-        }
-
-        navigate('/dashboard');
+        createdSale = result;
       } else {
-        const createdSale = await salesService.create(submitData, uploadFiles);
-
-        toast.success("Venda criada com sucesso!");
-        setDialogOpen(false);
-        resetForm();
-        setValidationWarnings([]);
-        setPendingSubmit(false);
-        setSkipEmail(false);
-
-        if (createdSale && energyPoints && energyPoints.length > 0) {
-          energyPointsService.replacePointsForSale(createdSale.id, energyPoints).catch(() => {});
-        }
-
-        navigate('/dashboard');
+        createdSale = await salesService.create(submitData, uploadFiles);
       }
+
+      toast.success("Venda criada com sucesso!");
+      setDialogOpen(false);
+      resetForm();
+      setValidationWarnings([]);
+      setPendingSubmit(false);
+      setSkipEmail(false);
+
+      if (createdSale && createdSale.id && energyPoints && energyPoints.length > 0) {
+        energyPointsService.replacePointsForSale(createdSale.id, energyPoints).catch(() => {});
+      }
+
+      if (createdSale && createdSale.id && !shouldSkipEmail) {
+        try {
+          await salesService.resendNewSaleEmail(createdSale.id, {}, true);
+        } catch (emailErr) {
+          toast.warning("Venda criada, mas o email de notificacao falhou. Pode reenviar manualmente.");
+        }
+      }
+
+      navigate('/dashboard');
     } catch (error) {
       const errorMessage = error.message || "Erro ao criar venda";
 

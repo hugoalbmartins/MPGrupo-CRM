@@ -415,7 +415,7 @@ export const salesService = {
       tratar_oop: saleData.scope === 'telecomunicacoes' ? (saleData.tratar_oop || false) : false,
       calculated_commission: commission,
       attachments: [],
-      is_bulk_import: saleData.is_bulk_import === true,
+      is_bulk_import: true,
       sale_type: saleData.sale_type || 'normal',
       parent_sale_id: saleData.parent_sale_id || null,
       billing_address: saleData.billing_address || null,
@@ -434,16 +434,30 @@ export const salesService = {
     if (error) throw error;
     if (!data) throw new Error('Sale created but not returned from database');
 
+    const updateFields = {};
+
     if (files && files.length > 0) {
       const attachments = await this.uploadAttachments(saleId, files);
       if (attachments.length > 0) {
-        await supabase
-          .from('sales')
-          .update({ attachments })
-          .eq('id', saleId);
+        updateFields.attachments = attachments;
         data.attachments = attachments;
       }
     }
+
+    const wasExplicitBulkImport = saleData.is_bulk_import === true;
+    if (!wasExplicitBulkImport) {
+      updateFields.is_bulk_import = false;
+    }
+
+    if (Object.keys(updateFields).length > 0) {
+      await supabase
+        .from('sales')
+        .update(updateFields)
+        .eq('id', saleId);
+    }
+
+    data._skip_trigger_email = true;
+    data._was_bulk_import = wasExplicitBulkImport;
 
     return data;
   },
