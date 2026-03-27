@@ -101,6 +101,7 @@ export const salesService = {
     if (!user) throw new Error('User not authenticated');
 
     const attachments = [];
+    const errors = [];
 
     for (const file of files) {
       const fileExt = file.name.split('.').pop();
@@ -117,7 +118,7 @@ export const salesService = {
         });
 
       if (uploadError) {
-        console.error('Error uploading file:', uploadError);
+        errors.push(`${file.name}: ${uploadError.message}`);
         continue;
       }
 
@@ -129,6 +130,14 @@ export const salesService = {
         uploaded_at: new Date().toISOString(),
         uploaded_by: user.id
       });
+    }
+
+    if (errors.length > 0 && attachments.length === 0) {
+      throw new Error(`Falha ao carregar anexos: ${errors.join('; ')}`);
+    }
+
+    if (errors.length > 0) {
+      console.warn('Some attachments failed to upload:', errors);
     }
 
     return attachments;
@@ -356,11 +365,6 @@ export const salesService = {
 
     const saleId = crypto.randomUUID();
 
-    let attachments = [];
-    if (files && files.length > 0) {
-      attachments = await this.uploadAttachments(saleId, files);
-    }
-
     const insertData = {
       id: saleId,
       sale_code: saleCode,
@@ -410,7 +414,7 @@ export const salesService = {
       mobile_numbers: (saleData.activation_type === 'M4' || saleData.activation_type === 'Movel') ? (saleData.mobile_numbers || []) : [],
       tratar_oop: saleData.scope === 'telecomunicacoes' ? (saleData.tratar_oop || false) : false,
       calculated_commission: commission,
-      attachments,
+      attachments: [],
       is_bulk_import: saleData.is_bulk_import === true,
       sale_type: saleData.sale_type || 'normal',
       parent_sale_id: saleData.parent_sale_id || null,
@@ -429,6 +433,17 @@ export const salesService = {
 
     if (error) throw error;
     if (!data) throw new Error('Sale created but not returned from database');
+
+    if (files && files.length > 0) {
+      const attachments = await this.uploadAttachments(saleId, files);
+      if (attachments.length > 0) {
+        await supabase
+          .from('sales')
+          .update({ attachments })
+          .eq('id', saleId);
+        data.attachments = attachments;
+      }
+    }
 
     return data;
   },

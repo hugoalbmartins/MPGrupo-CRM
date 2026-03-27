@@ -475,6 +475,8 @@ const Sales = ({ user }) => {
             energyPointsService.replacePointsForSale(parentSaleId, allPointsForEmail).catch(() => {});
           }
 
+          toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multiponto)!`);
+
           if (parentSaleId && !shouldSkipEmail) {
             const emailPoints = cpePoints.map(p => ({
               point_type: 'cpe',
@@ -486,13 +488,15 @@ const Sales = ({ user }) => {
               installation_address: p.installation_address || null,
               billing_address: p.billing_address || null,
             }));
-            salesService.resendNewSaleEmail(parentSaleId, {
-              sale_type: 'multiponto',
-              energy_points_list: emailPoints,
-            }, true).catch(() => {});
+            try {
+              await salesService.resendNewSaleEmail(parentSaleId, {
+                sale_type: 'multiponto',
+                energy_points_list: emailPoints,
+              }, true);
+            } catch (emailErr) {
+              toast.warning("Vendas criadas, mas o email de notificação falhou. Pode reenviar manualmente.");
+            }
           }
-
-          toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multiponto)!`);
         } else if (energySaleMode === 'multilocal') {
           const cpePoints = energyPoints.filter(p => p.point_type === 'cpe');
           const cuiPoints = energyPoints.filter(p => p.point_type === 'cui');
@@ -577,14 +581,18 @@ const Sales = ({ user }) => {
             energyPointsService.replacePointsForSale(parentSaleId, multilocalEmailPoints).catch(() => {});
           }
 
-          if (parentSaleId && !shouldSkipEmail) {
-            salesService.resendNewSaleEmail(parentSaleId, {
-              sale_type: 'multilocal',
-              energy_points_list: multilocalEmailPoints,
-            }, true).catch(() => {});
-          }
-
           toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multilocal)!`);
+
+          if (parentSaleId && !shouldSkipEmail) {
+            try {
+              await salesService.resendNewSaleEmail(parentSaleId, {
+                sale_type: 'multilocal',
+                energy_points_list: multilocalEmailPoints,
+              }, true);
+            } catch (emailErr) {
+              toast.warning("Vendas criadas, mas o email de notificação falhou. Pode reenviar manualmente.");
+            }
+          }
         }
 
         setDialogOpen(false);
