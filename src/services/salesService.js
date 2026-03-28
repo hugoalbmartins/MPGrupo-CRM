@@ -247,6 +247,10 @@ export const salesService = {
       throw new Error('Cannot create sales with future dates');
     }
 
+    if (saleData.is_bulk_import !== true && (!files || files.length === 0)) {
+      throw new Error('E obrigatorio adicionar pelo menos 1 anexo para criar a venda.');
+    }
+
     if (saleData.scope === 'telecomunicacoes' && saleData.requisition) {
       const { data: duplicateCheck } = await supabase
         .rpc('check_duplicate_requisition', {

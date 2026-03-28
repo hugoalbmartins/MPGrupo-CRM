@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Upload, Zap, TrendingUp, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Clock, Plus, CircleAlert as AlertCircle, Trash2, Info, MailX, TriangleAlert, Car } from 'lucide-react';
+import { X, Zap, TrendingUp, Building2, User, MapPin, FileText, Clock, Plus, Trash2, Info, MailX, TriangleAlert, Car } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -61,7 +61,6 @@ const SaleFormDialog = ({
   energySaleMode,
   setEnergySaleMode,
 }) => {
-  const [pendingFile, setPendingFile] = useState(null);
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -109,17 +108,22 @@ const SaleFormDialog = ({
       e.target.value = '';
       return;
     }
-    setPendingFile(files[0]);
-  };
 
-  const handleAddFile = () => {
-    if (!pendingFile) return;
-    const alreadyAdded = uploadFiles.some(f => f.name === pendingFile.name && f.size === pendingFile.size);
-    if (alreadyAdded) {
-      toast.error(`Ficheiro "${pendingFile.name}" ja foi adicionado`);
-      return;
+    const newFiles = [];
+    for (const file of files) {
+      const alreadyAdded = uploadFiles.some(f => f.name === file.name && f.size === file.size);
+      if (alreadyAdded) {
+        toast.error(`Ficheiro "${file.name}" ja foi adicionado`);
+      } else {
+        newFiles.push(file);
+      }
     }
-    setUploadFiles([...uploadFiles, pendingFile]);
+
+    if (newFiles.length > 0) {
+      setUploadFiles(prev => [...prev, ...newFiles]);
+      toast.success(`${newFiles.length} ficheiro${newFiles.length > 1 ? 's' : ''} adicionado${newFiles.length > 1 ? 's' : ''}`);
+    }
+
     setPendingFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -129,10 +133,6 @@ const SaleFormDialog = ({
   };
 
   const handleSubmitWithCheck = (e, forceSkipEmail = false) => {
-    if (pendingFile) {
-      toast.warning(`Tem um ficheiro selecionado ("${pendingFile.name}") que nao foi adicionado. Clique em "Adicionar" ou remova a selecao antes de gravar.`);
-      return;
-    }
     onSubmit(e, forceSkipEmail);
   };
 
@@ -194,7 +194,7 @@ const SaleFormDialog = ({
                 <p className="text-sm text-slate-400">Preencha os dados da nova venda no sistema</p>
               </div>
               <button
-                onClick={() => { setPendingFile(null); onClose(); }}
+                onClick={onClose}
                 className="w-10 h-10 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-colors"
               >
                 <X className="w-5 h-5 text-red-400" />
@@ -1229,11 +1229,7 @@ const SaleFormDialog = ({
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Label className="text-sm font-semibold text-slate-400">
-                        Documentos {(() => {
-                          const selectedPartner = partners.find(p => p.id === formData.partner_id);
-                          const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
-                          return isD2D ? '*' : '(opcional)';
-                        })()}
+                        Documentos *
                       </Label>
                       {formData.scope === 'energia' && mandatoryAttachmentInfo && (
                         <button
@@ -1251,30 +1247,12 @@ const SaleFormDialog = ({
                         <input
                           ref={fileInputRef}
                           type="file"
+                          multiple
                           accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt,.heic,.heif"
                           onChange={handleFileSelected}
                           className="flex-1 min-w-0 block text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyber-500/10 file:text-cyber-400 hover:file:bg-cyber-500/20 transition-colors cursor-pointer"
                         />
-                        <Button
-                          type="button"
-                          onClick={handleAddFile}
-                          disabled={!pendingFile}
-                          size="sm"
-                          className="shrink-0 bg-cyber-500 hover:bg-cyber-600 text-white disabled:opacity-40 w-full sm:w-auto"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Adicionar
-                        </Button>
                       </div>
-
-                      {pendingFile && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span className="text-xs text-amber-300 flex-1 truncate">
-                            "{pendingFile.name}" selecionado mas nao adicionado — clique em Adicionar
-                          </span>
-                        </div>
-                      )}
 
                       {uploadFiles.length > 0 && (
                         <div className="space-y-1">
@@ -1294,16 +1272,7 @@ const SaleFormDialog = ({
                         </div>
                       )}
 
-                      <p className="text-xs text-slate-500">Tamanho maximo por ficheiro: 15MB</p>
-                      {(() => {
-                        const selectedPartner = partners.find(p => p.id === formData.partner_id);
-                        const isD2D = selectedPartner && selectedPartner.partner_type === 'D2D';
-                        return isD2D && (
-                          <p className="text-xs text-orange-400 font-medium">
-                            Obrigatorio para parceiros D2D - Aceita fotos da camara
-                          </p>
-                        );
-                      })()}
+                      <p className="text-xs text-slate-500">Obrigatorio. Tamanho maximo por ficheiro: 15MB. Pode selecionar varios ficheiros de uma vez.</p>
                     </div>
                   </div>
                 </div>
@@ -1312,7 +1281,7 @@ const SaleFormDialog = ({
           </div>
 
           <div className="sticky bottom-0 z-10 bg-dark-850 border-t border-dark-700 px-4 sm:px-8 py-4 sm:py-6">
-            {currentOperator?.requires_attachment !== false && uploadFiles.length === 0 && (
+            {uploadFiles.length === 0 && (
               <div className="flex items-center gap-2 mb-3 px-1">
                 <TriangleAlert className="w-4 h-4 text-amber-400 shrink-0" />
                 <p className="text-xs text-amber-400">E obrigatorio adicionar pelo menos 1 anexo para criar a venda.</p>
@@ -1321,7 +1290,7 @@ const SaleFormDialog = ({
             <div className="flex flex-wrap justify-end gap-3 sm:gap-4">
               <Button
                 type="button"
-                onClick={() => { setPendingFile(null); onClose(); }}
+                onClick={onClose}
                 variant="outline"
                 className="px-6 py-3 rounded-xl font-semibold bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800"
               >
@@ -1331,7 +1300,7 @@ const SaleFormDialog = ({
                 <Button
                   type="button"
                   onClick={(e) => handleSubmitWithCheck(e, true)}
-                  disabled={isSubmitting || (currentOperator?.requires_attachment !== false && uploadFiles.length === 0) || (formData.operator_id && operatorCommissions.length === 0)}
+                  disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
                   variant="outline"
                   className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500 disabled:opacity-50"
                 >
@@ -1342,7 +1311,7 @@ const SaleFormDialog = ({
               <Button
                 type="submit"
                 onClick={handleSubmitWithCheck}
-                disabled={isSubmitting || (currentOperator?.requires_attachment !== false && uploadFiles.length === 0) || (formData.operator_id && operatorCommissions.length === 0)}
+                disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
                 className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25 disabled:opacity-50"
               >
                 {isSubmitting ? (
