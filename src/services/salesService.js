@@ -61,8 +61,8 @@ export const salesService = {
   },
 
   async checkWarningsAndCreateSale(saleData, files = []) {
-    const saleDate = new Date(saleData.date);
-    if (saleDate > new Date()) {
+    const todayStr = new Date().toLocaleDateString('sv-SE');
+    if (saleData.date > todayStr) {
       throw new Error('Cannot create sales with future dates');
     }
 
@@ -245,8 +245,8 @@ export const salesService = {
   },
 
   async create(saleData, files = []) {
-    const saleDate = new Date(saleData.date);
-    if (saleDate > new Date()) {
+    const todayStr = new Date().toLocaleDateString('sv-SE');
+    if (saleData.date > todayStr) {
       throw new Error('Cannot create sales with future dates');
     }
 

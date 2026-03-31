@@ -105,11 +105,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
       setSavingEdit(true);
 
       if (editData.date) {
-        const selectedDate = new Date(editData.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (selectedDate > today) {
+        const todayStr = new Date().toLocaleDateString('sv-SE');
+        if (editData.date > todayStr) {
           toast.error("Data de venda não pode ser futura");
           setSavingEdit(false);
           return;
@@ -311,7 +308,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                       <Input
                         type="date"
                         value={editData.date}
-                        max={new Date().toISOString().split('T')[0]}
+                        max={new Date().toLocaleDateString('sv-SE')}
                         onChange={(e) => setEditData({ ...editData, date: e.target.value })}
                         className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       />

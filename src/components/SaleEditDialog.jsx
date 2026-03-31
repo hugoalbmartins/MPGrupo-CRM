@@ -261,7 +261,7 @@ const SaleEditDialog = ({
                     <Input
                       type="date"
                       value={editFormData.date}
-                      max={new Date().toISOString().split('T')[0]}
+                      max={new Date().toLocaleDateString('sv-SE')}
                       onChange={(e) => update('date', e.target.value)}
                       required
                       className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"

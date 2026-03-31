@@ -44,7 +44,7 @@ const Sales = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const todayDate = new Date().toISOString().split('T')[0];
+  const todayDate = new Date().toLocaleDateString('sv-SE');
   const [sales, setSales] = useState([]);
   const [partners, setPartners] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -1199,11 +1199,8 @@ const Sales = ({ user }) => {
     e.preventDefault();
     try {
       if (editFormData.date) {
-        const selectedDate = new Date(editFormData.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (selectedDate > today) {
+        const todayStr = new Date().toLocaleDateString('sv-SE');
+        if (editFormData.date > todayStr) {
           toast.error("Data de venda nao pode ser futura");
           return;
         }
