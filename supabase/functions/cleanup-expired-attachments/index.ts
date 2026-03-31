@@ -40,6 +40,7 @@ Deno.serve(async (req: Request) => {
 
     let totalDeleted = 0;
     let totalMarked = 0;
+    const activePaths = new Set<string>();
 
     for (const sale of sales || []) {
       let saleUpdated = false;
@@ -78,6 +79,8 @@ Deno.serve(async (req: Request) => {
           };
           saleUpdated = true;
           totalMarked++;
+        } else {
+          if (att.path) activePaths.add(att.path);
         }
       }
 
@@ -119,6 +122,8 @@ Deno.serve(async (req: Request) => {
             };
             noteUpdated = true;
             totalMarked++;
+          } else {
+            if (att.path) activePaths.add(att.path);
           }
         }
 
@@ -140,13 +145,44 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    console.log(`Cleanup complete: ${totalDeleted} files deleted, ${totalMarked} attachments marked as expired`);
+    let orphanedDeleted = 0;
+    const { data: storageObjects, error: listError } = await supabase.storage
+      .from("sales-documents")
+      .list("", { limit: 1000 });
+
+    if (!listError && storageObjects) {
+      for (const folder of storageObjects) {
+        const { data: files, error: filesError } = await supabase.storage
+          .from("sales-documents")
+          .list(folder.name, { limit: 1000 });
+
+        if (filesError || !files) continue;
+
+        for (const file of files) {
+          const fullPath = `${folder.name}/${file.name}`;
+          if (!activePaths.has(fullPath)) {
+            const { error: removeError } = await supabase.storage
+              .from("sales-documents")
+              .remove([fullPath]);
+
+            if (!removeError) {
+              orphanedDeleted++;
+            } else {
+              console.error(`Failed to remove orphaned file ${fullPath}:`, removeError.message);
+            }
+          }
+        }
+      }
+    }
+
+    console.log(`Cleanup complete: ${totalDeleted} expired files deleted, ${totalMarked} attachments marked, ${orphanedDeleted} orphaned files removed`);
 
     return new Response(
       JSON.stringify({
         success: true,
         files_deleted: totalDeleted,
         attachments_marked_expired: totalMarked,
+        orphaned_files_deleted: orphanedDeleted,
         cutoff_large_files: cutoffLarge.toISOString(),
         cutoff_small_files: cutoffSmall.toISOString(),
       }),
