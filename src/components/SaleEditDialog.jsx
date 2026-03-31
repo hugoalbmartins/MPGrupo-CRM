@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { chargebackService } from "@/services/chargebackService";
+import { processFilesForUpload } from "@/lib/imageCompression";
 
 const CVP_REGEX = /^(\d{7}[A-Za-z]{4}\d{1}|\d{12})$/;
 function validateCVP(value) {
@@ -71,13 +72,13 @@ const SaleEditDialog = ({
   };
 
   const handleAddFiles = async (e) => {
-    const MAX_SIZE = 15 * 1024 * 1024;
+    const MAX_SIZE = 10 * 1024 * 1024;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     const oversized = files.filter(f => f.size > MAX_SIZE);
     if (oversized.length > 0) {
-      toast.error(`Ficheiro(s) excedem o limite de 15MB: ${oversized.map(f => f.name).join(', ')}`);
+      toast.error(`Ficheiro(s) excedem o limite de 10MB: ${oversized.map(f => f.name).join(', ')}`);
       e.target.value = '';
       return;
     }
@@ -85,10 +86,11 @@ const SaleEditDialog = ({
     const saleId = editingSale?.id;
     if (!saleId) return;
 
+    const processedFiles = await processFilesForUpload(files);
     const { data: { user: authUser } } = await supabase.auth.getUser();
     const newAttachments = [];
 
-    for (const file of files) {
+    for (const file of processedFiles) {
       const fileExt = file.name.split('.').pop();
       const randomId = crypto.randomUUID();
       const fileName = `${saleId}_${Date.now()}_${randomId}.${fileExt}`;

@@ -22,6 +22,7 @@ import { energyPointsService } from "../services/energyPointsService";
 import { recalculateAllCommissions, recalculateSaleCommission } from "../services/commissionRecalculator";
 import { supabase } from "../lib/supabase";
 import { generateSaleCode } from "../lib/utils-crm";
+import { processFilesForUpload } from "../lib/imageCompression";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import SalesImport from "../components/SalesImport";
 import SaleFormDialog from "../components/SaleFormDialog";
@@ -1254,7 +1255,8 @@ const Sales = ({ user }) => {
       const attachments = [];
 
       if (noteAttachments.length > 0) {
-        for (const file of noteAttachments) {
+        const processedNoteFiles = await processFilesForUpload(noteAttachments);
+        for (const file of processedNoteFiles) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${selectedSaleForNotes.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 

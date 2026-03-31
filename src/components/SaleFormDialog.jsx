@@ -99,12 +99,12 @@ const SaleFormDialog = ({
   )?.[1] || null;
 
   const handleFileSelected = (e) => {
-    const MAX_SIZE = 15 * 1024 * 1024;
+    const MAX_SIZE = 10 * 1024 * 1024;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     const oversized = files.filter(f => f.size > MAX_SIZE);
     if (oversized.length > 0) {
-      toast.error(`Ficheiro(s) excedem o limite de 15MB: ${oversized.map(f => f.name).join(', ')}`);
+      toast.error(`Ficheiro(s) excedem o limite de 10MB: ${oversized.map(f => f.name).join(', ')}`);
       e.target.value = '';
       return;
     }
@@ -1272,7 +1272,7 @@ const SaleFormDialog = ({
                         </div>
                       )}
 
-                      <p className="text-xs text-slate-500">Obrigatorio. Tamanho maximo por ficheiro: 15MB. Pode selecionar varios ficheiros de uma vez.</p>
+                      <p className="text-xs text-slate-500">Obrigatorio. Tamanho maximo por ficheiro: 10MB. Imagens sao comprimidas automaticamente. Pode selecionar varios ficheiros de uma vez.</p>
                     </div>
                   </div>
                 </div>

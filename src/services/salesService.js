@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { generateSaleCode, calculateCommission, validateCPE, validateCUI } from '../lib/utils-crm';
+import { processFilesForUpload } from '../lib/imageCompression';
 
 export const salesService = {
   async getAll(statusFilter = null, includeOperator = false) {
@@ -100,10 +101,12 @@ export const salesService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
+    const processedFiles = await processFilesForUpload(files);
+
     const attachments = [];
     const errors = [];
 
-    for (const file of files) {
+    for (const file of processedFiles) {
       const fileExt = file.name.split('.').pop();
       const timestamp = Date.now();
       const randomId = crypto.randomUUID();
@@ -688,7 +691,7 @@ export const salesService = {
 
     const { data: sale } = await supabase
       .from('sales')
-      .select('operator_doc_file, attachments')
+      .select('operator_doc_file, attachments, notes')
       .eq('id', id)
       .maybeSingle();
 
@@ -700,10 +703,14 @@ export const salesService = {
         .remove([sale.operator_doc_file]);
     }
 
-    if (Array.isArray(sale.attachments) && sale.attachments.length > 0) {
-      const paths = sale.attachments
-        .map(a => a.path)
-        .filter(Boolean);
+    const { data: folderFiles } = await supabase.storage
+      .from('sales-documents')
+      .list(id, { limit: 500 });
+
+    if (folderFiles && folderFiles.length > 0) {
+      const paths = folderFiles
+        .filter(f => f.name !== '.emptyFolderPlaceholder')
+        .map(f => `${id}/${f.name}`);
       if (paths.length > 0) {
         await supabase.storage
           .from('sales-documents')
