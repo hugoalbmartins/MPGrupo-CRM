@@ -7,8 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const EXPIRY_DAYS_DEFAULT = 45;
-const EXPIRY_DAYS_LARGE = 15;
+const EXPIRY_DAYS_SMALL = 15;
+const EXPIRY_DAYS_LARGE = 7;
 const LARGE_FILE_THRESHOLD_BYTES = 5 * 1024 * 1024;
 
 Deno.serve(async (req: Request) => {
@@ -24,13 +24,13 @@ Deno.serve(async (req: Request) => {
 
     const now = new Date();
 
-    const cutoffDefault = new Date(now);
-    cutoffDefault.setDate(cutoffDefault.getDate() - EXPIRY_DAYS_DEFAULT);
+    const cutoffSmall = new Date(now);
+    cutoffSmall.setDate(cutoffSmall.getDate() - EXPIRY_DAYS_SMALL);
 
     const cutoffLarge = new Date(now);
     cutoffLarge.setDate(cutoffLarge.getDate() - EXPIRY_DAYS_LARGE);
 
-    console.log(`Cleaning attachments: default cutoff=${cutoffDefault.toISOString()}, large-file cutoff=${cutoffLarge.toISOString()}`);
+    console.log(`Cleaning attachments: small-file cutoff=${cutoffSmall.toISOString()} (15d), large-file cutoff=${cutoffLarge.toISOString()} (7d)`);
 
     const { data: sales, error: salesError } = await supabase
       .from("sales")
@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
 
         const uploadedAt = new Date(att.uploaded_at);
         const isLarge = att.size != null ? att.size > LARGE_FILE_THRESHOLD_BYTES : false;
-        const cutoff = isLarge ? cutoffLarge : cutoffDefault;
+        const cutoff = isLarge ? cutoffLarge : cutoffSmall;
 
         if (uploadedAt < cutoff) {
           if (att.path) {
@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
 
           const uploadedAt = new Date(att.uploaded_at);
           const isLarge = att.size != null ? att.size > LARGE_FILE_THRESHOLD_BYTES : false;
-          const cutoff = isLarge ? cutoffLarge : cutoffDefault;
+          const cutoff = isLarge ? cutoffLarge : cutoffSmall;
 
           if (uploadedAt < cutoff) {
             if (att.path) {
@@ -147,7 +147,8 @@ Deno.serve(async (req: Request) => {
         success: true,
         files_deleted: totalDeleted,
         attachments_marked_expired: totalMarked,
-        cutoff_date: cutoffISO,
+        cutoff_large_files: cutoffLarge.toISOString(),
+        cutoff_small_files: cutoffSmall.toISOString(),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
