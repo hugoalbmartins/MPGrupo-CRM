@@ -63,7 +63,7 @@ const Sales = ({ user }) => {
   const [exportEndDate, setExportEndDate] = useState("");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [sortField, setSortField] = useState("created_at");
+  const [sortField, setSortField] = useState("date");
   const [sortDirection, setSortDirection] = useState("desc");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
