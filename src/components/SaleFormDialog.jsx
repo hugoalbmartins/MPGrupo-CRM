@@ -455,7 +455,7 @@ const SaleFormDialog = ({
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 text-slate-400">Contacto *</Label>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">Contacto Móvel *</Label>
                     <Input
                       value={formData.client_contact}
                       onChange={(e) => setFormData({...formData, client_contact: e.target.value})}

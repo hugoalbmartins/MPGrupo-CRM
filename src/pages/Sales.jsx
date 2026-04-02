@@ -213,6 +213,11 @@ const Sales = ({ user }) => {
       }
     }
 
+    if (!formData.client_contact?.trim()) {
+      toast.error("Contacto móvel do cliente é obrigatório!");
+      return;
+    }
+
     if (!formData.autoriza_documentos) {
       toast.error("Indique se o cliente autoriza copia dos documentos pessoais!");
       return;
