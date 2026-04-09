@@ -143,6 +143,8 @@ export const scopesService = {
         sort_order: fieldData.sort_order || 0,
         section: fieldData.section || 'general',
         depends_on: fieldData.depends_on || null,
+        dependency_mode: fieldData.dependency_mode || null,
+        repeat_group: fieldData.repeat_group || null,
         is_system: false,
         maps_to_column: fieldData.maps_to_column || null,
         active: true,
@@ -168,6 +170,8 @@ export const scopesService = {
     if (fieldData.active !== undefined) updateData.active = fieldData.active;
     if (fieldData.field_key !== undefined) updateData.field_key = fieldData.field_key;
     if (fieldData.maps_to_column !== undefined) updateData.maps_to_column = fieldData.maps_to_column;
+    if (fieldData.dependency_mode !== undefined) updateData.dependency_mode = fieldData.dependency_mode;
+    if (fieldData.repeat_group !== undefined) updateData.repeat_group = fieldData.repeat_group;
 
     const { data, error } = await supabase
       .from('scope_fields')
@@ -254,6 +258,8 @@ export const scopesService = {
         sort_order: f.sort_order,
         section: f.section,
         depends_on: f.depends_on,
+        dependency_mode: f.dependency_mode,
+        repeat_group: f.repeat_group,
         is_system: false,
         maps_to_column: f.maps_to_column,
         active: f.active,

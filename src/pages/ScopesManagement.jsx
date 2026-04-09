@@ -392,6 +392,7 @@ export default function ScopesManagement({ user }) {
                   onUpdate={handleFieldUpdate}
                   onDelete={handleFieldDelete}
                   isSystem={field.is_system}
+                  allFields={scopeFields}
                 />
               ))}
 
