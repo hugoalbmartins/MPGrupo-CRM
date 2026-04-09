@@ -11,54 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOperators, useCreateOperator, useUpdateOperator, useDeleteOperator } from "@/hooks/useOperatorsData";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { operatorsService } from "../services/operatorsService";
+import { scopesService } from "../services/scopesService";
 import CommissionWizard from "../components/CommissionWizard";
 import { supabase } from "../lib/supabase";
 import ErrorBoundary from "../components/ErrorBoundary";
-
-const EMAIL_FIELDS_BY_SCOPE = {
-  telecomunicacoes: [
-    { key: 'client_contact', label: 'Contacto do Cliente' },
-    { key: 'client_email', label: 'Email do Cliente' },
-    { key: 'client_iban', label: 'IBAN do Cliente' },
-    { key: 'address', label: 'Morada (Rua, Código Postal, Localidade)' },
-    { key: 'installation_address', label: 'Morada de Instalação/Fornecimento' },
-    { key: 'autoriza_documentos', label: 'Autoriza Documentos Pessoais' },
-    { key: 'service_type', label: 'Tipo de Serviço (NI/MC/REFID)' },
-    { key: 'activation_type', label: 'Tipo de Ativação (M2/M3/M4)' },
-    { key: 'monthly_value', label: 'Mensalidade (€)' },
-    { key: 'refid_fees', label: 'Mensalidade Atual / Contratada (REFID)' },
-    { key: 'services', label: 'Serviços Contratados (TV, NET, LR)' },
-    { key: 'mobile_lines', label: 'Linhas Móveis' },
-    { key: 'direct_debit', label: 'Adesão Débito Direto (DD)' },
-    { key: 'electronic_invoice', label: 'Adesão Fatura Eletrónica (FE)' },
-    { key: 'observations', label: 'Observações' },
-  ],
-  energia: [
-    { key: 'client_contact', label: 'Contacto do Cliente' },
-    { key: 'client_email', label: 'Email do Cliente' },
-    { key: 'client_iban', label: 'IBAN do Cliente' },
-    { key: 'address', label: 'Morada (Rua, Código Postal, Localidade)' },
-    { key: 'installation_address', label: 'Morada de Instalação/Fornecimento' },
-    { key: 'autoriza_documentos', label: 'Autoriza Documentos Pessoais' },
-    { key: 'entry_type', label: 'Tipo de Entrada' },
-    { key: 'energy_sale_type', label: 'Tipo de Energia (Eletricidade/Gás/Dual)' },
-    { key: 'cpe_power', label: 'CPE / Potência (Eletricidade)' },
-    { key: 'cui_tier', label: 'CUI / Escalão (Gás)' },
-    { key: 'direct_debit', label: 'Adesão Débito Direto (DD)' },
-    { key: 'electronic_invoice', label: 'Adesão Fatura Eletrónica (FE)' },
-    { key: 'observations', label: 'Observações' },
-  ],
-  solar: [
-    { key: 'client_contact', label: 'Contacto do Cliente' },
-    { key: 'client_email', label: 'Email do Cliente' },
-    { key: 'client_iban', label: 'IBAN do Cliente' },
-    { key: 'address', label: 'Morada (Rua, Código Postal, Localidade)' },
-    { key: 'installation_address', label: 'Morada de Instalação/Fornecimento' },
-    { key: 'autoriza_documentos', label: 'Autoriza Documentos Pessoais' },
-    { key: 'cpe_power', label: 'CPE / Potência' },
-    { key: 'observations', label: 'Observações' },
-  ],
-};
 
 const FormSection = ({ icon: Icon, title, children, gradient = "from-cyber-500 to-cyber-600" }) => (
   <motion.div
@@ -113,6 +69,8 @@ const Operators = ({ user }) => {
   const [adminBoUsers, setAdminBoUsers] = useState([]);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [dynamicScopes, setDynamicScopes] = useState([]);
+  const [emailFieldsByScope, setEmailFieldsByScope] = useState({});
   const [formData, setFormData] = useState({
     name: "",
     scope: "telecomunicacoes",
@@ -128,7 +86,23 @@ const Operators = ({ user }) => {
   useEffect(() => {
     setLoading(true);
     fetchOperators();
+    loadDynamicScopes();
   }, [location.pathname]);
+
+  const loadDynamicScopes = async () => {
+    try {
+      const scopes = await scopesService.getAll(true);
+      setDynamicScopes(scopes);
+      const emailFieldsMap = {};
+      for (const scope of scopes) {
+        const ef = await scopesService.getEmailFields(scope.id);
+        emailFieldsMap[scope.slug] = ef.map(f => ({ key: f.field_key, label: f.label }));
+      }
+      setEmailFieldsByScope(emailFieldsMap);
+    } catch (error) {
+      console.error('Error loading dynamic scopes:', error);
+    }
+  };
 
   const fetchOperators = async () => {
     try {
@@ -259,7 +233,7 @@ const Operators = ({ user }) => {
       ]);
       setSelectedOperator(freshData);
       setAdminBoUsers(usersResult.data || []);
-      const availableFields = EMAIL_FIELDS_BY_SCOPE[freshData.scope] || [];
+      const availableFields = emailFieldsByScope[freshData.scope] || [];
       const allFieldKeys = availableFields.map(f => f.key);
       const savedFields = freshData.email_fields;
       const initialEmailFields = savedFields !== null && savedFields !== undefined
@@ -538,9 +512,9 @@ const Operators = ({ user }) => {
                           <Select value={formData.scope} onValueChange={(v) => setFormData({...formData, scope: v, energy_type: '', allowed_energy_types: v === 'energia' ? ['eletricidade', 'gas'] : []})}>
                             <SelectTrigger className="bg-dark-900 text-white border-dark-700 focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 rounded-xl"><SelectValue /></SelectTrigger>
                             <SelectContent className="bg-dark-850 border-dark-700">
-                              <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
-                              <SelectItem value="energia">Energia</SelectItem>
-                              <SelectItem value="solar">Solar</SelectItem>
+                              {dynamicScopes.map(s => (
+                                <SelectItem key={s.slug} value={s.slug}>{s.display_name}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -696,14 +670,17 @@ const Operators = ({ user }) => {
 
       {/* Operator Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {['telecomunicacoes', 'energia', 'solar'].map(scope => (
+        {(dynamicScopes.length > 0 ? dynamicScopes.map(s => s.slug) : ['telecomunicacoes', 'energia', 'solar']).map(scope => {
+          const scopeObj = dynamicScopes.find(s => s.slug === scope);
+          const scopeLabel = scopeObj?.display_name || scope;
+          return (
           <motion.div
             key={scope}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-dark-850 border border-white/[0.06] rounded-xl p-6 hover:border-cyber-500/30 transition-all duration-300"
           >
-            <h2 className="text-xl font-semibold mb-4 capitalize text-white">{scope}</h2>
+            <h2 className="text-xl font-semibold mb-4 text-white">{scopeLabel}</h2>
             <div className="space-y-2">
               {operators.filter(op => op.scope === scope).map(op => (
                 <motion.div
@@ -763,7 +740,8 @@ const Operators = ({ user }) => {
               )}
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Upload Dialog */}
@@ -1216,7 +1194,7 @@ const Operators = ({ user }) => {
                 </div>
               </div>
 
-              {(EMAIL_FIELDS_BY_SCOPE[selectedOperator.scope] || []).length > 0 && (
+              {(emailFieldsByScope[selectedOperator.scope] || []).length > 0 && (
                 <div className="border-t border-dark-700 pt-4">
                   <Label className="text-slate-300 text-sm font-semibold block mb-1">
                     <FileText className="w-4 h-4 inline mr-1 text-cyber-400" />
@@ -1226,7 +1204,7 @@ const Operators = ({ user }) => {
                     Nome e NIF do cliente sao sempre incluidos. Selecione os campos adicionais a mostrar no email.
                   </p>
                   <div className="space-y-2">
-                    {(EMAIL_FIELDS_BY_SCOPE[selectedOperator.scope] || []).map(field => {
+                    {(emailFieldsByScope[selectedOperator.scope] || []).map(field => {
                       const checked = Array.isArray(editOperatorData.email_fields) && editOperatorData.email_fields.includes(field.key);
                       return (
                         <div key={field.key} className="flex items-center gap-2">

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import EnergyPointsManager from './EnergyPointsManager';
+import DynamicScopeFields from './DynamicScopeFields';
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 const FIX_OPERATORS = ["MEO", "Vodafone", "NOS", "Digi", "Outro"];
@@ -60,6 +61,8 @@ const SaleFormDialog = ({
   isSubmitting,
   energySaleMode,
   setEnergySaleMode,
+  dynamicScopes = [],
+  dynamicScopeFields = [],
 }) => {
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
   const fileInputRef = useRef(null);
@@ -251,10 +254,18 @@ const SaleFormDialog = ({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="telecomunicacoes">Telecomunicações</SelectItem>
-                        <SelectItem value="energia">Energia</SelectItem>
-                        <SelectItem value="solar">Solar</SelectItem>
-                        <SelectItem value="mobilidade_eletrica">Mobilidade Elétrica</SelectItem>
+                        {dynamicScopes.length > 0 ? (
+                          dynamicScopes.map(s => (
+                            <SelectItem key={s.slug} value={s.slug}>{s.display_name}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="telecomunicacoes">Telecomunicacoes</SelectItem>
+                            <SelectItem value="energia">Energia</SelectItem>
+                            <SelectItem value="solar">Solar</SelectItem>
+                            <SelectItem value="mobilidade_eletrica">Mobilidade Eletrica</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1194,6 +1205,16 @@ const SaleFormDialog = ({
                 </FormSection>
               )}
 
+
+              {dynamicScopeFields.length > 0 && !['telecomunicacoes', 'energia', 'solar', 'mobilidade_eletrica'].includes(formData.scope) && (
+                <FormSection icon={FileText} title="Campos Específicos" gradient="from-cyber-500 to-cyber-600">
+                  <DynamicScopeFields
+                    fields={dynamicScopeFields}
+                    formData={formData.custom_fields || {}}
+                    onChange={(customFields) => setFormData({...formData, custom_fields: customFields})}
+                  />
+                </FormSection>
+              )}
 
               <div className="border-t border-dark-700 my-6" />
 

@@ -12,6 +12,7 @@ import { SkeletonTable } from "@/components/ui/skeleton-loader";
 import { useQuery } from "@tanstack/react-query";
 import { partnersService } from "../services/partnersService";
 import { usersService } from "../services/usersService";
+import { partnerTypesService } from "../services/partnerTypesService";
 import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
 import { recalculatePartnerCommissions } from "../services/commissionRecalculator";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -73,6 +74,12 @@ const Partners = ({ user }) => {
   const { data: operatorsWithREV = [] } = useQuery({
     queryKey: ['operators-rev-configs'],
     queryFn: () => partnersService.getOperatorsWithREVConfigs(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: dynamicPartnerTypes = [] } = useQuery({
+    queryKey: ['partnerTypes'],
+    queryFn: () => partnerTypesService.getAll(true),
     staleTime: 10 * 60 * 1000,
   });
 
@@ -438,27 +445,40 @@ const Partners = ({ user }) => {
                     <Select value={formData.partner_type} onValueChange={(v) => setFormData({...formData, partner_type: v})}>
                       <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="D2D">D2D</SelectItem>
-                        <SelectItem value="REV">REV</SelectItem>
-                        <SelectItem value="Rev+">Rev+</SelectItem>
+                        {dynamicPartnerTypes.length > 0 ? (
+                          dynamicPartnerTypes.map(pt => (
+                            <SelectItem key={pt.slug} value={pt.slug}>{pt.display_name}</SelectItem>
+                          ))
+                        ) : (
+                          <>
+                            <SelectItem value="D2D">D2D</SelectItem>
+                            <SelectItem value="REV">REV</SelectItem>
+                            <SelectItem value="Rev+">Rev+</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
-                  {(formData.partner_type === 'REV' || formData.partner_type === 'Rev+') && (
+                  {(() => {
+                    const ptObj = dynamicPartnerTypes.find(pt => pt.slug === formData.partner_type);
+                    const hasLevels = ptObj ? ptObj.has_levels : (formData.partner_type === 'REV' || formData.partner_type === 'Rev+' || formData.partner_type === 'D2D');
+                    const isNamed = ptObj ? ptObj.level_type === 'named' : (formData.partner_type === 'D2D');
+                    const maxLevels = ptObj?.max_levels || 5;
+                    if (!hasLevels || isNamed) return null;
+                    return (
                     <div>
-                      <Label className="text-slate-400">Nível REV *</Label>
+                      <Label className="text-slate-400">Nivel *</Label>
                       <Select value={String(formData.rev_level || 1)} onValueChange={(v) => setFormData({...formData, rev_level: parseInt(v)})}>
                         <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">Nível 1</SelectItem>
-                          <SelectItem value="2">Nível 2</SelectItem>
-                          <SelectItem value="3">Nível 3</SelectItem>
-                          <SelectItem value="4">Nível 4</SelectItem>
-                          <SelectItem value="5">Nível 5</SelectItem>
+                          {Array.from({ length: maxLevels }, (_, i) => i + 1).map(n => (
+                            <SelectItem key={n} value={String(n)}>Nivel {n}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
+                    );
+                  })()}
                   <div>
                     <Label className="text-slate-400">Nome *</Label>
                     <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
@@ -747,9 +767,17 @@ const Partners = ({ user }) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="D2D">D2D</SelectItem>
-              <SelectItem value="REV">REV</SelectItem>
-              <SelectItem value="Rev+">Rev+</SelectItem>
+              {dynamicPartnerTypes.length > 0 ? (
+                dynamicPartnerTypes.map(pt => (
+                  <SelectItem key={pt.slug} value={pt.slug}>{pt.display_name}</SelectItem>
+                ))
+              ) : (
+                <>
+                  <SelectItem value="D2D">D2D</SelectItem>
+                  <SelectItem value="REV">REV</SelectItem>
+                  <SelectItem value="Rev+">Rev+</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

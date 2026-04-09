@@ -23,6 +23,7 @@ import { recalculateAllCommissions, recalculateSaleCommission } from "../service
 import { supabase } from "../lib/supabase";
 import { generateSaleCode } from "../lib/utils-crm";
 import { processFilesForUpload } from "../lib/imageCompression";
+import { scopesService } from "../services/scopesService";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import SalesImport from "../components/SalesImport";
 import SaleFormDialog from "../components/SaleFormDialog";
@@ -91,6 +92,8 @@ const Sales = ({ user }) => {
   const [recalcOperatorId, setRecalcOperatorId] = useState("all");
   const [recalcPartnerType, setRecalcPartnerType] = useState("all");
   const [energySaleMode, setEnergySaleMode] = useState('normal');
+  const [dynamicScopes, setDynamicScopes] = useState([]);
+  const [dynamicScopeFields, setDynamicScopeFields] = useState([]);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -160,16 +163,28 @@ const Sales = ({ user }) => {
     }
   }, [loading, location.state, partners]);
 
+  useEffect(() => {
+    if (!formData.scope || ['telecomunicacoes', 'energia', 'solar', 'mobilidade_eletrica'].includes(formData.scope)) {
+      setDynamicScopeFields([]);
+      return;
+    }
+    scopesService.getFieldsByScopeSlug(formData.scope).then(fields => {
+      setDynamicScopeFields(fields || []);
+    }).catch(() => setDynamicScopeFields([]));
+  }, [formData.scope]);
+
   const fetchData = async () => {
     try {
-      const [salesData, partnersData, operatorsData] = await Promise.all([
+      const [salesData, partnersData, operatorsData, scopesData] = await Promise.all([
         salesService.getAll(),
         partnersService.getAll(),
-        operatorsService.getAll()
+        operatorsService.getAll(),
+        scopesService.getAll(true).catch(() => [])
       ]);
       setSales(salesData);
       setPartners(partnersData);
       setOperators(operatorsData);
+      setDynamicScopes(scopesData);
 
       if (user?.role === 'partner' && partnersData.length > 0) {
         setFormData(prev => ({ ...prev, partner_id: partnersData[0].id }));
@@ -1653,6 +1668,8 @@ const Sales = ({ user }) => {
             isSubmitting={isSubmitting}
             energySaleMode={energySaleMode}
             setEnergySaleMode={setEnergySaleMode}
+            dynamicScopes={dynamicScopes}
+            dynamicScopeFields={dynamicScopeFields}
           />
         </div>
       </motion.div>
@@ -1870,9 +1887,17 @@ const Sales = ({ user }) => {
                 </SelectTrigger>
                 <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="telecomunicacoes">Telecomunicacoes</SelectItem>
-                  <SelectItem value="energia">Energia</SelectItem>
-                  <SelectItem value="solar">Solar</SelectItem>
+                  {dynamicScopes.length > 0 ? (
+                    dynamicScopes.map(s => (
+                      <SelectItem key={s.slug} value={s.slug}>{s.display_name}</SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="telecomunicacoes">Telecomunicacoes</SelectItem>
+                      <SelectItem value="energia">Energia</SelectItem>
+                      <SelectItem value="solar">Solar</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

@@ -31,6 +31,8 @@ const EnergySimulatorNew = lazy(() => import("./pages/EnergySimulatorNew.jsx"));
 const EnergySimulatorAdmin = lazy(() => import("./pages/EnergySimulatorAdmin.jsx"));
 const Advances = lazy(() => import("./pages/Advances.jsx"));
 const Refidelizacoes = lazy(() => import("./pages/Refidelizacoes.jsx"));
+const ScopesManagement = lazy(() => import("./pages/ScopesManagement.jsx"));
+const PartnerTypesManagement = lazy(() => import("./pages/PartnerTypesManagement.jsx"));
 
 export { supabase };
 
@@ -385,6 +387,8 @@ function App() {
                     <Route path="/operator-validations" element={<OperatorValidations user={user} />} />
                     <Route path="/bo-website" element={<BOWebsite user={user} />} />
                     <Route path="/simulador-energia-admin" element={<EnergySimulatorAdmin user={user} />} />
+                    <Route path="/scopes-management" element={<ScopesManagement user={user} />} />
+                    <Route path="/partner-types" element={<PartnerTypesManagement user={user} />} />
                   </>
                 )}
                 {user?.role === "bo" && (
