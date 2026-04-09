@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, GripVertical, ChevronDown, ChevronUp, Plus, X, Link2, Repeat, Eye } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Link2, Repeat, Eye } from 'lucide-react';
 
 const FIELD_TYPES = [
   { value: 'text', label: 'Texto' },
@@ -101,8 +101,6 @@ export default function ScopeFieldEditor({ field, onUpdate, onDelete, isSystem, 
       }}
     >
       <div className="flex items-center gap-2">
-        <GripVertical className="w-4 h-4 cursor-grab flex-shrink-0" style={{ color: 'rgba(6, 182, 212, 0.3)' }} />
-
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium text-white truncate">{field.label}</span>
@@ -419,9 +417,9 @@ export default function ScopeFieldEditor({ field, onUpdate, onDelete, isSystem, 
                     onChange={(e) => onUpdate({ ...field, depends_on: { field: e.target.value } })}
                     className="w-full h-8 text-sm bg-dark-900 border border-dark-700 text-white rounded-md px-2"
                   >
-                    <option value="">-- Selecionar campo numerico --</option>
-                    {otherFields.filter(f => f.field_type === 'number' || f.field_type === 'select').map(f => (
-                      <option key={f.field_key} value={f.field_key}>{f.label} ({f.field_key})</option>
+                    <option value="">-- Selecionar campo de quantidade --</option>
+                    {otherFields.map(f => (
+                      <option key={f.field_key} value={f.field_key}>{f.label} ({f.field_key}) [{f.field_type}]</option>
                     ))}
                   </select>
                 </div>

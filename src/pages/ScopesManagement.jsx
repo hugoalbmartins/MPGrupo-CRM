@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scopesService } from '../services/scopesService';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,69 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/sonner';
 import ScopeFieldEditor from '../components/ScopeFieldEditor';
-import { Plus, Pencil, Trash2, Settings, FileText, Mail, Layers, Eye, EyeOff, Copy } from 'lucide-react';
+import { Plus, Trash2, Settings, FileText, Mail, Layers, Eye, EyeOff, Copy, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 
 const ICON_OPTIONS = [
   'phone', 'zap', 'sun', 'car', 'building2', 'wifi', 'globe', 'shield',
   'heart', 'star', 'home', 'briefcase', 'truck', 'monitor', 'radio', 'circle',
 ];
+
+function ReorderableList({ items, onReorder, renderItem, keyExtractor }) {
+  const dragItem = useRef(null);
+  const dragOverItem = useRef(null);
+
+  const handleDragStart = (idx) => {
+    dragItem.current = idx;
+  };
+
+  const handleDragEnter = (idx) => {
+    dragOverItem.current = idx;
+  };
+
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    if (dragItem.current === dragOverItem.current) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    const reordered = [...items];
+    const [removed] = reordered.splice(dragItem.current, 1);
+    reordered.splice(dragOverItem.current, 0, removed);
+    dragItem.current = null;
+    dragOverItem.current = null;
+    onReorder(reordered);
+  };
+
+  const moveItem = (fromIdx, toIdx) => {
+    if (toIdx < 0 || toIdx >= items.length) return;
+    const reordered = [...items];
+    const [removed] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, removed);
+    onReorder(reordered);
+  };
+
+  return (
+    <div className="space-y-2">
+      {items.map((item, idx) => (
+        <div
+          key={keyExtractor(item, idx)}
+          draggable
+          onDragStart={() => handleDragStart(idx)}
+          onDragEnter={() => handleDragEnter(idx)}
+          onDragEnd={handleDragEnd}
+          onDragOver={(e) => e.preventDefault()}
+          className="group"
+        >
+          {renderItem(item, idx, {
+            onMoveUp: idx > 0 ? () => moveItem(idx, idx - 1) : null,
+            onMoveDown: idx < items.length - 1 ? () => moveItem(idx, idx + 1) : null,
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function ScopesManagement({ user }) {
   const queryClient = useQueryClient();
@@ -74,16 +131,6 @@ export default function ScopesManagement({ user }) {
     onError: (err) => toast.error(err.message),
   });
 
-  const handleStartDuplicate = (scope) => {
-    setDuplicateSource(scope);
-    setDuplicateData({
-      slug: '',
-      display_name: '',
-      icon: scope.icon || 'circle',
-      color: scope.color || '#06b6d4',
-    });
-  };
-
   const createFieldMutation = useMutation({
     mutationFn: (data) => scopesService.createField(data),
     onSuccess: () => {
@@ -97,7 +144,9 @@ export default function ScopesManagement({ user }) {
 
   const updateFieldMutation = useMutation({
     mutationFn: ({ id, data }) => scopesService.updateField(id, data),
-    onSuccess: () => toast.success('Campo atualizado'),
+    onSuccess: (_, variables) => {
+      toast.success('Campo atualizado');
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -123,15 +172,15 @@ export default function ScopesManagement({ user }) {
     await loadScopeFields(scope.id);
   };
 
-  const handleFieldUpdate = (updatedField) => {
+  const handleFieldUpdate = useCallback((updatedField) => {
     setScopeFields(prev => prev.map(f => f.id === updatedField.id ? updatedField : f));
     updateFieldMutation.mutate({ id: updatedField.id, data: updatedField });
-  };
+  }, [updateFieldMutation]);
 
-  const handleFieldDelete = (fieldId) => {
+  const handleFieldDelete = useCallback((fieldId) => {
     setScopeFields(prev => prev.filter(f => f.id !== fieldId));
     deleteFieldMutation.mutate(fieldId);
-  };
+  }, [deleteFieldMutation]);
 
   const handleCreateField = () => {
     if (!newFieldData.field_key || !newFieldData.label) {
@@ -144,6 +193,20 @@ export default function ScopesManagement({ user }) {
       sort_order: scopeFields.length,
     });
   };
+
+  const handleFieldsReorder = useCallback(async (reorderedFields) => {
+    const updated = reorderedFields.map((f, idx) => ({ ...f, sort_order: idx }));
+    setScopeFields(updated);
+    try {
+      await scopesService.saveFieldsOrder(updated);
+    } catch (err) {
+      toast.error('Erro ao reordenar campos');
+    }
+  }, []);
+
+  const handleEmailFieldsReorder = useCallback((reorderedFields) => {
+    setScopeEmailFields(reorderedFields.map((ef, idx) => ({ ...ef, sort_order: idx })));
+  }, []);
 
   const handleSaveEmailFields = async () => {
     try {
@@ -167,6 +230,16 @@ export default function ScopesManagement({ user }) {
 
   const handleToggleActive = (scope) => {
     updateMutation.mutate({ id: scope.id, data: { active: !scope.active } });
+  };
+
+  const handleStartDuplicate = (scope) => {
+    setDuplicateSource(scope);
+    setDuplicateData({
+      slug: '',
+      display_name: '',
+      icon: scope.icon || 'circle',
+      color: scope.color || '#06b6d4',
+    });
   };
 
   if (isLoading) {
@@ -377,24 +450,50 @@ export default function ScopesManagement({ user }) {
             <TabsContent value="fields" className="space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-400">
-                  Campos especificos do ambito que aparecem no formulario de nova venda.
-                  Os campos globais (Nome, NIF, Contacto, Morada) sao sempre incluidos.
+                  Arraste para reordenar. Os campos globais (Nome, NIF, etc.) sao sempre incluidos.
                 </p>
                 <Button size="sm" onClick={() => setShowNewField(true)} className="gap-1.5" variant="outline">
                   <Plus className="w-3.5 h-3.5" /> Adicionar Campo
                 </Button>
               </div>
 
-              {scopeFields.map(field => (
-                <ScopeFieldEditor
-                  key={field.id}
-                  field={field}
-                  onUpdate={handleFieldUpdate}
-                  onDelete={handleFieldDelete}
-                  isSystem={field.is_system}
-                  allFields={scopeFields}
-                />
-              ))}
+              <ReorderableList
+                items={scopeFields}
+                onReorder={handleFieldsReorder}
+                keyExtractor={(item) => item.id}
+                renderItem={(field, idx, { onMoveUp, onMoveDown }) => (
+                  <div className="flex items-start gap-1">
+                    <div className="flex flex-col items-center pt-3 gap-0.5">
+                      <button
+                        onClick={onMoveUp}
+                        disabled={!onMoveUp}
+                        className="p-0.5 rounded transition-colors disabled:opacity-20"
+                        style={{ color: 'rgba(6, 182, 212, 0.5)' }}
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </button>
+                      <span className="text-[9px] text-slate-600 select-none">{idx + 1}</span>
+                      <button
+                        onClick={onMoveDown}
+                        disabled={!onMoveDown}
+                        className="p-0.5 rounded transition-colors disabled:opacity-20"
+                        style={{ color: 'rgba(6, 182, 212, 0.5)' }}
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex-1">
+                      <ScopeFieldEditor
+                        field={field}
+                        onUpdate={handleFieldUpdate}
+                        onDelete={handleFieldDelete}
+                        isSystem={field.is_system}
+                        allFields={scopeFields}
+                      />
+                    </div>
+                  </div>
+                )}
+              />
 
               {scopeFields.length === 0 && (
                 <div className="text-center py-8 text-slate-500 text-sm">
@@ -402,7 +501,6 @@ export default function ScopesManagement({ user }) {
                 </div>
               )}
 
-              {/* Add New Field Inline */}
               {showNewField && (
                 <div className="rounded-lg p-4 space-y-3" style={{ background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
                   <h4 className="text-sm font-semibold text-white">Novo Campo</h4>
@@ -461,48 +559,70 @@ export default function ScopesManagement({ user }) {
             <TabsContent value="email" className="space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-400">
-                  Campos que as operadoras deste ambito podem incluir nos emails de notificacao de venda.
+                  Arraste para reordenar. Campos incluidos nos emails de notificacao de venda.
                 </p>
                 <Button size="sm" onClick={handleAddEmailField} className="gap-1.5" variant="outline">
                   <Plus className="w-3.5 h-3.5" /> Adicionar
                 </Button>
               </div>
 
-              {scopeEmailFields.map((ef, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-2 p-2 rounded-lg"
-                  style={{ background: 'rgba(6, 182, 212, 0.03)', border: '1px solid rgba(6, 182, 212, 0.1)' }}
-                >
-                  <Input
-                    value={ef.field_key}
-                    onChange={(e) => {
-                      const updated = [...scopeEmailFields];
-                      updated[idx] = { ...updated[idx], field_key: e.target.value };
-                      setScopeEmailFields(updated);
-                    }}
-                    className="h-8 text-sm bg-dark-900 border-dark-700 text-white flex-1"
-                    placeholder="field_key"
-                  />
-                  <Input
-                    value={ef.label}
-                    onChange={(e) => {
-                      const updated = [...scopeEmailFields];
-                      updated[idx] = { ...updated[idx], label: e.target.value };
-                      setScopeEmailFields(updated);
-                    }}
-                    className="h-8 text-sm bg-dark-900 border-dark-700 text-white flex-1"
-                    placeholder="Label do campo no email"
-                  />
-                  <button
-                    onClick={() => handleRemoveEmailField(idx)}
-                    className="p-1.5 rounded transition-colors"
-                    style={{ color: 'rgba(239, 68, 68, 0.5)' }}
+              <ReorderableList
+                items={scopeEmailFields}
+                onReorder={handleEmailFieldsReorder}
+                keyExtractor={(_, idx) => idx}
+                renderItem={(ef, idx, { onMoveUp, onMoveDown }) => (
+                  <div
+                    className="flex items-center gap-2 p-2 rounded-lg"
+                    style={{ background: 'rgba(6, 182, 212, 0.03)', border: '1px solid rgba(6, 182, 212, 0.1)' }}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                    <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+                      <button
+                        onClick={onMoveUp}
+                        disabled={!onMoveUp}
+                        className="p-0.5 rounded transition-colors disabled:opacity-20"
+                        style={{ color: 'rgba(6, 182, 212, 0.5)' }}
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={onMoveDown}
+                        disabled={!onMoveDown}
+                        className="p-0.5 rounded transition-colors disabled:opacity-20"
+                        style={{ color: 'rgba(6, 182, 212, 0.5)' }}
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <Input
+                      value={ef.field_key}
+                      onChange={(e) => {
+                        const updated = [...scopeEmailFields];
+                        updated[idx] = { ...updated[idx], field_key: e.target.value };
+                        setScopeEmailFields(updated);
+                      }}
+                      className="h-8 text-sm bg-dark-900 border-dark-700 text-white flex-1"
+                      placeholder="field_key"
+                    />
+                    <Input
+                      value={ef.label}
+                      onChange={(e) => {
+                        const updated = [...scopeEmailFields];
+                        updated[idx] = { ...updated[idx], label: e.target.value };
+                        setScopeEmailFields(updated);
+                      }}
+                      className="h-8 text-sm bg-dark-900 border-dark-700 text-white flex-1"
+                      placeholder="Label do campo no email"
+                    />
+                    <button
+                      onClick={() => handleRemoveEmailField(idx)}
+                      className="p-1.5 rounded transition-colors"
+                      style={{ color: 'rgba(239, 68, 68, 0.5)' }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              />
 
               <div className="flex justify-end pt-2">
                 <Button onClick={handleSaveEmailFields} size="sm" style={{ background: '#06b6d4', color: '#080c14' }}>
