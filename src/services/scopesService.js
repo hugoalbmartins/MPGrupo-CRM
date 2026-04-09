@@ -220,6 +220,71 @@ export const scopesService = {
     return data || [];
   },
 
+  async duplicate(sourceScopeId, { slug, display_name, icon, color }) {
+    const sourceScope = await this.getById(sourceScopeId);
+    if (!sourceScope) throw new Error('Ambito de origem nao encontrado');
+
+    const { data: newScope, error: scopeError } = await supabase
+      .from('scopes')
+      .insert({
+        slug,
+        display_name,
+        icon: icon || sourceScope.icon,
+        color: color || sourceScope.color,
+        sort_order: sourceScope.sort_order + 1,
+        is_system: false,
+        active: true,
+      })
+      .select()
+      .single();
+
+    if (scopeError) throw scopeError;
+
+    const sourceFields = await this.getFields(sourceScopeId, false);
+    if (sourceFields.length > 0) {
+      const fieldRows = sourceFields.map(f => ({
+        scope_id: newScope.id,
+        field_key: f.field_key,
+        label: f.label,
+        field_type: f.field_type,
+        is_required: f.is_required,
+        placeholder: f.placeholder,
+        validation_rules: f.validation_rules,
+        options: f.options,
+        sort_order: f.sort_order,
+        section: f.section,
+        depends_on: f.depends_on,
+        is_system: false,
+        maps_to_column: f.maps_to_column,
+        active: f.active,
+      }));
+
+      const { error: fieldsError } = await supabase
+        .from('scope_fields')
+        .insert(fieldRows);
+
+      if (fieldsError) throw fieldsError;
+    }
+
+    const sourceEmailFields = await this.getEmailFields(sourceScopeId);
+    if (sourceEmailFields.length > 0) {
+      const emailRows = sourceEmailFields.map(ef => ({
+        scope_id: newScope.id,
+        field_key: ef.field_key,
+        label: ef.label,
+        sort_order: ef.sort_order,
+      }));
+
+      const { error: emailError } = await supabase
+        .from('scope_email_fields')
+        .insert(emailRows);
+
+      if (emailError) throw emailError;
+    }
+
+    return newScope;
+  },
+
   async saveEmailFields(scopeId, emailFields) {
     await supabase
       .from('scope_email_fields')

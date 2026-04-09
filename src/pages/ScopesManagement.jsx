@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/sonner';
 import ScopeFieldEditor from '../components/ScopeFieldEditor';
-import { Plus, Pencil, Trash2, Settings, FileText, Mail, Layers, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Settings, FileText, Mail, Layers, Eye, EyeOff, Copy } from 'lucide-react';
 
 const ICON_OPTIONS = [
   'phone', 'zap', 'sun', 'car', 'building2', 'wifi', 'globe', 'shield',
@@ -26,6 +26,8 @@ export default function ScopesManagement({ user }) {
   const [scopeEmailFields, setScopeEmailFields] = useState([]);
   const [newFieldData, setNewFieldData] = useState({ field_key: '', label: '', field_type: 'text' });
   const [showNewField, setShowNewField] = useState(false);
+  const [duplicateSource, setDuplicateSource] = useState(null);
+  const [duplicateData, setDuplicateData] = useState({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4' });
 
   const { data: scopes = [], isLoading } = useQuery({
     queryKey: ['scopes'],
@@ -60,6 +62,27 @@ export default function ScopesManagement({ user }) {
     },
     onError: (err) => toast.error(err.message),
   });
+
+  const duplicateMutation = useMutation({
+    mutationFn: ({ sourceId, data }) => scopesService.duplicate(sourceId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scopes'] });
+      setDuplicateSource(null);
+      setDuplicateData({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4' });
+      toast.success('Ambito duplicado com sucesso');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleStartDuplicate = (scope) => {
+    setDuplicateSource(scope);
+    setDuplicateData({
+      slug: '',
+      display_name: '',
+      icon: scope.icon || 'circle',
+      color: scope.color || '#06b6d4',
+    });
+  };
 
   const createFieldMutation = useMutation({
     mutationFn: (data) => scopesService.createField(data),
@@ -217,8 +240,16 @@ export default function ScopesManagement({ user }) {
                 {scope.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
               <button
+                onClick={() => handleStartDuplicate(scope)}
+                className="p-2 rounded-lg transition-colors hover:bg-dark-800"
+                style={{ color: 'rgba(6, 182, 212, 0.5)' }}
+                title="Duplicar"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => handleEditScope(scope)}
-                className="p-2 rounded-lg transition-colors"
+                className="p-2 rounded-lg transition-colors hover:bg-dark-800"
                 style={{ color: 'rgba(6, 182, 212, 0.5)' }}
                 title="Configurar"
               >
@@ -227,7 +258,7 @@ export default function ScopesManagement({ user }) {
               {!scope.is_system && (
                 <button
                   onClick={() => { if (confirm('Eliminar ambito?')) deleteMutation.mutate(scope.id); }}
-                  className="p-2 rounded-lg transition-colors"
+                  className="p-2 rounded-lg transition-colors hover:bg-dark-800"
                   style={{ color: 'rgba(239, 68, 68, 0.5)' }}
                   title="Eliminar"
                 >
@@ -547,6 +578,92 @@ export default function ScopesManagement({ user }) {
               )}
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Scope Dialog */}
+      <Dialog open={!!duplicateSource} onOpenChange={(open) => !open && setDuplicateSource(null)}>
+        <DialogContent className="bg-dark-900 border-dark-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5" style={{ color: duplicateSource?.color }} />
+              Duplicar: {duplicateSource?.display_name}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-slate-400">
+            Todos os campos e definicoes de email do ambito original serao copiados. Pode ajustar depois.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-slate-400">Nome do Novo Ambito *</Label>
+              <Input
+                value={duplicateData.display_name}
+                onChange={(e) => {
+                  const displayName = e.target.value;
+                  const slug = displayName.toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]+/g, '_')
+                    .replace(/^_|_$/g, '');
+                  setDuplicateData({ ...duplicateData, display_name: displayName, slug });
+                }}
+                className="bg-dark-800 border-dark-700 text-white"
+                placeholder="ex: Energia Solar Pro"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-slate-400">Identificador (slug) *</Label>
+              <Input
+                value={duplicateData.slug}
+                onChange={(e) => setDuplicateData({ ...duplicateData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
+                className="bg-dark-800 border-dark-700 text-white"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-slate-400">Icone</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {ICON_OPTIONS.map(icon => (
+                  <button
+                    key={icon}
+                    onClick={() => setDuplicateData({ ...duplicateData, icon })}
+                    className="px-2 py-1 text-xs rounded-md transition-all"
+                    style={{
+                      background: duplicateData.icon === icon ? 'rgba(6, 182, 212, 0.2)' : 'rgba(6, 182, 212, 0.05)',
+                      border: `1px solid ${duplicateData.icon === icon ? 'rgba(6, 182, 212, 0.5)' : 'rgba(6, 182, 212, 0.1)'}`,
+                      color: duplicateData.icon === icon ? '#06b6d4' : 'rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-400">Cor</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="color"
+                  value={duplicateData.color}
+                  onChange={(e) => setDuplicateData({ ...duplicateData, color: e.target.value })}
+                  className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
+                />
+                <Input
+                  value={duplicateData.color}
+                  onChange={(e) => setDuplicateData({ ...duplicateData, color: e.target.value })}
+                  className="bg-dark-800 border-dark-700 text-white flex-1 h-8 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setDuplicateSource(null)}>Cancelar</Button>
+              <Button
+                onClick={() => duplicateMutation.mutate({ sourceId: duplicateSource.id, data: duplicateData })}
+                disabled={!duplicateData.slug || !duplicateData.display_name || duplicateMutation.isPending}
+                style={{ background: '#06b6d4', color: '#080c14' }}
+              >
+                {duplicateMutation.isPending ? 'A duplicar...' : 'Duplicar Ambito'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
