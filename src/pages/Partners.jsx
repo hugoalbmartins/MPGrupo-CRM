@@ -35,7 +35,6 @@ const Partners = ({ user }) => {
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [formData, setFormData] = useState({
     partner_type: "D2D",
-    rev_level: 1,
     name: "",
     email: "",
     communication_emails: [""],
@@ -159,7 +158,6 @@ const Partners = ({ user }) => {
     const displayEmail = partner.email && partner.email.endsWith('@noemail.mpgrupo.local') ? '' : (partner.email || '');
     setFormData({
       partner_type: partner.partner_type,
-      rev_level: partner.rev_level || 1,
       name: partner.name,
       email: displayEmail,
       communication_emails: partner.communication_emails.length > 0 ? partner.communication_emails : [""],
@@ -459,26 +457,6 @@ const Partners = ({ user }) => {
                       </SelectContent>
                     </Select>
                   </div>
-                  {(() => {
-                    const ptObj = dynamicPartnerTypes.find(pt => pt.slug === formData.partner_type);
-                    const hasLevels = ptObj ? ptObj.has_levels : (formData.partner_type === 'REV' || formData.partner_type === 'Rev+' || formData.partner_type === 'D2D');
-                    const isNamed = ptObj ? ptObj.level_type === 'named' : (formData.partner_type === 'D2D');
-                    const maxLevels = ptObj?.max_levels || 5;
-                    if (!hasLevels || isNamed) return null;
-                    return (
-                    <div>
-                      <Label className="text-slate-400">Nivel *</Label>
-                      <Select value={String(formData.rev_level || 1)} onValueChange={(v) => setFormData({...formData, rev_level: parseInt(v)})}>
-                        <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: maxLevels }, (_, i) => i + 1).map(n => (
-                            <SelectItem key={n} value={String(n)}>Nivel {n}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    );
-                  })()}
                   <div>
                     <Label className="text-slate-400">Nome *</Label>
                     <Input className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />

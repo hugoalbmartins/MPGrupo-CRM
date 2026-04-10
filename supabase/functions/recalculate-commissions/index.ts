@@ -50,7 +50,7 @@ async function calculateCommission(
   if (saleData.partner_id) {
     const { data: partner } = await supabase
       .from("partners")
-      .select("partner_type, rev_level")
+      .select("partner_type")
       .eq("id", saleData.partner_id)
       .maybeSingle();
 
@@ -70,7 +70,18 @@ async function calculateCommission(
         d2dLevel = "Nv1";
       }
     } else if (partnerType === "REV" || partnerType === "Rev+") {
-      revLevel = partner?.rev_level || 1;
+      const { data: levelData } = await supabase
+        .from("partner_rev_operator_levels")
+        .select("rev_level")
+        .eq("partner_id", saleData.partner_id)
+        .eq("operator_id", operator.id)
+        .maybeSingle();
+
+      revLevel = levelData?.rev_level || null;
+      if (!revLevel) {
+        console.warn(`${partnerType} partner ${saleData.partner_id} has no level for operator ${operator.id}, defaulting to 1`);
+        revLevel = 1;
+      }
     }
   }
 
