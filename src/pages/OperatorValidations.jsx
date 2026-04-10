@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Upload, FileSpreadsheet, CircleCheck as CheckCircle, Circle as XCircle, TriangleAlert as AlertTriangle, Download, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 
-const ALL_STATUSES = [
+const VALID_STATUSES = [
   "Para registo",
   "Pendente",
   "Registado",
@@ -17,9 +16,33 @@ const ALL_STATUSES = [
   "Em proposta",
 ];
 
+const normalizeStatus = (value) => {
+  if (!value) return null;
+  const v = String(value).trim().toLowerCase();
+  const map = {
+    'ativo': 'Ativo',
+    'activo': 'Ativo',
+    'active': 'Ativo',
+    'pendente': 'Pendente',
+    'pending': 'Pendente',
+    'registado': 'Registado',
+    'registered': 'Registado',
+    'para registo': 'Para registo',
+    'concluido': 'Concluido',
+    'concluído': 'Concluido',
+    'completed': 'Concluido',
+    'cancelado': 'Cancelado',
+    'cancelled': 'Cancelado',
+    'canceled': 'Cancelado',
+    'recusado': 'Recusado',
+    'refused': 'Recusado',
+    'em proposta': 'Em proposta',
+  };
+  return map[v] || (VALID_STATUSES.find(s => s.toLowerCase() === v) ? VALID_STATUSES.find(s => s.toLowerCase() === v) : null);
+};
+
 const OperatorValidations = ({ user }) => {
   const [file, setFile] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState("Ativo");
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [validationHistory, setValidationHistory] = useState([]);
@@ -56,6 +79,28 @@ const OperatorValidations = ({ user }) => {
     }
   };
 
+  const parseDate = (value) => {
+    if (!value) return null;
+    if (typeof value === 'number') {
+      const excelDate = new Date((value - 25569) * 86400 * 1000);
+      return excelDate.toISOString().split('T')[0];
+    }
+    if (typeof value === 'string') {
+      const parts = value.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+      if (parts) {
+        const year = parts[3].length === 2 ? '20' + parts[3] : parts[3];
+        return `${year}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+      }
+    }
+    return null;
+  };
+
+  const parseBool = (value) => {
+    if (!value) return false;
+    const v = String(value).trim().toUpperCase();
+    return v === 'SIM' || v === 'YES' || v === 'S' || v === '1' || v === 'TRUE' || value === true;
+  };
+
   const parseExcelFile = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -73,35 +118,31 @@ const OperatorValidations = ({ user }) => {
               norm[key.toLowerCase().trim()] = row[key];
             });
 
-            const paidRaw = norm['pago pelo operador'] ||
-                            norm['pago operador'] ||
-                            norm['paid'] ||
-                            norm['pago'] ||
-                            norm['pago pela operadora'] ||
-                            norm['validado'] ||
-                            '';
-            const paidStr = String(paidRaw).trim().toUpperCase();
-            const isPaid = paidStr === 'SIM' || paidStr === 'YES' || paidStr === 'S' || paidStr === '1' || paidRaw === true;
+            const statusRaw = norm['status'] || norm['estado'] || '';
+            const status = normalizeStatus(statusRaw);
 
-            let dateVal = norm.data || norm.date || norm['data de ativação'] || norm['data ativação'] || norm['data ativacao'] || null;
-            if (dateVal && typeof dateVal === 'number') {
-              const excelDate = new Date((dateVal - 25569) * 86400 * 1000);
-              dateVal = excelDate.toISOString().split('T')[0];
-            } else if (dateVal && typeof dateVal === 'string') {
-              const parts = dateVal.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-              if (parts) {
-                const year = parts[3].length === 2 ? '20' + parts[3] : parts[3];
-                dateVal = `${year}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
-              }
-            }
+            const activationDateRaw = norm['data de ativação'] || norm['data de ativacao'] ||
+              norm['data ativação'] || norm['data ativacao'] || norm['data ativação'] ||
+              norm['data'] || norm['date'] || null;
+            const activationDate = parseDate(activationDateRaw);
+
+            const paidRaw = norm['pago pelo operador'] || norm['pago operador'] ||
+              norm['paid'] || norm['pago'] || norm['pago pela operadora'] || norm['validado'] || '';
+            const isPaid = parseBool(paidRaw);
+
+            const paymentDateRaw = norm['data de pagamento'] || norm['data pagamento'] ||
+              norm['payment date'] || null;
+            const paymentDate = parseDate(paymentDateRaw);
 
             return {
               lineNumber: index + 2,
               cpe: norm.cpe ? String(norm.cpe).trim() : null,
               cui: norm.cui ? String(norm.cui).trim() : null,
               req: norm.req ? String(norm.req).trim() : (norm['requisição'] ? String(norm['requisição']).trim() : (norm['requisicao'] ? String(norm['requisicao']).trim() : null)),
-              date: dateVal,
-              paidByOperator: isPaid
+              status,
+              activationDate,
+              paidByOperator: isPaid,
+              paymentDate,
             };
           });
 
@@ -109,6 +150,12 @@ const OperatorValidations = ({ user }) => {
 
           if (validRows.length === 0) {
             reject(new Error('Nenhum registo valido encontrado. O ficheiro deve ter colunas: CPE, CUI ou REQ'));
+            return;
+          }
+
+          const rowsWithoutStatus = validRows.filter(r => !r.status);
+          if (rowsWithoutStatus.length > 0) {
+            reject(new Error(`${rowsWithoutStatus.length} registo(s) sem estado valido. O ficheiro deve conter coluna "Status" ou "Estado" com valores validos (ex: Ativo, Pendente, Registado, Cancelado...)`));
             return;
           }
 
@@ -132,8 +179,6 @@ const OperatorValidations = ({ user }) => {
     setProcessing(true);
     setCurrentReport(null);
     setProgress({ current: 0, total: 0 });
-
-    const isAtivo = selectedStatus === 'Ativo';
 
     try {
       const excelRows = await parseExcelFile(file);
@@ -188,35 +233,39 @@ const OperatorValidations = ({ user }) => {
 
       for (let i = 0; i < matchedSales.length; i++) {
         const { sale, row } = matchedSales[i];
+        const rowStatus = row.status;
+        const isAtivo = rowStatus === 'Ativo';
 
         const updateData = {
-          status: selectedStatus,
+          status: rowStatus,
         };
 
         if (isAtivo) {
-          const activationDate = row.date || new Date().toISOString().split('T')[0];
+          const activationDate = row.activationDate || new Date().toISOString().split('T')[0];
           updateData.operator_validated = true;
           updateData.operator_validation_date = new Date().toISOString();
           updateData.activated_at = activationDate;
+          updateData.activation_date = activationDate;
+        }
 
-          if (row.paidByOperator) {
-            updateData.paid_to_operator = true;
-            updateData.payment_date = activationDate;
+        if (row.paidByOperator) {
+          const payDate = row.paymentDate || row.activationDate || new Date().toISOString().split('T')[0];
+          updateData.paid_to_operator = true;
+          updateData.payment_date = payDate;
 
-            if (sale.scope === 'energia') {
-              if (sale.energy_sale_type === 'dual') {
-                updateData.electricity_paid = true;
-                updateData.electricity_payment_date = activationDate;
-                updateData.gas_paid = true;
-                updateData.gas_payment_date = activationDate;
-                updateData.is_partial_payment = false;
-              } else if (sale.energy_sale_type === 'eletricidade') {
-                updateData.electricity_paid = true;
-                updateData.electricity_payment_date = activationDate;
-              } else if (sale.energy_sale_type === 'gas') {
-                updateData.gas_paid = true;
-                updateData.gas_payment_date = activationDate;
-              }
+          if (sale.scope === 'energia') {
+            if (sale.energy_sale_type === 'dual') {
+              updateData.electricity_paid = true;
+              updateData.electricity_payment_date = payDate;
+              updateData.gas_paid = true;
+              updateData.gas_payment_date = payDate;
+              updateData.is_partial_payment = false;
+            } else if (sale.energy_sale_type === 'eletricidade') {
+              updateData.electricity_paid = true;
+              updateData.electricity_payment_date = payDate;
+            } else if (sale.energy_sale_type === 'gas') {
+              updateData.gas_paid = true;
+              updateData.gas_payment_date = payDate;
             }
           }
         }
@@ -236,8 +285,10 @@ const OperatorValidations = ({ user }) => {
             cpe: row.cpe,
             cui: row.cui,
             req: row.req,
-            paid: isAtivo ? row.paidByOperator : null,
-            date: isAtivo ? (row.date || new Date().toISOString().split('T')[0]) : null
+            status: rowStatus,
+            paid: row.paidByOperator,
+            activationDate: isAtivo ? (row.activationDate || new Date().toISOString().split('T')[0]) : null,
+            paymentDate: row.paidByOperator ? (row.paymentDate || row.activationDate || null) : null,
           });
         }
 
@@ -267,7 +318,7 @@ const OperatorValidations = ({ user }) => {
         toast.warning(`${results.notFound.length} registo(s) nao encontrado(s)`);
       }
       if (results.updated.length > 0) {
-        toast.success(`${results.updated.length} venda(s) atualizada(s) para "${selectedStatus}" com sucesso!`);
+        toast.success(`${results.updated.length} venda(s) atualizada(s) com sucesso!`);
       }
 
       setFile(null);
@@ -300,8 +351,6 @@ const OperatorValidations = ({ user }) => {
     );
   }
 
-  const isAtivo = selectedStatus === 'Ativo';
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -321,54 +370,41 @@ const OperatorValidations = ({ user }) => {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-cyber-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-slate-300">
-              <strong className="text-white">Formato do ficheiro Excel:</strong> O ficheiro deve conter as colunas de identificacao:
-              <ul className="list-disc list-inside mt-2 space-y-1 text-slate-400">
-                <li><strong className="text-slate-300">CPE</strong>: Codigo do ponto de entrega (eletricidade)</li>
-                <li><strong className="text-slate-300">CUI</strong>: Codigo unico de instalacao (gas)</li>
-                <li><strong className="text-slate-300">REQ</strong>: Numero de requisicao (telecomunicacoes)</li>
-              </ul>
-              <div className="mt-3 p-3 rounded-lg bg-dark-800 border border-dark-700 space-y-1.5">
-                <p className="font-semibold text-white text-xs uppercase tracking-wider">Colunas adicionais por estado</p>
-                <p className="text-slate-400">
-                  <span className="text-emerald-400 font-semibold">Estado "Ativo":</span> As colunas <strong className="text-slate-300">Data</strong> (data de ativacao) e <strong className="text-slate-300">Pago pelo operador</strong> (SIM/NAO) sao processadas. A data e registada como data de ativacao e o pagamento e atualizado nas vendas.
-                </p>
-                <p className="text-slate-400">
-                  <span className="text-slate-300 font-semibold">Outros estados:</span> Apenas o estado da venda e atualizado. As colunas Data e Pago pelo operador sao ignoradas.
-                </p>
+              <strong className="text-white">Formato do ficheiro Excel:</strong> O ficheiro deve conter as seguintes colunas:
+              <div className="mt-3 space-y-3">
+                <div className="p-3 rounded-lg bg-dark-800 border border-dark-700">
+                  <p className="font-semibold text-white text-xs uppercase tracking-wider mb-2">Colunas de identificacao (pelo menos uma obrigatoria)</p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-400">
+                    <li><strong className="text-slate-300">CPE</strong> - Codigo do ponto de entrega (eletricidade)</li>
+                    <li><strong className="text-slate-300">CUI</strong> - Codigo unico de instalacao (gas)</li>
+                    <li><strong className="text-slate-300">REQ</strong> - Numero de requisicao (telecomunicacoes)</li>
+                  </ul>
+                </div>
+
+                <div className="p-3 rounded-lg bg-dark-800 border border-dark-700">
+                  <p className="font-semibold text-white text-xs uppercase tracking-wider mb-2">Coluna de estado (obrigatoria)</p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-400">
+                    <li><strong className="text-slate-300">Status</strong> ou <strong className="text-slate-300">Estado</strong> - Estado a aplicar a cada venda (ex: Ativo, Pendente, Registado, Cancelado, Recusado, Concluido, Para registo, Em proposta)</li>
+                  </ul>
+                </div>
+
+                <div className="p-3 rounded-lg bg-dark-800 border border-dark-700">
+                  <p className="font-semibold text-white text-xs uppercase tracking-wider mb-2">Colunas opcionais</p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-400">
+                    <li><strong className="text-slate-300">Data de ativacao</strong> - Data de ativacao da venda (preenchida automaticamente quando estado e "Ativo")</li>
+                    <li><strong className="text-slate-300">Pago pelo operador</strong> - Se o operador ja pagou (SIM/NAO)</li>
+                    <li><strong className="text-slate-300">Data de pagamento</strong> - Data do pagamento pelo operador</li>
+                  </ul>
+                </div>
               </div>
-              <p className="mt-2 text-slate-500">
-                O sistema pesquisa vendas dos ultimos 90 dias e atualiza as que constam no ficheiro.
+              <p className="mt-3 text-slate-500">
+                O sistema pesquisa vendas dos ultimos 90 dias e aplica o estado que constar em cada linha do ficheiro.
               </p>
             </div>
           </div>
         </div>
 
         <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">Estado a aplicar</label>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-full sm:w-64 bg-dark-900 border-dark-700 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-dark-800 border-dark-700">
-                {ALL_STATUSES.map(s => (
-                  <SelectItem key={s} value={s} className="text-white">{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isAtivo && (
-              <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5" />
-                Data de ativacao e pagamento serao registados a partir do ficheiro
-              </p>
-            )}
-            {!isAtivo && (
-              <p className="text-xs text-slate-500 mt-1.5">
-                Apenas o estado sera atualizado — Data e Pago pelo operador sao ignorados
-              </p>
-            )}
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">Ficheiro Excel</label>
             <input
@@ -400,7 +436,7 @@ const OperatorValidations = ({ user }) => {
           ) : (
             <span className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              Processar e Aplicar Estado "{selectedStatus}"
+              Processar Validacoes
             </span>
           )}
         </Button>
@@ -441,12 +477,10 @@ const OperatorValidations = ({ user }) => {
                     <tr className="border-b border-dark-700">
                       <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Codigo</th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Cliente</th>
-                      {isAtivo && (
-                        <>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Pago</th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Data Ativacao</th>
-                        </>
-                      )}
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Estado</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Pago</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Data Ativacao</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-cyber-400">Data Pagamento</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -454,18 +488,25 @@ const OperatorValidations = ({ user }) => {
                       <tr key={idx} className="border-b border-dark-800">
                         <td className="px-4 py-2 text-white">{item.saleCode}</td>
                         <td className="px-4 py-2 text-slate-300">{item.clientName || '-'}</td>
-                        {isAtivo && (
-                          <>
-                            <td className="px-4 py-2">
-                              {item.paid ? (
-                                <span className="text-green-400">Sim</span>
-                              ) : (
-                                <span className="text-slate-400">Nao</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2 text-slate-300">{item.date || '-'}</td>
-                          </>
-                        )}
+                        <td className="px-4 py-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            item.status === 'Ativo' ? 'bg-emerald-500/10 text-emerald-400' :
+                            item.status === 'Cancelado' || item.status === 'Recusado' ? 'bg-red-500/10 text-red-400' :
+                            item.status === 'Concluido' ? 'bg-blue-500/10 text-blue-400' :
+                            'bg-slate-500/10 text-slate-300'
+                          }`}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          {item.paid ? (
+                            <span className="text-green-400">Sim</span>
+                          ) : (
+                            <span className="text-slate-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-slate-300">{item.activationDate || '-'}</td>
+                        <td className="px-4 py-2 text-slate-300">{item.paymentDate || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
