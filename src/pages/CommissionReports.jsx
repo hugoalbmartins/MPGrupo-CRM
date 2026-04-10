@@ -527,7 +527,9 @@ const CommissionReports = ({ user }) => {
 
               const { jsPDF } = window.jspdf;
               btn.textContent = 'Capturando imagem...';
+              document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
               const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false, allowTaint: true });
+              document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
               btn.textContent = 'Gerando PDF...';
               const imgData = canvas.toDataURL('image/jpeg', 0.85);
               const pdf = new jsPDF('l', 'mm', 'a4');
