@@ -951,7 +951,7 @@ const Sales = ({ user }) => {
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return '';
-      return d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
+      return d.toLocaleDateString('pt-PT');
     } catch {
       return '';
     }
