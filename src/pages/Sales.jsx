@@ -946,6 +946,17 @@ const Sales = ({ user }) => {
   const goToPreviousPage = () => setCurrentPage(prev => Math.max(1, prev - 1));
   const goToNextPage = () => setCurrentPage(prev => Math.min(totalPages, prev + 1));
 
+  const formatDateExtended = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       let dataToExport = [...sales];
@@ -970,7 +981,7 @@ const Sales = ({ user }) => {
         const commission = sale.manual_commission || sale.calculated_commission || 0;
 
         const baseData = {
-          'Data': new Date(sale.date).toLocaleDateString('pt-PT'),
+          'Data': formatDateExtended(sale.date),
           'ID Parceiro': partner?.code || partner?.name || sale.partner_id || '',
           'Ambito': sale.scope,
           'Tipo Cliente': sale.client_type,
@@ -1017,7 +1028,7 @@ const Sales = ({ user }) => {
           'Tipo Venda Energia': sale.energy_sale_type || '',
           ...((user?.role === 'admin' || user?.role === 'bo') ? {
             'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Nao',
-            'Data Pagamento': sale.payment_date ? new Date(sale.payment_date).toLocaleDateString('pt-PT') : ''
+            'Data Pagamento': formatDateExtended(sale.payment_date)
           } : {})
         };
 
@@ -1037,10 +1048,11 @@ const Sales = ({ user }) => {
                   'CUI': point.point_type === 'cui' ? point.point_code : '',
                   'Escalao': point.tier || '',
                   'Estado Ativacao': point.activation_status,
-                  'Data Ativacao': point.activation_date ? new Date(point.activation_date).toLocaleDateString('pt-PT') : '',
+                  'Data Ativacao Ponto': formatDateExtended(point.activation_date),
                   ...((user?.role === 'admin' || user?.role === 'bo') ? { 'Pago Operador Ponto': point.operator_paid ? 'Sim' : 'Nao' } : {}),
                   'Tipo Entrada': sale.entry_type || '',
                   'Status': sale.status,
+                  'Data Ativacao': formatDateExtended(sale.activation_date),
                   'Nr Requisicao': sale.request_number || '',
                   'Comissao': `EUR${commission.toFixed(2)}`,
                   'Observacoes': sale.observations || ''
@@ -1056,6 +1068,7 @@ const Sales = ({ user }) => {
                 'Escalao': showCUI ? (sale.tier || '') : '',
                 'Tipo Entrada': sale.entry_type || '',
                 'Status': sale.status,
+                'Data Ativacao': formatDateExtended(sale.activation_date),
                 'Nr Requisicao': sale.request_number || '',
                 'Comissao': `EUR${commission.toFixed(2)}`,
                 'Observacoes': sale.observations || ''
@@ -1072,6 +1085,7 @@ const Sales = ({ user }) => {
               'Escalao': showCUI ? (sale.tier || '') : '',
               'Tipo Entrada': sale.entry_type || '',
               'Status': sale.status,
+              'Data Ativacao': formatDateExtended(sale.activation_date),
               'Nr Requisicao': sale.request_number || '',
               'Comissao': `EUR${commission.toFixed(2)}`,
               'Observacoes': sale.observations || ''
@@ -1086,6 +1100,7 @@ const Sales = ({ user }) => {
             'Escalao': sale.tier || '',
             'Tipo Entrada': sale.entry_type || '',
             'Status': sale.status,
+            'Data Ativacao': formatDateExtended(sale.activation_date),
             'Nr Requisicao': sale.request_number || '',
             'Comissao': `EUR${commission.toFixed(2)}`,
             'Observacoes': sale.observations || ''
@@ -1206,6 +1221,7 @@ const Sales = ({ user }) => {
       observations: sale.observations || "",
       attachments: sale.attachments || [],
       activated_at: sale.activated_at ? sale.activated_at.split('T')[0] : "",
+      activation_date: sale.activation_date || "",
       refidelizacao_prazo: sale.refidelizacao_prazo || null,
       refidelizacao_unidade: sale.refidelizacao_unidade || 'dias',
       has_chargeback: Boolean(sale.has_chargeback),
@@ -1226,7 +1242,24 @@ const Sales = ({ user }) => {
         }
       }
 
+      if (editFormData.status === 'Ativo' && !editFormData.activation_date) {
+        toast.error("Data de ativacao e obrigatoria para o estado Ativo");
+        return;
+      }
+
+      if (editFormData.status === 'Cancelado' && !editFormData.observations?.trim()) {
+        toast.error("Observacoes sao obrigatorias para o estado Cancelado (motivo do cancelamento)");
+        return;
+      }
+
       const updatedData = { ...editFormData };
+
+      if (editFormData.status === 'Ativo') {
+        updatedData.activated_at = new Date().toISOString();
+      }
+      if (editFormData.status === 'Cancelado') {
+        updatedData.cancelled_at = new Date().toISOString();
+      }
 
       const originalPartnerId = editingSale.partner_id || null;
       const newPartnerId = editFormData.partner_id === 'admin_commissioned' ? null : (editFormData.partner_id || null);

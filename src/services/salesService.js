@@ -341,8 +341,11 @@ export const salesService = {
       }
     }
 
+    const VALID_STATUSES = ['Em proposta', 'Pendente', 'Para registo', 'Registado', 'Ativo', 'Concluido', 'Cancelado', 'Recusado'];
     let status;
-    if (saleData.is_proposal) {
+    if (saleData.is_bulk_import && saleData.status && VALID_STATUSES.includes(saleData.status)) {
+      status = saleData.status;
+    } else if (saleData.is_proposal) {
       status = 'Em proposta';
     } else {
       status = 'Para registo';
@@ -431,6 +434,9 @@ export const salesService = {
       ev_monthly_fee: saleData.ev_monthly_fee ? parseFloat(saleData.ev_monthly_fee) : null,
       ev_margin: saleData.ev_margin ? parseFloat(saleData.ev_margin) : null,
       ev_fidelization_months: saleData.ev_fidelization_months ? parseInt(saleData.ev_fidelization_months) : null,
+      activation_date: saleData.activation_date || null,
+      paid_to_operator: saleData.paid_to_operator || false,
+      payment_date: saleData.payment_date || null,
     };
 
     const { data, error } = await supabase
@@ -481,7 +487,7 @@ export const salesService = {
 
     const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address', 'billing_address'];
     const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint', 'tratar_oop'];
-    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'cui', 'cpe', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'refidelizacao_prazo', 'refidelizacao_unidade', 'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months', 'voltage_type', 'additional_services'];
+    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'cui', 'cpe', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'cancelled_at', 'activation_date', 'refidelizacao_prazo', 'refidelizacao_unidade', 'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months', 'voltage_type', 'additional_services'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {

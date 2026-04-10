@@ -146,10 +146,10 @@ const CommissionReports = ({ user }) => {
     const cutoff = cutoffDate ? new Date(cutoffDate + 'T23:59:59') : null;
 
     return sales.filter(sale => {
-      const dateField = sale.activation_date || sale.paid_date || sale.date;
-      if (!dateField) return false;
+      if (!sale.activation_date) return false;
 
       let saleDate;
+      const dateField = sale.activation_date;
       if (typeof dateField === 'string' && dateField.includes('T')) {
         saleDate = new Date(dateField);
       } else {
@@ -177,8 +177,8 @@ const CommissionReports = ({ user }) => {
 
   const openPrintWindow = async (partnerId, settledAdvances) => {
     const allSales = await salesService.getAll(null, true);
-    const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
-    const filteredByMonth = filterSalesByMonth(paidSales);
+    const activePaidSales = allSales.filter(sale => sale.status === 'Ativo' && sale.paid_to_operator === true);
+    const filteredByMonth = filterSalesByMonth(activePaidSales);
     let finalSales = filteredByMonth.filter(s => s.partner_id === partnerId);
 
     const partner = partners.find(p => p.id === partnerId);
@@ -232,7 +232,7 @@ const CommissionReports = ({ user }) => {
     });
 
     const refundSales = finalSales.filter(sale => {
-      const saleDate = new Date(sale.activation_date || sale.paid_date || sale.date);
+      const saleDate = new Date(sale.activation_date || sale.date);
       return sale.retention_value > 0 && saleDate >= refundMonthStart && saleDate <= refundMonthEnd;
     });
     refundSales.forEach(sale => { totalRefunds += parseFloat(sale.retention_value || 0); });

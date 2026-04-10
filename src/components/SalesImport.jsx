@@ -33,15 +33,30 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
     if (!dateStr) return null;
 
     if (dateStr instanceof Date) {
+      if (isNaN(dateStr.getTime())) return null;
       return dateStr.toISOString().split('T')[0];
     }
 
     const str = String(dateStr).trim();
     if (!str) return null;
 
+    const formatResult = (year, month, day) => {
+      year = parseInt(year, 10);
+      month = parseInt(month, 10);
+      day = parseInt(day, 10);
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+          return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+      }
+      return null;
+    };
+
     const formats = [
       /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
       /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+      /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
       /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
       /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/,
     ];
@@ -50,23 +65,59 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       const match = str.match(format);
       if (match) {
         let day, month, year;
-
         if (format.source.startsWith('^(\\d{4})')) {
           [, year, month, day] = match;
         } else {
           [, day, month, year] = match;
         }
+        const result = formatResult(year, month, day);
+        if (result) return result;
+      }
+    }
 
-        day = parseInt(day, 10);
-        month = parseInt(month, 10);
-        year = parseInt(year, 10);
+    const monthNames = {
+      'janeiro': 1, 'jan': 1, 'january': 1,
+      'fevereiro': 2, 'fev': 2, 'february': 2, 'feb': 2,
+      'marco': 3, 'mar': 3, 'march': 3,
+      'abril': 4, 'abr': 4, 'april': 4, 'apr': 4,
+      'maio': 5, 'mai': 5, 'may': 5,
+      'junho': 6, 'jun': 6, 'june': 6,
+      'julho': 7, 'jul': 7, 'july': 7,
+      'agosto': 8, 'ago': 8, 'august': 8, 'aug': 8,
+      'setembro': 9, 'set': 9, 'september': 9, 'sep': 9,
+      'outubro': 10, 'out': 10, 'october': 10, 'oct': 10,
+      'novembro': 11, 'nov': 11, 'november': 11,
+      'dezembro': 12, 'dez': 12, 'december': 12, 'dec': 12,
+    };
 
-        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-          const date = new Date(year, month - 1, day);
-          if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
-            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          }
-        }
+    const normalized = str.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    const ptMatch = normalized.match(/^(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})$/);
+    if (ptMatch) {
+      const monthNum = monthNames[ptMatch[2]];
+      if (monthNum) {
+        const result = formatResult(ptMatch[3], monthNum, ptMatch[1]);
+        if (result) return result;
+      }
+    }
+
+    const enMatch1 = normalized.match(/^(\d{1,2})\s+(\w+)\s+(\d{4})$/);
+    if (enMatch1) {
+      const monthNum = monthNames[enMatch1[2]];
+      if (monthNum) {
+        const result = formatResult(enMatch1[3], monthNum, enMatch1[1]);
+        if (result) return result;
+      }
+    }
+
+    const enMatch2 = normalized.match(/^(\w+)\s+(\d{1,2}),?\s+(\d{4})$/);
+    if (enMatch2) {
+      const monthNum = monthNames[enMatch2[1]];
+      if (monthNum) {
+        const result = formatResult(enMatch2[3], monthNum, enMatch2[2]);
+        if (result) return result;
       }
     }
 
@@ -77,6 +128,15 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
       const month = date.getUTCMonth() + 1;
       const day = date.getUTCDate();
       return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    try {
+      const fallback = new Date(str);
+      if (!isNaN(fallback.getTime()) && fallback.getFullYear() > 1990 && fallback.getFullYear() < 2100) {
+        return fallback.toISOString().split('T')[0];
+      }
+    } catch {
+      // ignore
     }
 
     return null;
@@ -177,6 +237,28 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
     return valid.includes(str) ? str : str || null;
   };
 
+  const normalizeStatus = (value) => {
+    if (!value) return 'Pendente';
+
+    const str = String(value).trim().toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    const statusMap = {
+      'em proposta': 'Em proposta',
+      'pendente': 'Pendente',
+      'para registo': 'Para registo',
+      'registado': 'Registado',
+      'ativo': 'Ativo',
+      'activo': 'Ativo',
+      'concluido': 'Concluido',
+      'cancelado': 'Cancelado',
+      'recusado': 'Recusado',
+    };
+
+    return statusMap[str] || 'Pendente';
+  };
+
   const handleImport = async () => {
     if (!file) {
       toast.error("Selecione um ficheiro para importar");
@@ -266,7 +348,8 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
             cui: row['CUI'] || null,
             tier: row['Escalao'] || row['Escal\u00E3o'] || null,
             entry_type: row['Tipo Entrada'] || null,
-            status: row['Status'] || 'pendente',
+            status: normalizeStatus(row['Status'] || row['Estado']),
+            activation_date: parseDate(row['Data Ativacao'] || row['Data Ativa\u00E7\u00E3o']) || null,
             request_number: row['Nr Requisicao'] || row['N\u00BA Requisi\u00E7\u00E3o'] || null,
             observations: row['Observacoes'] || row['Observa\u00E7\u00F5es'] || null,
           };
@@ -400,6 +483,7 @@ const SalesImport = ({ open, onOpenChange, onImportComplete }) => {
         'Escalao': '',
         'Tipo Entrada': '',
         'Status': '',
+        'Data Ativacao': '',
         'Nr Requisicao': '',
         'Observacoes': ''
       }];

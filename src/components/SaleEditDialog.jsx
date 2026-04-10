@@ -274,6 +274,10 @@ const SaleEditDialog = ({
                       onValueChange={(v) => {
                         const d = { ...editFormData, status: v };
                         if (v !== 'Ativo') { d.paid_to_operator = false; d.payment_date = ""; }
+                        if (v === 'Ativo' && !d.activation_date) {
+                          d.activation_date = new Date().toLocaleDateString('sv-SE');
+                        }
+                        if (v !== 'Ativo') { d.activation_date = ""; }
                         setEditFormData(d);
                       }}
                     >
@@ -288,6 +292,19 @@ const SaleEditDialog = ({
                       </SelectContent>
                     </Select>
                   </FieldGroup>
+
+                  {editFormData.status === 'Ativo' && (
+                    <FieldGroup label="Data de Ativacao *">
+                      <Input
+                        type="date"
+                        value={editFormData.activation_date || ""}
+                        onChange={(e) => update('activation_date', e.target.value)}
+                        required
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                      />
+                      <p className="text-xs mt-1 text-slate-500">Data em que a venda foi ativada pelo operador</p>
+                    </FieldGroup>
+                  )}
 
                   <FieldGroup label="Parceiro *">
                     <Select
@@ -883,13 +900,18 @@ const SaleEditDialog = ({
 
             <FormSection icon={FileText} title="Observações" gradient="from-cyber-500 to-cyber-600">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <FieldGroup label="Observacoes" colSpan={2}>
+                <FieldGroup label={editFormData.status === 'Cancelado' ? "Observacoes * (obrigatorio para cancelamento)" : "Observacoes"} colSpan={2}>
                   <Textarea
                     value={editFormData.observations}
                     onChange={(e) => update('observations', e.target.value)}
                     rows={3}
-                    className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                    required={editFormData.status === 'Cancelado'}
+                    placeholder={editFormData.status === 'Cancelado' ? "Indique o motivo do cancelamento..." : ""}
+                    className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white ${editFormData.status === 'Cancelado' && !editFormData.observations ? 'border-red-500/50' : ''}`}
                   />
+                  {editFormData.status === 'Cancelado' && !editFormData.observations && (
+                    <p className="text-xs mt-1 text-red-400">Obrigatorio indicar o motivo do cancelamento nas observacoes</p>
+                  )}
                 </FieldGroup>
               </div>
             </FormSection>

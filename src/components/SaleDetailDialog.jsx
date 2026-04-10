@@ -90,7 +90,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
         locality: saleData.locality || "",
         installation_address: saleData.installation_address || "",
         has_direct_debit: saleData.has_direct_debit || false,
-        has_electronic_invoice: saleData.has_electronic_invoice || false
+        has_electronic_invoice: saleData.has_electronic_invoice || false,
+        activation_date: saleData.activation_date || "",
+        observations: saleData.observations || ""
       });
     } catch (error) {
       toast.error("Erro ao carregar detalhes da venda");
@@ -113,6 +115,18 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
         }
       }
 
+      if (editData.status === 'Ativo' && !editData.activation_date) {
+        toast.error("Data de ativacao e obrigatoria para o estado Ativo");
+        setSavingEdit(false);
+        return;
+      }
+
+      if (editData.status === 'Cancelado' && !editData.observations?.trim()) {
+        toast.error("Observacoes sao obrigatorias para o estado Cancelado");
+        setSavingEdit(false);
+        return;
+      }
+
       if (editData.request_number && sale.scope === 'telecomunicacoes') {
         const isDuplicate = await salesService.checkDuplicateRequisition(
           editData.request_number,
@@ -129,9 +143,18 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
       const updateData = user?.role === 'bo'
         ? {
             status: editData.status,
-            request_number: editData.request_number
+            request_number: editData.request_number,
+            ...(editData.status === 'Ativo' ? { activation_date: editData.activation_date } : {}),
+            ...(editData.status === 'Cancelado' ? { observations: editData.observations } : {})
           }
         : editData;
+
+      if (editData.status === 'Ativo') {
+        updateData.activated_at = new Date().toISOString();
+      }
+      if (editData.status === 'Cancelado') {
+        updateData.cancelled_at = new Date().toISOString();
+      }
 
       await salesService.update(saleId, updateData);
       toast.success("Venda atualizada com sucesso");
@@ -319,7 +342,14 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                       <Label className="text-slate-400">Estado</Label>
                       <Select
                         value={editData.status}
-                        onValueChange={(value) => setEditData({ ...editData, status: value })}
+                        onValueChange={(value) => {
+                          const d = { ...editData, status: value };
+                          if (value === 'Ativo' && !d.activation_date) {
+                            d.activation_date = new Date().toLocaleDateString('sv-SE');
+                          }
+                          if (value !== 'Ativo') { d.activation_date = ""; }
+                          setEditData(d);
+                        }}
                       >
                         <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
                           <SelectValue />
@@ -333,6 +363,32 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {editData.status === 'Ativo' && (
+                      <div>
+                        <Label className="text-slate-400">Data de Ativacao *</Label>
+                        <Input
+                          type="date"
+                          value={editData.activation_date || ""}
+                          onChange={(e) => setEditData({ ...editData, activation_date: e.target.value })}
+                          className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">Data em que a venda foi ativada</p>
+                      </div>
+                    )}
+
+                    {editData.status === 'Cancelado' && (
+                      <div className="col-span-2">
+                        <Label className="text-red-400">Observacoes * (motivo do cancelamento)</Label>
+                        <Textarea
+                          value={editData.observations || ""}
+                          onChange={(e) => setEditData({ ...editData, observations: e.target.value })}
+                          rows={2}
+                          placeholder="Indique o motivo do cancelamento..."
+                          className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white ${!editData.observations?.trim() ? 'border-red-500/50' : ''}`}
+                        />
+                      </div>
+                    )}
 
                     <div>
                       <Label className="text-slate-400">Número de Requisição</Label>
