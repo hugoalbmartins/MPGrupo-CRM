@@ -27,6 +27,8 @@ const CommissionReports = ({ user }) => {
   const [partnerTypeFilter, setPartnerTypeFilter] = useState("all");
   const [cutoffDate, setCutoffDate] = useState("");
 
+  const [bccEmails, setBccEmails] = useState("geral@marciopinto.pt");
+
   const [advanceDialog, setAdvanceDialog] = useState(null);
   const [advanceSelections, setAdvanceSelections] = useState({});
   const [pendingPrintArgs, setPendingPrintArgs] = useState(null);
@@ -354,6 +356,8 @@ const CommissionReports = ({ user }) => {
 
     const advancesJson = JSON.stringify(settledAdvances || []);
 
+    const parsedBcc = bccEmails.split(',').map(e => e.trim()).filter(e => e && e.includes('@'));
+
     printWindow.reportData = {
       partnerId,
       partnerName: partner.name,
@@ -368,6 +372,7 @@ const CommissionReports = ({ user }) => {
       salesIds,
       settledAdvances: settledAdvances || [],
       chargebackIds: pendingChargebacks.map(cb => cb.id),
+      bccEmails: parsedBcc,
     };
 
     const htmlContent = `
@@ -378,27 +383,28 @@ const CommissionReports = ({ user }) => {
         <title>Auto de Comissoes - ${partner.name} - ${monthName}/${selectedYear}</title>
         <style>
           @media print {
-            @page { size: A4 landscape; margin: 10mm; }
-            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            @page { size: A4 landscape; margin: 15mm 12mm 15mm 12mm; }
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; margin: 0 !important; padding: 0 !important; }
+            .no-print { display:none !important; }
           }
-          body { font-family: Arial, sans-serif; margin: 15px; color: #333; max-width: 100%; }
-          .header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:15px; border-bottom:2px solid #1F4E78; padding-bottom:10px; }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 15mm 12mm; color: #333; max-width: 100%; box-sizing: border-box; }
+          .print-content { width: 100%; max-width: 100%; }
+          .header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; border-bottom:2px solid #1F4E78; padding-bottom:8px; }
           .header-left { flex:1; }
           .header-logo { flex-shrink:0; margin-left:20px; }
           .header-logo img { height:45px; width:auto; }
-          .company-name { font-size:14px; font-weight:bold; color:#1F4E78; margin-bottom:3px; }
-          .company-details { font-size:9px; color:#666; line-height:1.4; }
-          .title { font-size:16px; font-weight:bold; color:#1F4E78; text-align:center; margin:12px 0; padding:8px; background-color:#f0f4f8; border-radius:4px; }
-          table { width:100%; border-collapse:collapse; margin:10px 0; font-size:9px; }
-          th { background-color:#1F4E78; color:white; padding:6px 4px; text-align:left; font-weight:bold; font-size:9px; }
-          td { padding:5px 4px; border:1px solid #ddd; }
+          .company-name { font-size:13px; font-weight:bold; color:#1F4E78; margin-bottom:2px; }
+          .company-details { font-size:8px; color:#666; line-height:1.3; }
+          .title { font-size:14px; font-weight:bold; color:#1F4E78; text-align:center; margin:8px 0; padding:6px; background-color:#f0f4f8; border-radius:4px; }
+          table { width:100%; border-collapse:collapse; margin:8px 0; font-size:8px; table-layout:auto; }
+          th { background-color:#1F4E78; color:white; padding:5px 3px; text-align:left; font-weight:bold; font-size:8px; white-space:nowrap; }
+          td { padding:4px 3px; border:1px solid #ddd; word-break:break-word; }
           tr:nth-child(even) { background-color:#f9f9f9; }
-          .total-row { background-color:#e8f0f7 !important; font-weight:bold; font-size:11px; }
+          .total-row { background-color:#e8f0f7 !important; font-weight:bold; font-size:10px; }
           .total-row td { border-top:2px solid #1F4E78; }
-          .iva-section { background-color:#f0f4f8; border:2px dashed #94a3b8; border-radius:6px; padding:8px; margin-top:4px; }
-          .footer { margin-top:20px; text-align:right; font-size:8px; color:#666; }
+          .iva-section { background-color:#f0f4f8; border:2px dashed #94a3b8; border-radius:6px; padding:6px; margin-top:4px; }
+          .footer { margin-top:15px; text-align:right; font-size:7px; color:#666; }
           .no-print { margin:20px 0; text-align:center; }
-          @media print { .no-print { display:none; } }
         </style>
       </head>
       <body>
@@ -528,14 +534,21 @@ const CommissionReports = ({ user }) => {
               const { jsPDF } = window.jspdf;
               btn.textContent = 'Capturando imagem...';
               document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
-              const canvas = await html2canvas(document.body, { scale: 1, useCORS: true, logging: false, allowTaint: true });
+              const canvas = await html2canvas(document.body, { scale: 2, useCORS: true, logging: false, allowTaint: true });
               document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
               btn.textContent = 'Gerando PDF...';
-              const imgData = canvas.toDataURL('image/jpeg', 0.85);
+              const imgData = canvas.toDataURL('image/jpeg', 0.92);
               const pdf = new jsPDF('l', 'mm', 'a4');
-              const pdfWidth = pdf.internal.pageSize.getWidth();
-              const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-              pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+              const pageW = pdf.internal.pageSize.getWidth();
+              const pageH = pdf.internal.pageSize.getHeight();
+              const margin = 10;
+              const printW = pageW - (margin * 2);
+              const printH = pageH - (margin * 2);
+              const imgRatio = canvas.height / canvas.width;
+              let finalW = printW;
+              let finalH = printW * imgRatio;
+              if (finalH > printH) { finalH = printH; finalW = printH / imgRatio; }
+              pdf.addImage(imgData, 'JPEG', margin, margin, finalW, finalH);
               const pdfBlob = pdf.output('blob');
               const data = window.reportData;
 
@@ -593,7 +606,7 @@ const CommissionReports = ({ user }) => {
               }
 
               btn.textContent = 'Enviando email...';
-              const emailData = { partnerId: data.partnerId, partnerEmail: data.partnerEmail, partnerName: data.partnerName, month: data.month, year: data.year, userId: data.userId, filePath, fileName, version, salesIds: data.salesIds || [] };
+              const emailData = { partnerId: data.partnerId, partnerEmail: data.partnerEmail, partnerName: data.partnerName, month: data.month, year: data.year, userId: data.userId, filePath, fileName, version, salesIds: data.salesIds || [], bccEmails: data.bccEmails || [] };
               const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${data.accessToken}\` },
@@ -1095,6 +1108,18 @@ const CommissionReports = ({ user }) => {
                 </Select>
               </div>
             )}
+          </div>
+
+          <div>
+            <Label className="text-slate-300 text-sm mb-1.5 block">Emails BCC (copia oculta no envio do auto)</Label>
+            <Input
+              type="text"
+              value={bccEmails}
+              onChange={(e) => setBccEmails(e.target.value)}
+              placeholder="email1@example.com, email2@example.com"
+              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+            />
+            <p className="text-xs text-slate-500 mt-1">Separe multiplos emails com virgula. Estes emails recebem copia oculta de cada auto enviado.</p>
           </div>
 
           <div className="border-t border-dark-700 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">

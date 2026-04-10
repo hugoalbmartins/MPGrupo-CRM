@@ -2,6 +2,7 @@ export interface EmailConfig {
   from?: string;
   fromName?: string;
   replyTo?: string;
+  bcc?: string[];
 }
 
 function encodeSubject(subject: string): string {
@@ -55,6 +56,10 @@ export async function sendEmailResend(
 
   if (config?.replyTo) {
     payload.reply_to = config.replyTo;
+  }
+
+  if (config?.bcc && config.bcc.length > 0) {
+    payload.bcc = config.bcc;
   }
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -112,6 +117,10 @@ export async function sendEmailSMTP(
 
   if (config?.replyTo) {
     emailHeaders.push(`Reply-To: ${config.replyTo}`);
+  }
+
+  if (config?.bcc && config.bcc.length > 0) {
+    emailHeaders.push(`Bcc: ${config.bcc.join(", ")}`);
   }
 
   const emailBody = [
@@ -195,6 +204,13 @@ export async function sendEmailSMTP(
 
     await writeCommand(`RCPT TO:<${to}>`);
     await readFullResponse("RCPT TO");
+
+    if (config?.bcc && config.bcc.length > 0) {
+      for (const bccAddr of config.bcc) {
+        await writeCommand(`RCPT TO:<${bccAddr.trim()}>`);
+        await readFullResponse(`RCPT TO BCC ${bccAddr.trim()}`);
+      }
+    }
 
     await writeCommand(`DATA`);
     await readFullResponse("DATA");

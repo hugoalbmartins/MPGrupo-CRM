@@ -19,6 +19,7 @@ interface EmailPayload {
   fileName: string;
   version: number;
   salesIds?: string[];
+  bccEmails?: string[];
 }
 
 Deno.serve(async (req: Request) => {
@@ -30,7 +31,7 @@ Deno.serve(async (req: Request) => {
     console.log("[CommissionReport] Starting email process");
 
     const payload: EmailPayload = await req.json();
-    const { partnerId, partnerEmail, partnerName, month, year, userId, filePath, fileName, version, salesIds } = payload;
+    const { partnerId, partnerEmail, partnerName, month, year, userId, filePath, fileName, version, salesIds, bccEmails } = payload;
 
     if (!partnerId || !partnerName || !month || !year || !userId || !filePath || !fileName || !version) {
       return new Response(
@@ -99,7 +100,7 @@ Deno.serve(async (req: Request) => {
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background: #f5f5f5; }
     .container { max-width: 650px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .header { background: linear-gradient(135deg, #1F4E78 0%, #2C5F8D 100%); color: white; padding: 30px; text-align: center; }
-    .header h1 { margin: 0 0 8px 0; font-size: 24px; }
+    .header h1 { margin: 0 0 8px 0; font-size: 24px; color: #ffffff !important; }
     .content { padding: 30px; }
     .info-box { background: #f8f9fa; border-left: 4px solid #1F4E78; padding: 15px; margin: 20px 0; border-radius: 4px; }
     .billing-box { background: #fff9e6; border: 2px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 6px; }
@@ -110,9 +111,9 @@ Deno.serve(async (req: Request) => {
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>Auto de Comissões</h1>
-      <p style="margin: 0;">${monthName} ${year} - Versão ${version}</p>
+    <div class="header" style="background: linear-gradient(135deg, #1F4E78 0%, #2C5F8D 100%); color: #ffffff; padding: 30px; text-align: center;">
+      <h1 style="margin: 0 0 8px 0; font-size: 24px; color: #ffffff;">Auto de Comissoes</h1>
+      <p style="margin: 0; color: #ffffff; font-size: 16px;">${monthName} ${year} - Versao ${version}</p>
     </div>
     <div class="content">
       <p>Exmo(a). Sr(a). <strong>${partnerName}</strong>,</p>
@@ -158,6 +159,7 @@ Deno.serve(async (req: Request) => {
     if (partnerEmail) {
       console.log(`[CommissionReport] Sending email to: ${partnerEmail}`);
 
+      const validBcc = (bccEmails || []).filter((e: string) => e && e.includes("@"));
       await sendEmail(
         partnerEmail,
         subject,
@@ -165,7 +167,8 @@ Deno.serve(async (req: Request) => {
         {
           from: "noreply@mpgrupo.pt",
           fromName: "MP Grupo - Departamento Financeiro",
-          replyTo: "geral@marciopinto.pt"
+          replyTo: "geral@marciopinto.pt",
+          bcc: validBcc.length > 0 ? validBcc : undefined
         }
       );
 
