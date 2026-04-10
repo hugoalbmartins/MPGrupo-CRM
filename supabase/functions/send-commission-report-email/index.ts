@@ -123,10 +123,10 @@ Deno.serve(async (req: Request) => {
       </center>
 
       <div class="billing-box">
-        <h3 style="margin-top: 0;">💼 Dados de Faturação</h3>
-        <p>Para processamento do pagamento, solicitamos a emissão de fatura com os seguintes dados:</p>
+        <h3 style="margin-top: 0;">Dados de Faturacao</h3>
+        <p>Para processamento do pagamento, solicitamos a emissao de fatura com os seguintes dados:</p>
         <div class="company-details">
-          <strong>MARCIO & SANDRA LDA</strong><br>
+          <strong>MARCIO &amp; SANDRA LDA</strong><br>
           Avenida Rainha Santa Isabel, Lt 8, Loja 1<br>
           5000-434 Vila Real<br>
           <strong>NIF:</strong> 518162796
@@ -134,8 +134,8 @@ Deno.serve(async (req: Request) => {
       </div>
 
       <div class="info-box">
-        <p style="margin: 0;"><strong>⚠️ Ação Requerida:</strong></p>
-        <p style="margin: 8px 0 0 0;">Por favor, <strong>responda a este email</strong> com a respetiva fatura em anexo para <strong>financeira@mpgrupo.pt</strong></p>
+        <p style="margin: 0;"><strong>Acao Requerida:</strong></p>
+        <p style="margin: 8px 0 0 0;">Por favor, envie a respetiva fatura para <strong>geral@marciopinto.pt</strong></p>
       </div>
 
       <div class="info-box">
@@ -165,7 +165,7 @@ Deno.serve(async (req: Request) => {
         {
           from: "noreply@mpgrupo.pt",
           fromName: "MP Grupo - Departamento Financeiro",
-          replyTo: "financeira@mpgrupo.pt"
+          replyTo: "geral@marciopinto.pt"
         }
       );
 
