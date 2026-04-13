@@ -321,7 +321,8 @@ const SaleFormDialog = ({
                           cpe: '',
                           power: '',
                           cui: '',
-                          tier: ''
+                          tier: '',
+                          technology: 'Fibra'
                         });
 
                         fetchOperatorCommissions(v);
@@ -639,6 +640,29 @@ const SaleFormDialog = ({
                     </div>
                   ) : (
                     <FormSection icon={TrendingUp} title="Detalhes da Venda - Telecomunicações" gradient="from-cyber-500 to-cyber-600">
+                      {currentOperator?.allowed_technologies && currentOperator.allowed_technologies.includes('SAT') && (
+                        <div className="mb-2">
+                          <Label className="text-sm font-semibold mb-2 text-slate-400">Tecnologia *</Label>
+                          <Select
+                            value={formData.technology || 'Fibra'}
+                            onValueChange={(v) => setFormData({...formData, technology: v})}
+                          >
+                            <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(currentOperator?.allowed_technologies || ['Fibra']).map(tech => (
+                                <SelectItem key={tech} value={tech}>{tech}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {formData.technology === 'SAT' && currentOperator?.sat_commission_mode === 'percentage' && currentOperator?.sat_commission_percentage && (
+                            <p className="text-xs text-amber-400 mt-1">
+                              Comissao SAT = {currentOperator.sat_commission_percentage}% do valor Fibra
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                           <Label className="text-sm font-semibold mb-2 text-slate-400">Tipo de Serviço *</Label>

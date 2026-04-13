@@ -29,6 +29,7 @@ interface CommissionConfig {
   monthly_value_min: string;
   monthly_value_max: string;
   power_value: string | null;
+  technology: string | null;
 }
 
 async function calculateCommission(
@@ -184,8 +185,18 @@ async function calculateCommission(
     });
   }
 
+  const saleTechnology = saleData.technology || "Fibra";
+  const isSATSale = saleTechnology === "SAT";
+  const satMode = operator.sat_commission_mode;
+
+  if (isSATSale && satMode === "individual" && commissionConfigs.length > 0) {
+    commissionConfigs = commissionConfigs.filter((config: CommissionConfig) => config.technology === "SAT");
+  } else if (commissionConfigs.length > 0) {
+    commissionConfigs = commissionConfigs.filter((config: CommissionConfig) => !config.technology || config.technology === "Fibra");
+  }
+
   if (commissionConfigs.length === 0) {
-    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, d2d_level: ${d2dLevel}, rev_level: ${revLevel}, service_type: ${serviceType}, activation_type: ${saleData.activation_type}`);
+    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, d2d_level: ${d2dLevel}, rev_level: ${revLevel}, service_type: ${serviceType}, activation_type: ${saleData.activation_type}, technology: ${saleTechnology}`);
     return 0.0;
   }
 
@@ -259,7 +270,14 @@ async function calculateCommission(
     bonuses += parseFloat(applicableTier.electronic_invoice_bonus || "0");
   }
 
-  return baseCommission + bonuses;
+  let totalCommission = baseCommission + bonuses;
+
+  if (isSATSale && satMode === "percentage" && operator.sat_commission_percentage) {
+    const pct = parseFloat(operator.sat_commission_percentage) / 100;
+    totalCommission = totalCommission * pct;
+  }
+
+  return totalCommission;
 }
 
 async function calculateSingleEnergyCommission(

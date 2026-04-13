@@ -80,7 +80,10 @@ const Operators = ({ user }) => {
     allowed_energy_types: ['eletricidade', 'gas'],
     commission_mode: "tier",
     pays_direct_debit: false,
-    pays_electronic_invoice: false
+    pays_electronic_invoice: false,
+    allowed_technologies: ['Fibra'],
+    sat_commission_mode: '',
+    sat_commission_percentage: ''
   });
 
   useEffect(() => {
@@ -178,7 +181,10 @@ const Operators = ({ user }) => {
       allowed_energy_types: ['eletricidade', 'gas'],
       commission_mode: "tier",
       pays_direct_debit: false,
-      pays_electronic_invoice: false
+      pays_electronic_invoice: false,
+      allowed_technologies: ['Fibra'],
+      sat_commission_mode: '',
+      sat_commission_percentage: ''
     });
   };
 
@@ -206,6 +212,26 @@ const Operators = ({ user }) => {
         ? prev.allowed_energy_types.filter(t => t !== type)
         : [...prev.allowed_energy_types, type];
       return { ...prev, allowed_energy_types: newTypes };
+    });
+  };
+
+  const toggleTechnology = (tech) => {
+    setFormData(prev => {
+      let newTechs;
+      if (tech === 'Fibra') {
+        newTechs = prev.allowed_technologies;
+      } else {
+        newTechs = prev.allowed_technologies.includes(tech)
+          ? prev.allowed_technologies.filter(t => t !== tech)
+          : [...prev.allowed_technologies, tech];
+      }
+      const hasSAT = newTechs.includes('SAT');
+      return {
+        ...prev,
+        allowed_technologies: newTechs,
+        sat_commission_mode: hasSAT ? (prev.sat_commission_mode || 'percentage') : '',
+        sat_commission_percentage: hasSAT ? (prev.sat_commission_percentage || '') : ''
+      };
     });
   };
 
@@ -258,6 +284,9 @@ const Operators = ({ user }) => {
         email_envio_password: freshData.email_envio_password || '',
         refidelizacao_prazo: freshData.refidelizacao_prazo || '',
         refidelizacao_unidade: freshData.refidelizacao_unidade || 'dias',
+        allowed_technologies: freshData.allowed_technologies || ['Fibra'],
+        sat_commission_mode: freshData.sat_commission_mode || '',
+        sat_commission_percentage: freshData.sat_commission_percentage || '',
       });
       setShowEmailPassword(false);
       setNewNotifEmail("");
@@ -328,6 +357,26 @@ const Operators = ({ user }) => {
         ? prev.allowed_sale_types.filter(t => t !== type)
         : [...prev.allowed_sale_types, type]
     }));
+  };
+
+  const toggleEditTechnology = (tech) => {
+    setEditOperatorData(prev => {
+      let newTechs;
+      if (tech === 'Fibra') {
+        newTechs = prev.allowed_technologies;
+      } else {
+        newTechs = prev.allowed_technologies.includes(tech)
+          ? prev.allowed_technologies.filter(t => t !== tech)
+          : [...prev.allowed_technologies, tech];
+      }
+      const hasSAT = newTechs.includes('SAT');
+      return {
+        ...prev,
+        allowed_technologies: newTechs,
+        sat_commission_mode: hasSAT ? (prev.sat_commission_mode || 'percentage') : '',
+        sat_commission_percentage: hasSAT ? (prev.sat_commission_percentage || '') : ''
+      };
+    });
   };
 
   const openUploadDialog = (operator) => {
@@ -522,6 +571,7 @@ const Operators = ({ user }) => {
                     </FormSection>
 
                     {formData.scope === 'telecomunicacoes' && (
+                      <>
                       <FormSection icon={Settings} title="Tipos de Ativação" gradient="from-cyber-500 to-cyber-600">
                         <div className="grid grid-cols-1 gap-6">
                           <div>
@@ -544,6 +594,83 @@ const Operators = ({ user }) => {
                           </div>
                         </div>
                       </FormSection>
+
+                      <FormSection icon={Zap} title="Tecnologias" gradient="from-cyber-500 to-cyber-600">
+                        <div className="grid grid-cols-1 gap-6">
+                          <div>
+                            <Label className="text-sm font-semibold mb-2 text-white">Tecnologias Permitidas</Label>
+                            <div className="mt-2 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id="tech-fibra"
+                                  checked={true}
+                                  disabled
+                                  className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900 opacity-60"
+                                />
+                                <Label htmlFor="tech-fibra" className="cursor-default font-normal text-slate-300">Fibra (base)</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id="tech-sat"
+                                  checked={formData.allowed_technologies.includes('SAT')}
+                                  onChange={() => toggleTechnology('SAT')}
+                                  className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                                />
+                                <Label htmlFor="tech-sat" className="cursor-pointer font-normal text-slate-300">SAT</Label>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">Fibra e sempre a tecnologia base. Ative SAT se a operadora suportar.</p>
+                          </div>
+
+                          {formData.allowed_technologies.includes('SAT') && (
+                            <div className="bg-dark-900 border border-dark-700 rounded-xl p-4 space-y-4">
+                              <Label className="text-sm font-semibold text-white">Modo de Comissao SAT</Label>
+                              <Select
+                                value={formData.sat_commission_mode || 'percentage'}
+                                onValueChange={(v) => setFormData({...formData, sat_commission_mode: v, sat_commission_percentage: v === 'percentage' ? (formData.sat_commission_percentage || '') : ''})}
+                              >
+                                <SelectTrigger className="bg-dark-900 text-white border-dark-700 focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 rounded-xl">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-dark-850 border-dark-700">
+                                  <SelectItem value="percentage">Percentagem das comissoes Fibra</SelectItem>
+                                  <SelectItem value="individual">Comissoes individuais (definidas separadamente)</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {formData.sat_commission_mode === 'percentage' && (
+                                <div>
+                                  <Label className="text-sm font-semibold mb-2 text-slate-400">Percentagem (%)</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    step="1"
+                                    value={formData.sat_commission_percentage}
+                                    onChange={(e) => setFormData({...formData, sat_commission_percentage: e.target.value})}
+                                    placeholder="Ex: 80"
+                                    className="bg-dark-900 text-white border-dark-700 focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 rounded-xl"
+                                  />
+                                  <p className="text-xs text-slate-500 mt-1">
+                                    {formData.sat_commission_percentage
+                                      ? `SAT recebera ${formData.sat_commission_percentage}% do valor das comissoes Fibra`
+                                      : 'Defina a percentagem do valor Fibra para vendas SAT'}
+                                  </p>
+                                </div>
+                              )}
+
+                              {formData.sat_commission_mode === 'individual' && (
+                                <p className="text-xs text-slate-500">
+                                  As comissoes SAT serao definidas separadamente na configuracao de comissoes da operadora.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </FormSection>
+                      </>
                     )}
 
                     <FormSection icon={Building2} title="Tipos de Cliente" gradient="from-cyber-500 to-cyber-600">
@@ -696,6 +823,11 @@ const Operators = ({ user }) => {
                         {op.energy_type === 'eletricidade' ? '⚡ Eletricidade' :
                          op.energy_type === 'gas' ? '🔥 Gás' :
                          '⚡🔥 Dual'}
+                      </span>
+                    )}
+                    {op.scope === 'telecomunicacoes' && op.allowed_technologies && op.allowed_technologies.includes('SAT') && (
+                      <span className="text-xs block text-slate-400">
+                        Fibra + SAT {op.sat_commission_mode === 'percentage' && op.sat_commission_percentage ? `(${op.sat_commission_percentage}%)` : op.sat_commission_mode === 'individual' ? '(individual)' : ''}
                       </span>
                     )}
                     {op.commission_config && Object.keys(op.commission_config).length > 0 && (
@@ -923,6 +1055,75 @@ const Operators = ({ user }) => {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {selectedOperator.scope === 'telecomunicacoes' && (
+                <div className="border-t border-dark-700 pt-4">
+                  <Label className="text-slate-300 text-sm font-semibold">Tecnologias Permitidas</Label>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" id="edit-tech-fibra" checked={true} disabled className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900 opacity-60" />
+                      <Label htmlFor="edit-tech-fibra" className="cursor-default font-normal text-slate-300">Fibra (base)</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="edit-tech-sat"
+                        checked={editOperatorData.allowed_technologies.includes('SAT')}
+                        onChange={() => toggleEditTechnology('SAT')}
+                        className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                      />
+                      <Label htmlFor="edit-tech-sat" className="cursor-pointer font-normal text-slate-300">SAT</Label>
+                    </div>
+                  </div>
+
+                  {editOperatorData.allowed_technologies.includes('SAT') && (
+                    <div className="mt-3 bg-dark-900 border border-dark-700 rounded-xl p-4 space-y-3">
+                      <Label className="text-sm font-semibold text-white">Modo de Comissao SAT</Label>
+                      <Select
+                        value={editOperatorData.sat_commission_mode || 'percentage'}
+                        onValueChange={(v) => setEditOperatorData(prev => ({
+                          ...prev,
+                          sat_commission_mode: v,
+                          sat_commission_percentage: v === 'percentage' ? (prev.sat_commission_percentage || '') : ''
+                        }))}
+                      >
+                        <SelectTrigger className="bg-dark-900 text-white border-dark-700 focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-dark-850 border-dark-700">
+                          <SelectItem value="percentage">Percentagem das comissoes Fibra</SelectItem>
+                          <SelectItem value="individual">Comissoes individuais</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {(editOperatorData.sat_commission_mode === 'percentage' || !editOperatorData.sat_commission_mode) && (
+                        <div>
+                          <Label className="text-sm font-semibold mb-1 text-slate-400">Percentagem (%)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="100"
+                            step="1"
+                            value={editOperatorData.sat_commission_percentage}
+                            onChange={(e) => setEditOperatorData(prev => ({ ...prev, sat_commission_percentage: e.target.value }))}
+                            placeholder="Ex: 80"
+                            className="bg-dark-900 text-white border-dark-700 focus:border-cyber-500 focus:ring-2 focus:ring-cyber-500/20 rounded-xl"
+                          />
+                          <p className="text-xs text-slate-500 mt-1">
+                            {editOperatorData.sat_commission_percentage
+                              ? `SAT = ${editOperatorData.sat_commission_percentage}% do valor Fibra`
+                              : 'Defina a percentagem'}
+                          </p>
+                        </div>
+                      )}
+
+                      {editOperatorData.sat_commission_mode === 'individual' && (
+                        <p className="text-xs text-slate-500">As comissoes SAT serao definidas separadamente na configuracao de comissoes.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

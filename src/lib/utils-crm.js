@@ -461,8 +461,18 @@ export async function calculateCommission(operator, saleData, supabase) {
     });
   }
 
+  const saleTechnology = saleData.technology || 'Fibra';
+  const isSATSale = saleTechnology === 'SAT';
+  const satMode = operator.sat_commission_mode;
+
+  if (isSATSale && satMode === 'individual' && commissionConfigs.length > 0) {
+    commissionConfigs = commissionConfigs.filter(config => config.technology === 'SAT');
+  } else if (commissionConfigs.length > 0) {
+    commissionConfigs = commissionConfigs.filter(config => !config.technology || config.technology === 'Fibra');
+  }
+
   if (commissionConfigs.length === 0) {
-    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}, activation_type: ${saleData.activation_type}, refid_type: ${refidOperationType}`);
+    console.warn(`No commission config found for operator: ${operator.name}, client_type: ${clientType}, partner_type: ${partnerType}, service_type: ${serviceType}, activation_type: ${saleData.activation_type}, refid_type: ${refidOperationType}, technology: ${saleTechnology}`);
     return 0.0;
   }
 
@@ -555,7 +565,14 @@ export async function calculateCommission(operator, saleData, supabase) {
     }
   }
 
-  return baseCommission + bonuses + additionalServiceBonus;
+  let totalCommission = baseCommission + bonuses + additionalServiceBonus;
+
+  if (isSATSale && satMode === 'percentage' && operator.sat_commission_percentage) {
+    const pct = parseFloat(operator.sat_commission_percentage) / 100;
+    totalCommission = totalCommission * pct;
+  }
+
+  return totalCommission;
 }
 
 export function formatCurrency(value) {

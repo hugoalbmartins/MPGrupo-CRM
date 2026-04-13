@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers } from "lucide-react";
+import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Satellite } from "lucide-react";
 import { toast } from "sonner";
 import { operatorsService } from "../services/operatorsService";
 import { partnerTypesService } from "../services/partnerTypesService";
@@ -20,6 +20,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [activePartnerTab, setActivePartnerTab] = useState('D2D');
   const [levelsByType, setLevelsByType] = useState({});
   const [activeLevelByType, setActiveLevelByType] = useState({});
+  const [activeTechnology, setActiveTechnology] = useState('Fibra');
 
   useEffect(() => {
     loadConfigs();
@@ -103,6 +104,20 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const isTelecom = operator?.scope === 'telecomunicacoes';
   const isEnergy = operator?.scope === 'energia';
+  const hasSATIndividual = isTelecom && (operator?.allowed_technologies || []).includes('SAT') && operator?.sat_commission_mode === 'individual';
+
+  const getTechnologyForConfig = () => {
+    if (!hasSATIndividual) return null;
+    return activeTechnology === 'SAT' ? 'SAT' : null;
+  };
+
+  const filterConfigsByTechnology = (cfgs) => {
+    if (!hasSATIndividual) return cfgs;
+    if (activeTechnology === 'SAT') {
+      return cfgs.filter(c => c.technology === 'SAT');
+    }
+    return cfgs.filter(c => !c.technology || c.technology === 'Fibra');
+  };
   const additionalServicesList = (operator?.additional_services_list || []).map(s =>
     typeof s === 'string' ? s : s?.name
   ).filter(Boolean);
@@ -143,7 +158,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       partner_type: partnerType,
       d2d_level: partnerType === 'D2D' ? d2dLevel : null,
       rev_level: (partnerType === 'REV' || partnerType === 'Rev+') ? revLevel : null,
-      service_types: newConfig.service_types?.length > 0 ? newConfig.service_types : (newConfig.service_type ? [newConfig.service_type] : [])
+      service_types: newConfig.service_types?.length > 0 ? newConfig.service_types : (newConfig.service_type ? [newConfig.service_type] : []),
+      technology: newConfig.technology !== undefined ? newConfig.technology : getTechnologyForConfig(),
     };
 
     setConfigs(prev => {
@@ -183,22 +199,26 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   };
 
   const getAdditionalServiceConfig = (partnerType, d2dLevel, revLevel, clientType, serviceName) => {
+    const tech = getTechnologyForConfig();
     return configs.find(c =>
       c.partner_type === partnerType &&
       c.service_type === 'additional_service' &&
       c.additional_service_name === serviceName &&
       c.client_type === clientType &&
-      (partnerType === 'D2D' ? c.d2d_level === d2dLevel : c.rev_level === revLevel)
+      (partnerType === 'D2D' ? c.d2d_level === d2dLevel : c.rev_level === revLevel) &&
+      (tech === 'SAT' ? c.technology === 'SAT' : (!c.technology || c.technology === 'Fibra'))
     );
   };
 
   const updateAdditionalServiceConfig = (partnerType, d2dLevel, revLevel, clientType, serviceName, value) => {
+    const tech = getTechnologyForConfig();
     const existing = configs.findIndex(c =>
       c.partner_type === partnerType &&
       c.service_type === 'additional_service' &&
       c.additional_service_name === serviceName &&
       c.client_type === clientType &&
-      (partnerType === 'D2D' ? c.d2d_level === d2dLevel : c.rev_level === revLevel)
+      (partnerType === 'D2D' ? c.d2d_level === d2dLevel : c.rev_level === revLevel) &&
+      (tech === 'SAT' ? c.technology === 'SAT' : (!c.technology || c.technology === 'Fibra'))
     );
     if (existing >= 0) {
       const newConfigs = [...configs];
@@ -227,6 +247,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         refid_operation_type: null,
         activation_type: null,
         power_value: null,
+        technology: tech,
       }]);
     }
   };
@@ -308,9 +329,16 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       <div className="bg-dark-850 border border-white/[0.06] rounded-lg">
         <div className="border-b border-dark-700 bg-dark-900 p-6 rounded-t-lg">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">
-              Configuracao de Comissoes - {operator?.name}
-            </h2>
+            <div>
+              <h2 className="text-xl font-bold text-white">
+                Configuracao de Comissoes - {operator?.name}
+              </h2>
+              {hasSATIndividual && (
+                <p className="text-xs text-slate-400 mt-1">
+                  Este operador suporta Fibra e SAT com comissoes individuais. Alterne entre as tecnologias abaixo.
+                </p>
+              )}
+            </div>
             <Button
               type="button"
               onClick={handleSaveAll}
@@ -323,6 +351,26 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
           </div>
         </div>
         <div className="p-6 space-y-4">
+          {hasSATIndividual && (
+            <Tabs value={activeTechnology} onValueChange={setActiveTechnology} className="w-full mb-4">
+              <TabsList className="grid w-full grid-cols-2 bg-dark-900 border border-dark-700 p-1">
+                <TabsTrigger
+                  value="Fibra"
+                  className="data-[state=active]:bg-blue-500/10 data-[state=active]:text-blue-400 data-[state=active]:shadow-lg transition-all duration-300 font-semibold"
+                >
+                  <Wifi className="w-4 h-4 mr-2" />
+                  Fibra
+                </TabsTrigger>
+                <TabsTrigger
+                  value="SAT"
+                  className="data-[state=active]:bg-amber-500/10 data-[state=active]:text-amber-400 data-[state=active]:shadow-lg transition-all duration-300 font-semibold"
+                >
+                  <Satellite className="w-4 h-4 mr-2" />
+                  SAT (Individual)
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
           <Tabs value={activePartnerTab} onValueChange={setActivePartnerTab} className="w-full">
             <TabsList className={`grid w-full bg-dark-900 border border-dark-700 p-1`} style={{ gridTemplateColumns: `repeat(${Math.min(getPartnerTypes().length, 6)}, 1fr)` }}>
               {getPartnerTypes().map((pt) => (
@@ -343,7 +391,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
               const activeLevel = activeLevelByType[ptSlug];
 
               if (!ptObj?.has_levels) {
-                const levelConfigs = configs.filter(c => c.partner_type === ptSlug);
+                const levelConfigs = filterConfigsByTechnology(configs.filter(c => c.partner_type === ptSlug));
                 return (
                   <TabsContent key={ptSlug} value={ptSlug} className="mt-4">
                     <CommissionTable
@@ -359,6 +407,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                       onAddConfig={addNewConfig}
                       onUpdateConfig={updateConfig}
                       onRemoveConfig={removeConfig}
+                      technology={getTechnologyForConfig()}
                     />
                   </TabsContent>
                 );
@@ -399,11 +448,11 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                         </div>
 
                         {levels.map((level) => {
-                          const levelConfigs = configs.filter(c => {
+                          const levelConfigs = filterConfigsByTechnology(configs.filter(c => {
                             if (c.partner_type !== ptSlug) return false;
                             if (isNamed) return c.d2d_level === level;
                             return c.rev_level === level;
-                          });
+                          }));
                           const levelLabel = isNamed ? level : `Nivel ${level}`;
                           return (
                             <TabsContent key={level} value={String(level)} className="mt-3">
@@ -438,6 +487,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                                 onAddConfig={addNewConfig}
                                 onUpdateConfig={updateConfig}
                                 onRemoveConfig={removeConfig}
+                                technology={getTechnologyForConfig()}
                               />
                             </TabsContent>
                           );

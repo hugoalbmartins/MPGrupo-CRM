@@ -470,6 +470,23 @@ const SaleEditDialog = ({
             {/* Telecom fields */}
             {editFormData.scope === 'telecomunicacoes' && (
               <FormSection icon={Phone} title="Detalhes Telecomunicações" gradient="from-cyber-500 to-cyber-600">
+                {saleOperator?.allowed_technologies && saleOperator.allowed_technologies.includes('SAT') && (
+                  <div className="mb-2">
+                    <FieldGroup label="Tecnologia">
+                      <Select value={editFormData.technology || 'Fibra'} onValueChange={(v) => update('technology', v)}>
+                        <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {(saleOperator?.allowed_technologies || ['Fibra']).map(tech => (
+                            <SelectItem key={tech} value={tech}>{tech}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldGroup>
+                    {editFormData.technology === 'SAT' && saleOperator?.sat_commission_mode === 'percentage' && saleOperator?.sat_commission_percentage && (
+                      <p className="text-xs text-amber-400 mt-1 pl-1">Comissao SAT = {saleOperator.sat_commission_percentage}% do valor Fibra</p>
+                    )}
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <FieldGroup label="Tipo de Servico">
                     <Select value={editFormData.service_type} onValueChange={(v) => update('service_type', v)}>

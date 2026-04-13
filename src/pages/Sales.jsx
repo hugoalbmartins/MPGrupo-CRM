@@ -142,7 +142,8 @@ const Sales = ({ user }) => {
     ev_outlet_count: "",
     ev_monthly_fee: "",
     ev_margin: "",
-    ev_fidelization_months: ""
+    ev_fidelization_months: "",
+    technology: "Fibra"
   });
 
   useEffect(() => {
@@ -755,7 +756,8 @@ const Sales = ({ user }) => {
       autoriza_documentos: "",
       is_proposal: false,
       voltage_type: "",
-      additional_services: ""
+      additional_services: "",
+      technology: "Fibra"
     });
     setUploadFiles([]);
     setOperatorCommissions([]);
@@ -997,6 +999,7 @@ const Sales = ({ user }) => {
           'Localidade': sale.locality || '',
           'Morada Instalacao': sale.installation_address || '',
           'ID Operadora': operator?.name || sale.operator_id || '',
+          'Tecnologia': sale.scope === 'telecomunicacoes' ? (sale.technology || 'Fibra') : '',
           'Tipo Servico': sale.service_type || '',
           'Tipo Ativacao': sale.activation_type || '',
           'Valor Mensal': sale.monthly_value || '',
@@ -1497,6 +1500,12 @@ const Sales = ({ user }) => {
                   <span className="font-bold text-cyan-400 text-sm">
                     {commission ? `\u20AC${parseFloat(commission).toFixed(2)}` : '-'}
                   </span>
+                )}
+                {sale.scope === 'telecomunicacoes' && sale.technology && sale.technology !== 'Fibra' && (
+                  <span className="text-xs font-semibold text-amber-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.2)' }}>{sale.technology}</span>
+                )}
+                {sale.scope === 'telecomunicacoes' && (!sale.technology || sale.technology === 'Fibra') && (
+                  <span className="text-xs text-slate-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>Fibra</span>
                 )}
                 {sale.service_type && (
                   <span className="text-xs text-slate-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>{sale.service_type}</span>

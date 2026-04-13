@@ -65,6 +65,9 @@ export const operatorsService = {
         commission_mode: operatorData.commission_mode || 'tier',
         pays_direct_debit: operatorData.pays_direct_debit || false,
         pays_electronic_invoice: operatorData.pays_electronic_invoice || false,
+        allowed_technologies: operatorData.allowed_technologies || ['Fibra'],
+        sat_commission_mode: operatorData.sat_commission_mode || null,
+        sat_commission_percentage: operatorData.sat_commission_percentage || null,
         active: true,
         hidden: false
       })
@@ -167,6 +170,17 @@ export const operatorsService = {
         ? settingsData.allowed_sale_types
         : ['normal', 'multiponto', 'multilocal'];
     }
+    if (settingsData.hasOwnProperty('allowed_technologies')) {
+      updateData.allowed_technologies = settingsData.allowed_technologies && settingsData.allowed_technologies.length > 0
+        ? settingsData.allowed_technologies
+        : ['Fibra'];
+    }
+    if (settingsData.hasOwnProperty('sat_commission_mode')) {
+      updateData.sat_commission_mode = settingsData.sat_commission_mode || null;
+    }
+    if (settingsData.hasOwnProperty('sat_commission_percentage')) {
+      updateData.sat_commission_percentage = settingsData.sat_commission_percentage || null;
+    }
 
     const { data, error } = await supabase
       .from('operators')
@@ -236,6 +250,7 @@ export const operatorsService = {
         config.refid_operation_type || null,
         config.tier_mode === 'by_power' ? (config.power_value || null) : null,
         config.service_type === 'additional_service' ? (config.additional_service_name || null) : null,
+        config.technology || null,
       ].join('|');
       if (seen.has(key)) return false;
       seen.add(key);
@@ -271,6 +286,7 @@ export const operatorsService = {
         rev_level: (config.partner_type === 'REV' || config.partner_type === 'Rev+') ? (config.rev_level || 1) : null,
         power_value: config.tier_mode === 'by_power' ? (config.power_value || null) : null,
         additional_service_name: config.service_type === 'additional_service' ? (config.additional_service_name || null) : null,
+        technology: config.technology || null,
       };
     });
 

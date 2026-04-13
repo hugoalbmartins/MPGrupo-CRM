@@ -11,7 +11,7 @@ const POWER_OPTIONS = [
   "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"
 ];
 
-function getEmptyConfig() {
+function getEmptyConfig(technology = null) {
   return {
     client_type: 'particular',
     service_type: '',
@@ -30,6 +30,7 @@ function getEmptyConfig() {
     refid_operation_type: null,
     activation_type: null,
     power_value: null,
+    technology: technology,
   };
 }
 
@@ -258,10 +259,11 @@ const CommissionTable = ({
   onAddConfig,
   onUpdateConfig,
   onRemoveConfig,
+  technology = null,
 }) => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newConfig, setNewConfig] = useState(getEmptyConfig());
+  const [newConfig, setNewConfig] = useState(getEmptyConfig(technology));
 
   const nonPowerConfigs = filteredConfigs.filter(c => c.tier_mode !== 'by_power');
 
@@ -299,17 +301,18 @@ const CommissionTable = ({
             tier_mode: 'by_power',
             power_value: powerValue,
             commission_value: 0,
+            technology,
           });
         });
       });
-      setNewConfig(getEmptyConfig());
+      setNewConfig(getEmptyConfig(technology));
       setShowAddForm(false);
       toast.success('Tabela de potencias adicionada');
       return true;
     }
-    const success = onAddConfig(partnerType, d2dLevel, revLevel, newConfig);
+    const success = onAddConfig(partnerType, d2dLevel, revLevel, { ...newConfig, technology });
     if (success) {
-      setNewConfig(getEmptyConfig());
+      setNewConfig(getEmptyConfig(technology));
       setShowAddForm(false);
     }
     return success;
@@ -738,7 +741,7 @@ const CommissionTable = ({
               variant="outline"
               onClick={() => {
                 setShowAddForm(false);
-                setNewConfig(getEmptyConfig());
+                setNewConfig(getEmptyConfig(technology));
               }}
               className="h-8 bg-dark-900 border-dark-700 text-slate-300 hover:border-dark-600 hover:bg-dark-800 transition-all duration-200"
             >
