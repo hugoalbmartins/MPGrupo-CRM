@@ -1,11 +1,14 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { RotateCcw, Calendar, User, ChevronRight, Search, Clock, CircleCheck as CheckCircle2, Loader as Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+import { RotateCcw, Calendar, User, ChevronRight, Search, Clock, CircleCheck as CheckCircle2, Loader as Loader2, Check } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { refidelizacoesService } from "../services/refidelizacoesService";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 
@@ -33,7 +36,9 @@ const Refidelizacoes = ({ user }) => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [markingId, setMarkingId] = useState(null);
 
+  const queryClient = useQueryClient();
   const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
   const isAdminOrBo = user?.role === 'admin' || user?.role === 'bo';
 
@@ -81,6 +86,21 @@ const Refidelizacoes = ({ user }) => {
   const openDetail = (saleId) => {
     setSelectedSaleId(saleId);
     setDetailOpen(true);
+  };
+
+  const handleMarkRefidelizado = async (e, saleId, clientName) => {
+    e.stopPropagation();
+    if (markingId) return;
+    setMarkingId(saleId);
+    try {
+      await refidelizacoesService.markAsRefidelizado(saleId, user?.id);
+      toast.success(`${clientName} marcado como refidelizado`);
+      queryClient.invalidateQueries({ queryKey: ['refidelizacoes'] });
+    } catch (err) {
+      toast.error("Erro ao marcar como refidelizado");
+    } finally {
+      setMarkingId(null);
+    }
   };
 
   return (
@@ -216,58 +236,87 @@ const Refidelizacoes = ({ user }) => {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Ativação</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Data de Contacto</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
+                    {isAdminOrBo && <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center w-20">Ação</th>}
                     <th className="px-4 py-3 w-10" />
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((item) => (
-                    <motion.tr
-                      key={item.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      onClick={() => openDetail(item.id)}
-                      className="border-b border-dark-700/50 hover:bg-dark-800/50 cursor-pointer transition-colors group"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 bg-dark-700 rounded-full flex items-center justify-center flex-shrink-0">
-                            <User className="w-3.5 h-3.5 text-slate-400" />
+                  <AnimatePresence>
+                    {filtered.map((item) => (
+                      <motion.tr
+                        key={item.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                        onClick={() => openDetail(item.id)}
+                        className="border-b border-dark-700/50 hover:bg-dark-800/50 cursor-pointer transition-colors group"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 bg-dark-700 rounded-full flex items-center justify-center flex-shrink-0">
+                              <User className="w-3.5 h-3.5 text-slate-400" />
+                            </div>
+                            <span className="text-white text-sm font-medium truncate max-w-[140px]">{item.client_name}</span>
                           </div>
-                          <span className="text-white text-sm font-medium truncate max-w-[140px]">{item.client_name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <span className="text-slate-300 text-sm font-mono">{item.client_nif}</span>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-slate-300 text-sm">{item.operator_name}</span>
-                      </td>
-                      {!isPartner && (
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <span className="text-slate-400 text-sm">{item.partner_name}</span>
                         </td>
-                      )}
-                      <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-slate-400 text-sm">
-                          {item.activated_at ? new Date(item.activated_at).toLocaleDateString('pt-PT') : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                          <span className={`text-sm font-semibold ${item.status_refidelizacao === 'pronto' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {new Date(item.contact_date + 'T00:00:00').toLocaleDateString('pt-PT')}
+                        <td className="px-4 py-3 hidden sm:table-cell">
+                          <span className="text-slate-300 text-sm font-mono">{item.client_nif}</span>
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <span className="text-slate-300 text-sm">{item.operator_name}</span>
+                        </td>
+                        {!isPartner && (
+                          <td className="px-4 py-3 hidden lg:table-cell">
+                            <span className="text-slate-400 text-sm">{item.partner_name}</span>
+                          </td>
+                        )}
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <span className="text-slate-400 text-sm">
+                            {item.activated_at ? new Date(item.activated_at).toLocaleDateString('pt-PT') : '—'}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={item.status_refidelizacao} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
-                      </td>
-                    </motion.tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                            <span className={`text-sm font-semibold ${item.status_refidelizacao === 'pronto' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              {new Date(item.contact_date + 'T00:00:00').toLocaleDateString('pt-PT')}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={item.status_refidelizacao} />
+                        </td>
+                        {isAdminOrBo && (
+                          <td className="px-4 py-3 text-center">
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-7 w-7 rounded-lg hover:bg-emerald-500/15 text-slate-400 hover:text-emerald-400 transition-colors"
+                                    disabled={markingId === item.id}
+                                    onClick={(e) => handleMarkRefidelizado(e, item.id, item.client_name)}
+                                  >
+                                    {markingId === item.id
+                                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      : <Check className="w-3.5 h-3.5" />
+                                    }
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="bg-dark-800 border-dark-700 text-white text-xs">
+                                  Marcar como refidelizado
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </td>
+                        )}
+                        <td className="px-4 py-3">
+                          <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
                 </tbody>
               </table>
             </div>
