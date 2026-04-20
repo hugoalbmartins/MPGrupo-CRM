@@ -8,17 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Checkbox } from "@/components/ui/checkbox";
 import { partnersService } from "../services/partnersService";
 import { commissionReportsService } from "../services/commissionReportsService";
 import { salesService } from "../services/salesService";
 import { advancesService } from "../services/advancesService";
+import { operatorsService } from "../services/operatorsService";
 import { supabase } from "../lib/supabase";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const CommissionReports = ({ user }) => {
   const queryClient = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const [selectedPartner, setSelectedPartner] = useState("");
+  const [selectedPartners, setSelectedPartners] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(false);
@@ -26,6 +28,7 @@ const CommissionReports = ({ user }) => {
   const [filterMonth, setFilterMonth] = useState(null);
   const [partnerTypeFilter, setPartnerTypeFilter] = useState("all");
   const [cutoffDate, setCutoffDate] = useState("");
+  const [selectedOperatorFilter, setSelectedOperatorFilter] = useState("");
 
   const [bccEmails, setBccEmails] = useState("geral@marciopinto.pt");
 
@@ -36,6 +39,12 @@ const CommissionReports = ({ user }) => {
   const { data: partners = [], isLoading: partnersLoading } = useQuery({
     queryKey: ['partners'],
     queryFn: () => partnersService.getAll(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: operators = [] } = useQuery({
+    queryKey: ['operators-all'],
+    queryFn: () => operatorsService.getAll(true),
     staleTime: 10 * 60 * 1000,
   });
 
@@ -172,7 +181,7 @@ const CommissionReports = ({ user }) => {
   const getFilteredPartners = () => {
     if (partnerTypeFilter === 'all') return partners;
     if (partnerTypeFilter === 'individual') {
-      return selectedPartner ? partners.filter(p => p.id === selectedPartner) : [];
+      return selectedPartners.length > 0 ? partners.filter(p => selectedPartners.includes(p.id)) : [];
     }
     return partners.filter(p => p.partner_type === partnerTypeFilter);
   };
@@ -182,6 +191,9 @@ const CommissionReports = ({ user }) => {
     const activePaidSales = allSales.filter(sale => sale.status === 'Ativo' && sale.paid_to_operator === true);
     const filteredByMonth = filterSalesByMonth(activePaidSales);
     let finalSales = filteredByMonth.filter(s => s.partner_id === partnerId);
+    if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
+      finalSales = finalSales.filter(s => s.operator_id === selectedOperatorFilter);
+    }
 
     const partner = partners.find(p => p.id === partnerId);
     if (!partner) { toast.error("Parceiro nao encontrado"); return; }
@@ -248,8 +260,15 @@ const CommissionReports = ({ user }) => {
     const iva = totalSemIVA * 0.23;
     const totalComIVA = totalSemIVA * 1.23;
 
+    const getScopeOperatorLabel = (sale) => {
+      const scope = sale.scope || '-';
+      const opName = sale.operator_name || sale.operator?.name || '-';
+      return `${scope}/${opName}`;
+    };
+
     const salesRows = salesRowsData.map(({ sale, totalComm, retentionValue }) => `
       <tr>
+        <td>${getScopeOperatorLabel(sale)}</td>
         <td>${sale.client_name || '-'}</td>
         <td>${sale.client_nif || '-'}</td>
         <td>${sale.cpe || '-'}</td>
@@ -265,7 +284,7 @@ const CommissionReports = ({ user }) => {
         <table style="width:100%;border-collapse:collapse;font-size:9px;">
           <thead>
             <tr>
-              <th colspan="5" style="background:#1F4E78;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">
+              <th colspan="6" style="background:#1F4E78;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">
                 Retencoes a Devolver — Mes de referencia: ${refundMonthLabel}
               </th>
               <th style="background:#1F4E78;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;visibility:hidden">-</th>
@@ -275,6 +294,7 @@ const CommissionReports = ({ user }) => {
           <tbody>
             ${refundSales.map(sale => `
               <tr>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${getScopeOperatorLabel(sale)}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_name || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_nif || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cpe || '-'}</td>
@@ -318,7 +338,7 @@ const CommissionReports = ({ user }) => {
               </tr>
             `).join('')}
             <tr style="background:#fee2e2;font-weight:bold;">
-              <td colspan="7" style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">TOTAL CHARGEBACKS:</td>
+              <td colspan="8" style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">TOTAL CHARGEBACKS:</td>
               <td style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">-\u20AC${totalChargebacks.toFixed(2)}</td>
             </tr>
           </tbody>
@@ -328,28 +348,28 @@ const CommissionReports = ({ user }) => {
 
     const chargebacksLineHtml = totalChargebacks > 0 ? `
       <tr style="background-color:#fee2e2 !important;">
-        <td colspan="6" style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">Chargebacks:</td>
+        <td colspan="7" style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">Chargebacks:</td>
         <td style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">-\u20AC${totalChargebacks.toFixed(2)}</td>
       </tr>
     ` : '';
 
     const advancesLineHtml = totalAdvancesSettled > 0 ? `
       <tr style="background-color:#fff3cd !important;">
-        <td colspan="6" style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">Adiantamentos:</td>
+        <td colspan="7" style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">Adiantamentos:</td>
         <td style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">-\u20AC${totalAdvancesSettled.toFixed(2)}</td>
       </tr>
     ` : '';
 
     const retentionsLineHtml = totalRetentions > 0 ? `
       <tr style="background-color:#fee2e2 !important;">
-        <td colspan="6" style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">Retencoes:</td>
+        <td colspan="7" style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">Retencoes:</td>
         <td style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">-\u20AC${totalRetentions.toFixed(2)}</td>
       </tr>
     ` : '';
 
     const refundsLineHtml = totalRefunds > 0 ? `
       <tr style="background-color:#dcfce7 !important;">
-        <td colspan="6" style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">Retencoes a Devolver:</td>
+        <td colspan="7" style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">Retencoes a Devolver:</td>
         <td style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">+\u20AC${totalRefunds.toFixed(2)}</td>
       </tr>
     ` : '';
@@ -427,6 +447,7 @@ const CommissionReports = ({ user }) => {
         <table>
           <thead>
             <tr>
+              <th>Ambito/Operadora</th>
               <th>Nome Cliente</th>
               <th>NIF</th>
               <th>CPE</th>
@@ -439,7 +460,7 @@ const CommissionReports = ({ user }) => {
           <tbody>
             ${salesRows}
             <tr class="total-row">
-              <td colspan="5" style="text-align:right;font-weight:bold;">Total Comissoes:</td>
+              <td colspan="6" style="text-align:right;font-weight:bold;">Total Comissoes:</td>
               <td style="text-align:right;font-weight:bold;">\u20AC${totalCommissions.toFixed(2)}</td>
               <td style="text-align:right;font-weight:bold;color:#991b1b;">${totalRetentions > 0 ? '-\u20AC' + totalRetentions.toFixed(2) : '-'}</td>
             </tr>
@@ -448,7 +469,7 @@ const CommissionReports = ({ user }) => {
             ${retentionsLineHtml}
             ${refundsLineHtml}
             <tr class="total-row" style="font-size:12px;">
-              <td colspan="6" style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">${isVatExempt ? 'TOTAL:' : 'TOTAL S/IVA:'}</td>
+              <td colspan="7" style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">${isVatExempt ? 'TOTAL:' : 'TOTAL S/IVA:'}</td>
               <td style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">\u20AC${totalSemIVA.toFixed(2)}</td>
             </tr>
           </tbody>
@@ -467,11 +488,11 @@ const CommissionReports = ({ user }) => {
           <table style="margin:0;">
             <tbody>
               <tr style="background:#e2e8f0;">
-                <td colspan="6" style="text-align:right;font-weight:bold;color:#475569;">IVA 23%:</td>
+                <td colspan="7" style="text-align:right;font-weight:bold;color:#475569;">IVA 23%:</td>
                 <td style="text-align:right;font-weight:bold;color:#475569;">\u20AC${iva.toFixed(2)}</td>
               </tr>
               <tr style="background:#cbd5e1;">
-                <td colspan="6" style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">TOTAL C/IVA:</td>
+                <td colspan="7" style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">TOTAL C/IVA:</td>
                 <td style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">\u20AC${totalComIVA.toFixed(2)}</td>
               </tr>
             </tbody>
@@ -694,15 +715,26 @@ const CommissionReports = ({ user }) => {
     }
   };
 
-  const generateCommissionReport = async (partnerId = null) => {
+  const generateCommissionReport = async (partnerIds = null) => {
     setLoading(true);
     try {
       const allSales = await salesService.getAll(null, true);
-      const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+      let paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+      if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
+        paidSales = paidSales.filter(s => s.operator_id === selectedOperatorFilter);
+      }
       const filteredByMonth = filterSalesByMonth(paidSales);
-      const finalSales = partnerId
-        ? filteredByMonth.filter(s => s.partner_id === partnerId)
-        : filteredByMonth;
+      let finalSales;
+      if (Array.isArray(partnerIds) && partnerIds.length > 0) {
+        const idSet = new Set(partnerIds);
+        finalSales = filteredByMonth.filter(s => idSet.has(s.partner_id));
+      } else if (typeof partnerIds === 'string' && partnerIds) {
+        finalSales = filteredByMonth.filter(s => s.partner_id === partnerIds);
+      } else {
+        const filteredPartnerList = getFilteredPartners();
+        const fpIds = new Set(filteredPartnerList.map(p => p.id));
+        finalSales = filteredByMonth.filter(s => fpIds.has(s.partner_id));
+      }
 
       if (finalSales.length === 0) {
         const monthName = months.find(m => m.value === selectedMonth)?.label;
@@ -713,8 +745,9 @@ const CommissionReports = ({ user }) => {
 
       const XLSX = await import('xlsx');
 
-      if (partnerId) {
-        await generateSinglePartnerReport(partnerId, finalSales, XLSX);
+      const uniquePartnerIds = [...new Set(finalSales.map(s => s.partner_id))];
+      if (uniquePartnerIds.length === 1) {
+        await generateSinglePartnerReport(uniquePartnerIds[0], finalSales, XLSX);
       } else {
         await generateAllPartnersReport(finalSales, XLSX);
       }
@@ -777,7 +810,10 @@ const CommissionReports = ({ user }) => {
     setLoading(true);
     try {
       const allSales = await salesService.getAll(null, true);
-      const paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+      let paidSales = allSales.filter(sale => sale.paid_to_operator === true);
+      if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
+        paidSales = paidSales.filter(s => s.operator_id === selectedOperatorFilter);
+      }
       const filteredByPeriod = filterSalesByMonth(paidSales);
 
       const filteredPartners = getFilteredPartners();
@@ -825,6 +861,7 @@ const CommissionReports = ({ user }) => {
   };
 
   const createStyledWorksheet = (partner, sales, XLSX) => {
+    const isVatExempt = partner.is_vat_exempt === true;
     const data = [];
 
     data.push(['']);
@@ -840,7 +877,7 @@ const CommissionReports = ({ user }) => {
     data.push([]);
     data.push([]);
 
-    data.push(['Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativacao', 'Valor (\u20AC)']);
+    data.push(['Ambito/Operadora', 'Nome Cliente', 'NIF', 'CPE', 'CUI', 'REQ', 'Data Ativacao', 'Valor (\u20AC)']);
 
     const headerRow = data.length - 1;
 
@@ -850,7 +887,9 @@ const CommissionReports = ({ user }) => {
       total += commission;
 
       const saleDate = sale.activation_date || sale.paid_date || sale.date;
+      const scopeOp = `${sale.scope || '-'}/${sale.operator_name || sale.operator?.name || '-'}`;
       data.push([
+        scopeOp,
         sale.client_name || '',
         sale.client_nif || '',
         sale.cpe || '',
@@ -862,17 +901,22 @@ const CommissionReports = ({ user }) => {
     });
 
     data.push([]);
-    data.push(['', '', '', '', '', 'TOTAL S/IVA:', total.toFixed(2)]);
-    data.push(['', '', '', '', '', 'IVA 23%:', (total * 0.23).toFixed(2)]);
-    data.push(['', '', '', '', '', 'TOTAL C/IVA:', (total * 1.23).toFixed(2)]);
-    data.push([]);
-    data.push(['ATENÇÃO - IVA: Caso seja isento de IVA, desconsidere o "TOTAL C/IVA" e emita fatura apenas pelo "TOTAL S/IVA".']);
+    if (isVatExempt) {
+      data.push(['', '', '', '', '', '', 'TOTAL:', total.toFixed(2)]);
+      data.push([]);
+      data.push(['Parceiro isento de IVA — valores apresentados sem IVA']);
+    } else {
+      data.push(['', '', '', '', '', '', 'TOTAL S/IVA:', total.toFixed(2)]);
+      data.push(['', '', '', '', '', '', 'IVA 23%:', (total * 0.23).toFixed(2)]);
+      data.push(['', '', '', '', '', '', 'TOTAL C/IVA:', (total * 1.23).toFixed(2)]);
+    }
     data.push([]);
 
     const ws = XLSX.utils.aoa_to_sheet(data);
 
     ws['!cols'] = [
-      { wch: 35 },
+      { wch: 25 },
+      { wch: 30 },
       { wch: 12 },
       { wch: 15 },
       { wch: 15 },
@@ -928,7 +972,7 @@ const CommissionReports = ({ user }) => {
         else if (R > headerRow && R < range.e.r - 3) {
           ws[cell_address].s = {
             font: { sz: 10 },
-            alignment: { horizontal: C === 6 ? "right" : "left", vertical: "center" },
+            alignment: { horizontal: C === 7 ? "right" : "left", vertical: "center" },
             border: {
               top: { style: "thin", color: { rgb: "D0D0D0" } },
               bottom: { style: "thin", color: { rgb: "D0D0D0" } },
@@ -965,7 +1009,7 @@ const CommissionReports = ({ user }) => {
     ws['!rows'][headerRow] = { hpt: 22 };
 
     if (!ws['!merges']) ws['!merges'] = [];
-    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+    ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } });
 
     ws['A1'].v = 'MARCIO & SANDRA LDA';
     ws['A1'].t = 's';
@@ -1075,10 +1119,10 @@ const CommissionReports = ({ user }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Label className="text-slate-300 text-sm mb-1.5 block">Filtrar por Tipo de Parceiro</Label>
-              <Select value={partnerTypeFilter} onValueChange={(v) => { setPartnerTypeFilter(v); setSelectedPartner(""); }}>
+              <Select value={partnerTypeFilter} onValueChange={(v) => { setPartnerTypeFilter(v); setSelectedPartners([]); }}>
                 <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
                   <SelectValue />
                 </SelectTrigger>
@@ -1087,28 +1131,66 @@ const CommissionReports = ({ user }) => {
                   <SelectItem value="D2D">D2D</SelectItem>
                   <SelectItem value="REV">REV</SelectItem>
                   <SelectItem value="Rev+">Rev+</SelectItem>
-                  <SelectItem value="individual">Parceiro Individual</SelectItem>
+                  <SelectItem value="individual">Parceiros Individuais</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {partnerTypeFilter === 'individual' && (
-              <div>
-                <Label className="text-slate-300 text-sm mb-1.5 block">Selecionar Parceiro</Label>
-                <Select value={selectedPartner} onValueChange={setSelectedPartner}>
-                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
-                    <SelectValue placeholder="Escolha um parceiro..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {partners.map(partner => (
-                      <SelectItem key={partner.id} value={partner.id}>
-                        {partner.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div>
+              <Label className="text-slate-300 text-sm mb-1.5 block">Filtrar por Operadora</Label>
+              <Select value={selectedOperatorFilter} onValueChange={setSelectedOperatorFilter}>
+                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
+                  <SelectValue placeholder="Todas as operadoras" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Operadoras</SelectItem>
+                  {operators.map(op => (
+                    <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div />
           </div>
+          {partnerTypeFilter === 'individual' && (
+            <div>
+              <Label className="text-slate-300 text-sm mb-1.5 block">
+                Selecionar Parceiros ({selectedPartners.length} selecionado{selectedPartners.length !== 1 ? 's' : ''})
+              </Label>
+              <div className="bg-dark-900 border border-dark-700 rounded-md max-h-48 overflow-y-auto p-2 space-y-1">
+                {partners.length === 0 ? (
+                  <p className="text-sm text-slate-500 p-2">Nenhum parceiro disponivel</p>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 px-2 py-1.5 border-b border-dark-700 mb-1">
+                      <Checkbox
+                        checked={selectedPartners.length === partners.length && partners.length > 0}
+                        onCheckedChange={(checked) => {
+                          setSelectedPartners(checked ? partners.map(p => p.id) : []);
+                        }}
+                        className="border-dark-600 data-[state=checked]:bg-cyber-500 data-[state=checked]:border-cyber-500"
+                      />
+                      <span className="text-xs text-slate-400 font-medium">Selecionar todos</span>
+                    </div>
+                    {partners.map(p => (
+                      <label key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-dark-800 cursor-pointer transition-colors">
+                        <Checkbox
+                          checked={selectedPartners.includes(p.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedPartners(prev =>
+                              checked ? [...prev, p.id] : prev.filter(id => id !== p.id)
+                            );
+                          }}
+                          className="border-dark-600 data-[state=checked]:bg-cyber-500 data-[state=checked]:border-cyber-500"
+                        />
+                        <span className="text-sm text-slate-300">{p.name}</span>
+                        <span className="text-xs text-slate-500 ml-auto">{p.partner_type}</span>
+                      </label>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           <div>
             <Label className="text-slate-300 text-sm mb-1.5 block">Emails BCC (copia oculta no envio do auto)</Label>
@@ -1128,23 +1210,26 @@ const CommissionReports = ({ user }) => {
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    const pid = partnerTypeFilter === 'individual' ? selectedPartner : null;
-                    if (!pid && partnerTypeFilter === 'individual') { toast.error("Selecione um parceiro"); return; }
-                    if (pid) {
-                      printCommissionReport(pid);
+                    if (partnerTypeFilter === 'individual') {
+                      if (selectedPartners.length === 0) { toast.error("Selecione pelo menos um parceiro"); return; }
+                      if (selectedPartners.length === 1) {
+                        printCommissionReport(selectedPartners[0]);
+                      } else {
+                        handleBulkPrintCommissionReports();
+                      }
                     } else {
                       handleBulkPrintCommissionReports();
                     }
                   }}
-                  disabled={loading || (!cutoffDate && !selectedMonth) || (partnerTypeFilter === 'individual' && !selectedPartner)}
+                  disabled={loading || (!cutoffDate && !selectedMonth) || (partnerTypeFilter === 'individual' && selectedPartners.length === 0)}
                   className="flex-1 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
                 >
                   {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
-                  {partnerTypeFilter === 'individual' ? 'Pre-visualizar PDF' : 'Emitir PDFs'}
+                  {partnerTypeFilter === 'individual' && selectedPartners.length === 1 ? 'Pre-visualizar PDF' : 'Emitir PDFs'}
                 </Button>
               </div>
               <p className="text-xs text-slate-500">
-                {partnerTypeFilter === 'individual'
+                {partnerTypeFilter === 'individual' && selectedPartners.length === 1
                   ? 'Abre janela de pre-visualizacao para o parceiro selecionado'
                   : 'Abre uma janela individual para cada parceiro com vendas no periodo'}
               </p>
@@ -1153,10 +1238,13 @@ const CommissionReports = ({ user }) => {
               <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Exportar Excel</p>
               <Button
                 onClick={() => {
-                  const pid = partnerTypeFilter === 'individual' ? selectedPartner : null;
-                  generateCommissionReport(pid === '' ? null : pid);
+                  if (partnerTypeFilter === 'individual' && selectedPartners.length > 0) {
+                    generateCommissionReport(selectedPartners);
+                  } else {
+                    generateCommissionReport(null);
+                  }
                 }}
-                disabled={loading || (!cutoffDate && !selectedMonth) || (partnerTypeFilter === 'individual' && !selectedPartner)}
+                disabled={loading || (!cutoffDate && !selectedMonth) || (partnerTypeFilter === 'individual' && selectedPartners.length === 0)}
                 className="w-full bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700"
               >
                 <Download className="w-4 h-4 mr-2" />

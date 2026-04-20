@@ -53,6 +53,12 @@ export const usersService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
+    const hasRealEmail = userData.email && userData.email.trim() && !userData.email.endsWith('@noemail.mpgrupo.local');
+    const uniqueSuffix = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+    const emailForAuth = hasRealEmail
+      ? userData.email.trim()
+      : `user.${uniqueSuffix}@noemail.mpgrupo.local`;
+
     const response = await fetch(`${SUPABASE_URL}/functions/v1/create-user`, {
       method: 'POST',
       headers: {
@@ -61,12 +67,13 @@ export const usersService = {
       },
       body: JSON.stringify({
         name: userData.name,
-        email: userData.email,
+        email: emailForAuth,
         password,
         role: userData.role,
         position: userData.position,
         partner_id: userData.partner_id || null,
         is_commissioned: userData.is_commissioned || false,
+        no_real_email: !hasRealEmail,
       }),
     });
 
@@ -87,6 +94,16 @@ export const usersService = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const currentEmailIsSynthetic = existingUser?.email?.endsWith('@noemail.mpgrupo.local');
+    const hasNewRealEmail = userData.email && userData.email.trim() && !userData.email.endsWith('@noemail.mpgrupo.local');
+    const emailToSend = hasNewRealEmail ? userData.email.trim() : (currentEmailIsSynthetic ? existingUser.email : userData.email);
+
     const response = await fetch(`${SUPABASE_URL}/functions/v1/update-user`, {
       method: 'PUT',
       headers: {
@@ -96,12 +113,13 @@ export const usersService = {
       body: JSON.stringify({
         userId,
         name: userData.name,
-        email: userData.email,
+        email: emailToSend,
         password: userData.password || undefined,
         role: userData.role,
         position: userData.position,
         partner_id: userData.partner_id || null,
         is_commissioned: userData.is_commissioned || false,
+        no_real_email: !hasNewRealEmail && currentEmailIsSynthetic,
       }),
     });
 

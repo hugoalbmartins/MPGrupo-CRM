@@ -235,7 +235,8 @@ export const partnersService = {
       nif: partnerData.nif,
       crc: partnerData.crc,
       iban: partnerData.iban,
-      email_bcc_enabled: partnerData.email_bcc_enabled || false
+      email_bcc_enabled: partnerData.email_bcc_enabled || false,
+      is_vat_exempt: partnerData.is_vat_exempt || false
     };
 
     const { data, error } = await supabase

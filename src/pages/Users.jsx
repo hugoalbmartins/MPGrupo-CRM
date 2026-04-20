@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Shield, Briefcase, User as UserIcon, Edit, Trash2, KeyRound, Search, ArrowUpDown, ArrowUp, ArrowDown, Loader2, AlertCircle } from "lucide-react";
+import { Plus, Shield, Briefcase, User as UserIcon, LocationEdit as Edit, Trash2, KeyRound, Search, ArrowUpDown, ArrowUp, ArrowDown, Loader as Loader2, CircleAlert as AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -91,12 +91,14 @@ const Users = ({ user }) => {
     setEditingUserId(null);
   };
 
+  const isSyntheticEmail = (email) => email && email.endsWith('@noemail.mpgrupo.local');
+
   const openEditDialog = (userToEdit) => {
     setEditMode(true);
     setEditingUserId(userToEdit.id);
     setFormData({
       name: userToEdit.name,
-      email: userToEdit.email,
+      email: isSyntheticEmail(userToEdit.email) ? '' : userToEdit.email,
       password: "",
       role: userToEdit.role,
       position: userToEdit.position,
@@ -334,8 +336,15 @@ const Users = ({ user }) => {
                   <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" />
                 </div>
                 <div>
-                  <Label className="text-slate-400">Email *</Label>
-                  <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white" />
+                  <Label className="text-slate-400">Email{['admin', 'bo', 'gestor_nv1', 'gestor_nv2'].includes(formData.role) ? ' *' : ' (opcional)'}</Label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    required={['admin', 'bo', 'gestor_nv1', 'gestor_nv2'].includes(formData.role)}
+                    placeholder={['admin', 'bo', 'gestor_nv1', 'gestor_nv2'].includes(formData.role) ? '' : 'Deixe vazio se nao tiver email'}
+                    className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 text-white"
+                  />
                 </div>
                 <div>
                   <Label className="text-slate-400">Posicao *</Label>
@@ -499,7 +508,7 @@ const Users = ({ user }) => {
                         <span className="font-medium text-white">{u.name}</span>
                       </div>
                     </td>
-                    <td className="text-slate-300">{u.email}</td>
+                    <td className="text-slate-300">{isSyntheticEmail(u.email) ? <span className="text-slate-500 italic">Sem email</span> : u.email}</td>
                     <td className="text-slate-300">{getDisplayPosition(u)}</td>
                     <td>
                       <span className={`status-badge ${getRoleBadgeClasses(u.role)}`}>
