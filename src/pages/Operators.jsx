@@ -51,6 +51,7 @@ const Operators = ({ user }) => {
     allowed_energy_types: [],
     allowed_client_types: [],
     allowed_sale_types: ['normal', 'multiponto', 'multilocal'],
+    allowed_technologies: ['Fibra'],
     pays_direct_debit: false,
     pays_electronic_invoice: false,
     requires_voltage_type: false,
@@ -62,6 +63,8 @@ const Operators = ({ user }) => {
     email_fields: null,
     email_envio: '',
     email_envio_password: '',
+    sat_commission_mode: '',
+    sat_commission_percentage: '',
   });
   const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [newNotifEmail, setNewNotifEmail] = useState("");
