@@ -18,7 +18,7 @@ export const refidelizacoesService = {
     let query = supabase
       .from('sales')
       .select(`
-        id, sale_code, customer_name, client_nif, activated_at,
+        id, sale_code, client_name, client_nif, activated_at,
         partner_id, partner_name, operator_id, operator_name,
         status, scope, refidelizacao_prazo, refidelizacao_unidade,
         operators!sales_operator_id_fkey(

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight, Download, Car } from "lucide-react";
+import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight, Download, Car, Heart, Shield, Wifi, Flame, Leaf, Globe, Box } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -215,6 +215,80 @@ const Dashboard = ({ user }) => {
     return Array.from({ length: 6 }, (_, i) => currentYear - i);
   };
 
+  const SCOPE_ICON_MAP = {
+    phone: Phone, zap: Zap, sun: Sun, car: Car, heart: Heart,
+    shield: Shield, wifi: Wifi, flame: Flame, leaf: Leaf, globe: Globe, box: Box,
+  };
+
+  const SCOPE_GRADIENT_MAP = {
+    telecomunicacoes: "from-cyan-500 to-cyan-600",
+    energia: "from-amber-500 to-amber-600",
+    solar: "from-emerald-500 to-emerald-600",
+    mobilidade_eletrica: "from-teal-500 to-teal-600",
+    saude: "from-rose-500 to-rose-600",
+  };
+
+  const SCOPE_TEXT_COLOR_MAP = {
+    telecomunicacoes: "text-cyan-400",
+    energia: "text-amber-400",
+    solar: "text-emerald-400",
+    mobilidade_eletrica: "text-teal-400",
+    saude: "text-rose-400",
+  };
+
+  const FALLBACK_GRADIENTS = [
+    "from-sky-500 to-sky-600", "from-orange-500 to-orange-600",
+    "from-lime-500 to-lime-600", "from-pink-500 to-pink-600",
+  ];
+  const FALLBACK_TEXT_COLORS = [
+    "text-sky-400", "text-orange-400", "text-lime-400", "text-pink-400",
+  ];
+
+  const dynamicScopeCards = useMemo(() => {
+    if (!stats?.by_scope || !stats?.scopes_meta) return [];
+    const meta = stats.scopes_meta;
+    let fallbackIdx = 0;
+    return meta
+      .map((scope, idx) => {
+        const data = stats.by_scope[scope.slug];
+        if (!data || data.count === 0) return null;
+        const iconComponent = SCOPE_ICON_MAP[scope.icon] || Box;
+        const gradient = SCOPE_GRADIENT_MAP[scope.slug] || FALLBACK_GRADIENTS[fallbackIdx % FALLBACK_GRADIENTS.length];
+        const textColor = SCOPE_TEXT_COLOR_MAP[scope.slug] || FALLBACK_TEXT_COLORS[fallbackIdx % FALLBACK_TEXT_COLORS.length];
+        if (!SCOPE_GRADIENT_MAP[scope.slug]) fallbackIdx++;
+
+        let subtitle;
+        if (scope.slug === 'telecomunicacoes') {
+          subtitle = `€${data.monthly_total?.toFixed(2) || "0.00"}/mes`;
+        } else if (scope.slug === 'energia') {
+          subtitle = `${data.electricity || 0} elet. / ${data.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`;
+        }
+
+        return {
+          index: 7 + idx,
+          label: scope.display_name,
+          value: data.count,
+          subtitle,
+          icon: iconComponent,
+          gradient,
+          color: textColor,
+        };
+      })
+      .filter(Boolean);
+  }, [stats]);
+
+  const renderDynamicScopeCards = (startIndex = 7) => {
+    const cards = dynamicScopeCards.map((c, i) => ({ ...c, index: startIndex + i }));
+    if (cards.length === 0) return null;
+    return (
+      <div className={`grid grid-cols-1 md:grid-cols-${Math.min(cards.length, 4)} gap-4`}>
+        {cards.map(card => (
+          <StatCard key={card.label} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+        ))}
+      </div>
+    );
+  };
+
   /* ---- loading skeleton ---- */
   if (statsLoading) {
     return (
@@ -319,23 +393,7 @@ const Dashboard = ({ user }) => {
         />
       </div>
 
-      {[
-        stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-        stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-        stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-        stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-      ].filter(Boolean).length > 0 && (
-        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
-          {[
-            stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-            stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-            stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-            stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-          ].filter(Boolean).map(card => (
-            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
-          ))}
-        </div>
-      )}
+      {renderDynamicScopeCards(7)}
     </>
   );
 
@@ -417,23 +475,7 @@ const Dashboard = ({ user }) => {
         />
       </div>
 
-      {[
-        stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-        stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-        stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-        stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-      ].filter(Boolean).length > 0 && (
-        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
-          {[
-            stats?.telecomunicacoes?.count > 0 && { index: 7, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-            stats?.energia?.count > 0 && { index: 8, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-            stats?.solar?.count > 0 && { index: 9, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-            stats?.mobilidade_eletrica?.count > 0 && { index: 10, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-          ].filter(Boolean).map(card => (
-            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
-          ))}
-        </div>
-      )}
+      {renderDynamicScopeCards(7)}
     </>
   );
 
@@ -444,23 +486,7 @@ const Dashboard = ({ user }) => {
         <StatCard index={0} label="Minhas Vendas" value={stats?.total_sales || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600" valueColor="text-white" />
       </div>
 
-      {[
-        stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-        stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-        stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-        stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-      ].filter(Boolean).length > 0 && (
-        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
-          {[
-            stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-            stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-            stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-            stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-          ].filter(Boolean).map(card => (
-            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
-          ))}
-        </div>
-      )}
+      {renderDynamicScopeCards(1)}
 
       {stats?.operator_stats && stats.operator_stats.length > 0 && (
         <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
@@ -491,23 +517,7 @@ const Dashboard = ({ user }) => {
         <StatCard index={0} label="Total Vendas" value={stats?.total_sales || 0} icon={ShoppingCart} iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600" valueColor="text-white" />
       </div>
 
-      {[
-        stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-        stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `DD: ${stats?.dd_count || 0} · FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-        stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-        stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-      ].filter(Boolean).length > 0 && (
-        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
-          {[
-            stats?.telecomunicacoes?.count > 0 && { index: 1, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-            stats?.energia?.count > 0 && { index: 2, label: "Energia", value: stats.energia.count, subtitle: `DD: ${stats?.dd_count || 0} · FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-            stats?.solar?.count > 0 && { index: 3, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-            stats?.mobilidade_eletrica?.count > 0 && { index: 4, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-          ].filter(Boolean).map(card => (
-            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
-          ))}
-        </div>
-      )}
+      {renderDynamicScopeCards(1)}
     </>
   );
 
@@ -655,23 +665,7 @@ const Dashboard = ({ user }) => {
         </motion.div>
       )}
 
-      {[
-        stats?.telecomunicacoes?.count > 0 && { index: 4, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-        stats?.energia?.count > 0 && { index: 5, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-        stats?.solar?.count > 0 && { index: 6, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-        stats?.mobilidade_eletrica?.count > 0 && { index: 7, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-      ].filter(Boolean).length > 0 && (
-        <div className={`grid grid-cols-1 md:grid-cols-${Math.min([stats?.telecomunicacoes?.count > 0, stats?.energia?.count > 0, stats?.solar?.count > 0, stats?.mobilidade_eletrica?.count > 0].filter(Boolean).length, 4)} gap-4`}>
-          {[
-            stats?.telecomunicacoes?.count > 0 && { index: 4, label: "Telecomunicacoes", value: stats.telecomunicacoes.count, subtitle: `€${stats.telecomunicacoes.monthly_total?.toFixed(2) || "0.00"}/mes`, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-            stats?.energia?.count > 0 && { index: 5, label: "Energia", value: stats.energia.count, subtitle: `${stats.energia.electricity || 0} elet. / ${stats.energia.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-            stats?.solar?.count > 0 && { index: 6, label: "Solar", value: stats.solar.count, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-            stats?.mobilidade_eletrica?.count > 0 && { index: 7, label: "Mobilidade Eletrica", value: stats.mobilidade_eletrica.count, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-          ].filter(Boolean).map(card => (
-            <StatCard key={card.index} index={card.index} label={card.label} value={card.value} subtitle={card.subtitle} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
-          ))}
-        </div>
-      )}
+      {renderDynamicScopeCards(4)}
     </>
   );
 
@@ -767,23 +761,28 @@ const Dashboard = ({ user }) => {
           </motion.div>
         )}
 
-        {[
-          proposalStats.by_scope?.telecomunicacoes > 0 && { index: 5, label: "Telecomunicacoes", value: proposalStats.by_scope.telecomunicacoes, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-          proposalStats.by_scope?.energia > 0 && { index: 6, label: "Energia", value: proposalStats.by_scope.energia, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-          proposalStats.by_scope?.solar > 0 && { index: 7, label: "Solar", value: proposalStats.by_scope.solar, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-          proposalStats.by_scope?.mobilidade_eletrica > 0 && { index: 8, label: "Mobilidade Eletrica", value: proposalStats.by_scope.mobilidade_eletrica, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-        ].filter(Boolean).length > 0 && (
-          <div className={`grid grid-cols-1 md:grid-cols-${Math.min([proposalStats.by_scope?.telecomunicacoes > 0, proposalStats.by_scope?.energia > 0, proposalStats.by_scope?.solar > 0, proposalStats.by_scope?.mobilidade_eletrica > 0].filter(Boolean).length, 4)} gap-4`}>
-            {[
-              proposalStats.by_scope?.telecomunicacoes > 0 && { index: 5, label: "Telecomunicacoes", value: proposalStats.by_scope.telecomunicacoes, icon: Phone, gradient: "from-cyan-500 to-cyan-600", color: "text-cyan-400" },
-              proposalStats.by_scope?.energia > 0 && { index: 6, label: "Energia", value: proposalStats.by_scope.energia, icon: Zap, gradient: "from-amber-500 to-amber-600", color: "text-amber-400" },
-              proposalStats.by_scope?.solar > 0 && { index: 7, label: "Solar", value: proposalStats.by_scope.solar, icon: Sun, gradient: "from-emerald-500 to-emerald-600", color: "text-emerald-400" },
-              proposalStats.by_scope?.mobilidade_eletrica > 0 && { index: 8, label: "Mobilidade Eletrica", value: proposalStats.by_scope.mobilidade_eletrica, icon: Car, gradient: "from-teal-500 to-teal-600", color: "text-teal-400" },
-            ].filter(Boolean).map(card => (
-              <StatCard key={card.index} index={card.index} label={card.label} value={card.value} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
-            ))}
-          </div>
-        )}
+        {(() => {
+          const scopeEntries = Object.entries(proposalStats.by_scope || {}).filter(([, v]) => v > 0);
+          if (scopeEntries.length === 0) return null;
+          const scopeMetaMap = {};
+          (stats?.scopes_meta || []).forEach(s => { scopeMetaMap[s.slug] = s; });
+          let fIdx = 0;
+          const cards = scopeEntries.map(([slug, count], idx) => {
+            const meta = scopeMetaMap[slug];
+            const icon = meta ? (SCOPE_ICON_MAP[meta.icon] || Box) : Box;
+            const gradient = SCOPE_GRADIENT_MAP[slug] || FALLBACK_GRADIENTS[fIdx % FALLBACK_GRADIENTS.length];
+            const color = SCOPE_TEXT_COLOR_MAP[slug] || FALLBACK_TEXT_COLORS[fIdx % FALLBACK_TEXT_COLORS.length];
+            if (!SCOPE_GRADIENT_MAP[slug]) fIdx++;
+            return { index: 5 + idx, label: meta?.display_name || slug, value: count, icon, gradient, color };
+          });
+          return (
+            <div className={`grid grid-cols-1 md:grid-cols-${Math.min(cards.length, 4)} gap-4`}>
+              {cards.map(card => (
+                <StatCard key={card.label} index={card.index} label={card.label} value={card.value} icon={card.icon} iconGradient={`bg-gradient-to-br ${card.gradient}`} valueColor={card.color} />
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Partners with open proposals */}
         {partnersList.length > 0 && (
@@ -827,26 +826,33 @@ const Dashboard = ({ user }) => {
   /* ====================================================================
      12-month trend data helper
   ==================================================================== */
+  const SCOPE_CHART_COLORS = {
+    telecomunicacoes: '#06b6d4', energia: '#f59e0b', solar: '#10b981',
+    mobilidade_eletrica: '#a78bfa', saude: '#f43f5e',
+  };
+  const EXTRA_CHART_COLORS = ['#22d3ee', '#34d399', '#fbbf24', '#fb7185', '#67e8f9'];
+
   const prepare12MonthsData = () => {
     if (!stats?.last_12_months) return [];
-    return stats.last_12_months.map((item) => ({
-      name: `${months[item.month_num - 1].substring(0, 3)}/${item.year.toString().substring(2)}`,
-      Telecom: item.telecomunicacoes,
-      Energia: item.energia,
-      Solar: item.solar,
-      Mobilidade: item.mobilidade_eletrica || 0,
-    }));
+    const meta = stats?.scopes_meta || [];
+    return stats.last_12_months.map((item) => {
+      const entry = { name: `${months[item.month_num - 1].substring(0, 3)}/${item.year.toString().substring(2)}` };
+      meta.forEach(s => { entry[s.slug] = item[s.slug] || 0; });
+      return entry;
+    });
   };
 
   const get12MonthsActiveScopes = () => {
     const data = prepare12MonthsData();
-    const scopes = [
-      { key: 'Telecom', label: 'Telecomunicacoes', color: '#06b6d4', gradId: 'gradTelecom' },
-      { key: 'Energia', label: 'Energia', color: '#f59e0b', gradId: 'gradEnergia' },
-      { key: 'Solar', label: 'Solar', color: '#10b981', gradId: 'gradSolar' },
-      { key: 'Mobilidade', label: 'Mobilidade Eletrica', color: '#a78bfa', gradId: 'gradMobilidade' },
-    ];
-    return scopes.filter(s => data.some(d => (d[s.key] || 0) > 0));
+    const meta = stats?.scopes_meta || [];
+    let eIdx = 0;
+    return meta
+      .map(s => {
+        let color = SCOPE_CHART_COLORS[s.slug];
+        if (!color) { color = s.color || EXTRA_CHART_COLORS[eIdx % EXTRA_CHART_COLORS.length]; eIdx++; }
+        return { key: s.slug, label: s.display_name, color, gradId: `grad_${s.slug}` };
+      })
+      .filter(scope => data.some(d => (d[scope.key] || 0) > 0));
   };
 
   /* ====================================================================
@@ -983,14 +989,24 @@ const Dashboard = ({ user }) => {
 
         {/* ---- Bar Chart: Vendas por Ambito (only scopes with data) ---- */}
         {(() => {
-          const scopeColors = ['#06b6d4', '#f59e0b', '#10b981', '#a78bfa'];
-          const allScopes = [
-            { name: 'Telecom', value: stats?.telecomunicacoes?.count || 0 },
-            { name: 'Energia', value: stats?.energia?.count || 0 },
-            { name: 'Solar', value: stats?.solar?.count || 0 },
-            { name: 'Mobilidade', value: stats?.mobilidade_eletrica?.count || 0 },
-          ].filter(s => s.value > 0);
+          const scopeColorMap = {
+            telecomunicacoes: '#06b6d4', energia: '#f59e0b', solar: '#10b981',
+            mobilidade_eletrica: '#a78bfa', saude: '#f43f5e',
+          };
+          const extraColors = ['#22d3ee', '#34d399', '#fbbf24', '#fb7185'];
+          let eIdx = 0;
+          const meta = stats?.scopes_meta || [];
+          const allScopes = meta
+            .map(s => {
+              const data = stats?.by_scope?.[s.slug];
+              if (!data || data.count === 0) return null;
+              let c = scopeColorMap[s.slug];
+              if (!c) { c = s.color || extraColors[eIdx % extraColors.length]; eIdx++; }
+              return { name: s.display_name, value: data.count, color: c };
+            })
+            .filter(Boolean);
           if (allScopes.length === 0) return null;
+          const scopeColors = allScopes.map(s => s.color);
           return (
             <motion.div variants={chartVariants} initial="hidden" animate="visible" className="glass-ultra p-6 border border-cyber-500/10 rounded-2xl">
               <h3 className="text-base font-bold text-white mb-1">Vendas por Ambito</h3>
@@ -1165,22 +1181,12 @@ const Dashboard = ({ user }) => {
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={prepare12MonthsData()}>
               <defs>
-                <linearGradient id="gradTelecom" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gradEnergia" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gradSolar" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gradMobilidade" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
-                </linearGradient>
+                {get12MonthsActiveScopes().map(scope => (
+                  <linearGradient key={scope.gradId} id={scope.gradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={scope.color} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={scope.color} stopOpacity={0} />
+                  </linearGradient>
+                ))}
                 <filter id="areaGlow">
                   <feGaussianBlur stdDeviation="2" result="coloredBlur" />
                   <feMerge>

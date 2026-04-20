@@ -23,6 +23,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [activeTechnology, setActiveTechnology] = useState('Fibra');
 
   useEffect(() => {
+    setLoading(true);
+    setConfigs([]);
     loadConfigs();
   }, [operator?.id]);
 

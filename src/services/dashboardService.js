@@ -79,6 +79,36 @@ function getMonthRange(year, month) {
   };
 }
 
+async function fetchScopesMeta() {
+  const { data } = await supabase
+    .from('scopes')
+    .select('slug, display_name, icon, color, sort_order')
+    .eq('active', true)
+    .order('sort_order');
+  return data || [];
+}
+
+function buildByScope(sales) {
+  const byScope = {};
+  if (!sales) return byScope;
+  for (const sale of sales) {
+    const scope = sale.scope || '';
+    if (!scope) continue;
+    if (!byScope[scope]) {
+      byScope[scope] = { count: 0, monthly_total: 0, electricity: 0, gas: 0, dual: 0 };
+    }
+    byScope[scope].count++;
+    if (scope === 'telecomunicacoes') byScope[scope].monthly_total += sale.monthly_value || 0;
+    if (scope === 'energia') {
+      const et = sale.energy_sale_type || 'eletricidade';
+      if (et === 'eletricidade') byScope[scope].electricity++;
+      else if (et === 'gas') byScope[scope].gas++;
+      else if (et === 'dual') { byScope[scope].dual++; byScope[scope].electricity++; byScope[scope].gas++; }
+    }
+  }
+  return byScope;
+}
+
 async function calculateRetentions(year, month, partnerId = null) {
   const { start, end } = getMonthRange(year, month);
 
@@ -234,6 +264,7 @@ async function getLast12MonthsData(partnerId = null) {
 
   const { data: sales } = await query;
 
+  const allScopes = new Set();
   const monthlyData = {};
 
   if (sales) {
@@ -245,15 +276,12 @@ async function getLast12MonthsData(partnerId = null) {
         monthlyData[key] = {
           year: date.getFullYear(),
           month_num: date.getMonth() + 1,
-          telecomunicacoes: 0,
-          energia: 0,
-          solar: 0,
-          mobilidade_eletrica: 0
         };
       }
 
       const scope = sale.scope || '';
       if (scope) {
+        allScopes.add(scope);
         monthlyData[key][scope] = (monthlyData[key][scope] || 0) + 1;
       }
     });
@@ -264,14 +292,12 @@ async function getLast12MonthsData(partnerId = null) {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-    result.push(monthlyData[key] || {
+    const entry = monthlyData[key] || {
       year: date.getFullYear(),
       month_num: date.getMonth() + 1,
-      telecomunicacoes: 0,
-      energia: 0,
-      solar: 0,
-      mobilidade_eletrica: 0
-    });
+    };
+    allScopes.forEach(s => { if (entry[s] === undefined) entry[s] = 0; });
+    result.push(entry);
   }
 
   return result;
@@ -280,7 +306,7 @@ async function getLast12MonthsData(partnerId = null) {
 async function getAdminDashboard(year, month, adminId, isCommissioned, adminPartnerId = null) {
   const { start, end } = getMonthRange(year, month);
 
-  const [salesResult, partnerCountResult, last12Months, allCommissionConfigs] = await Promise.all([
+  const [salesResult, partnerCountResult, last12Months, allCommissionConfigs, scopesResult] = await Promise.all([
     supabase
       .from('sales')
       .select('*')
@@ -293,7 +319,12 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
     getLast12MonthsData(),
     supabase
       .from('commission_configurations')
-      .select('operator_id, service_type, has_retention, retention_percentage')
+      .select('operator_id, service_type, has_retention, retention_percentage'),
+    supabase
+      .from('scopes')
+      .select('slug, display_name, icon, color, sort_order')
+      .eq('active', true)
+      .order('sort_order')
   ]);
 
   const sales = salesResult.data;
@@ -307,6 +338,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
     });
   }
 
+  const scopesMeta = scopesResult.data || [];
   const retentions = await calculateRetentions(year, month);
   const netCommissions = await calculateNetCommission(sales);
 
@@ -317,6 +349,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     mobilidade_eletrica: { count: 0 },
+    by_scope: {},
+    scopes_meta: scopesMeta,
     by_status: {},
     by_partner: {},
     by_operator: {},
@@ -422,20 +456,22 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
     }
   }
 
+  stats.by_scope = buildByScope(sales);
   return stats;
 }
 
 async function getBODashboard(year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const [salesResult, last12Months] = await Promise.all([
+  const [salesResult, last12Months, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
       .select('*')
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta'),
-    getLast12MonthsData()
+    getLast12MonthsData(),
+    fetchScopesMeta()
   ]);
 
   const sales = salesResult.data;
@@ -446,6 +482,8 @@ async function getBODashboard(year, month) {
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     mobilidade_eletrica: { count: 0 },
+    by_scope: {},
+    scopes_meta: scopesMeta,
     by_status: {},
     by_partner: {},
     selected_month: month,
@@ -494,13 +532,14 @@ async function getBODashboard(year, month) {
     });
   }
 
+  stats.by_scope = buildByScope(sales);
   return stats;
 }
 
 async function getPartnerDashboard(partnerId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const [salesResult, last12Months, operatorsResult] = await Promise.all([
+  const [salesResult, last12Months, operatorsResult, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
       .select('*')
@@ -512,7 +551,8 @@ async function getPartnerDashboard(partnerId, year, month) {
     supabase
       .from('operators')
       .select('id, name')
-      .eq('hidden', false)
+      .eq('hidden', false),
+    fetchScopesMeta()
   ]);
 
   const sales = salesResult.data;
@@ -526,6 +566,8 @@ async function getPartnerDashboard(partnerId, year, month) {
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     mobilidade_eletrica: { count: 0 },
+    by_scope: {},
+    scopes_meta: scopesMeta,
     by_status: {},
     by_operator: {},
     total_commission_gross: netCommissions.gross,
@@ -589,6 +631,8 @@ async function getPartnerDashboard(partnerId, year, month) {
     });
   }
 
+  stats.by_scope = buildByScope(sales);
+
   const operatorStats = operators.map(op => ({
     id: op.id,
     name: op.name,
@@ -601,7 +645,7 @@ async function getPartnerDashboard(partnerId, year, month) {
 async function getCommercialDashboard(userId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const [salesResult, last12Months] = await Promise.all([
+  const [salesResult, last12Months, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
       .select('*')
@@ -609,7 +653,8 @@ async function getCommercialDashboard(userId, year, month) {
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta'),
-    getLast12MonthsData()
+    getLast12MonthsData(),
+    fetchScopesMeta()
   ]);
 
   const sales = salesResult.data;
@@ -620,6 +665,8 @@ async function getCommercialDashboard(userId, year, month) {
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     mobilidade_eletrica: { count: 0 },
+    by_scope: {},
+    scopes_meta: scopesMeta,
     by_status: {},
     selected_month: month,
     selected_year: year,
@@ -655,13 +702,14 @@ async function getCommercialDashboard(userId, year, month) {
     });
   }
 
+  stats.by_scope = buildByScope(sales);
   return stats;
 }
 
 async function getManagerLevel1Dashboard(managerId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const [salesResult, ownSalesResult, managerUserResult, objectivesResult, last12Months, allCommissionConfigs] = await Promise.all([
+  const [salesResult, ownSalesResult, managerUserResult, objectivesResult, last12Months, allCommissionConfigs, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
       .select('*')
@@ -693,7 +741,8 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     getLast12MonthsData(),
     supabase
       .from('commission_configurations')
-      .select('*')
+      .select('*'),
+    fetchScopesMeta()
   ]);
 
   const sales = salesResult.data;
@@ -803,6 +852,8 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
     mobilidade_eletrica: { count: 0 },
+    by_scope: {},
+    scopes_meta: scopesMeta,
     own_commission_gross: ownCommissionGross,
     own_retention: ownRetention,
     objectives_progress: objectivesProgress,
@@ -844,6 +895,7 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     });
   }
 
+  stats.by_scope = buildByScope(sales);
   return stats;
 }
 

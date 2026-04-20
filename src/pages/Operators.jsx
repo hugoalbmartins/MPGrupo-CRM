@@ -237,10 +237,12 @@ const Operators = ({ user }) => {
 
   const openCommissionConfig = async (operator) => {
     try {
+      setSelectedOperator(null);
+      setCommissionDialogOpen(true);
       const freshOperatorData = await operatorsService.getById(operator.id);
       setSelectedOperator(freshOperatorData);
-      setCommissionDialogOpen(true);
     } catch (error) {
+      setCommissionDialogOpen(false);
       toast.error("Erro ao carregar dados da operadora");
     }
   };
@@ -1011,7 +1013,7 @@ const Operators = ({ user }) => {
               Configurar Comissões - {selectedOperator?.name}
             </DialogTitle>
           </DialogHeader>
-          {selectedOperator && (
+          {selectedOperator ? (
             <ErrorBoundary>
               <CommissionWizard
                 operator={selectedOperator}
@@ -1022,6 +1024,10 @@ const Operators = ({ user }) => {
                 }}
               />
             </ErrorBoundary>
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyber-400" />
+            </div>
           )}
         </DialogContent>
       </Dialog>

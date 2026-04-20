@@ -66,7 +66,7 @@ const Refidelizacoes = ({ user }) => {
     if (search) {
       const q = search.toLowerCase();
       if (
-        !item.customer_name?.toLowerCase().includes(q) &&
+        !item.client_name?.toLowerCase().includes(q) &&
         !item.client_nif?.toLowerCase().includes(q) &&
         !item.operator_name?.toLowerCase().includes(q) &&
         !item.partner_name?.toLowerCase().includes(q)
@@ -233,7 +233,7 @@ const Refidelizacoes = ({ user }) => {
                           <div className="w-7 h-7 bg-dark-700 rounded-full flex items-center justify-center flex-shrink-0">
                             <User className="w-3.5 h-3.5 text-slate-400" />
                           </div>
-                          <span className="text-white text-sm font-medium truncate max-w-[140px]">{item.customer_name}</span>
+                          <span className="text-white text-sm font-medium truncate max-w-[140px]">{item.client_name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden sm:table-cell">
