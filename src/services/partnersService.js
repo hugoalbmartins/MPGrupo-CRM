@@ -201,6 +201,13 @@ export const partnersService = {
         console.error('Error linking user to partner:', linkResult.error);
       }
 
+      try {
+        await this.assignDefaultLevels(partner.id, partnerData.partner_type);
+        console.log('13. Default operator levels assigned');
+      } catch (levelErr) {
+        console.error('Failed to assign default levels:', levelErr);
+      }
+
       return { ...partner, initial_password: userPassword };
     } catch (error) {
       console.error('Partner creation failed:', error);
@@ -295,7 +302,7 @@ export const partnersService = {
     if (!levels || levels.length === 0) return [];
 
     const rows = levels
-      .filter(l => l.d2d_level)
+      .filter(l => l.d2d_level && l.operator_id)
       .map(l => ({
         partner_id: partnerId,
         operator_id: l.operator_id,
@@ -360,7 +367,7 @@ export const partnersService = {
     if (!levels || levels.length === 0) return [];
 
     const rows = levels
-      .filter(l => l.rev_level)
+      .filter(l => l.operator_id && (l.rev_level === 0 || l.rev_level))
       .map(l => ({
         partner_id: partnerId,
         operator_id: l.operator_id,
@@ -404,5 +411,54 @@ export const partnersService = {
       ...op,
       levels: Array.from(op.levels).sort((a, b) => a - b),
     }));
+  },
+
+  async assignDefaultLevels(partnerId, partnerType) {
+    if (partnerType === 'D2D') {
+      const operators = await this.getOperatorsWithD2DConfigs();
+      if (operators.length === 0) return;
+      const rows = operators.map(op => ({
+        partner_id: partnerId,
+        operator_id: op.id,
+        d2d_level: op.levels[0] || 'Nv1',
+      }));
+      const { error } = await supabase
+        .from('partner_d2d_operator_levels')
+        .insert(rows);
+      if (error) throw error;
+    } else if (partnerType === 'REV' || partnerType === 'Rev+') {
+      const operators = await this.getOperatorsWithREVConfigs();
+      if (operators.length === 0) return;
+      const rows = operators.map(op => ({
+        partner_id: partnerId,
+        operator_id: op.id,
+        rev_level: op.levels[0] || 1,
+      }));
+      const { error } = await supabase
+        .from('partner_rev_operator_levels')
+        .insert(rows);
+      if (error) throw error;
+    }
+  },
+
+  async getPartnerAvailableOperatorIds(partnerId, partnerType) {
+    if (partnerType === 'D2D') {
+      const { data, error } = await supabase
+        .from('partner_d2d_operator_levels')
+        .select('operator_id, d2d_level')
+        .eq('partner_id', partnerId)
+        .neq('d2d_level', 'disabled');
+      if (error) throw error;
+      return (data || []).map(r => r.operator_id);
+    } else if (partnerType === 'REV' || partnerType === 'Rev+') {
+      const { data, error } = await supabase
+        .from('partner_rev_operator_levels')
+        .select('operator_id, rev_level')
+        .eq('partner_id', partnerId)
+        .gt('rev_level', 0);
+      if (error) throw error;
+      return (data || []).map(r => r.operator_id);
+    }
+    return [];
   }
 };

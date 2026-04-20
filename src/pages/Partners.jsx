@@ -121,10 +121,10 @@ const Partners = ({ user }) => {
         let affectedOperatorIds = [];
         if (editingPartner.partner_type === 'D2D') {
           await partnersService.saveD2DLevels(editingPartner.id, d2dLevels);
-          affectedOperatorIds = d2dLevels.map(l => l.operator_id).filter(Boolean);
+          affectedOperatorIds = d2dLevels.filter(l => l.d2d_level !== 'disabled').map(l => l.operator_id).filter(Boolean);
         } else if (editingPartner.partner_type === 'REV' || editingPartner.partner_type === 'Rev+') {
           await partnersService.saveREVLevels(editingPartner.id, revLevels);
-          affectedOperatorIds = revLevels.map(l => l.operator_id).filter(Boolean);
+          affectedOperatorIds = revLevels.filter(l => l.rev_level !== 0 && l.rev_level !== '0').map(l => l.operator_id).filter(Boolean);
         }
         toast.success("Parceiro atualizado com sucesso!");
         if (affectedOperatorIds.length > 0) {
@@ -180,10 +180,15 @@ const Partners = ({ user }) => {
       setLoadingLevels(true);
       try {
         const levels = await partnersService.getD2DLevels(partner.id);
-        setD2dLevels(levels.map(l => ({
+        const savedLevels = levels.map(l => ({
           operator_id: l.operator_id,
           d2d_level: l.d2d_level,
-        })));
+        }));
+        const allD2dLevels = operatorsWithD2D.map(op => {
+          const existing = savedLevels.find(l => l.operator_id === op.id);
+          return existing || { operator_id: op.id, d2d_level: op.levels[0] || 'Nv1' };
+        });
+        setD2dLevels(allD2dLevels);
         setRevLevels([]);
       } catch (err) {
         console.error('Failed to load D2D levels:', err);
@@ -196,10 +201,15 @@ const Partners = ({ user }) => {
       setLoadingLevels(true);
       try {
         const levels = await partnersService.getREVLevels(partner.id);
-        setRevLevels(levels.map(l => ({
+        const savedLevels = levels.map(l => ({
           operator_id: l.operator_id,
           rev_level: l.rev_level,
-        })));
+        }));
+        const allRevLevels = operatorsWithREV.map(op => {
+          const existing = savedLevels.find(l => l.operator_id === op.id);
+          return existing || { operator_id: op.id, rev_level: op.levels[0] || 1 };
+        });
+        setRevLevels(allRevLevels);
         setD2dLevels([]);
       } catch (err) {
         console.error('Failed to load REV levels:', err);
@@ -602,34 +612,35 @@ const Partners = ({ user }) => {
                       <div className="space-y-2">
                         {operatorsWithD2D.map(op => {
                           const currentLevel = d2dLevels.find(l => l.operator_id === op.id);
+                          const isDisabled = currentLevel?.d2d_level === 'disabled';
                           return (
                             <div key={op.id} className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-slate-300 w-40 truncate">{op.name}</span>
+                              <span className={`text-sm font-medium w-40 truncate ${isDisabled ? 'text-slate-500 line-through' : 'text-slate-300'}`}>{op.name}</span>
                               <Select
-                                value={currentLevel?.d2d_level || "none"}
+                                value={currentLevel?.d2d_level || op.levels[0] || 'Nv1'}
                                 onValueChange={(v) => {
                                   const newLevels = d2dLevels.filter(l => l.operator_id !== op.id);
-                                  if (v !== "none") {
-                                    newLevels.push({ operator_id: op.id, d2d_level: v });
-                                  }
+                                  newLevels.push({ operator_id: op.id, d2d_level: v });
                                   setD2dLevels(newLevels);
                                 }}
                               >
-                                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 flex-1 h-9">
-                                  <SelectValue placeholder="Sem nivel" />
+                                <SelectTrigger className={`flex-1 h-9 ${isDisabled ? 'bg-red-500/5 border-red-500/20 text-red-400' : 'bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20'}`}>
+                                  <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="none">Sem nivel atribuido</SelectItem>
                                   {op.levels.map(level => (
                                     <SelectItem key={level} value={level}>{level}</SelectItem>
                                   ))}
+                                  <SelectItem value="disabled">
+                                    <span className="text-red-400">Operadora Nao Disponivel</span>
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                           );
                         })}
                         <p className="text-xs text-slate-500 mt-2">
-                          Operadoras sem nivel atribuido nao permitem registar vendas para este parceiro
+                          Operadoras marcadas como "Nao Disponivel" nao aparecerao para este parceiro no registo de vendas
                         </p>
                       </div>
                     )}
@@ -650,34 +661,39 @@ const Partners = ({ user }) => {
                       <div className="space-y-2">
                         {operatorsWithREV.map(op => {
                           const currentLevel = revLevels.find(l => l.operator_id === op.id);
+                          const isDisabled = currentLevel?.rev_level === 0 || currentLevel?.rev_level === '0';
                           return (
                             <div key={op.id} className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-slate-300 w-40 truncate">{op.name}</span>
+                              <span className={`text-sm font-medium w-40 truncate ${isDisabled ? 'text-slate-500 line-through' : 'text-slate-300'}`}>{op.name}</span>
                               <Select
-                                value={currentLevel ? String(currentLevel.rev_level) : "none"}
+                                value={isDisabled ? "disabled" : (currentLevel ? String(currentLevel.rev_level) : String(op.levels[0] || 1))}
                                 onValueChange={(v) => {
                                   const newLevels = revLevels.filter(l => l.operator_id !== op.id);
-                                  if (v !== "none") {
+                                  if (v === "disabled") {
+                                    newLevels.push({ operator_id: op.id, rev_level: 0 });
+                                  } else {
                                     newLevels.push({ operator_id: op.id, rev_level: parseInt(v) });
                                   }
                                   setRevLevels(newLevels);
                                 }}
                               >
-                                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 flex-1 h-9">
-                                  <SelectValue placeholder="Sem nivel" />
+                                <SelectTrigger className={`flex-1 h-9 ${isDisabled ? 'bg-red-500/5 border-red-500/20 text-red-400' : 'bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20'}`}>
+                                  <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="none">Sem nivel atribuido</SelectItem>
                                   {op.levels.map(level => (
                                     <SelectItem key={level} value={String(level)}>Nivel {level}</SelectItem>
                                   ))}
+                                  <SelectItem value="disabled">
+                                    <span className="text-red-400">Operadora Nao Disponivel</span>
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                           );
                         })}
                         <p className="text-xs text-slate-500 mt-2">
-                          Operadoras sem nivel atribuido nao permitem registar vendas para este parceiro
+                          Operadoras marcadas como "Nao Disponivel" nao aparecerao para este parceiro no registo de vendas
                         </p>
                       </div>
                     )}

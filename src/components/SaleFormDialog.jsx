@@ -225,7 +225,7 @@ const SaleFormDialog = ({
                     <Select
                       value={formData.partner_id}
                       onValueChange={(v) => {
-                        setFormData({...formData, partner_id: v});
+                        setFormData({...formData, partner_id: v, operator_id: "", service_type: "", activation_type: ""});
                         if (formData.operator_id) {
                           fetchOperatorCommissions(formData.operator_id, v, formData.client_type);
                         }

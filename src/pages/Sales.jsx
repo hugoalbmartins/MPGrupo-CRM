@@ -94,6 +94,7 @@ const Sales = ({ user }) => {
   const [energySaleMode, setEnergySaleMode] = useState('normal');
   const [dynamicScopes, setDynamicScopes] = useState([]);
   const [dynamicScopeFields, setDynamicScopeFields] = useState([]);
+  const [partnerAvailableOperatorIds, setPartnerAvailableOperatorIds] = useState(null);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -163,6 +164,21 @@ const Sales = ({ user }) => {
       window.history.replaceState({}, document.title);
     }
   }, [loading, location.state, partners]);
+
+  useEffect(() => {
+    if (!formData.partner_id || formData.partner_id === '__admin__') {
+      setPartnerAvailableOperatorIds(null);
+      return;
+    }
+    const selectedPartner = partners.find(p => p.id === formData.partner_id);
+    if (!selectedPartner) {
+      setPartnerAvailableOperatorIds(null);
+      return;
+    }
+    partnersService.getPartnerAvailableOperatorIds(formData.partner_id, selectedPartner.partner_type)
+      .then(ids => setPartnerAvailableOperatorIds(ids))
+      .catch(() => setPartnerAvailableOperatorIds(null));
+  }, [formData.partner_id, partners]);
 
   useEffect(() => {
     if (!formData.scope || ['telecomunicacoes', 'energia', 'solar', 'mobilidade_eletrica'].includes(formData.scope)) {
@@ -869,7 +885,21 @@ const Sales = ({ user }) => {
     }
   };
 
-  const filteredOperators = operators.filter(op => op.scope === formData.scope);
+  const filteredOperators = operators.filter(op => {
+    if (op.scope !== formData.scope) return false;
+    if (partnerAvailableOperatorIds !== null) {
+      return partnerAvailableOperatorIds.includes(op.id);
+    }
+    return true;
+  });
+
+  const filteredScopes = (() => {
+    if (partnerAvailableOperatorIds === null) return dynamicScopes;
+    const availableScopeSet = new Set(
+      operators.filter(op => partnerAvailableOperatorIds.includes(op.id)).map(op => op.scope)
+    );
+    return dynamicScopes.filter(s => availableScopeSet.has(s.slug));
+  })();
 
   const currentOperator = operators.find(op => op.id === formData.operator_id);
   const operatorEnergyType = currentOperator?.energy_type || '';
@@ -1710,7 +1740,7 @@ const Sales = ({ user }) => {
             isSubmitting={isSubmitting}
             energySaleMode={energySaleMode}
             setEnergySaleMode={setEnergySaleMode}
-            dynamicScopes={dynamicScopes}
+            dynamicScopes={filteredScopes}
             dynamicScopeFields={dynamicScopeFields}
           />
         </div>
