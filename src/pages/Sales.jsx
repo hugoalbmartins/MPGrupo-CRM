@@ -914,6 +914,10 @@ const Sales = ({ user }) => {
     }
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedStatus, selectedPartner, selectedOperator, selectedScope, filterStartDate, filterEndDate, viewMode]);
+
   const filteredSales = sales.filter(sale => {
     if (viewMode === "proposals") {
       if (sale.status !== "Em proposta") return false;
@@ -926,16 +930,23 @@ const Sales = ({ user }) => {
     if (selectedScope && selectedScope !== "all" && sale.scope !== selectedScope) return false;
     if (filterStartDate && new Date(sale.date) < new Date(filterStartDate)) return false;
     if (filterEndDate && new Date(sale.date) > new Date(filterEndDate)) return false;
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        sale.sale_code?.toLowerCase().includes(query) ||
-        sale.client_name?.toLowerCase().includes(query) ||
-        sale.client_nif?.toLowerCase().includes(query) ||
-        sale.client_contact?.toLowerCase().includes(query) ||
-        sale.cpe?.toLowerCase().includes(query) ||
-        sale.cui?.toLowerCase().includes(query)
-      );
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      const haystack = [
+        sale.sale_code,
+        sale.client_name,
+        sale.customer_name,
+        sale.client_nif,
+        sale.client_contact,
+        sale.client_email,
+        sale.cpe,
+        sale.cui,
+        sale.request_number,
+      ]
+        .filter(v => v !== null && v !== undefined)
+        .map(v => String(v).toLowerCase())
+        .join(' | ');
+      if (!haystack.includes(query)) return false;
     }
     return true;
   });
