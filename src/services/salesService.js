@@ -88,7 +88,7 @@ export const salesService = {
       warnings.push('CPE com formato inválido (esperado: PT seguido de 13 dígitos)');
     }
     if (saleData.cui && !validateCUI(saleData.cui)) {
-      warnings.push('CUI com formato inválido (esperado: PT seguido de 16 dígitos)');
+      warnings.push('CUI com formato inválido (esperado: PT seguido de 16 dígitos e 2 letras)');
     }
 
     if (saleData.scope === 'telecomunicacoes' && saleData.requisition) {
@@ -640,7 +640,7 @@ export const salesService = {
         .rpc('validate_cui', { cui_value: cui });
 
       if (!isValidCUI) {
-        warnings.push('CUI com formato inválido (esperado: PT seguido de 16 dígitos)');
+        warnings.push('CUI com formato inválido (esperado: PT seguido de 16 dígitos e 2 letras)');
       }
     }
 

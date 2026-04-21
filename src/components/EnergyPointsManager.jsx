@@ -259,11 +259,11 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
                       value={point.point_code}
                       onChange={(e) => {
                         const updated = [...localPoints];
-                        updated[index] = { ...updated[index], point_code: e.target.value };
+                        updated[index] = { ...updated[index], point_code: e.target.value.toUpperCase() };
                         setLocalPoints(updated);
                         emitNormalChange(updated);
                       }}
-                      placeholder="Codigo do Ponto de Entrega"
+                      placeholder="PT0002000000000000XX"
                     />
                   </div>
                   <div>
@@ -299,15 +299,16 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
                       value={needsCPE ? point.cui_code : point.point_code}
                       onChange={(e) => {
                         const updated = [...localPoints];
+                        const upper = e.target.value.toUpperCase();
                         if (needsCPE) {
-                          updated[index] = { ...updated[index], cui_code: e.target.value };
+                          updated[index] = { ...updated[index], cui_code: upper };
                         } else {
-                          updated[index] = { ...updated[index], point_code: e.target.value };
+                          updated[index] = { ...updated[index], point_code: upper };
                         }
                         setLocalPoints(updated);
                         emitNormalChange(updated);
                       }}
-                      placeholder="Codigo Universal de Instalacao"
+                      placeholder="PT0000000000000000XX"
                     />
                   </div>
                   <div>
