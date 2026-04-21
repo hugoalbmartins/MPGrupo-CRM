@@ -19,34 +19,49 @@ export const salesService = {
       ? '*, operator:operators!sales_operator_id_fkey(id, name)'
       : '*';
 
-    let query = supabase
-      .from('sales')
-      .select(selectFields)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
+    const buildQuery = () => {
+      let q = supabase
+        .from('sales')
+        .select(selectFields)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
 
+      if (currentUser.role === 'partner') {
+        q = q.eq('partner_id', partnerId);
+      } else if (currentUser.role === 'partner_commercial') {
+        q = q.eq('created_by_user_id', user.id);
+      }
+
+      if (statusFilter) {
+        q = q.eq('status', statusFilter);
+      }
+      return q;
+    };
+
+    let partnerId = null;
     if (currentUser.role === 'partner') {
       const { data: partner } = await supabase
         .from('partners')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
-
-      if (partner) {
-        query = query.eq('partner_id', partner.id);
-      }
-    } else if (currentUser.role === 'partner_commercial') {
-      query = query.eq('created_by_user_id', user.id);
+      if (!partner) return [];
+      partnerId = partner.id;
     }
 
-    if (statusFilter) {
-      query = query.eq('status', statusFilter);
+    const PAGE_SIZE = 1000;
+    const all = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      all.push(...data);
+      if (data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
     }
 
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data || [];
+    return all;
   },
 
   async getById(id) {
