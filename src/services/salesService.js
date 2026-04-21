@@ -528,6 +528,17 @@ export const salesService = {
     return data;
   },
 
+  async getGroupSiblings(sale) {
+    if (!sale || !sale.sale_type || sale.sale_type === 'normal') return [];
+    const groupId = sale.parent_sale_id || sale.id;
+    const { data, error } = await supabase
+      .from('sales')
+      .select('id')
+      .or(`id.eq.${groupId},parent_sale_id.eq.${groupId}`);
+    if (error) throw error;
+    return (data || []).filter(s => s.id !== sale.id).map(s => s.id);
+  },
+
   async addNote(saleId, content, attachments = []) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data: currentUser } = await supabase

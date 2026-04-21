@@ -95,6 +95,7 @@ const Sales = ({ user }) => {
   const [dynamicScopes, setDynamicScopes] = useState([]);
   const [dynamicScopeFields, setDynamicScopeFields] = useState([]);
   const [partnerAvailableOperatorIds, setPartnerAvailableOperatorIds] = useState(null);
+  const [groupScopeDialog, setGroupScopeDialog] = useState({ open: false, sharedFields: [], pendingUpdatedData: null, pendingCommissionRecalc: false });
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -1264,6 +1265,68 @@ const Sales = ({ user }) => {
     setEditDialogOpen(true);
   };
 
+  const GROUP_SHARED_FIELDS = [
+    'date', 'status', 'activation_date', 'activated_at', 'cancelled_at',
+    'paid_to_operator', 'payment_date',
+    'client_type', 'client_name', 'client_nif', 'client_contact', 'client_email', 'client_iban',
+  ];
+
+  const detectChangedSharedFields = (originalSale, updatedData) => {
+    const changed = [];
+    for (const key of GROUP_SHARED_FIELDS) {
+      if (!(key in updatedData)) continue;
+      const newVal = updatedData[key];
+      let oldVal = originalSale?.[key];
+      if (key === 'date' && typeof oldVal === 'string') oldVal = oldVal.split('T')[0];
+      if (key === 'payment_date' && typeof oldVal === 'string') oldVal = oldVal ? oldVal.split('T')[0] : '';
+      if (key === 'activated_at' && typeof oldVal === 'string') oldVal = oldVal ? oldVal.split('T')[0] : '';
+      const normOld = oldVal === null || oldVal === undefined ? '' : (typeof oldVal === 'boolean' ? oldVal : String(oldVal));
+      const normNew = newVal === null || newVal === undefined ? '' : (typeof newVal === 'boolean' ? newVal : String(newVal));
+      if (normOld !== normNew) changed.push(key);
+    }
+    return changed;
+  };
+
+  const applyUpdateToSale = async (saleId, updatedData, isPrimary, recalcCommission) => {
+    await salesService.update(saleId, updatedData);
+    if (recalcCommission) {
+      try {
+        await recalculateSaleCommission(saleId);
+      } catch (err) {
+        console.error('Error recalculating commission for sale', saleId, err);
+      }
+    }
+  };
+
+  const persistSaleUpdate = async (updatedData, applyToGroup, sharedFields) => {
+    const recalc = !editFormData.manual_commission;
+    await applyUpdateToSale(editingSale.id, updatedData, true, recalc);
+
+    if (applyToGroup) {
+      try {
+        const siblingIds = await salesService.getGroupSiblings(editingSale);
+        if (siblingIds.length > 0) {
+          const siblingUpdate = {};
+          for (const field of sharedFields) {
+            if (field in updatedData) siblingUpdate[field] = updatedData[field];
+          }
+          if ('status' in siblingUpdate) {
+            if (siblingUpdate.status === 'Ativo') siblingUpdate.activated_at = updatedData.activated_at;
+            if (siblingUpdate.status === 'Cancelado') siblingUpdate.cancelled_at = updatedData.cancelled_at;
+          }
+          await Promise.all(siblingIds.map(id => applyUpdateToSale(id, siblingUpdate, false, recalc)));
+        }
+      } catch (err) {
+        console.error('Error propagating update to group siblings:', err);
+        toast.error('Venda atualizada, mas falhou a propagacao a outros pontos do grupo');
+      }
+    }
+
+    toast.success(applyToGroup ? "Venda e pontos do grupo atualizados!" : "Venda atualizada com sucesso!");
+    setEditDialogOpen(false);
+    fetchData();
+  };
+
   const handleUpdateSale = async (e) => {
     e.preventDefault();
     try {
@@ -1306,21 +1369,22 @@ const Sales = ({ user }) => {
         }
       }
 
-      await salesService.update(editingSale.id, updatedData);
-
-      if (!editFormData.manual_commission) {
-        try {
-          await recalculateSaleCommission(editingSale.id);
-          console.log('Commission recalculated successfully for sale:', editingSale.id);
-        } catch (commissionError) {
-          console.error('Error recalculating commission:', commissionError);
+      const isGroupSale = editingSale?.sale_type === 'multiponto' || editingSale?.sale_type === 'multilocal';
+      if (isGroupSale) {
+        const changedShared = detectChangedSharedFields(editingSale, updatedData);
+        if (changedShared.length > 0) {
+          setGroupScopeDialog({
+            open: true,
+            sharedFields: changedShared,
+            pendingUpdatedData: updatedData,
+          });
+          return;
         }
       }
 
-      toast.success("Venda atualizada com sucesso!");
-      setEditDialogOpen(false);
-      fetchData();
+      await persistSaleUpdate(updatedData, false, []);
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao atualizar venda");
     }
   };
@@ -2155,6 +2219,71 @@ const Sales = ({ user }) => {
         operators={operators}
         user={user}
       />
+
+      <Dialog open={groupScopeDialog.open} onOpenChange={(open) => { if (!open) setGroupScopeDialog({ open: false, sharedFields: [], pendingUpdatedData: null }); }}>
+        <DialogContent className="bg-dark-850 border border-cyan-500/10 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-white font-display">Aplicar alteracoes a {editingSale?.sale_type === 'multilocal' ? 'Multilocal' : 'Multiponto'}</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Esta venda pertence a um grupo com varios pontos. Detetamos alteracoes em campos partilhados: <span className="text-cyan-400 font-medium">{groupScopeDialog.sharedFields.map(f => {
+                const labels = {
+                  date: 'Data da venda',
+                  status: 'Estado',
+                  activation_date: 'Data de ativacao',
+                  activated_at: 'Data de ativacao',
+                  cancelled_at: 'Data de cancelamento',
+                  paid_to_operator: 'Pago pela operadora',
+                  payment_date: 'Data de pagamento da operadora',
+                  client_type: 'Tipo de cliente',
+                  client_name: 'Nome do cliente',
+                  client_nif: 'NIF do cliente',
+                  client_contact: 'Contacto do cliente',
+                  client_email: 'Email do cliente',
+                  client_iban: 'IBAN do cliente',
+                };
+                return labels[f] || f;
+              }).join(', ')}</span>. Pretende aplicar as alteracoes apenas a este ponto ou a todos os pontos do grupo?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col sm:flex-row gap-2 mt-4 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setGroupScopeDialog({ open: false, sharedFields: [], pendingUpdatedData: null })}
+              className="border-dark-700 text-slate-300 hover:bg-dark-700"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                const { pendingUpdatedData, sharedFields } = groupScopeDialog;
+                setGroupScopeDialog({ open: false, sharedFields: [], pendingUpdatedData: null });
+                try {
+                  await persistSaleUpdate(pendingUpdatedData, false, sharedFields);
+                } catch (err) {
+                  toast.error("Erro ao atualizar venda");
+                }
+              }}
+              className="bg-dark-900 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+            >
+              Apenas este ponto
+            </Button>
+            <Button
+              onClick={async () => {
+                const { pendingUpdatedData, sharedFields } = groupScopeDialog;
+                setGroupScopeDialog({ open: false, sharedFields: [], pendingUpdatedData: null });
+                try {
+                  await persistSaleUpdate(pendingUpdatedData, true, sharedFields);
+                } catch (err) {
+                  toast.error("Erro ao atualizar venda");
+                }
+              }}
+              className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white"
+            >
+              Aplicar a todos os pontos
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Sale Detail Dialog */}
       <SaleDetailDialog
