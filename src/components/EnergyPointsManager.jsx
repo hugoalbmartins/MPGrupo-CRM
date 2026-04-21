@@ -312,17 +312,24 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
                   </div>
                   <div>
                     <Label className="text-slate-400">Escalao {!needsCPE && '*'}</Label>
-                    <Input
-                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20"
-                      value={point.tier}
-                      onChange={(e) => {
+                    <Select
+                      value={point.tier || ''}
+                      onValueChange={(v) => {
                         const updated = [...localPoints];
-                        updated[index] = { ...updated[index], tier: e.target.value };
+                        updated[index] = { ...updated[index], tier: v };
                         setLocalPoints(updated);
                         emitNormalChange(updated);
                       }}
-                      placeholder="Ex: 1, 2, 3..."
-                    />
+                    >
+                      <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Escalão 1">Escalao 1</SelectItem>
+                        <SelectItem value="Escalão 2">Escalao 2</SelectItem>
+                        <SelectItem value="Escalão 3">Escalao 3</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </>
               )}
@@ -633,12 +640,19 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
                 </div>
                 <div>
                   <Label className="text-slate-400 text-xs">Escalao *</Label>
-                  <Input
-                    className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm"
-                    value={loc.tier}
-                    onChange={(e) => handleLocationChange(index, 'tier', e.target.value)}
-                    placeholder="Ex: 1, 2, 3..."
-                  />
+                  <Select
+                    value={loc.tier || ''}
+                    onValueChange={(v) => handleLocationChange(index, 'tier', v)}
+                  >
+                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm text-white">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Escalão 1">Escalao 1</SelectItem>
+                      <SelectItem value="Escalão 2">Escalao 2</SelectItem>
+                      <SelectItem value="Escalão 3">Escalao 3</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
