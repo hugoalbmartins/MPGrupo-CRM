@@ -223,15 +223,28 @@ export const partnersService = {
 
     const { data: oldPartner } = await supabase
       .from('partners')
-      .select('email, user_id')
+      .select('email, user_id, partner_code')
       .eq('id', id)
       .maybeSingle();
 
     if (!oldPartner) throw new Error('Partner not found');
 
+    const rawEmail = (partnerData.email || '').trim();
+    const oldEmailIsSynthetic = oldPartner.email && oldPartner.email.endsWith('@noemail.mpgrupo.local');
+    let effectiveEmail;
+    if (rawEmail) {
+      effectiveEmail = rawEmail;
+    } else if (oldEmailIsSynthetic) {
+      effectiveEmail = oldPartner.email;
+    } else {
+      const uniqueSuffix = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+      const codePart = (oldPartner.partner_code || 'partner').toLowerCase();
+      effectiveEmail = `${codePart}.${uniqueSuffix}@noemail.mpgrupo.local`;
+    }
+
     const updateData = {
       name: partnerData.name,
-      email: partnerData.email,
+      email: effectiveEmail,
       communication_emails: partnerData.communication_emails || [],
       phone: partnerData.phone,
       contact_person: partnerData.contact_person,
@@ -253,13 +266,18 @@ export const partnersService = {
       .select()
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505' || error.status === 409 || /duplicate key/i.test(error.message || '')) {
+        throw new Error('Email já está em uso por outro parceiro. Utilize outro email ou deixe o campo vazio.');
+      }
+      throw error;
+    }
     if (!data) throw new Error('Partner update failed');
 
-    if (oldPartner && oldPartner.email !== partnerData.email && oldPartner.user_id) {
+    if (oldPartner && oldPartner.email !== effectiveEmail && oldPartner.user_id) {
       await supabase
         .from('users')
-        .update({ email: partnerData.email })
+        .update({ email: effectiveEmail })
         .eq('id', oldPartner.user_id);
     }
 
@@ -460,5 +478,87 @@ export const partnersService = {
       return (data || []).map(r => r.operator_id);
     }
     return [];
+  },
+
+  async getLevelsForOperator(operatorId, partnerType) {
+    if (partnerType === 'D2D') {
+      const { data, error } = await supabase
+        .from('partner_d2d_operator_levels')
+        .select('partner_id, d2d_level')
+        .eq('operator_id', operatorId);
+      if (error) throw error;
+      return data || [];
+    }
+    if (partnerType === 'REV' || partnerType === 'Rev+') {
+      const { data, error } = await supabase
+        .from('partner_rev_operator_levels')
+        .select('partner_id, rev_level')
+        .eq('operator_id', operatorId);
+      if (error) throw error;
+      return data || [];
+    }
+    return [];
+  },
+
+  async bulkSetD2DLevelForOperator(operatorId, assignments) {
+    if (!assignments || assignments.length === 0) return [];
+
+    const toDelete = assignments.filter(a => a.d2d_level === 'disabled' || a.d2d_level === null || a.d2d_level === '');
+    const toUpsert = assignments.filter(a => a.d2d_level && a.d2d_level !== 'disabled');
+
+    if (toDelete.length > 0) {
+      const partnerIds = toDelete.map(a => a.partner_id);
+      const { error } = await supabase
+        .from('partner_d2d_operator_levels')
+        .delete()
+        .eq('operator_id', operatorId)
+        .in('partner_id', partnerIds);
+      if (error) throw error;
+    }
+
+    if (toUpsert.length > 0) {
+      const rows = toUpsert.map(a => ({
+        partner_id: a.partner_id,
+        operator_id: operatorId,
+        d2d_level: a.d2d_level,
+      }));
+      const { error } = await supabase
+        .from('partner_d2d_operator_levels')
+        .upsert(rows, { onConflict: 'partner_id,operator_id' });
+      if (error) throw error;
+    }
+
+    return assignments;
+  },
+
+  async bulkSetREVLevelForOperator(operatorId, assignments) {
+    if (!assignments || assignments.length === 0) return [];
+
+    const toDelete = assignments.filter(a => a.rev_level === 0 || a.rev_level === '0' || a.rev_level === null || a.rev_level === '');
+    const toUpsert = assignments.filter(a => a.rev_level && a.rev_level !== 0 && a.rev_level !== '0');
+
+    if (toDelete.length > 0) {
+      const partnerIds = toDelete.map(a => a.partner_id);
+      const { error } = await supabase
+        .from('partner_rev_operator_levels')
+        .delete()
+        .eq('operator_id', operatorId)
+        .in('partner_id', partnerIds);
+      if (error) throw error;
+    }
+
+    if (toUpsert.length > 0) {
+      const rows = toUpsert.map(a => ({
+        partner_id: a.partner_id,
+        operator_id: operatorId,
+        rev_level: Number(a.rev_level),
+      }));
+      const { error } = await supabase
+        .from('partner_rev_operator_levels')
+        .upsert(rows, { onConflict: 'partner_id,operator_id' });
+      if (error) throw error;
+    }
+
+    return assignments;
   }
 };

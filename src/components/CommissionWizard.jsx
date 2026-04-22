@@ -4,13 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Satellite } from "lucide-react";
+import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Satellite, Copy, Users } from "lucide-react";
 import { toast } from "sonner";
 import { operatorsService } from "../services/operatorsService";
 import { partnerTypesService } from "../services/partnerTypesService";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 import CommissionTable from "./CommissionTable";
+import CopyCommissionConfigsDialog from "./CopyCommissionConfigsDialog";
+import BulkPartnerLevelsDialog from "./BulkPartnerLevelsDialog";
 
 const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -21,6 +23,8 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [levelsByType, setLevelsByType] = useState({});
   const [activeLevelByType, setActiveLevelByType] = useState({});
   const [activeTechnology, setActiveTechnology] = useState('Fibra');
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [bulkLevelsDialogOpen, setBulkLevelsDialogOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -328,6 +332,20 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   return (
     <div className="space-y-6">
       {confirmDialog}
+      <CopyCommissionConfigsDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        currentOperator={operator}
+        existingConfigs={configs}
+        onApply={(nextConfigs) => setConfigs(nextConfigs)}
+      />
+      <BulkPartnerLevelsDialog
+        open={bulkLevelsDialogOpen}
+        onOpenChange={setBulkLevelsDialogOpen}
+        operator={operator}
+        levelsByType={levelsByType}
+        partnerTypes={partnerTypes}
+      />
       <div className="bg-dark-850 border border-white/[0.06] rounded-lg">
         <div className="border-b border-dark-700 bg-dark-900 p-6 rounded-t-lg">
           <div className="flex items-center justify-between">
@@ -341,15 +359,37 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
                 </p>
               )}
             </div>
-            <Button
-              type="button"
-              onClick={handleSaveAll}
-              size="sm"
-              className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700 shadow-lg shadow-cyber-500/30 hover:shadow-xl transition-all duration-300"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              Guardar Tudo
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCopyDialogOpen(true)}
+                className="border-dark-700 bg-dark-900 text-slate-200 hover:border-cyber-500 hover:text-cyber-400"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copiar de outra operadora
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkLevelsDialogOpen(true)}
+                className="border-dark-700 bg-dark-900 text-slate-200 hover:border-cyber-500 hover:text-cyber-400"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Definição de níveis a parceiros
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSaveAll}
+                size="sm"
+                className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white hover:from-cyber-600 hover:to-cyber-700 shadow-lg shadow-cyber-500/30 hover:shadow-xl transition-all duration-300"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Tudo
+              </Button>
+            </div>
           </div>
         </div>
         <div className="p-6 space-y-4">
