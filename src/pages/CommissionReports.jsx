@@ -195,6 +195,12 @@ const CommissionReports = ({ user }) => {
       finalSales = finalSales.filter(s => s.operator_id === selectedOperatorFilter);
     }
 
+    const canceledSalesAll = allSales.filter(sale => sale.status === 'Cancelado' || sale.status === 'Anulado');
+    let canceledSales = filterSalesByMonth(canceledSalesAll).filter(s => s.partner_id === partnerId);
+    if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
+      canceledSales = canceledSales.filter(s => s.operator_id === selectedOperatorFilter);
+    }
+
     const partner = partners.find(p => p.id === partnerId);
     if (!partner) { toast.error("Parceiro nao encontrado"); return; }
 
@@ -374,6 +380,42 @@ const CommissionReports = ({ user }) => {
       </tr>
     ` : '';
 
+    const canceledTableHtml = canceledSales.length > 0 ? `
+      <div style="margin-top:18px; page-break-inside:avoid;">
+        <div style="background:#991b1b;color:white;padding:6px 8px;font-weight:bold;font-size:10px;border-radius:4px 4px 0 0;">
+          Vendas Anuladas / Canceladas — ${monthName}/${selectedYear}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:9px;margin:0;">
+          <thead>
+            <tr>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Ambito/Operadora</th>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Nome Cliente</th>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">NIF</th>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">CPE</th>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">CUI</th>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">REQ</th>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Estado</th>
+              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Observacoes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${canceledSales.map(sale => `
+              <tr>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${getScopeOperatorLabel(sale)}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_name || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;font-family:monospace;">${sale.client_nif || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cpe || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cui || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.request_number || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;color:#991b1b;font-weight:bold;">${sale.status || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;">${(sale.observations || '').toString().replace(/</g, '&lt;').replace(/>/g, '&gt;') || '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '';
+
     const advancesJson = JSON.stringify(settledAdvances || []);
 
     const parsedBcc = bccEmails.split(',').map(e => e.trim()).filter(e => e && e.includes('@'));
@@ -478,6 +520,8 @@ const CommissionReports = ({ user }) => {
         ${refundTableHtml}
 
         ${chargebackTableHtml}
+
+        ${canceledTableHtml}
 
         ${isVatExempt ? `
         <div style="margin-top:10px;padding:8px;background:#fef3c7;border:1px solid #d97706;border-radius:6px;font-size:9px;color:#92400e;font-weight:bold;">
