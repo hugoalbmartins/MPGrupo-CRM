@@ -4,15 +4,158 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Satellite, Copy, Users } from "lucide-react";
+import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Satellite, Copy, Users, Loader as Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { operatorsService } from "../services/operatorsService";
 import { partnerTypesService } from "../services/partnerTypesService";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 import CommissionTable from "./CommissionTable";
-import CopyCommissionConfigsDialog from "./CopyCommissionConfigsDialog";
 import BulkPartnerLevelsDialog from "./BulkPartnerLevelsDialog";
+
+const buildCopyDedupKey = (c) => [
+  c.partner_type || 'D2D',
+  c.partner_type === 'D2D' ? (c.d2d_level || 'Nv1') : null,
+  (c.partner_type === 'REV' || c.partner_type === 'Rev+') ? (c.rev_level || 1) : null,
+  c.client_type,
+  c.service_type,
+  c.tier_mode || 'by_quantity',
+  c.min_sales || 0,
+  c.monthly_value_min || 0,
+  c.monthly_value_max || 0,
+  c.activation_type || null,
+  c.refid_operation_type || null,
+  c.tier_mode === 'by_power' ? (c.power_value || null) : null,
+  c.service_type === 'additional_service' ? (c.additional_service_name || null) : null,
+  c.technology || null,
+].join('|');
+
+function CopyConfigsInlineDialog({ open, onOpenChange, currentOperator, existingConfigs, onApply }) {
+  const [operators, setOperators] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [sourceId, setSourceId] = useState('');
+  const [mode, setMode] = useState('replace');
+  const [copying, setCopying] = useState(false);
+
+  useEffect(() => {
+    if (!open || !currentOperator?.id) return;
+    setSourceId('');
+    setMode('replace');
+    const load = async () => {
+      setLoading(true);
+      try {
+        const all = await operatorsService.getAll(true, currentOperator.scope);
+        setOperators(all.filter(op => op.id !== currentOperator.id));
+      } catch (error) {
+        console.error('Error loading operators:', error);
+        toast.error('Erro ao carregar operadoras');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [open, currentOperator?.id, currentOperator?.scope]);
+
+  const handleCopy = async () => {
+    if (!sourceId) {
+      toast.error('Selecione uma operadora de origem');
+      return;
+    }
+    setCopying(true);
+    try {
+      const sourceConfigs = await operatorsService.getCommissionConfigs(sourceId);
+      if (!sourceConfigs.length) {
+        toast.error('A operadora selecionada nao tem configuracoes.');
+        setCopying(false);
+        return;
+      }
+      const stripped = sourceConfigs.map(({ id, operator_id, created_at, updated_at, ...rest }) => ({ ...rest }));
+      let nextConfigs;
+      if (mode === 'replace') {
+        nextConfigs = stripped;
+      } else {
+        const existingKeys = new Set((existingConfigs || []).map(buildCopyDedupKey));
+        const toAdd = stripped.filter(c => !existingKeys.has(buildCopyDedupKey(c)));
+        nextConfigs = [...(existingConfigs || []), ...toAdd];
+      }
+      onApply(nextConfigs);
+      toast.success(`${stripped.length} configuracao(oes) carregadas. Clique em "Guardar Tudo" para persistir.`);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error copying configs:', error);
+      toast.error(`Erro ao copiar: ${error?.message || 'Erro desconhecido'}`);
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl bg-dark-850 border border-cyber-500/10">
+        <DialogHeader>
+          <DialogTitle className="text-white flex items-center gap-2">
+            <Copy className="w-5 h-5 text-cyber-400" />
+            Copiar configuracoes de outra operadora
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div>
+            <Label className="text-slate-300 mb-2 block">Operadora de origem (mesmo ambito)</Label>
+            {loading ? (
+              <div className="flex items-center gap-2 text-slate-400 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" /> A carregar...
+              </div>
+            ) : operators.length === 0 ? (
+              <p className="text-slate-500 text-sm">Nao existem outras operadoras com o mesmo ambito.</p>
+            ) : (
+              <Select value={sourceId} onValueChange={setSourceId}>
+                <SelectTrigger className="bg-dark-900 border-dark-700 text-white">
+                  <SelectValue placeholder="Selecionar operadora..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {operators.map(op => (
+                    <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <div>
+            <Label className="text-slate-300 mb-2 block">Modo</Label>
+            <RadioGroup value={mode} onValueChange={setMode} className="space-y-2">
+              <div className="flex items-start gap-2">
+                <RadioGroupItem value="replace" id="copy-replace" className="mt-1" />
+                <div>
+                  <Label htmlFor="copy-replace" className="text-white font-medium cursor-pointer">Substituir tudo</Label>
+                  <p className="text-xs text-slate-500">Remove as configuracoes atuais e carrega as da operadora escolhida.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <RadioGroupItem value="merge" id="copy-merge" className="mt-1" />
+                <div>
+                  <Label htmlFor="copy-merge" className="text-white font-medium cursor-pointer">Adicionar ao existente</Label>
+                  <p className="text-xs text-slate-500">Mantem as atuais e acrescenta as novas, ignorando duplicados.</p>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+          <p className="text-xs text-amber-400 bg-amber-500/5 border border-amber-500/20 rounded p-2">
+            As alteracoes nao sao persistidas automaticamente. Apos copiar, reveja e clique em "Guardar Tudo".
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={copying}>Cancelar</Button>
+          <Button onClick={handleCopy} disabled={copying || !sourceId} className="bg-cyber-500 hover:bg-cyber-600 text-white">
+            {copying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+            Copiar configuracoes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const { confirm, dialog: confirmDialog } = useConfirm();
@@ -332,7 +475,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   return (
     <div className="space-y-6">
       {confirmDialog}
-      <CopyCommissionConfigsDialog
+      <CopyConfigsInlineDialog
         open={copyDialogOpen}
         onOpenChange={setCopyDialogOpen}
         currentOperator={operator}
