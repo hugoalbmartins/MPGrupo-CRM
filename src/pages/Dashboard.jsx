@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import SaleDetailDialog from "../components/SaleDetailDialog";
 import { useDashboardStats, useProposalStats, usePartnerStats, useProposals, useMonthlySalesByOperator, getAvailableWeeks, getAvailableMonths, getAvailableDays } from "@/hooks/useDashboardData";
+import { useOperators } from "@/hooks/useOperatorsData";
 import { AnimatedNumber } from "@/hooks/useAnimatedCounter";
 
 /* ---------------------------------------------------------------------------
@@ -153,6 +154,12 @@ const Dashboard = ({ user }) => {
 
   /* ---- data hooks ---- */
   const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedYear, selectedMonth);
+  const { data: operatorsList = [] } = useOperators(true);
+  const operatorNameMap = useMemo(() => {
+    const map = {};
+    operatorsList.forEach(op => { map[op.id] = op.name; });
+    return map;
+  }, [operatorsList]);
   const { data: proposalStats } = useProposalStats();
   const { data: partnerData } = usePartnerStats(user, partnerTableFilterMode, partnerTableFilterKey);
   const { data: filteredProposals = [] } = useProposals(proposalFilter);
@@ -259,7 +266,15 @@ const Dashboard = ({ user }) => {
 
         let subtitle;
         if (scope.slug === 'telecomunicacoes') {
-          subtitle = `€${data.monthly_total?.toFixed(2) || "0.00"}/mes`;
+          const byOp = data.by_operator || {};
+          const entries = Object.entries(byOp)
+            .map(([opId, c]) => ({ name: operatorNameMap[opId] || 'Outro', count: c }))
+            .sort((a, b) => b.count - a.count);
+          if (entries.length === 0) {
+            subtitle = 'Sem vendas';
+          } else {
+            subtitle = entries.map(e => `${e.name}: ${e.count}`).join(' · ');
+          }
         } else if (scope.slug === 'energia') {
           subtitle = `${data.electricity || 0} elet. / ${data.gas || 0} gas · DD: ${stats?.dd_count || 0} FE: ${stats?.fe_count || 0}`;
         }
@@ -275,7 +290,7 @@ const Dashboard = ({ user }) => {
         };
       })
       .filter(Boolean);
-  }, [stats]);
+  }, [stats, operatorNameMap]);
 
   const renderDynamicScopeCards = (startIndex = 7) => {
     const cards = dynamicScopeCards.map((c, i) => ({ ...c, index: startIndex + i }));

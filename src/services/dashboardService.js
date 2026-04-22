@@ -95,10 +95,15 @@ function buildByScope(sales) {
     const scope = sale.scope || '';
     if (!scope) continue;
     if (!byScope[scope]) {
-      byScope[scope] = { count: 0, monthly_total: 0, electricity: 0, gas: 0, dual: 0 };
+      byScope[scope] = { count: 0, monthly_total: 0, electricity: 0, gas: 0, dual: 0, by_operator: {} };
     }
     byScope[scope].count++;
-    if (scope === 'telecomunicacoes') byScope[scope].monthly_total += sale.monthly_value || 0;
+    if (scope === 'telecomunicacoes') {
+      byScope[scope].monthly_total += sale.monthly_value || 0;
+      if (sale.operator_id) {
+        byScope[scope].by_operator[sale.operator_id] = (byScope[scope].by_operator[sale.operator_id] || 0) + 1;
+      }
+    }
     if (scope === 'energia') {
       const et = sale.energy_sale_type || 'eletricidade';
       if (et === 'eletricidade') byScope[scope].electricity++;
