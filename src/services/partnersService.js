@@ -560,5 +560,69 @@ export const partnersService = {
     }
 
     return assignments;
-  }
+  },
+
+  async copyPartnerLevelsFromOperator(sourceOperatorId, targetOperatorId, mode = 'replace') {
+    if (!sourceOperatorId || !targetOperatorId) throw new Error('Operadoras inválidas');
+    if (sourceOperatorId === targetOperatorId) throw new Error('Origem e destino iguais');
+
+    const [srcD2D, srcREV] = await Promise.all([
+      supabase.from('partner_d2d_operator_levels').select('partner_id, d2d_level').eq('operator_id', sourceOperatorId),
+      supabase.from('partner_rev_operator_levels').select('partner_id, rev_level').eq('operator_id', sourceOperatorId),
+    ]);
+    if (srcD2D.error) throw srcD2D.error;
+    if (srcREV.error) throw srcREV.error;
+
+    const d2dRows = (srcD2D.data || []).map(r => ({ partner_id: r.partner_id, operator_id: targetOperatorId, d2d_level: r.d2d_level }));
+    const revRows = (srcREV.data || []).map(r => ({ partner_id: r.partner_id, operator_id: targetOperatorId, rev_level: Number(r.rev_level) || 0 }));
+
+    if (mode === 'replace') {
+      const { error: delD2D } = await supabase.from('partner_d2d_operator_levels').delete().eq('operator_id', targetOperatorId);
+      if (delD2D) throw delD2D;
+      const { error: delREV } = await supabase.from('partner_rev_operator_levels').delete().eq('operator_id', targetOperatorId);
+      if (delREV) throw delREV;
+    }
+
+    const d2dActive = d2dRows.filter(r => r.d2d_level && r.d2d_level !== 'disabled');
+    const d2dDisabled = d2dRows.filter(r => !r.d2d_level || r.d2d_level === 'disabled');
+    const revActive = revRows.filter(r => r.rev_level && r.rev_level !== 0);
+    const revDisabled = revRows.filter(r => !r.rev_level || r.rev_level === 0);
+
+    if (d2dActive.length > 0) {
+      const { error } = await supabase
+        .from('partner_d2d_operator_levels')
+        .upsert(d2dActive, { onConflict: 'partner_id,operator_id' });
+      if (error) throw error;
+    }
+    if (d2dDisabled.length > 0) {
+      const ids = d2dDisabled.map(r => r.partner_id);
+      const { error } = await supabase
+        .from('partner_d2d_operator_levels')
+        .delete()
+        .eq('operator_id', targetOperatorId)
+        .in('partner_id', ids);
+      if (error) throw error;
+    }
+    if (revActive.length > 0) {
+      const { error } = await supabase
+        .from('partner_rev_operator_levels')
+        .upsert(revActive, { onConflict: 'partner_id,operator_id' });
+      if (error) throw error;
+    }
+    if (revDisabled.length > 0) {
+      const ids = revDisabled.map(r => r.partner_id);
+      const { error } = await supabase
+        .from('partner_rev_operator_levels')
+        .delete()
+        .eq('operator_id', targetOperatorId)
+        .in('partner_id', ids);
+      if (error) throw error;
+    }
+
+    const affectedPartnerIds = [
+      ...d2dActive.map(r => r.partner_id),
+      ...revActive.map(r => r.partner_id),
+    ];
+    return { affectedPartnerIds, d2dCount: d2dRows.length, revCount: revRows.length };
+  },
 };

@@ -8,8 +8,11 @@ import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Sate
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { operatorsService } from "../services/operatorsService";
 import { partnerTypesService } from "../services/partnerTypesService";
+import { partnersService } from "../services/partnersService";
+import { recalculatePartnerCommissions } from "../services/commissionRecalculator";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 import CommissionTable from "./CommissionTable";
@@ -37,12 +40,14 @@ function CopyConfigsInlineDialog({ open, onOpenChange, currentOperator, existing
   const [loading, setLoading] = useState(false);
   const [sourceId, setSourceId] = useState('');
   const [mode, setMode] = useState('replace');
+  const [copyLevels, setCopyLevels] = useState(false);
   const [copying, setCopying] = useState(false);
 
   useEffect(() => {
     if (!open || !currentOperator?.id) return;
     setSourceId('');
     setMode('replace');
+    setCopyLevels(false);
     const load = async () => {
       setLoading(true);
       try {
@@ -82,6 +87,20 @@ function CopyConfigsInlineDialog({ open, onOpenChange, currentOperator, existing
       }
       onApply(nextConfigs);
       toast.success(`${stripped.length} configuracao(oes) carregadas. Clique em "Guardar Tudo" para persistir.`);
+
+      if (copyLevels && currentOperator?.id) {
+        try {
+          const result = await partnersService.copyPartnerLevelsFromOperator(sourceId, currentOperator.id, mode);
+          toast.success(`Níveis copiados: ${result.d2dCount} D2D · ${result.revCount} REV`);
+          (result.affectedPartnerIds || []).forEach(pid => {
+            recalculatePartnerCommissions(pid, [currentOperator.id]);
+          });
+        } catch (err) {
+          console.error('Error copying partner levels:', err);
+          toast.error(`Erro ao copiar níveis: ${err?.message || 'Erro desconhecido'}`);
+        }
+      }
+
       onOpenChange(false);
     } catch (error) {
       console.error('Error copying configs:', error);
@@ -141,8 +160,26 @@ function CopyConfigsInlineDialog({ open, onOpenChange, currentOperator, existing
               </div>
             </RadioGroup>
           </div>
+          <div className="flex items-start gap-2 bg-dark-900 border border-dark-700 rounded-xl p-3">
+            <Checkbox
+              id="copy-levels"
+              checked={copyLevels}
+              onCheckedChange={(v) => setCopyLevels(!!v)}
+              className="mt-1"
+            />
+            <div>
+              <Label htmlFor="copy-levels" className="text-white font-medium cursor-pointer">
+                Copiar também atribuição de níveis aos parceiros
+              </Label>
+              <p className="text-xs text-slate-500">
+                Replica os níveis D2D e REV dos parceiros (incluindo &quot;disabled&quot;/0) da operadora de origem para esta.
+                O acesso ao registo de vendas da operadora não é alterado.
+              </p>
+            </div>
+          </div>
           <p className="text-xs text-amber-400 bg-amber-500/5 border border-amber-500/20 rounded p-2">
-            As alteracoes nao sao persistidas automaticamente. Apos copiar, reveja e clique em "Guardar Tudo".
+            As configuracoes de comissao nao sao persistidas automaticamente. Apos copiar, reveja e clique em &quot;Guardar Tudo&quot;.
+            {copyLevels && ' Os niveis dos parceiros sao guardados imediatamente.'}
           </p>
         </div>
         <DialogFooter>

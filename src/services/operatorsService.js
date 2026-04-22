@@ -181,6 +181,9 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('sat_commission_percentage')) {
       updateData.sat_commission_percentage = settingsData.sat_commission_percentage || null;
     }
+    if (settingsData.hasOwnProperty('sales_access')) {
+      updateData.sales_access = settingsData.sales_access || 'all_commissioned';
+    }
 
     const { data, error } = await supabase
       .from('operators')

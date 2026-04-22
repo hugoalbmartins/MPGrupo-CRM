@@ -886,8 +886,19 @@ const Sales = ({ user }) => {
     }
   };
 
+  const userAllowedByOperatorAccess = (op) => {
+    const access = op.sales_access || 'all_commissioned';
+    const role = user?.role;
+    if (access === 'everyone') return true;
+    if (access === 'admin_only') return role === 'admin';
+    if (access === 'bo_only') return role === 'bo';
+    if (access === 'admin_bo') return role === 'admin' || role === 'bo';
+    return true;
+  };
+
   const filteredOperators = operators.filter(op => {
     if (op.scope !== formData.scope) return false;
+    if (!userAllowedByOperatorAccess(op)) return false;
     if (partnerAvailableOperatorIds !== null) {
       return partnerAvailableOperatorIds.includes(op.id);
     }
@@ -895,9 +906,13 @@ const Sales = ({ user }) => {
   });
 
   const filteredScopes = (() => {
-    if (partnerAvailableOperatorIds === null) return dynamicScopes;
+    const accessAllowed = operators.filter(userAllowedByOperatorAccess);
+    if (partnerAvailableOperatorIds === null) {
+      const accessibleSet = new Set(accessAllowed.map(op => op.scope));
+      return dynamicScopes.filter(s => accessibleSet.has(s.slug));
+    }
     const availableScopeSet = new Set(
-      operators.filter(op => partnerAvailableOperatorIds.includes(op.id)).map(op => op.scope)
+      accessAllowed.filter(op => partnerAvailableOperatorIds.includes(op.id)).map(op => op.scope)
     );
     return dynamicScopes.filter(s => availableScopeSet.has(s.slug));
   })();

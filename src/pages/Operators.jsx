@@ -292,6 +292,7 @@ const Operators = ({ user }) => {
         allowed_technologies: freshData.allowed_technologies || ['Fibra'],
         sat_commission_mode: freshData.sat_commission_mode || '',
         sat_commission_percentage: freshData.sat_commission_percentage || '',
+        sales_access: freshData.sales_access || 'all_commissioned',
       });
       setShowEmailPassword(false);
       setNewNotifEmail("");
@@ -1047,6 +1048,26 @@ const Operators = ({ user }) => {
           </div>
           {selectedOperator && (
             <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+              <div className="bg-dark-900 border border-cyber-500/10 rounded-xl p-4">
+                <Label className="text-slate-300 text-sm font-semibold">Acesso ao Registo de Vendas</Label>
+                <p className="text-xs text-slate-500 mt-1 mb-2">Define QUEM pode registar vendas desta operadora (1.ª validação). A atribuição de níveis comissionais ao parceiro continua a ser a 2.ª validação.</p>
+                <Select
+                  value={editOperatorData.sales_access || 'all_commissioned'}
+                  onValueChange={(v) => setEditOperatorData(prev => ({ ...prev, sales_access: v }))}
+                >
+                  <SelectTrigger className="bg-dark-800 border-dark-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all_commissioned">Todos os vendedores (com comissão atribuída)</SelectItem>
+                    <SelectItem value="admin_only">Apenas ADMIN</SelectItem>
+                    <SelectItem value="bo_only">Apenas BO</SelectItem>
+                    <SelectItem value="admin_bo">ADMIN e BO</SelectItem>
+                    <SelectItem value="everyone">Todos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {selectedOperator.scope === 'telecomunicacoes' && (
                 <div>
                   <Label className="text-slate-300 text-sm font-semibold">Tipos de Ativação Permitidos</Label>
