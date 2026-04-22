@@ -623,6 +623,28 @@ export const salesService = {
     return data || false;
   },
 
+  async findRecentNifCpeDuplicates(nif, cpeList) {
+    const cleanNif = (nif || '').toString().trim();
+    const cleanCpes = (Array.isArray(cpeList) ? cpeList : [cpeList])
+      .map(c => (c || '').toString().trim())
+      .filter(Boolean);
+    if (!cleanNif || cleanCpes.length === 0) return [];
+
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase
+      .from('sales')
+      .select('id, sale_code, date, status, client_nif, cpe, created_at, operator:operators!sales_operator_id_fkey(name)')
+      .eq('client_nif', cleanNif)
+      .in('cpe', cleanCpes)
+      .neq('status', 'Cancelado')
+      .gte('created_at', cutoff)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
   async validateCPECUI(cpe, cui) {
     const warnings = [];
 

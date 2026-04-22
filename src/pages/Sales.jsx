@@ -44,7 +44,7 @@ const formatPowerForEdit = (value) => {
 const Sales = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { confirm, dialog: confirmDialog } = useConfirm();
+  const { confirm, dialog: confirmDialog, close: closeConfirm } = useConfirm();
   const todayDate = new Date().toLocaleDateString('sv-SE');
   const [sales, setSales] = useState([]);
   const [partners, setPartners] = useState([]);
@@ -448,6 +448,51 @@ const Sales = ({ user }) => {
           return;
         }
       }
+    }
+
+    try {
+      const nifForCheck = (formData.client_nif || '').trim();
+      const cpeCandidates = [];
+      if (formData.cpe) cpeCandidates.push(formData.cpe);
+      (formData.energy_points || []).forEach(p => {
+        if (p.point_type === 'cpe' && p.point_code) cpeCandidates.push(p.point_code);
+      });
+      const cpeListForCheck = Array.from(new Set(cpeCandidates.map(c => c.toString().trim().toUpperCase()))).filter(Boolean);
+
+      if (nifForCheck && cpeListForCheck.length > 0) {
+        const duplicates = await salesService.findRecentNifCpeDuplicates(nifForCheck, cpeListForCheck);
+        if (duplicates.length > 0) {
+          const lines = duplicates.slice(0, 5).map(d => {
+            const dt = d.date ? new Date(d.date).toLocaleDateString('pt-PT') : (d.created_at ? new Date(d.created_at).toLocaleDateString('pt-PT') : '-');
+            const op = d.operator?.name ? ` · ${d.operator.name}` : '';
+            return `• ${dt} · CPE ${d.cpe || '-'} · Estado: ${d.status || '-'}${op}`;
+          }).join('\n');
+
+          const confirmPromise = confirm({
+            title: 'Possivel venda duplicada',
+            description: `Ja existe venda com o mesmo NIF (${nifForCheck}) e CPE nas ultimas 48h:\n\n${lines}\n\nDeseja registar a venda mesmo assim? (sem resposta em 60s a venda e cancelada)`,
+            confirmLabel: 'Registar mesmo assim',
+            confirmVariant: 'destructive',
+          });
+          let timeoutId;
+          const timeoutPromise = new Promise(resolve => {
+            timeoutId = setTimeout(() => resolve('__timeout__'), 60000);
+          });
+          const result = await Promise.race([confirmPromise, timeoutPromise]);
+          clearTimeout(timeoutId);
+
+          if (result === '__timeout__') {
+            closeConfirm(false);
+            toast.error('Sem resposta em 60 segundos. Venda nao registada.');
+            return;
+          }
+          if (!result) {
+            return;
+          }
+        }
+      }
+    } catch (dupErr) {
+      console.error('Duplicate check error:', dupErr);
     }
 
     setIsSubmitting(true);

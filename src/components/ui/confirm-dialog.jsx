@@ -59,6 +59,11 @@ export function useConfirm() {
     resolveRef.current?.(false);
   }, []);
 
+  const close = useCallback((value = false) => {
+    setState(s => ({ ...s, open: false }));
+    resolveRef.current?.(value);
+  }, []);
+
   const dialog = (
     <ConfirmDialog
       open={state.open}
@@ -71,5 +76,5 @@ export function useConfirm() {
     />
   );
 
-  return { confirm, dialog };
+  return { confirm, dialog, close };
 }
