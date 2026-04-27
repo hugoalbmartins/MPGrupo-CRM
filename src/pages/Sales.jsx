@@ -62,6 +62,8 @@ const Sales = ({ user }) => {
   const [filterEndDate, setFilterEndDate] = useState("");
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
+  const [exportOperatorFilter, setExportOperatorFilter] = useState("all");
+  const [exportPartnerFilter, setExportPartnerFilter] = useState("all");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [sortField, setSortField] = useState("date");
@@ -1071,6 +1073,12 @@ const Sales = ({ user }) => {
       if (exportEndDate) {
         dataToExport = dataToExport.filter(sale => new Date(sale.date) <= new Date(exportEndDate));
       }
+      if (exportOperatorFilter && exportOperatorFilter !== 'all') {
+        dataToExport = dataToExport.filter(sale => sale.operator_id === exportOperatorFilter);
+      }
+      if (exportPartnerFilter && exportPartnerFilter !== 'all') {
+        dataToExport = dataToExport.filter(sale => sale.partner_id === exportPartnerFilter);
+      }
 
       if (dataToExport.length === 0) {
         toast.error("Nenhuma venda encontrada para exportar");
@@ -1791,6 +1799,34 @@ const Sales = ({ user }) => {
                     className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
                     style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
                   />
+                </div>
+                <div>
+                  <Label className="text-slate-400">Operadora (opcional)</Label>
+                  <Select value={exportOperatorFilter} onValueChange={setExportOperatorFilter}>
+                    <SelectTrigger className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white" style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}>
+                      <SelectValue placeholder="Todas as operadoras" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as operadoras</SelectItem>
+                      {operators.map(op => (
+                        <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-slate-400">Parceiro (opcional)</Label>
+                  <Select value={exportPartnerFilter} onValueChange={setExportPartnerFilter}>
+                    <SelectTrigger className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white" style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}>
+                      <SelectValue placeholder="Todos os parceiros" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os parceiros</SelectItem>
+                      {partners.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <Button
