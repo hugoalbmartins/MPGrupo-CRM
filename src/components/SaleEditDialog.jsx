@@ -62,7 +62,14 @@ const SaleEditDialog = ({
   const fileInputRef = useRef(null);
 
   const update = (field, value) => {
-    setEditFormData(prev => ({ ...prev, [field]: value }));
+    setEditFormData(prev => {
+      const next = { ...prev, [field]: value };
+      // Sync ev_* fields to custom_fields for mobilidade_eletrica
+      if (prev.scope === 'mobilidade_eletrica' && field.startsWith('ev_')) {
+        next.custom_fields = { ...(prev.custom_fields || {}), [field]: value };
+      }
+      return next;
+    });
   };
 
   const isAddressEditable = (fieldName) => {

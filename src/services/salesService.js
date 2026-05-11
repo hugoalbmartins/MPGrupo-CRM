@@ -2,6 +2,21 @@ import { supabase } from '../lib/supabase';
 import { generateSaleCode, calculateCommission, validateCPE, validateCUI } from '../lib/utils-crm';
 import { processFilesForUpload } from '../lib/imageCompression';
 
+function buildCustomFields(saleData) {
+  const customFields = { ...(saleData.custom_fields || {}) };
+
+  // For scopes with maps_to_column system fields, also store in custom_fields
+  // so getSaleQuantity can find them there
+  if (saleData.scope === 'mobilidade_eletrica') {
+    if (saleData.ev_outlet_count != null) customFields.ev_outlet_count = parseInt(saleData.ev_outlet_count) || 0;
+    if (saleData.ev_monthly_fee != null) customFields.ev_monthly_fee = saleData.ev_monthly_fee;
+    if (saleData.ev_margin != null) customFields.ev_margin = saleData.ev_margin;
+    if (saleData.ev_fidelization_months != null) customFields.ev_fidelization_months = parseInt(saleData.ev_fidelization_months) || 0;
+  }
+
+  return customFields;
+}
+
 export const salesService = {
   async getAll(statusFilter = null, includeOperator = false) {
     const { data: { user } } = await supabase.auth.getUser();
@@ -452,6 +467,7 @@ export const salesService = {
       activation_date: saleData.activation_date || null,
       paid_to_operator: saleData.paid_to_operator || false,
       payment_date: saleData.payment_date || null,
+      custom_fields: buildCustomFields(saleData),
     };
 
     const { data, error } = await supabase
@@ -515,6 +531,8 @@ export const salesService = {
 
       if (key === 'partner_id') {
         updates[key] = value === null || value === '' || value === 'admin_commissioned' ? null : value;
+      } else if (key === 'custom_fields') {
+        updates[key] = value && typeof value === 'object' ? value : {};
       } else if (BOOLEAN_FIELDS.includes(key)) {
         updates[key] = Boolean(value);
       } else if (key === 'mobile_count') {
