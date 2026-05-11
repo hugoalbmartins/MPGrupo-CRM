@@ -449,8 +449,8 @@ const CommissionReports = ({ user }) => {
             body { print-color-adjust: exact; -webkit-print-color-adjust: exact; margin: 0 !important; padding: 0 !important; }
             .no-print { display:none !important; }
           }
-          body { font-family: Arial, sans-serif; margin: 0; padding: 15mm 12mm; color: #333; max-width: 100%; box-sizing: border-box; }
-          .print-content { width: 100%; max-width: 100%; }
+          body { font-family: Arial, sans-serif; margin: 0; padding: 10mm; color: #333; width: 277mm; min-width: 277mm; box-sizing: border-box; }
+          .print-content { width: 100%; }
           .header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; border-bottom:2px solid #1F4E78; padding-bottom:8px; }
           .header-left { flex:1; }
           .header-logo { flex-shrink:0; margin-left:20px; }
@@ -470,6 +470,7 @@ const CommissionReports = ({ user }) => {
         </style>
       </head>
       <body>
+        <div class="print-content">
         <div class="header">
           <div class="header-left">
             <div class="company-name">MARCIO &amp; SANDRA LDA</div>
@@ -599,7 +600,10 @@ const CommissionReports = ({ user }) => {
               const { jsPDF } = window.jspdf;
               btn.textContent = 'Capturando imagem...';
               document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
-              const canvas = await html2canvas(document.body, { scale: 2, useCORS: true, logging: false, allowTaint: true });
+
+              const printContent = document.querySelector('.print-content') || document.body;
+              const canvas = await html2canvas(printContent, { scale: 2, useCORS: true, logging: false, allowTaint: true, windowWidth: printContent.scrollWidth });
+
               document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
               btn.textContent = 'Gerando PDF...';
               const imgData = canvas.toDataURL('image/jpeg', 0.92);
@@ -609,11 +613,31 @@ const CommissionReports = ({ user }) => {
               const margin = 10;
               const printW = pageW - (margin * 2);
               const printH = pageH - (margin * 2);
-              const imgRatio = canvas.height / canvas.width;
-              let finalW = printW;
-              let finalH = printW * imgRatio;
-              if (finalH > printH) { finalH = printH; finalW = printH / imgRatio; }
-              pdf.addImage(imgData, 'JPEG', margin, margin, finalW, finalH);
+
+              const imgW = canvas.width;
+              const imgH = canvas.height;
+              const pxPerMm = imgW / printW;
+              const pageHpx = printH * pxPerMm;
+              const totalPages = Math.ceil(imgH / pageHpx);
+
+              for (let page = 0; page < totalPages; page++) {
+                if (page > 0) pdf.addPage();
+                const srcY = page * pageHpx;
+                const srcH = Math.min(pageHpx, imgH - srcY);
+                const destH = (srcH / pxPerMm);
+
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = imgW;
+                pageCanvas.height = srcH;
+                const ctx = pageCanvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, imgW, srcH);
+                ctx.drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH);
+
+                const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.92);
+                pdf.addImage(pageImgData, 'JPEG', margin, margin, printW, destH);
+              }
+
               const pdfBlob = pdf.output('blob');
               const data = window.reportData;
 
@@ -694,6 +718,7 @@ const CommissionReports = ({ user }) => {
             }
           }
         </script>
+        </div>
       </body>
       </html>
     `;
