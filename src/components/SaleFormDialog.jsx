@@ -62,6 +62,7 @@ const SaleFormDialog = ({
   energySaleMode,
   setEnergySaleMode,
   dynamicScopes = [],
+  filteredScopes = [],
   dynamicScopeFields = [],
 }) => {
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
@@ -254,8 +255,8 @@ const SaleFormDialog = ({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {dynamicScopes.length > 0 ? (
-                          dynamicScopes.map(s => (
+                        {filteredScopes.length > 0 ? (
+                          filteredScopes.map(s => (
                             <SelectItem key={s.slug} value={s.slug}>{s.display_name}</SelectItem>
                           ))
                         ) : (
@@ -1237,6 +1238,39 @@ const SaleFormDialog = ({
                     formData={formData.custom_fields || {}}
                     onChange={(customFields) => setFormData({...formData, custom_fields: customFields})}
                   />
+                </FormSection>
+              )}
+
+              {!['telecomunicacoes', 'energia', 'solar', 'mobilidade_eletrica'].includes(formData.scope) && formData.operator_id && dynamicScopeFields.length === 0 && (
+                <FormSection icon={FileText} title="Detalhes da Venda" gradient="from-cyber-500 to-cyber-600">
+                  {operatorCommissions.length === 0 ? (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                      <p className="text-amber-400 font-semibold">Operadora sem comissoes configuradas</p>
+                      <p className="text-sm text-amber-400/80 mt-1">
+                        A venda sera registada sem valor de comissao. Contacte o administrador para configurar comissoes.
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">CPE</Label>
+                      <Input
+                        value={formData.cpe || ''}
+                        onChange={(e) => setFormData({...formData, cpe: e.target.value.toUpperCase()})}
+                        placeholder="PT0002XXXXXXXXXXXX"
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 text-slate-400">NIF do Cliente</Label>
+                      <Input
+                        value={formData.client_nif || ''}
+                        onChange={(e) => setFormData({...formData, client_nif: e.target.value})}
+                        placeholder="NIF"
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                      />
+                    </div>
+                  </div>
                 </FormSection>
               )}
 

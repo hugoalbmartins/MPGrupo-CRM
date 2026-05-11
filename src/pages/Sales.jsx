@@ -229,8 +229,10 @@ const Sales = ({ user }) => {
     }
 
     if (operatorCommissions.length === 0) {
-      toast.error("Nao e possivel criar venda: operadora sem comissoes configuradas!");
-      return;
+      if (['telecomunicacoes', 'energia'].includes(formData.scope)) {
+        toast.error("Nao e possivel criar venda: operadora sem comissoes configuradas!");
+        return;
+      }
     }
 
     if (formData.scope === 'telecomunicacoes') {
@@ -953,15 +955,8 @@ const Sales = ({ user }) => {
   });
 
   const filteredScopes = (() => {
-    const accessAllowed = operators.filter(userAllowedByOperatorAccess);
-    if (partnerAvailableOperatorIds === null) {
-      const accessibleSet = new Set(accessAllowed.map(op => op.scope));
-      return dynamicScopes.filter(s => accessibleSet.has(s.slug));
-    }
-    const availableScopeSet = new Set(
-      accessAllowed.filter(op => partnerAvailableOperatorIds.includes(op.id)).map(op => op.scope)
-    );
-    return dynamicScopes.filter(s => availableScopeSet.has(s.slug));
+    const allScopeSlugs = new Set(operators.map(op => op.scope).filter(Boolean));
+    return dynamicScopes.filter(s => allScopeSlugs.has(s.slug));
   })();
 
   const currentOperator = operators.find(op => op.id === formData.operator_id);
@@ -1912,6 +1907,7 @@ const Sales = ({ user }) => {
             energySaleMode={energySaleMode}
             setEnergySaleMode={setEnergySaleMode}
             dynamicScopes={filteredScopes}
+            filteredScopes={filteredScopes}
             dynamicScopeFields={dynamicScopeFields}
           />
         </div>
