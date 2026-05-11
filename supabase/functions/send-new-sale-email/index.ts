@@ -549,10 +549,53 @@ Deno.serve(async (req: Request) => {
     const globalSmtpPass = Deno.env.get("SMTP_PASS") || "";
 
     const hasOperatorEmail = payload.from_email && payload.from_smtp_user && payload.from_smtp_pass;
+
+    // Check commission_config SMTP override (priority: commission_config > operator > global)
+    let commissionSmtpOverride: { from_email?: string; from_smtp_pass?: string } | null = null;
+    if (payload.sale_id && !hasOperatorEmail) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (supabaseUrl && supabaseKey) {
+          // Get sale details to find matching commission config
+          const saleRes = await fetch(
+            `${supabaseUrl}/rest/v1/sales?select=operator_id,service_type,scope,partner_id,client_type&id=eq.${payload.sale_id}&limit=1`,
+            { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+          );
+          const saleData = await saleRes.json();
+          if (saleData?.[0]) {
+            const sale = saleData[0];
+            // Get partner type
+            let partnerType = 'D2D';
+            if (sale.partner_id) {
+              const ptRes = await fetch(
+                `${supabaseUrl}/rest/v1/partners?select=partner_type&id=eq.${sale.partner_id}&limit=1`,
+                { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+              );
+              const ptData = await ptRes.json();
+              if (ptData?.[0]?.partner_type) partnerType = ptData[0].partner_type;
+            }
+            // Find commission config with SMTP override
+            const ccRes = await fetch(
+              `${supabaseUrl}/rest/v1/commission_configurations?select=from_email,from_smtp_pass&operator_id=eq.${sale.operator_id}&from_email=not.is.null&limit=1`,
+              { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+            );
+            const ccData = await ccRes.json();
+            if (ccData?.[0]?.from_email) {
+              commissionSmtpOverride = ccData[0];
+              console.log(`[EMAIL] Found commission config SMTP override: ${ccData[0].from_email}`);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to check commission config SMTP override:", e);
+      }
+    }
+
     const toAddressesRaw = payload.to_recipients.map((r) => r.email);
     const smtpUser = hasOperatorEmail ? payload.from_smtp_user! : globalSmtpUser;
-    const smtpPass = hasOperatorEmail ? payload.from_smtp_pass! : globalSmtpPass;
-    const fromEmail = hasOperatorEmail ? payload.from_email! : ((dbSmtpConfig?.from_email as string) || "info@mpgrupo.pt");
+    const smtpPass = hasOperatorEmail ? payload.from_smtp_pass! : (commissionSmtpOverride?.from_smtp_pass || globalSmtpPass);
+    const fromEmail = hasOperatorEmail ? payload.from_email! : (commissionSmtpOverride?.from_email || (dbSmtpConfig?.from_email as string) || "info@mpgrupo.pt");
     const fromName = (dbSmtpConfig?.from_name as string) || "MP Grupo CRM";
 
     if (!smtpPass) {

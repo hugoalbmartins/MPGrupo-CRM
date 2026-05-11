@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Satellite, Copy, Users, Loader as Loader2 } from "lucide-react";
+import { Save, Trash2, Plus, Check, X, LocationEdit as Edit2, Layers, Wifi, Satellite, Copy, Users, Loader as Loader2, Mail, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -205,6 +205,9 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
   const [activeTechnology, setActiveTechnology] = useState('Fibra');
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [bulkLevelsDialogOpen, setBulkLevelsDialogOpen] = useState(false);
+  const [smtpOverride, setSmtpOverride] = useState({ from_email: '', from_smtp_pass: '' });
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
+  const [smtpSectionOpen, setSmtpSectionOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -237,6 +240,16 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
         rev_level: c.rev_level || null,
       }));
       setConfigs(withDefaults);
+
+      // Load SMTP override from first config that has it
+      const smtpConfig = withDefaults.find(c => c.from_email);
+      if (smtpConfig) {
+        setSmtpOverride({
+          from_email: smtpConfig.from_email || '',
+          from_smtp_pass: smtpConfig.from_smtp_pass || '',
+        });
+        setSmtpSectionOpen(true);
+      }
 
       const newLevelsByType = {};
       const newActiveLevels = {};
@@ -323,7 +336,13 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
 
   const handleSaveAll = async () => {
     try {
-      await operatorsService.saveCommissionConfigs(operator.id, configs);
+      // Apply SMTP override to all configs
+      const configsWithSmtp = configs.map(c => ({
+        ...c,
+        from_email: smtpOverride.from_email || null,
+        from_smtp_pass: smtpOverride.from_smtp_pass || null,
+      }));
+      await operatorsService.saveCommissionConfigs(operator.id, configsWithSmtp);
       toast.success('Configuracoes guardadas!');
       onSave?.();
     } catch (error) {
@@ -573,6 +592,65 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
           </div>
         </div>
         <div className="p-6 space-y-4">
+          {/* SMTP Override Section */}
+          <div className="rounded-lg border border-dark-700 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setSmtpSectionOpen(!smtpSectionOpen)}
+              className="w-full flex items-center justify-between p-3 bg-dark-900 hover:bg-dark-800 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-semibold text-white">Email de Envio (Sobreposicao)</span>
+                {smtpOverride.from_email && (
+                  <span className="text-xs text-blue-400">{smtpOverride.from_email}</span>
+                )}
+              </div>
+              <span className="text-xs text-slate-500">{smtpSectionOpen ? 'Fechar' : 'Abrir'}</span>
+            </button>
+            {smtpSectionOpen && (
+              <div className="p-4 space-y-3 bg-dark-850">
+                <p className="text-xs text-slate-500">
+                  Sobrepor o email de envio para esta operadora nas notificacoes de comissoes. Se nao configurado, usa-se o email da operadora ou o global.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-slate-400 mb-1 block">Email de Envio</Label>
+                    <Input
+                      type="email"
+                      value={smtpOverride.from_email}
+                      onChange={(e) => setSmtpOverride(prev => ({ ...prev, from_email: e.target.value }))}
+                      className="bg-dark-900 border-dark-700 text-white h-9 text-sm"
+                      placeholder="ex: comissoes@operadora.pt"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-400 mb-1 block">Password SMTP</Label>
+                    <div className="relative">
+                      <Input
+                        type={showSmtpPass ? 'text' : 'password'}
+                        value={smtpOverride.from_smtp_pass}
+                        onChange={(e) => setSmtpOverride(prev => ({ ...prev, from_smtp_pass: e.target.value }))}
+                        className="bg-dark-900 border-dark-700 text-white h-9 text-sm pr-10"
+                        placeholder="Password do email"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSmtpPass(!showSmtpPass)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                      >
+                        {showSmtpPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {smtpOverride.from_email && !smtpOverride.from_smtp_pass && (
+                  <p className="text-xs text-amber-400">Defina a password para ativar o email de envio personalizado.</p>
+                )}
+              </div>
+            )}
+          </div>
+
           {hasSATIndividual && (
             <Tabs value={activeTechnology} onValueChange={setActiveTechnology} className="w-full mb-4">
               <TabsList className="grid w-full grid-cols-2 bg-dark-900 border border-dark-700 p-1">

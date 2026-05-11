@@ -290,6 +290,8 @@ export const operatorsService = {
         power_value: config.tier_mode === 'by_power' ? (config.power_value || null) : null,
         additional_service_name: config.service_type === 'additional_service' ? (config.additional_service_name || null) : null,
         technology: config.technology || null,
+        from_email: config.from_email || null,
+        from_smtp_pass: config.from_smtp_pass || null,
       };
     });
 
