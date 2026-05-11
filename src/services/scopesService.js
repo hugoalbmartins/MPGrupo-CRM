@@ -49,6 +49,8 @@ export const scopesService = {
         sort_order: scopeData.sort_order || 0,
         is_system: false,
         active: true,
+        counting_mode: scopeData.counting_mode || 'per_contract',
+        quantity_field: scopeData.quantity_field || null,
       })
       .select()
       .single();
@@ -65,6 +67,8 @@ export const scopesService = {
     if (scopeData.sort_order !== undefined) updateData.sort_order = scopeData.sort_order;
     if (scopeData.active !== undefined) updateData.active = scopeData.active;
     if (scopeData.slug !== undefined) updateData.slug = scopeData.slug;
+    if (scopeData.counting_mode !== undefined) updateData.counting_mode = scopeData.counting_mode;
+    if (scopeData.quantity_field !== undefined) updateData.quantity_field = scopeData.quantity_field;
 
     const { data, error } = await supabase
       .from('scopes')

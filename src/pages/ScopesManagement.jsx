@@ -77,7 +77,7 @@ export default function ScopesManagement({ user }) {
   const queryClient = useQueryClient();
   const [editScope, setEditScope] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [newScope, setNewScope] = useState({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4' });
+  const [newScope, setNewScope] = useState({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4', counting_mode: 'per_contract', quantity_field: '' });
   const [editTab, setEditTab] = useState('fields');
   const [scopeFields, setScopeFields] = useState([]);
   const [scopeEmailFields, setScopeEmailFields] = useState([]);
@@ -96,7 +96,7 @@ export default function ScopesManagement({ user }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scopes'] });
       setShowCreate(false);
-      setNewScope({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4' });
+      setNewScope({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4', counting_mode: 'per_contract', quantity_field: '' });
       toast.success('Ambito criado com sucesso');
     },
     onError: (err) => toast.error(err.message),
@@ -125,7 +125,7 @@ export default function ScopesManagement({ user }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scopes'] });
       setDuplicateSource(null);
-      setDuplicateData({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4' });
+      setDuplicateData({ slug: '', display_name: '', icon: 'circle', color: '#06b6d4', counting_mode: 'per_contract', quantity_field: '' });
       toast.success('Ambito duplicado com sucesso');
     },
     onError: (err) => toast.error(err.message),
@@ -410,6 +410,29 @@ export default function ScopesManagement({ user }) {
                 />
               </div>
             </div>
+            <div>
+              <Label className="text-xs text-slate-400">Forma de Contabilizacao</Label>
+              <select
+                value={newScope.counting_mode}
+                onChange={(e) => setNewScope({ ...newScope, counting_mode: e.target.value, quantity_field: e.target.value === 'per_contract' ? '' : newScope.quantity_field })}
+                className="w-full h-9 text-sm bg-dark-800 border border-dark-700 text-white rounded-md px-3 mt-1"
+              >
+                <option value="per_contract">Por contrato (1 venda = 1 comissao)</option>
+                <option value="by_quantity">Por quantidade (comissao x quantidade de item)</option>
+              </select>
+            </div>
+            {newScope.counting_mode === 'by_quantity' && (
+              <div>
+                <Label className="text-xs text-slate-400">Campo de Quantidade (field_key)</Label>
+                <Input
+                  value={newScope.quantity_field}
+                  onChange={(e) => setNewScope({ ...newScope, quantity_field: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
+                  className="bg-dark-800 border-dark-700 text-white"
+                  placeholder="ex: ev_outlet_count"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Chave do campo cujo valor numerico multiplica a comissao</p>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
               <Button
@@ -677,6 +700,47 @@ export default function ScopesManagement({ user }) {
                       ))}
                     </div>
                   </div>
+                  <div className="border-t border-dark-700 pt-4">
+                    <Label className="text-xs text-slate-400">Forma de Contabilizacao</Label>
+                    <select
+                      value={editScope.counting_mode || 'per_contract'}
+                      onChange={(e) => setEditScope({ ...editScope, counting_mode: e.target.value, quantity_field: e.target.value === 'per_contract' ? '' : (editScope.quantity_field || '') })}
+                      className="w-full h-9 text-sm bg-dark-800 border border-dark-700 text-white rounded-md px-3 mt-1"
+                    >
+                      <option value="per_contract">Por contrato (1 venda = 1 comissao)</option>
+                      <option value="by_quantity">Por quantidade (comissao x quantidade de item)</option>
+                    </select>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Define como a comissao e calculada: por contrato (valor fixo por venda) ou por quantidade (valor da comissao multiplicado pelo campo de quantidade)
+                    </p>
+                  </div>
+                  {(editScope.counting_mode || 'per_contract') === 'by_quantity' && (
+                    <div>
+                      <Label className="text-xs text-slate-400">Campo de Quantidade</Label>
+                      {scopeFields.length > 0 ? (
+                        <select
+                          value={editScope.quantity_field || ''}
+                          onChange={(e) => setEditScope({ ...editScope, quantity_field: e.target.value })}
+                          className="w-full h-9 text-sm bg-dark-800 border border-dark-700 text-white rounded-md px-3 mt-1"
+                        >
+                          <option value="">Selecione um campo...</option>
+                          {scopeFields.filter(f => f.field_type === 'number').map(f => (
+                            <option key={f.field_key} value={f.field_key}>{f.label} ({f.field_key})</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          value={editScope.quantity_field || ''}
+                          onChange={(e) => setEditScope({ ...editScope, quantity_field: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
+                          className="bg-dark-800 border-dark-700 text-white mt-1"
+                          placeholder="ex: ev_outlet_count"
+                        />
+                      )}
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        Campo numerico cujo valor multiplica a comissao. Ex: "Quantidade de tomadas" = 2 tomadas, comissao = 2 x valor base
+                      </p>
+                    </div>
+                  )}
                   <div className="flex justify-end pt-2">
                     <Button
                       onClick={() => {
@@ -686,6 +750,8 @@ export default function ScopesManagement({ user }) {
                             display_name: editScope.display_name,
                             color: editScope.color,
                             icon: editScope.icon,
+                            counting_mode: editScope.counting_mode || 'per_contract',
+                            quantity_field: editScope.quantity_field || null,
                           },
                         });
                       }}

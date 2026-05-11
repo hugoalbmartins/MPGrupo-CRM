@@ -572,6 +572,36 @@ export async function calculateCommission(operator, saleData, supabase) {
     totalCommission = totalCommission * pct;
   }
 
+  // Apply quantity multiplier for scopes with counting_mode = 'by_quantity'
+  if (scope && scope !== 'telecomunicacoes' && scope !== 'energia') {
+    try {
+      const { data: scopeData } = await supabase
+        .from('scopes')
+        .select('counting_mode, quantity_field')
+        .eq('slug', scope)
+        .maybeSingle();
+
+      if (scopeData && scopeData.counting_mode === 'by_quantity' && scopeData.quantity_field) {
+        const qtyField = scopeData.quantity_field;
+        let quantity = 1;
+
+        // Check custom_fields first, then sale data directly
+        if (saleData.custom_fields && saleData.custom_fields[qtyField] !== undefined) {
+          quantity = parseInt(saleData.custom_fields[qtyField]) || 1;
+        } else if (saleData[qtyField] !== undefined) {
+          quantity = parseInt(saleData[qtyField]) || 1;
+        }
+
+        if (quantity > 1) {
+          console.log(`Scope ${scope} uses by_quantity mode: ${qtyField}=${quantity}, commission ${totalCommission} x ${quantity} = ${totalCommission * quantity}`);
+          totalCommission = totalCommission * quantity;
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching scope counting mode:', e);
+    }
+  }
+
   return totalCommission;
 }
 
