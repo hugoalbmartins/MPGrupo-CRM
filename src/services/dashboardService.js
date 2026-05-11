@@ -82,13 +82,29 @@ function getMonthRange(year, month) {
 async function fetchScopesMeta() {
   const { data } = await supabase
     .from('scopes')
-    .select('slug, display_name, icon, color, sort_order')
+    .select('slug, display_name, icon, color, sort_order, counting_mode, quantity_field')
     .eq('active', true)
     .order('sort_order');
   return data || [];
 }
 
-function buildByScope(sales) {
+function getSaleQuantity(sale, scopesMetaMap) {
+  const scope = sale.scope || '';
+  const scopeMeta = scopesMetaMap[scope];
+  if (!scopeMeta || scopeMeta.counting_mode !== 'by_quantity' || !scopeMeta.quantity_field) {
+    return 1;
+  }
+  const qtyField = scopeMeta.quantity_field;
+  if (sale.custom_fields && sale.custom_fields[qtyField] !== undefined) {
+    return parseInt(sale.custom_fields[qtyField]) || 1;
+  }
+  if (sale[qtyField] !== undefined) {
+    return parseInt(sale[qtyField]) || 1;
+  }
+  return 1;
+}
+
+function buildByScope(sales, scopesMetaMap = {}) {
   const byScope = {};
   if (!sales) return byScope;
   for (const sale of sales) {
@@ -97,18 +113,19 @@ function buildByScope(sales) {
     if (!byScope[scope]) {
       byScope[scope] = { count: 0, monthly_total: 0, electricity: 0, gas: 0, dual: 0, by_operator: {} };
     }
-    byScope[scope].count++;
+    const qty = getSaleQuantity(sale, scopesMetaMap);
+    byScope[scope].count += qty;
     if (scope === 'telecomunicacoes') {
       byScope[scope].monthly_total += sale.monthly_value || 0;
       if (sale.operator_id) {
-        byScope[scope].by_operator[sale.operator_id] = (byScope[scope].by_operator[sale.operator_id] || 0) + 1;
+        byScope[scope].by_operator[sale.operator_id] = (byScope[scope].by_operator[sale.operator_id] || 0) + qty;
       }
     }
     if (scope === 'energia') {
       const et = sale.energy_sale_type || 'eletricidade';
-      if (et === 'eletricidade') byScope[scope].electricity++;
-      else if (et === 'gas') byScope[scope].gas++;
-      else if (et === 'dual') { byScope[scope].dual++; byScope[scope].electricity++; byScope[scope].gas++; }
+      if (et === 'eletricidade') byScope[scope].electricity += qty;
+      else if (et === 'gas') byScope[scope].gas += qty;
+      else if (et === 'dual') { byScope[scope].dual += qty; byScope[scope].electricity += qty; byScope[scope].gas += qty; }
     }
   }
   return byScope;
@@ -257,17 +274,19 @@ async function getLast12MonthsData(partnerId = null) {
   const now = new Date();
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
-  let query = supabase
-    .from('sales')
-    .select('date, scope')
-    .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
-    .neq('status', 'Em proposta');
+  const [salesResult, scopesMeta] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('date, scope, custom_fields, ev_outlet_count')
+      .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
+      .neq('status', 'Em proposta')
+      .then(q => partnerId ? q.eq('partner_id', partnerId) : q),
+    fetchScopesMeta()
+  ]);
 
-  if (partnerId) {
-    query = query.eq('partner_id', partnerId);
-  }
-
-  const { data: sales } = await query;
+  const { data: sales } = salesResult;
+  const scopesMetaMap = {};
+  scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
 
   const allScopes = new Set();
   const monthlyData = {};
@@ -287,7 +306,8 @@ async function getLast12MonthsData(partnerId = null) {
       const scope = sale.scope || '';
       if (scope) {
         allScopes.add(scope);
-        monthlyData[key][scope] = (monthlyData[key][scope] || 0) + 1;
+        const qty = getSaleQuantity(sale, scopesMetaMap);
+        monthlyData[key][scope] = (monthlyData[key][scope] || 0) + qty;
       }
     });
   }
@@ -344,11 +364,13 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
   }
 
   const scopesMeta = scopesResult.data || [];
+  const scopesMetaMap = {};
+  scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
   const retentions = await calculateRetentions(year, month);
   const netCommissions = await calculateNetCommission(sales);
 
   const stats = {
-    total_sales: sales?.length || 0,
+    total_sales: 0,
     total_partners: partnerCount || 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
@@ -384,27 +406,30 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
       const scope = sale.scope || '';
       const commission = sale.manual_commission || sale.calculated_commission || 0;
       const status = sale.status || 'Pendente';
+      const qty = getSaleQuantity(sale, scopesMetaMap);
+
+      stats.total_sales += qty;
 
       if (scope === 'telecomunicacoes') {
-        stats.telecomunicacoes.count++;
+        stats.telecomunicacoes.count += qty;
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
-        stats.energia.count++;
+        stats.energia.count += qty;
 
         const energyType = sale.energy_sale_type || 'eletricidade';
         if (energyType === 'eletricidade') {
-          stats.energia.electricity++;
+          stats.energia.electricity += qty;
         } else if (energyType === 'gas') {
-          stats.energia.gas++;
+          stats.energia.gas += qty;
         } else if (energyType === 'dual') {
-          stats.energia.dual++;
-          stats.energia.electricity++;
-          stats.energia.gas++;
+          stats.energia.dual += qty;
+          stats.energia.electricity += qty;
+          stats.energia.gas += qty;
         }
       } else if (scope === 'solar') {
-        stats.solar.count++;
+        stats.solar.count += qty;
       } else if (scope === 'mobilidade_eletrica') {
-        stats.mobilidade_eletrica.count++;
+        stats.mobilidade_eletrica.count += qty;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
@@ -412,10 +437,10 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
       if (!stats.by_partner[sale.partner_id]) {
         stats.by_partner[sale.partner_id] = { count: 0, commission: 0 };
       }
-      stats.by_partner[sale.partner_id].count++;
+      stats.by_partner[sale.partner_id].count += qty;
       stats.by_partner[sale.partner_id].commission += commission;
 
-      stats.by_operator[sale.operator_id] = (stats.by_operator[sale.operator_id] || 0) + 1;
+      stats.by_operator[sale.operator_id] = (stats.by_operator[sale.operator_id] || 0) + qty;
 
       if (sale.paid_to_operator) {
         stats.paid_by_operator++;
@@ -461,7 +486,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
     }
   }
 
-  stats.by_scope = buildByScope(sales);
+  stats.by_scope = buildByScope(sales, scopesMetaMap);
   return stats;
 }
 
@@ -480,9 +505,11 @@ async function getBODashboard(year, month) {
   ]);
 
   const sales = salesResult.data;
+  const scopesMetaMap = {};
+  scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
 
   const stats = {
-    total_sales: sales?.length || 0,
+    total_sales: 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
@@ -502,27 +529,30 @@ async function getBODashboard(year, month) {
     sales.forEach(sale => {
       const scope = sale.scope || '';
       const status = sale.status || 'Pendente';
+      const qty = getSaleQuantity(sale, scopesMetaMap);
+
+      stats.total_sales += qty;
 
       if (scope === 'telecomunicacoes') {
-        stats.telecomunicacoes.count++;
+        stats.telecomunicacoes.count += qty;
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
-        stats.energia.count++;
+        stats.energia.count += qty;
 
         const energyType = sale.energy_sale_type || 'eletricidade';
         if (energyType === 'eletricidade') {
-          stats.energia.electricity++;
+          stats.energia.electricity += qty;
         } else if (energyType === 'gas') {
-          stats.energia.gas++;
+          stats.energia.gas += qty;
         } else if (energyType === 'dual') {
-          stats.energia.dual++;
-          stats.energia.electricity++;
-          stats.energia.gas++;
+          stats.energia.dual += qty;
+          stats.energia.electricity += qty;
+          stats.energia.gas += qty;
         }
       } else if (scope === 'solar') {
-        stats.solar.count++;
+        stats.solar.count += qty;
       } else if (scope === 'mobilidade_eletrica') {
-        stats.mobilidade_eletrica.count++;
+        stats.mobilidade_eletrica.count += qty;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
@@ -530,14 +560,14 @@ async function getBODashboard(year, month) {
       if (!stats.by_partner[sale.partner_id]) {
         stats.by_partner[sale.partner_id] = { count: 0 };
       }
-      stats.by_partner[sale.partner_id].count++;
+      stats.by_partner[sale.partner_id].count += qty;
 
       if (sale.has_direct_debit) stats.dd_count++;
       if (sale.has_electronic_invoice) stats.fe_count++;
     });
   }
 
-  stats.by_scope = buildByScope(sales);
+  stats.by_scope = buildByScope(sales, scopesMetaMap);
   return stats;
 }
 
@@ -562,11 +592,13 @@ async function getPartnerDashboard(partnerId, year, month) {
 
   const sales = salesResult.data;
   const operators = operatorsResult.data || [];
+  const scopesMetaMap = {};
+  scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
   const retentions = await calculateRetentions(year, month, partnerId);
   const netCommissions = await calculateNetCommission(sales);
 
   const stats = {
-    total_sales: sales?.length || 0,
+    total_sales: 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
@@ -596,31 +628,34 @@ async function getPartnerDashboard(partnerId, year, month) {
       const scope = sale.scope || '';
       const commission = sale.manual_commission || sale.calculated_commission || 0;
       const status = sale.status || 'Pendente';
+      const qty = getSaleQuantity(sale, scopesMetaMap);
+
+      stats.total_sales += qty;
 
       if (scope === 'telecomunicacoes') {
-        stats.telecomunicacoes.count++;
+        stats.telecomunicacoes.count += qty;
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
-        stats.energia.count++;
+        stats.energia.count += qty;
 
         const energyType = sale.energy_sale_type || 'eletricidade';
         if (energyType === 'eletricidade') {
-          stats.energia.electricity++;
+          stats.energia.electricity += qty;
         } else if (energyType === 'gas') {
-          stats.energia.gas++;
+          stats.energia.gas += qty;
         } else if (energyType === 'dual') {
-          stats.energia.dual++;
-          stats.energia.electricity++;
-          stats.energia.gas++;
+          stats.energia.dual += qty;
+          stats.energia.electricity += qty;
+          stats.energia.gas += qty;
         }
       } else if (scope === 'solar') {
-        stats.solar.count++;
+        stats.solar.count += qty;
       } else if (scope === 'mobilidade_eletrica') {
-        stats.mobilidade_eletrica.count++;
+        stats.mobilidade_eletrica.count += qty;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
-      stats.by_operator[sale.operator_id] = (stats.by_operator[sale.operator_id] || 0) + 1;
+      stats.by_operator[sale.operator_id] = (stats.by_operator[sale.operator_id] || 0) + qty;
 
       if (sale.paid_to_operator) {
         stats.commission_paid += commission;
@@ -636,7 +671,7 @@ async function getPartnerDashboard(partnerId, year, month) {
     });
   }
 
-  stats.by_scope = buildByScope(sales);
+  stats.by_scope = buildByScope(sales, scopesMetaMap);
 
   const operatorStats = operators.map(op => ({
     id: op.id,
@@ -663,9 +698,11 @@ async function getCommercialDashboard(userId, year, month) {
   ]);
 
   const sales = salesResult.data;
+  const scopesMetaMap = {};
+  scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
 
   const stats = {
-    total_sales: sales?.length || 0,
+    total_sales: 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
@@ -684,20 +721,23 @@ async function getCommercialDashboard(userId, year, month) {
     sales.forEach(sale => {
       const scope = sale.scope || '';
       const status = sale.status || 'Pendente';
+      const qty = getSaleQuantity(sale, scopesMetaMap);
+
+      stats.total_sales += qty;
 
       if (scope === 'telecomunicacoes') {
-        stats.telecomunicacoes.count++;
+        stats.telecomunicacoes.count += qty;
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
-        stats.energia.count++;
+        stats.energia.count += qty;
         const energyType = sale.energy_sale_type || 'eletricidade';
-        if (energyType === 'eletricidade') stats.energia.electricity++;
-        else if (energyType === 'gas') stats.energia.gas++;
-        else if (energyType === 'dual') { stats.energia.dual++; stats.energia.electricity++; stats.energia.gas++; }
+        if (energyType === 'eletricidade') stats.energia.electricity += qty;
+        else if (energyType === 'gas') stats.energia.gas += qty;
+        else if (energyType === 'dual') { stats.energia.dual += qty; stats.energia.electricity += qty; stats.energia.gas += qty; }
       } else if (scope === 'solar') {
-        stats.solar.count++;
+        stats.solar.count += qty;
       } else if (scope === 'mobilidade_eletrica') {
-        stats.mobilidade_eletrica.count++;
+        stats.mobilidade_eletrica.count += qty;
       }
 
       stats.by_status[status] = (stats.by_status[status] || 0) + 1;
@@ -707,7 +747,7 @@ async function getCommercialDashboard(userId, year, month) {
     });
   }
 
-  stats.by_scope = buildByScope(sales);
+  stats.by_scope = buildByScope(sales, scopesMetaMap);
   return stats;
 }
 
@@ -851,8 +891,11 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     };
   });
 
+  const scopesMetaMap = {};
+  scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
+
   const stats = {
-    total_sales: sales?.length || 0,
+    total_sales: 0,
     telecomunicacoes: { count: 0, monthly_total: 0 },
     energia: { count: 0, electricity: 0, gas: 0, dual: 0 },
     solar: { count: 0 },
@@ -872,27 +915,30 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
   if (sales) {
     sales.forEach(sale => {
       const scope = sale.scope || '';
+      const qty = getSaleQuantity(sale, scopesMetaMap);
+
+      stats.total_sales += qty;
 
       if (scope === 'telecomunicacoes') {
-        stats.telecomunicacoes.count++;
+        stats.telecomunicacoes.count += qty;
         stats.telecomunicacoes.monthly_total += sale.monthly_value || 0;
       } else if (scope === 'energia') {
-        stats.energia.count++;
+        stats.energia.count += qty;
 
         const energyType = sale.energy_sale_type || 'eletricidade';
         if (energyType === 'eletricidade') {
-          stats.energia.electricity++;
+          stats.energia.electricity += qty;
         } else if (energyType === 'gas') {
-          stats.energia.gas++;
+          stats.energia.gas += qty;
         } else if (energyType === 'dual') {
-          stats.energia.dual++;
-          stats.energia.electricity++;
-          stats.energia.gas++;
+          stats.energia.dual += qty;
+          stats.energia.electricity += qty;
+          stats.energia.gas += qty;
         }
       } else if (scope === 'solar') {
-        stats.solar.count++;
+        stats.solar.count += qty;
       } else if (scope === 'mobilidade_eletrica') {
-        stats.mobilidade_eletrica.count++;
+        stats.mobilidade_eletrica.count += qty;
       }
 
       if (sale.has_direct_debit) stats.dd_count++;
@@ -900,7 +946,7 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     });
   }
 
-  stats.by_scope = buildByScope(sales);
+  stats.by_scope = buildByScope(sales, scopesMetaMap);
   return stats;
 }
 
