@@ -1,3 +1,68 @@
+// Cached SMTP config from database
+let cachedSmtpConfig: Record<string, unknown> | null = null;
+let cacheExpiry = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getSmtpConfigFromDB(): Promise<Record<string, unknown> | null> {
+  const now = Date.now();
+  if (cachedSmtpConfig && now < cacheExpiry) {
+    return cachedSmtpConfig;
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !supabaseKey) return null;
+
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/system_settings?select=setting_value&setting_key=eq.smtp_config`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
+
+    const data = await res.json();
+    if (data?.[0]?.setting_value) {
+      cachedSmtpConfig = data[0].setting_value;
+      cacheExpiry = now + CACHE_TTL;
+      return cachedSmtpConfig;
+    }
+  } catch (e) {
+    console.warn("Failed to fetch SMTP config from DB, using env vars:", e);
+  }
+
+  return null;
+}
+
+export async function getSmtpSettings() {
+  const dbConfig = await getSmtpConfigFromDB();
+
+  return {
+    smtp_host: (dbConfig?.smtp_host as string) || Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt",
+    smtp_port: (dbConfig?.smtp_port as number) || parseInt(Deno.env.get("SMTP_PORT") || "465"),
+    smtp_user: (dbConfig?.smtp_user as string) || Deno.env.get("SMTP_USER") || "info@mpgrupo.pt",
+    smtp_pass: Deno.env.get("SMTP_PASS") || "",
+    from_email: (dbConfig?.from_email as string) || Deno.env.get("FROM_EMAIL") || "info@mpgrupo.pt",
+    from_name: (dbConfig?.from_name as string) || Deno.env.get("FROM_NAME") || "MP Grupo CRM",
+    reply_to: (dbConfig?.reply_to as string) || "",
+    bcc_enabled: (dbConfig?.bcc_enabled as boolean) || false,
+    bcc_emails: (dbConfig?.bcc_emails as string[]) || [],
+    new_sale_email_enabled: dbConfig?.new_sale_email_enabled !== false,
+    alert_email_enabled: dbConfig?.alert_email_enabled !== false,
+    commission_report_email_enabled: dbConfig?.commission_report_email_enabled !== false,
+    operator_notification_email_enabled: dbConfig?.operator_notification_email_enabled !== false,
+  };
+}
+
+export function clearSmtpConfigCache() {
+  cachedSmtpConfig = null;
+  cacheExpiry = 0;
+}
+
 export async function sendEmailSMTP(
   to: string,
   subject: string,
@@ -10,12 +75,15 @@ export async function sendEmailSMTP(
     replyTo?: string;
   }
 ) {
-  const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
-  const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-  const smtpUser = options?.smtpUser || Deno.env.get("SMTP_USER") || "noreply@mpgrupo.pt";
-  const smtpPass = options?.smtpPass || Deno.env.get("SMTP_PASS") || "";
-  const fromEmail = options?.fromEmail || Deno.env.get("FROM_EMAIL") || "noreply@mpgrupo.pt";
-  const fromName = options?.fromName || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
+  const settings = await getSmtpSettings();
+
+  const smtpHost = settings.smtp_host;
+  const smtpPort = settings.smtp_port;
+  const smtpUser = options?.smtpUser || settings.smtp_user;
+  const smtpPass = options?.smtpPass || settings.smtp_pass;
+  const fromEmail = options?.fromEmail || settings.from_email;
+  const fromName = options?.fromName || settings.from_name;
+  const replyTo = options?.replyTo || settings.reply_to;
 
   if (!smtpPass) {
     throw new Error("SMTP_PASS not configured");
@@ -34,8 +102,8 @@ export async function sendEmailSMTP(
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ];
 
-  if (options?.replyTo) {
-    headers.push(`Reply-To: ${options.replyTo}`);
+  if (replyTo) {
+    headers.push(`Reply-To: ${replyTo}`);
   }
 
   const emailBody = [
@@ -113,12 +181,15 @@ export async function sendEmailWithAttachment(
     replyTo?: string;
   }
 ) {
-  const smtpHost = Deno.env.get("SMTP_HOST") || "cpanel75.dnscpanel.com";
-  const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-  const smtpUser = options?.smtpUser || Deno.env.get("SMTP_USER") || "noreply@mpgrupo.pt";
-  const smtpPass = options?.smtpPass || Deno.env.get("SMTP_PASS") || "";
-  const fromEmail = options?.fromEmail || Deno.env.get("FROM_EMAIL") || "noreply@mpgrupo.pt";
-  const fromName = options?.fromName || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
+  const settings = await getSmtpSettings();
+
+  const smtpHost = settings.smtp_host;
+  const smtpPort = settings.smtp_port;
+  const smtpUser = options?.smtpUser || settings.smtp_user;
+  const smtpPass = options?.smtpPass || settings.smtp_pass;
+  const fromEmail = options?.fromEmail || settings.from_email;
+  const fromName = options?.fromName || settings.from_name;
+  const replyTo = options?.replyTo || settings.reply_to;
 
   if (!smtpPass) {
     throw new Error("SMTP_PASS not configured");
@@ -141,8 +212,8 @@ export async function sendEmailWithAttachment(
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
   ];
 
-  if (options?.replyTo) {
-    headers.push(`Reply-To: ${options.replyTo}`);
+  if (replyTo) {
+    headers.push(`Reply-To: ${replyTo}`);
   }
 
   const emailBody = [

@@ -1,3 +1,37 @@
+// Cached SMTP config from database
+let cachedSmtpConfig: Record<string, unknown> | null = null;
+let cacheExpiry = 0;
+const CACHE_TTL = 5 * 60 * 1000;
+
+async function getSmtpConfigFromDB(): Promise<Record<string, unknown> | null> {
+  const now = Date.now();
+  if (cachedSmtpConfig && now < cacheExpiry) {
+    return cachedSmtpConfig;
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) return null;
+
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/system_settings?select=setting_value&setting_key=eq.smtp_config`,
+      {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+      }
+    );
+    const data = await res.json();
+    if (data?.[0]?.setting_value) {
+      cachedSmtpConfig = data[0].setting_value;
+      cacheExpiry = now + CACHE_TTL;
+      return cachedSmtpConfig;
+    }
+  } catch (e) {
+    console.warn("Failed to fetch SMTP config from DB:", e);
+  }
+  return null;
+}
+
 export interface EmailConfig {
   from?: string;
   fromName?: string;
@@ -38,36 +72,20 @@ export async function sendEmailResend(
   config?: EmailConfig
 ) {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) throw new Error("RESEND_API_KEY not configured");
 
-  if (!resendApiKey) {
-    throw new Error("RESEND_API_KEY not configured");
-  }
-
-  const fromEmail = config?.from || "noreply@mpgrupo.pt";
-  const fromName = config?.fromName || "MP Grupo CRM";
+  const dbConfig = await getSmtpConfigFromDB();
+  const fromEmail = config?.from || (dbConfig?.from_email as string) || Deno.env.get("FROM_EMAIL") || "noreply@mpgrupo.pt";
+  const fromName = config?.fromName || (dbConfig?.from_name as string) || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
   const from = `${fromName} <${fromEmail}>`;
 
-  const payload: any = {
-    from,
-    to: [to],
-    subject,
-    html,
-  };
-
-  if (config?.replyTo) {
-    payload.reply_to = config.replyTo;
-  }
-
-  if (config?.bcc && config.bcc.length > 0) {
-    payload.bcc = config.bcc;
-  }
+  const payload: any = { from, to: [to], subject, html };
+  if (config?.replyTo) payload.reply_to = config.replyTo;
+  if (config?.bcc && config.bcc.length > 0) payload.bcc = config.bcc;
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${resendApiKey}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendApiKey}` },
     body: JSON.stringify(payload),
   });
 
@@ -87,16 +105,17 @@ export async function sendEmailSMTP(
   html: string,
   config?: EmailConfig
 ) {
-  const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
-  const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-  const smtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
-  const smtpPass = Deno.env.get("SMTP_PASS") || "";
-  const fromEmail = config?.from || Deno.env.get("FROM_EMAIL") || "info@mpgrupo.pt";
-  const fromName = config?.fromName || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
+  const dbConfig = await getSmtpConfigFromDB();
 
-  if (!smtpPass) {
-    throw new Error("SMTP_PASS not configured");
-  }
+  const smtpHost = (dbConfig?.smtp_host as string) || Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
+  const smtpPort = (dbConfig?.smtp_port as number) || parseInt(Deno.env.get("SMTP_PORT") || "465");
+  const smtpUser = Deno.env.get("SMTP_USER") || (dbConfig?.smtp_user as string) || "info@mpgrupo.pt";
+  const smtpPass = Deno.env.get("SMTP_PASS") || "";
+  const fromEmail = config?.from || (dbConfig?.from_email as string) || Deno.env.get("FROM_EMAIL") || "info@mpgrupo.pt";
+  const fromName = config?.fromName || (dbConfig?.from_name as string) || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
+  const replyTo = config?.replyTo || (dbConfig?.reply_to as string) || "";
+
+  if (!smtpPass) throw new Error("SMTP_PASS not configured");
 
   console.log(`[SMTP Commission] Connecting to ${smtpHost}:${smtpPort}`);
 
@@ -115,13 +134,8 @@ export async function sendEmailSMTP(
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ];
 
-  if (config?.replyTo) {
-    emailHeaders.push(`Reply-To: ${config.replyTo}`);
-  }
-
-  if (config?.bcc && config.bcc.length > 0) {
-    emailHeaders.push(`Bcc: ${config.bcc.join(", ")}`);
-  }
+  if (replyTo) emailHeaders.push(`Reply-To: ${replyTo}`);
+  if (config?.bcc && config.bcc.length > 0) emailHeaders.push(`Bcc: ${config.bcc.join(", ")}`);
 
   const emailBody = [
     ...emailHeaders,
@@ -151,11 +165,9 @@ export async function sendEmailSMTP(
     const readFullResponse = async (label: string, timeoutMs = 15000): Promise<string> => {
       let fullResponse = "";
       const deadline = Date.now() + timeoutMs;
-
       while (true) {
         const remaining = deadline - Date.now();
         if (remaining <= 0) throw new Error(`SMTP timeout waiting for ${label}`);
-
         const buffer = new Uint8Array(4096);
         const bytesRead = await Promise.race([
           conn!.read(buffer),
@@ -163,26 +175,18 @@ export async function sendEmailSMTP(
             setTimeout(() => reject(new Error(`SMTP read timeout on ${label}`)), remaining)
           ),
         ]);
-
         if (bytesRead === null) throw new Error(`SMTP connection closed on ${label}`);
-
         fullResponse += decoder.decode(buffer.subarray(0, bytesRead));
-
         const lines = fullResponse.split("\r\n").filter((l) => l.length > 0);
         const lastLine = lines[lines.length - 1];
-        if (lastLine && lastLine.length >= 4 && lastLine[3] === " ") {
-          break;
-        }
+        if (lastLine && lastLine.length >= 4 && lastLine[3] === " ") break;
       }
-
       console.log(`[SMTP Commission] ${label}: ${fullResponse.substring(0, 120).trim()}`);
-
       const lines = fullResponse.split("\r\n").filter((l) => l.length > 0);
       const lastLine = lines[lines.length - 1];
       if (lastLine.startsWith("4") || lastLine.startsWith("5")) {
         throw new Error(`SMTP error on ${label}: ${lastLine.trim()}`);
       }
-
       return fullResponse;
     };
 
@@ -191,7 +195,6 @@ export async function sendEmailSMTP(
     };
 
     await readFullResponse("CONNECT");
-
     await writeCommand(`EHLO ${smtpHost}`);
     await readFullResponse("EHLO", 10000);
 
@@ -232,12 +235,7 @@ export async function sendEmailSMTP(
     throw error;
   } finally {
     if (conn) {
-      try {
-        conn.close();
-        console.log("[SMTP Commission] Connection closed");
-      } catch (_e) {
-        console.error("[SMTP Commission] Error closing connection");
-      }
+      try { conn.close(); } catch (_e) { /* ignore */ }
     }
   }
 
@@ -262,7 +260,6 @@ export async function sendEmail(
     return messageId;
   } catch (primaryError) {
     console.error(`Failed to send via ${useResend ? 'Resend' : 'SMTP'}:`, primaryError);
-
     try {
       if (useResend) {
         console.log("Trying SMTP fallback...");

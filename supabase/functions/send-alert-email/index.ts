@@ -38,13 +38,41 @@ function encodeSubject(subject: string): string {
   return `=?UTF-8?B?${base64}?=`;
 }
 
+let cachedSmtpConfig: Record<string, unknown> | null = null;
+let cacheExpiry = 0;
+const CACHE_TTL = 5 * 60 * 1000;
+
+async function getSmtpConfigFromDB(): Promise<Record<string, unknown> | null> {
+  const now = Date.now();
+  if (cachedSmtpConfig && now < cacheExpiry) return cachedSmtpConfig;
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) return null;
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/system_settings?select=setting_value&setting_key=eq.smtp_config`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+    );
+    const data = await res.json();
+    if (data?.[0]?.setting_value) {
+      cachedSmtpConfig = data[0].setting_value;
+      cacheExpiry = now + CACHE_TTL;
+      return cachedSmtpConfig;
+    }
+  } catch (e) {
+    console.warn("Failed to fetch SMTP config from DB:", e);
+  }
+  return null;
+}
+
 async function sendEmailSMTP(to: string, subject: string, html: string) {
-  const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
-  const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-  const smtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
+  const dbConfig = await getSmtpConfigFromDB();
+  const smtpHost = (dbConfig?.smtp_host as string) || Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
+  const smtpPort = (dbConfig?.smtp_port as number) || parseInt(Deno.env.get("SMTP_PORT") || "465");
+  const smtpUser = (dbConfig?.smtp_user as string) || Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
   const smtpPass = Deno.env.get("SMTP_PASS") || "";
-  const fromEmail = Deno.env.get("FROM_EMAIL") || "info@mpgrupo.pt";
-  const fromName = Deno.env.get("FROM_NAME") || "MP Grupo CRM";
+  const fromEmail = (dbConfig?.from_email as string) || Deno.env.get("FROM_EMAIL") || "info@mpgrupo.pt";
+  const fromName = (dbConfig?.from_name as string) || Deno.env.get("FROM_NAME") || "MP Grupo CRM";
 
   if (!smtpPass) {
     throw new Error("SMTP_PASS not configured");

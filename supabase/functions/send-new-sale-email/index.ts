@@ -526,17 +526,34 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const smtpHost = Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
-    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const globalSmtpUser = Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
+    // Read SMTP config from database first, fall back to env vars
+    let dbSmtpConfig: Record<string, unknown> | null = null;
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (supabaseUrl && supabaseKey) {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/system_settings?select=setting_value&setting_key=eq.smtp_config`,
+          { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+        );
+        const data = await res.json();
+        if (data?.[0]?.setting_value) dbSmtpConfig = data[0].setting_value;
+      }
+    } catch (e) {
+      console.warn("Failed to fetch SMTP config from DB:", e);
+    }
+
+    const smtpHost = (dbSmtpConfig?.smtp_host as string) || Deno.env.get("SMTP_HOST") || "mail.mpgrupo.pt";
+    const smtpPort = (dbSmtpConfig?.smtp_port as number) || parseInt(Deno.env.get("SMTP_PORT") || "465");
+    const globalSmtpUser = (dbSmtpConfig?.smtp_user as string) || Deno.env.get("SMTP_USER") || "info@mpgrupo.pt";
     const globalSmtpPass = Deno.env.get("SMTP_PASS") || "";
 
     const hasOperatorEmail = payload.from_email && payload.from_smtp_user && payload.from_smtp_pass;
     const toAddressesRaw = payload.to_recipients.map((r) => r.email);
     const smtpUser = hasOperatorEmail ? payload.from_smtp_user! : globalSmtpUser;
     const smtpPass = hasOperatorEmail ? payload.from_smtp_pass! : globalSmtpPass;
-    const fromEmail = hasOperatorEmail ? payload.from_email! : "info@mpgrupo.pt";
-    const fromName = "MP Grupo CRM";
+    const fromEmail = hasOperatorEmail ? payload.from_email! : ((dbSmtpConfig?.from_email as string) || "info@mpgrupo.pt");
+    const fromName = (dbSmtpConfig?.from_name as string) || "MP Grupo CRM";
 
     if (!smtpPass) {
       throw new Error("SMTP_PASS not configured");
