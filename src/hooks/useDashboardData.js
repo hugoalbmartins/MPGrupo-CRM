@@ -140,7 +140,7 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
       }
 
-      const [salesResult, partnersResult] = await Promise.all([
+      const [salesResult, partnersResult, scopesResult] = await Promise.all([
         supabase
           .from('sales')
           .select('*, partners(name), operators(name, id)')
@@ -148,10 +148,34 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .lte('date', endDate)
           .neq('status', 'Em proposta'),
         supabase.from('partners').select('id, name'),
+        supabase
+          .from('scopes')
+          .select('slug, counting_mode, quantity_field')
+          .eq('active', true)
       ]);
 
       const currentSales = salesResult.data || [];
       const partners = partnersResult.data || [];
+      const scopesMeta = scopesResult.data || [];
+
+      const scopesMetaMap = {};
+      scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
+
+      const getSaleQuantity = (sale) => {
+        const scope = sale.scope || '';
+        const scopeMeta = scopesMetaMap[scope];
+        if (!scopeMeta || scopeMeta.counting_mode !== 'by_quantity' || !scopeMeta.quantity_field) {
+          return 1;
+        }
+        const qtyField = scopeMeta.quantity_field;
+        if (sale.custom_fields && sale.custom_fields[qtyField] !== undefined) {
+          return parseInt(sale.custom_fields[qtyField]) || 1;
+        }
+        if (sale[qtyField] !== undefined) {
+          return parseInt(sale[qtyField]) || 1;
+        }
+        return 1;
+      };
 
       const partnerMap = {};
       const operatorSet = {};
@@ -173,6 +197,7 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
         const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
         const operatorName = sale.operators?.name || 'Desconhecido';
         const operatorId = sale.operators?.id || sale.operator_id;
+        const qty = getSaleQuantity(sale);
 
         if (operatorId && operatorName !== 'Desconhecido') {
           operatorSet[operatorId] = operatorName;
@@ -181,7 +206,7 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
         if (!partnerMap[partnerId].operators[operatorName]) {
           partnerMap[partnerId].operators[operatorName] = 0;
         }
-        partnerMap[partnerId].operators[operatorName]++;
+        partnerMap[partnerId].operators[operatorName] += qty;
         partnerMap[partnerId].total += commission;
       });
 

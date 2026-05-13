@@ -274,13 +274,18 @@ async function getLast12MonthsData(partnerId = null) {
   const now = new Date();
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
+  let query = supabase
+    .from('sales')
+    .select('date, scope, custom_fields, ev_outlet_count')
+    .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
+    .neq('status', 'Em proposta');
+
+  if (partnerId) {
+    query = query.eq('partner_id', partnerId);
+  }
+
   const [salesResult, scopesMeta] = await Promise.all([
-    supabase
-      .from('sales')
-      .select('date, scope, custom_fields, ev_outlet_count')
-      .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
-      .neq('status', 'Em proposta')
-      .then(q => partnerId ? q.eq('partner_id', partnerId) : q),
+    query,
     fetchScopesMeta()
   ]);
 
@@ -347,7 +352,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
       .select('operator_id, service_type, has_retention, retention_percentage'),
     supabase
       .from('scopes')
-      .select('slug, display_name, icon, color, sort_order')
+      .select('slug, display_name, icon, color, sort_order, counting_mode, quantity_field')
       .eq('active', true)
       .order('sort_order')
   ]);
