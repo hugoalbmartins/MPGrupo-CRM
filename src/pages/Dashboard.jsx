@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { ShoppingCart, Phone, Zap, Sun, Award, CircleCheck as CheckCircle, Clock, TrendingUp, Euro, TriangleAlert as AlertTriangle, ArrowUpRight, Download, Car, Heart, Shield, Wifi, Flame, Leaf, Globe, Box } from "lucide-react";
@@ -151,6 +151,13 @@ const Dashboard = ({ user }) => {
   const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [partnerTableFilterMode, setPartnerTableFilterMode] = useState('mensal');
   const [partnerTableFilterKey, setPartnerTableFilterKey] = useState(null);
+
+  // Sync partner table filter with dashboard month/year selection
+  useEffect(() => {
+    if (partnerTableFilterMode === 'mensal') {
+      setPartnerTableFilterKey(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`);
+    }
+  }, [selectedYear, selectedMonth, partnerTableFilterMode]);
 
   /* ---- data hooks ---- */
   const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedYear, selectedMonth);
@@ -1081,7 +1088,7 @@ const Dashboard = ({ user }) => {
                         setPartnerTableFilterMode(mode);
                         if (mode === 'week') setPartnerTableFilterKey(availableWeeks[0]?.key || null);
                         else if (mode === 'day') setPartnerTableFilterKey(availableDays[0]?.key || null);
-                        else if (mode === 'mensal') setPartnerTableFilterKey(availableMonths[0]?.key || null);
+                        else if (mode === 'mensal') setPartnerTableFilterKey(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`);
                       }}
                       className={`px-3 py-1.5 text-xs font-medium transition-colors ${partnerTableFilterMode === mode ? 'bg-cyber-500/20 text-cyber-400' : 'text-slate-500 hover:text-slate-300'}`}
                     >
