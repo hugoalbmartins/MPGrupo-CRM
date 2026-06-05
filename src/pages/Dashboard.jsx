@@ -160,7 +160,7 @@ const Dashboard = ({ user }) => {
   }, [selectedYear, selectedMonth, partnerTableFilterMode]);
 
   /* ---- data hooks ---- */
-  const { data: stats, isLoading: statsLoading } = useDashboardStats(selectedYear, selectedMonth);
+  const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useDashboardStats(selectedYear, selectedMonth);
   const { data: operatorsList = [] } = useOperators(true);
   const operatorNameMap = useMemo(() => {
     const map = {};
@@ -325,6 +325,20 @@ const Dashboard = ({ user }) => {
               <div className="h-7 bg-dark-700/50 rounded w-3/4" />
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (statsError && !stats) {
+    return (
+      <div className="space-y-6 p-2 animate-fade-in">
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+          <AlertTriangle className="w-12 h-12 text-amber-400" />
+          <p className="text-slate-400 text-sm">Nao foi possivel carregar o dashboard.</p>
+          <Button variant="outline" onClick={() => refetchStats()} className="border-cyber-500/30 text-cyber-400 hover:bg-cyber-500/10">
+            Tentar novamente
+          </Button>
         </div>
       </div>
     );

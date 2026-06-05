@@ -2,8 +2,9 @@ import { supabase } from '../lib/supabase';
 
 export const dashboardService = {
   async getStats(year, month) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw new Error('Not authenticated');
+    const user = session.user;
 
     const { data: currentUser } = await supabase
       .from('users')
@@ -38,8 +39,9 @@ export const dashboardService = {
   },
 
   async getProposalStats() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw new Error('Not authenticated');
+    const user = session.user;
 
     const { data: currentUser } = await supabase
       .from('users')
