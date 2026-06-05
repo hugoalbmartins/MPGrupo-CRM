@@ -206,7 +206,9 @@ export const commissionReportsService = {
         *,
         sale:sales!chargebacks_sale_id_fkey(
           id, sale_code, client_name, client_nif, calculated_commission,
-          manual_commission, operator_name, request_number, activated_at
+          manual_commission, operator_name, request_number, activated_at,
+          paid_in_report_id, scope, cpe, cui, has_direct_debit, direct_debit_value,
+          has_electronic_invoice, electronic_invoice_value, operator_id, observations
         )
       `)
       .eq('partner_id', partnerId)

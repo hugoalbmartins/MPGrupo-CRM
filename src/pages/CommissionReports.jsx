@@ -208,15 +208,17 @@ const CommissionReports = ({ user }) => {
     if (settledSaleIds.length > 0) {
       finalSales = finalSales.filter(sale => !settledSaleIds.includes(sale.id));
     }
-    if (finalSales.length === 0) {
+
+    const pendingChargebacks = await commissionReportsService.getPendingChargebacksForPartner(partnerId);
+    const hasUnpaidChargebacks = pendingChargebacks.some(cb => cb.sale?.paid_in_report_id == null);
+
+    if (finalSales.length === 0 && !hasUnpaidChargebacks && canceledSales.length === 0) {
       const monthName = months.find(m => m.value === selectedMonth)?.label;
       toast.error(settledSaleIds.length > 0
         ? `Todas as vendas de ${monthName}/${selectedYear} para ${partner.name} ja foram liquidadas em auto anterior.`
         : `Nao existem vendas pagas para ${partner.name} no mes de ${monthName}/${selectedYear}`);
       return;
     }
-
-    const pendingChargebacks = await commissionReportsService.getPendingChargebacksForPartner(partnerId);
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { toast.error("Sessao expirada."); return; }
@@ -240,6 +242,22 @@ const CommissionReports = ({ user }) => {
     let totalRefunds = 0;
     let totalChargebacks = 0;
 
+    // Split chargebacks: Category A = sale already paid in previous report, Category B = sale never paid
+    const chargebacksCatA = pendingChargebacks.filter(cb => cb.sale?.paid_in_report_id != null);
+    const chargebacksCatB = pendingChargebacks.filter(cb => cb.sale?.paid_in_report_id == null);
+
+    // Category B: sales that were never paid but have chargebacks - include both payment + deduction
+    const catBSalesData = chargebacksCatB.map(cb => {
+      const sale = cb.sale;
+      if (!sale) return null;
+      const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
+      const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
+      const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
+      const totalComm = commission + ddValue + feValue;
+      totalCommissions += totalComm;
+      return { sale, totalComm, retentionValue: 0, isChargebackSale: true };
+    }).filter(Boolean);
+
     const salesRowsData = finalSales.map(sale => {
       const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
       const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
@@ -251,12 +269,18 @@ const CommissionReports = ({ user }) => {
       return { sale, totalComm, retentionValue };
     });
 
+    // Add cancelled sales with value 0
+    const canceledRowsData = canceledSales.map(sale => {
+      return { sale, totalComm: 0, retentionValue: 0, isCanceled: true };
+    });
+
     const refundSales = finalSales.filter(sale => {
       const saleDate = new Date(sale.activation_date || sale.date);
       return sale.retention_value > 0 && saleDate >= refundMonthStart && saleDate <= refundMonthEnd;
     });
     refundSales.forEach(sale => { totalRefunds += parseFloat(sale.retention_value || 0); });
 
+    // All chargebacks count as deductions
     pendingChargebacks.forEach(cb => { totalChargebacks += parseFloat(cb.chargeback_amount || 0); });
 
     const totalAdvancesSettled = (settledAdvances || []).reduce((sum, a) => sum + a.settle_amount, 0);
@@ -272,25 +296,45 @@ const CommissionReports = ({ user }) => {
       return `${scope}/${opName}`;
     };
 
-    const salesRows = salesRowsData.map(({ sale, totalComm, retentionValue }) => `
-      <tr>
+    // Combine all rows for the main table: active sales + category B chargeback sales + cancelled
+    const allMainRows = [...salesRowsData, ...catBSalesData, ...canceledRowsData];
+
+    const salesRows = allMainRows.map(({ sale, totalComm, retentionValue, isCanceled, isChargebackSale }) => {
+      const rowStyle = isCanceled
+        ? 'background-color:#fee2e2;'
+        : isChargebackSale
+          ? 'background-color:#fef3c7;'
+          : '';
+      const commDisplay = isCanceled
+        ? `<span style="color:#991b1b;font-weight:bold;">\u20AC0.00</span>`
+        : `\u20AC${totalComm.toFixed(2)}`;
+      const obsText = (sale.observations || '').toString().replace(/</g, '&lt;').replace(/>/g, '&gt;') || '-';
+      const statusNote = isCanceled
+        ? `<span style="color:#991b1b;font-weight:bold;">[${sale.status}]</span> ${obsText}`
+        : isChargebackSale
+          ? `<span style="color:#92400e;font-weight:bold;">[Chargeback]</span> ${obsText}`
+          : obsText;
+      return `
+      <tr style="${rowStyle}">
         <td>${getScopeOperatorLabel(sale)}</td>
         <td>${sale.client_name || '-'}</td>
         <td>${sale.client_nif || '-'}</td>
         <td>${sale.cpe || '-'}</td>
         <td>${sale.cui || '-'}</td>
         <td>${sale.request_number || '-'}</td>
-        <td style="text-align:right">\u20AC${totalComm.toFixed(2)}</td>
+        <td style="text-align:right">${commDisplay}</td>
         <td style="text-align:right; color:#b91c1c">${retentionValue > 0 ? '\u20AC' + retentionValue.toFixed(2) : '-'}</td>
+        <td style="font-size:7px;max-width:120px;overflow:hidden;text-overflow:ellipsis;">${statusNote}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     const refundTableHtml = (totalRefunds > 0 && refundSales.length > 0) ? `
       <div style="margin-top:18px;">
         <table style="width:100%;border-collapse:collapse;font-size:9px;">
           <thead>
             <tr>
-              <th colspan="6" style="background:#1F4E78;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">
+              <th colspan="7" style="background:#1F4E78;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">
                 Retencoes a Devolver — Mes de referencia: ${refundMonthLabel}
               </th>
               <th style="background:#1F4E78;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;visibility:hidden">-</th>
@@ -306,6 +350,7 @@ const CommissionReports = ({ user }) => {
                 <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cpe || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cui || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${sale.request_number || '-'}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;"></td>
                 <td style="padding:5px 4px;border:1px solid #ddd;"></td>
                 <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#166534;font-weight:bold;">\u20AC${parseFloat(sale.retention_value || 0).toFixed(2)}</td>
               </tr>
@@ -328,10 +373,14 @@ const CommissionReports = ({ user }) => {
               <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">Comissao Orig. (\u20AC)</th>
               <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">% CB</th>
               <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">A Descontar (\u20AC)</th>
+              <th style="background:#7f1d1d;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">Tipo</th>
             </tr>
           </thead>
           <tbody>
-            ${pendingChargebacks.map(cb => `
+            ${pendingChargebacks.map(cb => {
+              const isPreviouslyPaid = cb.sale?.paid_in_report_id != null;
+              const typeLabel = isPreviouslyPaid ? 'Pago em auto anterior' : 'Pago neste auto';
+              return `
               <tr>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${cb.sale?.client_name || '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;font-family:monospace;">${cb.sale?.client_nif || '-'}</td>
@@ -341,11 +390,13 @@ const CommissionReports = ({ user }) => {
                 <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;">\u20AC${parseFloat(cb.commission_amount || 0).toFixed(2)}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;">${parseFloat(cb.percentage || 0).toFixed(0)}%</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#b91c1c;font-weight:bold;">-\u20AC${parseFloat(cb.chargeback_amount || 0).toFixed(2)}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;font-size:7px;">${typeLabel}</td>
               </tr>
-            `).join('')}
+            `;}).join('')}
             <tr style="background:#fee2e2;font-weight:bold;">
-              <td colspan="8" style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">TOTAL CHARGEBACKS:</td>
+              <td colspan="7" style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">TOTAL CHARGEBACKS:</td>
               <td style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">-\u20AC${totalChargebacks.toFixed(2)}</td>
+              <td></td>
             </tr>
           </tbody>
         </table>
@@ -354,71 +405,39 @@ const CommissionReports = ({ user }) => {
 
     const chargebacksLineHtml = totalChargebacks > 0 ? `
       <tr style="background-color:#fee2e2 !important;">
-        <td colspan="7" style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">Chargebacks:</td>
+        <td colspan="8" style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">Chargebacks:</td>
         <td style="text-align:right;font-weight:bold;color:#7f1d1d;border-top:1px solid #fca5a5;">-\u20AC${totalChargebacks.toFixed(2)}</td>
       </tr>
     ` : '';
 
     const advancesLineHtml = totalAdvancesSettled > 0 ? `
       <tr style="background-color:#fff3cd !important;">
-        <td colspan="7" style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">Adiantamentos:</td>
+        <td colspan="8" style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">Adiantamentos:</td>
         <td style="text-align:right;font-weight:bold;color:#92400e;border-top:1px solid #f59e0b;">-\u20AC${totalAdvancesSettled.toFixed(2)}</td>
       </tr>
     ` : '';
 
     const retentionsLineHtml = totalRetentions > 0 ? `
       <tr style="background-color:#fee2e2 !important;">
-        <td colspan="7" style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">Retencoes:</td>
+        <td colspan="8" style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">Retencoes:</td>
         <td style="text-align:right;font-weight:bold;color:#991b1b;border-top:1px solid #fca5a5;">-\u20AC${totalRetentions.toFixed(2)}</td>
       </tr>
     ` : '';
 
     const refundsLineHtml = totalRefunds > 0 ? `
       <tr style="background-color:#dcfce7 !important;">
-        <td colspan="7" style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">Retencoes a Devolver:</td>
+        <td colspan="8" style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">Retencoes a Devolver:</td>
         <td style="text-align:right;font-weight:bold;color:#166534;border-top:1px solid #86efac;">+\u20AC${totalRefunds.toFixed(2)}</td>
       </tr>
-    ` : '';
-
-    const canceledTableHtml = canceledSales.length > 0 ? `
-      <div style="margin-top:18px; page-break-inside:avoid;">
-        <div style="background:#991b1b;color:white;padding:6px 8px;font-weight:bold;font-size:10px;border-radius:4px 4px 0 0;">
-          Vendas Anuladas / Canceladas — ${monthName}/${selectedYear}
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:9px;margin:0;">
-          <thead>
-            <tr>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Ambito/Operadora</th>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Nome Cliente</th>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">NIF</th>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">CPE</th>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">CUI</th>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">REQ</th>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Estado</th>
-              <th style="background:#7f1d1d;color:white;padding:5px 4px;text-align:left;font-weight:bold;">Observacoes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${canceledSales.map(sale => `
-              <tr>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${getScopeOperatorLabel(sale)}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_name || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;font-family:monospace;">${sale.client_nif || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cpe || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cui || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.request_number || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;color:#991b1b;font-weight:bold;">${sale.status || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${(sale.observations || '').toString().replace(/</g, '&lt;').replace(/>/g, '&gt;') || '-'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
     ` : '';
 
     const advancesJson = JSON.stringify(settledAdvances || []);
 
     const parsedBcc = bccEmails.split(',').map(e => e.trim()).filter(e => e && e.includes('@'));
+
+    // Include Category B chargeback sale IDs in the report so they get tracked as paid
+    const catBSaleIds = chargebacksCatB.map(cb => cb.sale?.id).filter(Boolean);
+    const allSalesIds = [...salesIds, ...catBSaleIds];
 
     printWindow.reportData = {
       partnerId,
@@ -431,7 +450,7 @@ const CommissionReports = ({ user }) => {
       supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
       supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
       accessToken: session.access_token,
-      salesIds,
+      salesIds: allSalesIds,
       settledAdvances: settledAdvances || [],
       chargebackIds: pendingChargebacks.map(cb => cb.id),
       bccEmails: parsedBcc,
@@ -498,6 +517,7 @@ const CommissionReports = ({ user }) => {
               <th>REQ</th>
               <th style="text-align:right">Comissao (\u20AC)</th>
               <th style="text-align:right">A Reter (\u20AC)</th>
+              <th>Obs.</th>
             </tr>
           </thead>
           <tbody>
@@ -506,13 +526,14 @@ const CommissionReports = ({ user }) => {
               <td colspan="6" style="text-align:right;font-weight:bold;">Total Comissoes:</td>
               <td style="text-align:right;font-weight:bold;">\u20AC${totalCommissions.toFixed(2)}</td>
               <td style="text-align:right;font-weight:bold;color:#991b1b;">${totalRetentions > 0 ? '-\u20AC' + totalRetentions.toFixed(2) : '-'}</td>
+              <td></td>
             </tr>
             ${chargebacksLineHtml}
             ${advancesLineHtml}
             ${retentionsLineHtml}
             ${refundsLineHtml}
             <tr class="total-row" style="font-size:12px;">
-              <td colspan="7" style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">${isVatExempt ? 'TOTAL:' : 'TOTAL S/IVA:'}</td>
+              <td colspan="8" style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">${isVatExempt ? 'TOTAL:' : 'TOTAL S/IVA:'}</td>
               <td style="text-align:right;font-weight:bold;border-top:2px solid #1F4E78;">\u20AC${totalSemIVA.toFixed(2)}</td>
             </tr>
           </tbody>
@@ -521,8 +542,6 @@ const CommissionReports = ({ user }) => {
         ${refundTableHtml}
 
         ${chargebackTableHtml}
-
-        ${canceledTableHtml}
 
         ${isVatExempt ? `
         <div style="margin-top:10px;padding:8px;background:#fef3c7;border:1px solid #d97706;border-radius:6px;font-size:9px;color:#92400e;font-weight:bold;">
@@ -533,11 +552,11 @@ const CommissionReports = ({ user }) => {
           <table style="margin:0;">
             <tbody>
               <tr style="background:#e2e8f0;">
-                <td colspan="7" style="text-align:right;font-weight:bold;color:#475569;">IVA 23%:</td>
+                <td colspan="8" style="text-align:right;font-weight:bold;color:#475569;">IVA 23%:</td>
                 <td style="text-align:right;font-weight:bold;color:#475569;">\u20AC${iva.toFixed(2)}</td>
               </tr>
               <tr style="background:#cbd5e1;">
-                <td colspan="7" style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">TOTAL C/IVA:</td>
+                <td colspan="8" style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">TOTAL C/IVA:</td>
                 <td style="text-align:right;font-weight:bold;color:#1e293b;font-size:12px;">\u20AC${totalComIVA.toFixed(2)}</td>
               </tr>
             </tbody>
