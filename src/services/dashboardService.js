@@ -138,7 +138,8 @@ async function calculateRetentions(year, month, partnerId = null) {
     .from('sales')
     .select('*, operator_id')
     .gte('date', start.split('T')[0])
-    .lt('date', end.split('T')[0]);
+    .lt('date', end.split('T')[0])
+    .eq('is_mirror_copy', false);
   if (partnerId) currentQuery = currentQuery.eq('partner_id', partnerId);
   const { data: currentSales } = await currentQuery;
 
@@ -186,7 +187,8 @@ async function calculateRetentions(year, month, partnerId = null) {
     .from('sales')
     .select('*, operator_id')
     .gte('date', returnStartDate.toISOString().split('T')[0])
-    .lt('date', returnEndDate.toISOString().split('T')[0]);
+    .lt('date', returnEndDate.toISOString().split('T')[0])
+    .eq('is_mirror_copy', false);
   if (partnerId) returnQuery = returnQuery.eq('partner_id', partnerId);
   const { data: returnSales } = await returnQuery;
 
@@ -278,7 +280,8 @@ async function getLast12MonthsData(partnerId = null) {
     .from('sales')
     .select('date, scope, custom_fields, ev_outlet_count')
     .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
-    .neq('status', 'Em proposta');
+    .neq('status', 'Em proposta')
+    .eq('is_mirror_copy', false);
 
   if (partnerId) {
     query = query.eq('partner_id', partnerId);
@@ -342,7 +345,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
       .select('*')
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
-      .neq('status', 'Em proposta'),
+      .neq('status', 'Em proposta')
+      .eq('is_mirror_copy', false),
     supabase
       .from('partners')
       .select('*', { count: 'exact', head: true }),
@@ -504,7 +508,8 @@ async function getBODashboard(year, month) {
       .select('*')
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
-      .neq('status', 'Em proposta'),
+      .neq('status', 'Em proposta')
+      .eq('is_mirror_copy', false),
     getLast12MonthsData(),
     fetchScopesMeta()
   ]);
@@ -586,7 +591,8 @@ async function getPartnerDashboard(partnerId, year, month) {
       .eq('partner_id', partnerId)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
-      .neq('status', 'Em proposta'),
+      .neq('status', 'Em proposta')
+      .eq('is_mirror_copy', false),
     getLast12MonthsData(partnerId),
     supabase
       .from('operators')
@@ -697,7 +703,8 @@ async function getCommercialDashboard(userId, year, month) {
       .eq('created_by_user_id', userId)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
-      .neq('status', 'Em proposta'),
+      .neq('status', 'Em proposta')
+      .eq('is_mirror_copy', false),
     getLast12MonthsData(),
     fetchScopesMeta()
   ]);
@@ -766,14 +773,16 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
       .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
-      .neq('status', 'Em proposta'),
+      .neq('status', 'Em proposta')
+      .eq('is_mirror_copy', false),
     supabase
       .from('sales')
       .select('*')
       .eq('created_by_user_id', managerId)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
-      .neq('status', 'Em proposta'),
+      .neq('status', 'Em proposta')
+      .eq('is_mirror_copy', false),
     supabase
       .from('users')
       .select('commission_type')

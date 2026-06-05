@@ -15,6 +15,7 @@ import { usersService } from "../services/usersService";
 import { partnerTypesService } from "../services/partnerTypesService";
 import { validateNIF, generateStrongPassword } from "../lib/utils-crm";
 import { recalculatePartnerCommissions } from "../services/commissionRecalculator";
+import { partnerAssociationsService } from "../services/partnerAssociationsService";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const Partners = ({ user }) => {
@@ -33,6 +34,10 @@ const Partners = ({ user }) => {
   const [d2dLevels, setD2dLevels] = useState([]);
   const [revLevels, setRevLevels] = useState([]);
   const [loadingLevels, setLoadingLevels] = useState(false);
+  const [association, setAssociation] = useState(null);
+  const [associationPartnerId, setAssociationPartnerId] = useState("");
+  const [associationRole, setAssociationRole] = useState("primary");
+  const [savingAssociation, setSavingAssociation] = useState(false);
   const [formData, setFormData] = useState({
     partner_type: "D2D",
     name: "",
@@ -176,6 +181,21 @@ const Partners = ({ user }) => {
     });
     setDialogOpen(true);
 
+    partnerAssociationsService.getByPartnerId(partner.id).then(assoc => {
+      setAssociation(assoc);
+      if (assoc) {
+        const isPrimary = assoc.primary_partner_id === partner.id;
+        setAssociationRole(isPrimary ? 'primary' : 'secondary');
+        setAssociationPartnerId(isPrimary ? assoc.secondary_partner_id : assoc.primary_partner_id);
+      } else {
+        setAssociationPartnerId("");
+        setAssociationRole("primary");
+      }
+    }).catch(() => {
+      setAssociation(null);
+      setAssociationPartnerId("");
+    });
+
     if (partner.partner_type === 'D2D') {
       setLoadingLevels(true);
       try {
@@ -263,6 +283,9 @@ const Partners = ({ user }) => {
     setGeneratedPassword("");
     setD2dLevels([]);
     setRevLevels([]);
+    setAssociation(null);
+    setAssociationPartnerId("");
+    setAssociationRole("primary");
     setFormData({
       partner_type: "D2D",
       name: "",
@@ -281,6 +304,58 @@ const Partners = ({ user }) => {
       email_bcc_enabled: false,
       is_vat_exempt: false,
     });
+  };
+
+  const handleSaveAssociation = async () => {
+    if (!editingPartner || !associationPartnerId) return;
+    const primaryId = associationRole === 'primary' ? editingPartner.id : associationPartnerId;
+    const secondaryId = associationRole === 'primary' ? associationPartnerId : editingPartner.id;
+
+    const ok = await confirm({
+      title: 'Associar Parceiros',
+      description: 'Ao associar, as vendas existentes do parceiro primario serao copiadas para o secundario. Deseja continuar?',
+      confirmLabel: 'Associar',
+    });
+    if (!ok) return;
+
+    setSavingAssociation(true);
+    try {
+      if (association) {
+        await partnerAssociationsService.delete(association.id);
+      }
+      const newAssoc = await partnerAssociationsService.create(primaryId, secondaryId, user.id);
+      await partnerAssociationsService.syncExistingSales(primaryId, secondaryId);
+      setAssociation(newAssoc);
+      toast.success("Associacao criada e vendas sincronizadas!");
+    } catch (error) {
+      toast.error(error.message || "Erro ao criar associacao");
+    } finally {
+      setSavingAssociation(false);
+    }
+  };
+
+  const handleRemoveAssociation = async () => {
+    if (!association) return;
+
+    const ok = await confirm({
+      title: 'Remover Associacao',
+      description: 'As copias (mirror) de vendas associadas serao eliminadas. Deseja continuar?',
+      confirmLabel: 'Remover',
+    });
+    if (!ok) return;
+
+    setSavingAssociation(true);
+    try {
+      await partnerAssociationsService.delete(association.id);
+      setAssociation(null);
+      setAssociationPartnerId("");
+      setAssociationRole("primary");
+      toast.success("Associacao removida com sucesso!");
+    } catch (error) {
+      toast.error(error.message || "Erro ao remover associacao");
+    } finally {
+      setSavingAssociation(false);
+    }
   };
 
   const addEmailField = () => {
@@ -596,6 +671,87 @@ const Partners = ({ user }) => {
                     </p>
                   )}
                 </div>
+
+                {editingPartner && (
+                  <div className="border border-dark-700 rounded-xl p-4 bg-dark-900">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Building2 className="w-4 h-4 text-cyan-400" />
+                      <Label className="text-sm font-semibold text-slate-300">Associacao de Parceiros (Mirror)</Label>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3">
+                      Associar este parceiro a outro para que as vendas do primario sejam automaticamente copiadas para o secundario.
+                    </p>
+                    {association ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 bg-dark-800 rounded-lg p-3">
+                          <span className="text-xs text-slate-400">Parceiro primario:</span>
+                          <span className="text-sm text-white font-medium">
+                            {association.primary_partner?.name || 'N/A'}
+                          </span>
+                          <span className="text-xs text-slate-600 mx-1">→</span>
+                          <span className="text-xs text-slate-400">Secundario:</span>
+                          <span className="text-sm text-white font-medium">
+                            {association.secondary_partner?.name || 'N/A'}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleRemoveAssociation}
+                          disabled={savingAssociation}
+                        >
+                          {savingAssociation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Trash2 className="w-3 h-3 mr-1" />}
+                          Remover Associacao
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs text-slate-400">Papel deste parceiro</Label>
+                            <Select value={associationRole} onValueChange={setAssociationRole}>
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 mt-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="primary">Primario (origem)</SelectItem>
+                                <SelectItem value="secondary">Secundario (copia)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-slate-400">Parceiro associado</Label>
+                            <Select value={associationPartnerId || undefined} onValueChange={setAssociationPartnerId}>
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyan-500 focus:ring-cyan-500/20 mt-1">
+                                <SelectValue placeholder="Selecionar parceiro..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {partners
+                                  .filter(p => p.id !== editingPartner?.id)
+                                  .map(p => (
+                                    <SelectItem key={p.id} value={p.id}>
+                                      {p.name} ({p.partner_code})
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleSaveAssociation}
+                          disabled={!associationPartnerId || savingAssociation}
+                          className="bg-cyan-600 hover:bg-cyan-700"
+                        >
+                          {savingAssociation && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                          Criar Associacao
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {editingPartner && editingPartner.partner_type === 'D2D' && operatorsWithD2D.length > 0 && (
                   <div className="border border-dark-700 rounded-xl p-4 bg-dark-900">
