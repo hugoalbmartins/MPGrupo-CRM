@@ -79,13 +79,13 @@ const SaleEditDialog = ({
   };
 
   const handleAddFiles = async (e) => {
-    const MAX_SIZE = 10 * 1024 * 1024;
+    const MAX_SIZE = 15 * 1024 * 1024;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     const oversized = files.filter(f => f.size > MAX_SIZE);
     if (oversized.length > 0) {
-      toast.error(`Ficheiro(s) excedem o limite de 10MB: ${oversized.map(f => f.name).join(', ')}`);
+      toast.error(`Ficheiro(s) excedem o limite de 15MB: ${oversized.map(f => f.name).join(', ')}`);
       e.target.value = '';
       return;
     }
@@ -1042,7 +1042,7 @@ const SaleEditDialog = ({
                       <div className="min-w-0">
                         <p className={`text-sm truncate ${att.expired ? 'line-through text-slate-500' : 'text-white'}`}>{att.filename}</p>
                         <p className="text-xs text-slate-600">{new Date(att.uploaded_at).toLocaleDateString('pt-PT')}</p>
-                        {att.expired && <p className="text-xs text-red-500/70">Expirado — ficheiro removido apos 60 dias</p>}
+                        {att.expired && <p className="text-xs text-red-500/70">Expirado — ficheiro removido apos 45 dias</p>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">

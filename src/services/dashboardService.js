@@ -281,6 +281,8 @@ async function getLast12MonthsData(partnerId = null) {
     .select('date, scope, custom_fields, ev_outlet_count')
     .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
     .neq('status', 'Em proposta')
+    .neq('status', 'Cancelado')
+    .neq('status', 'Recusado')
     .eq('is_mirror_copy', false);
 
   if (partnerId) {
@@ -346,6 +348,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
+    .neq('status', 'Cancelado')
+    .neq('status', 'Recusado')
       .eq('is_mirror_copy', false),
     supabase
       .from('partners')
@@ -509,6 +513,8 @@ async function getBODashboard(year, month) {
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
+    .neq('status', 'Cancelado')
+    .neq('status', 'Recusado')
       .eq('is_mirror_copy', false),
     getLast12MonthsData(),
     fetchScopesMeta()
@@ -592,6 +598,8 @@ async function getPartnerDashboard(partnerId, year, month) {
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
+    .neq('status', 'Cancelado')
+    .neq('status', 'Recusado')
       .eq('is_mirror_copy', false),
     getLast12MonthsData(partnerId),
     supabase
@@ -704,6 +712,8 @@ async function getCommercialDashboard(userId, year, month) {
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
+    .neq('status', 'Cancelado')
+    .neq('status', 'Recusado')
       .eq('is_mirror_copy', false),
     getLast12MonthsData(),
     fetchScopesMeta()
@@ -774,6 +784,8 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
+    .neq('status', 'Cancelado')
+    .neq('status', 'Recusado')
       .eq('is_mirror_copy', false),
     supabase
       .from('sales')
@@ -782,6 +794,8 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
+    .neq('status', 'Cancelado')
+    .neq('status', 'Recusado')
       .eq('is_mirror_copy', false),
     supabase
       .from('users')

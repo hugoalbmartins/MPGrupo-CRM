@@ -338,6 +338,16 @@ const Dashboard = ({ user }) => {
   ==================================================================== */
 
   // ---- Admin ----
+  const operatorSubtitle = useMemo(() => {
+    if (!stats?.by_operator) return '';
+    const entries = Object.entries(stats.by_operator)
+      .map(([id, count]) => ({ name: operatorNameMap[id] || 'Outro', count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    if (entries.length === 0) return '';
+    return entries.map(e => `${e.name}: ${e.count}`).join(', ');
+  }, [stats?.by_operator, operatorNameMap]);
+
   const renderAdminDashboard = () => (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -345,7 +355,7 @@ const Dashboard = ({ user }) => {
           index={0}
           label="Total Vendas"
           value={stats?.total_sales || 0}
-          subtitle={`${stats?.total_partners || 0} parceiros`}
+          subtitle={operatorSubtitle}
           icon={ShoppingCart}
           iconGradient="bg-gradient-to-br from-cyber-500 to-cyber-600"
           valueColor="text-white"

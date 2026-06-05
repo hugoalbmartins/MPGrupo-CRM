@@ -7,9 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const EXPIRY_DAYS_SMALL = 15;
-const EXPIRY_DAYS_LARGE = 7;
-const LARGE_FILE_THRESHOLD_BYTES = 5 * 1024 * 1024;
+const EXPIRY_DAYS = 45;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -23,14 +21,10 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - EXPIRY_DAYS);
 
-    const cutoffSmall = new Date(now);
-    cutoffSmall.setDate(cutoffSmall.getDate() - EXPIRY_DAYS_SMALL);
-
-    const cutoffLarge = new Date(now);
-    cutoffLarge.setDate(cutoffLarge.getDate() - EXPIRY_DAYS_LARGE);
-
-    console.log(`Cleaning attachments: small-file cutoff=${cutoffSmall.toISOString()} (15d), large-file cutoff=${cutoffLarge.toISOString()} (7d)`);
+    console.log(`Cleaning attachments: cutoff=${cutoff.toISOString()} (${EXPIRY_DAYS} days)`);
 
     const { data: sales, error: salesError } = await supabase
       .from("sales")
@@ -53,8 +47,6 @@ Deno.serve(async (req: Request) => {
         if (!att.uploaded_at) continue;
 
         const uploadedAt = new Date(att.uploaded_at);
-        const isLarge = att.size != null ? att.size > LARGE_FILE_THRESHOLD_BYTES : false;
-        const cutoff = isLarge ? cutoffLarge : cutoffSmall;
 
         if (uploadedAt < cutoff) {
           if (att.path) {
@@ -97,8 +89,6 @@ Deno.serve(async (req: Request) => {
           if (!att.uploaded_at) continue;
 
           const uploadedAt = new Date(att.uploaded_at);
-          const isLarge = att.size != null ? att.size > LARGE_FILE_THRESHOLD_BYTES : false;
-          const cutoff = isLarge ? cutoffLarge : cutoffSmall;
 
           if (uploadedAt < cutoff) {
             if (att.path) {
@@ -183,8 +173,7 @@ Deno.serve(async (req: Request) => {
         files_deleted: totalDeleted,
         attachments_marked_expired: totalMarked,
         orphaned_files_deleted: orphanedDeleted,
-        cutoff_large_files: cutoffLarge.toISOString(),
-        cutoff_small_files: cutoffSmall.toISOString(),
+        cutoff_date: cutoff.toISOString(),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
