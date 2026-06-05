@@ -311,6 +311,17 @@ const Dashboard = ({ user }) => {
     );
   };
 
+  // ---- Admin ----
+  const operatorSubtitle = useMemo(() => {
+    if (!stats?.by_operator) return '';
+    const entries = Object.entries(stats.by_operator)
+      .map(([id, count]) => ({ name: operatorNameMap[id] || 'Outro', count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    if (entries.length === 0) return '';
+    return entries.map(e => `${e.name}: ${e.count}`).join(', ');
+  }, [stats?.by_operator, operatorNameMap]);
+
   /* ---- loading skeleton ---- */
   if (statsLoading) {
     return (
@@ -346,21 +357,6 @@ const Dashboard = ({ user }) => {
 
   /* ---- derived data ---- */
   const statusData = Object.entries(stats?.by_status || {}).map(([name, value]) => ({ name, value }));
-
-  /* ====================================================================
-     Role-specific dashboard renderers
-  ==================================================================== */
-
-  // ---- Admin ----
-  const operatorSubtitle = useMemo(() => {
-    if (!stats?.by_operator) return '';
-    const entries = Object.entries(stats.by_operator)
-      .map(([id, count]) => ({ name: operatorNameMap[id] || 'Outro', count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-    if (entries.length === 0) return '';
-    return entries.map(e => `${e.name}: ${e.count}`).join(', ');
-  }, [stats?.by_operator, operatorNameMap]);
 
   const renderAdminDashboard = () => (
     <>
