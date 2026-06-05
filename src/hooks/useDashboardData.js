@@ -151,7 +151,8 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .neq('status', 'Em proposta')
           .neq('status', 'Cancelado')
           .neq('status', 'Recusado')
-          .eq('is_mirror_copy', false),
+          .eq('is_mirror_copy', false)
+          .limit(10000),
         supabase.from('partners').select('id, name'),
         supabase
           .from('scopes')
@@ -244,7 +245,8 @@ export const useMonthlySalesByOperator = (user) => {
         .neq('status', 'Em proposta')
         .neq('status', 'Cancelado')
         .neq('status', 'Recusado')
-        .eq('is_mirror_copy', false);
+        .eq('is_mirror_copy', false)
+        .limit(10000);
 
       const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
       if (isPartner && user?.partner_id) {
