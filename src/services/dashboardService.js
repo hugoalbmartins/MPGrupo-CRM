@@ -1,5 +1,20 @@
 import { supabase } from '../lib/supabase';
 
+async function fetchAllRows(buildQuery) {
+  const PAGE_SIZE = 1000;
+  let allData = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    allData = allData.concat(data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allData;
+}
+
 export const dashboardService = {
   async getStats(year, month) {
     const { data: { session } } = await supabase.auth.getSession();
@@ -277,27 +292,26 @@ async function calculateNetCommission(sales) {
 async function getLast12MonthsData(partnerId = null) {
   const now = new Date();
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const startDate = twelveMonthsAgo.toISOString().split('T')[0];
 
-  let query = supabase
-    .from('sales')
-    .select('date, scope, custom_fields, ev_outlet_count')
-    .gte('date', twelveMonthsAgo.toISOString().split('T')[0])
-    .neq('status', 'Em proposta')
-    .neq('status', 'Cancelado')
-    .neq('status', 'Recusado')
-    .eq('is_mirror_copy', false)
-    .limit(10000);
+  const buildQuery = () => {
+    let q = supabase
+      .from('sales')
+      .select('date, scope, custom_fields, ev_outlet_count')
+      .gte('date', startDate)
+      .neq('status', 'Em proposta')
+      .neq('status', 'Cancelado')
+      .neq('status', 'Recusado')
+      .eq('is_mirror_copy', false);
+    if (partnerId) q = q.eq('partner_id', partnerId);
+    return q;
+  };
 
-  if (partnerId) {
-    query = query.eq('partner_id', partnerId);
-  }
-
-  const [salesResult, scopesMeta] = await Promise.all([
-    query,
+  const [sales, scopesMeta] = await Promise.all([
+    fetchAllRows(buildQuery),
     fetchScopesMeta()
   ]);
 
-  const { data: sales } = salesResult;
   const scopesMetaMap = {};
   scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
 

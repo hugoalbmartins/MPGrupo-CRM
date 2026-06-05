@@ -2,6 +2,21 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboardService';
 import { supabase } from '../lib/supabase';
 
+async function fetchAllRows(buildQuery) {
+  const PAGE_SIZE = 1000;
+  let allData = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    allData = allData.concat(data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allData;
+}
+
 export const useDashboardStats = (year, month) => {
   return useQuery({
     queryKey: ['dashboardStats', year, month],
@@ -142,8 +157,7 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
       }
 
-      const [salesResult, partnersResult, scopesResult] = await Promise.all([
-        supabase
+      const buildSalesQuery = () => supabase
           .from('sales')
           .select('*, partners(name), operators(name, id)')
           .gte('date', startDate)
@@ -151,8 +165,10 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .neq('status', 'Em proposta')
           .neq('status', 'Cancelado')
           .neq('status', 'Recusado')
-          .eq('is_mirror_copy', false)
-          .limit(10000),
+          .eq('is_mirror_copy', false);
+
+      const [currentSales, partnersResult, scopesResult] = await Promise.all([
+        fetchAllRows(buildSalesQuery),
         supabase.from('partners').select('id, name'),
         supabase
           .from('scopes')
@@ -160,7 +176,6 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .eq('active', true)
       ]);
 
-      const currentSales = salesResult.data || [];
       const partners = partnersResult.data || [];
       const scopesMeta = scopesResult.data || [];
 
@@ -238,23 +253,24 @@ export const useMonthlySalesByOperator = (user) => {
       const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
       const startStr = start.toISOString().split('T')[0];
 
-      let query = supabase
-        .from('sales')
-        .select('date, operator_id, operators(id, name)')
-        .gte('date', startStr)
-        .neq('status', 'Em proposta')
-        .neq('status', 'Cancelado')
-        .neq('status', 'Recusado')
-        .eq('is_mirror_copy', false)
-        .limit(10000);
+      const buildQuery = () => {
+        let q = supabase
+          .from('sales')
+          .select('date, operator_id, operators(id, name)')
+          .gte('date', startStr)
+          .neq('status', 'Em proposta')
+          .neq('status', 'Cancelado')
+          .neq('status', 'Recusado')
+          .eq('is_mirror_copy', false);
+        const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
+        if (isPartner && user?.partner_id) {
+          q = q.eq('partner_id', user.partner_id);
+        }
+        return q;
+      };
 
-      const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
-      if (isPartner && user?.partner_id) {
-        query = query.eq('partner_id', user.partner_id);
-      }
-
-      const { data: sales, error } = await query;
-      if (error || !sales) return { chartData: [], operators: [] };
+      const sales = await fetchAllRows(buildQuery);
+      if (!sales || sales.length === 0) return { chartData: [], operators: [] };
 
       const monthKeys = [];
       for (let i = 11; i >= 0; i--) {
