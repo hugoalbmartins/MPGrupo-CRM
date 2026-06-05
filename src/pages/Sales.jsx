@@ -1075,6 +1075,10 @@ const Sales = ({ user }) => {
         dataToExport = dataToExport.filter(sale => sale.partner_id === exportPartnerFilter);
       }
 
+      dataToExport = dataToExport.filter(sale =>
+        !sale.parent_sale_id || (sale.sale_type !== 'multiponto' && sale.sale_type !== 'multilocal')
+      );
+
       if (dataToExport.length === 0) {
         toast.error("Nenhuma venda encontrada para exportar");
         return;
@@ -1088,6 +1092,7 @@ const Sales = ({ user }) => {
         const commission = sale.manual_commission || sale.calculated_commission || 0;
 
         const baseData = {
+          'Codigo Venda': sale.sale_code || '',
           'Data': formatDateExtended(sale.date),
           'ID Parceiro': partner?.code || partner?.name || sale.partner_id || '',
           'Ambito': sale.scope,

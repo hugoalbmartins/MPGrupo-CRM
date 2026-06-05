@@ -183,16 +183,29 @@ const OperatorValidations = ({ user }) => {
     try {
       const excelRows = await parseExcelFile(file);
 
-      const ninetyDaysAgo = new Date();
-      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      const dateStr = ninetyDaysAgo.toISOString().split('T')[0];
+      const lookbackDate = new Date();
+      lookbackDate.setDate(lookbackDate.getDate() - 120);
+      const dateStr = lookbackDate.toISOString().split('T')[0];
 
-      const { data: sales, error: salesError } = await supabase
-        .from('sales')
-        .select('id, sale_code, date, status, scope, energy_sale_type, cpe, cui, request_number, client_name, operator_validated, paid_to_operator, electricity_paid, gas_paid')
-        .gte('date', dateStr);
+      const [salesResult, energyPointsResult] = await Promise.all([
+        supabase
+          .from('sales')
+          .select('id, sale_code, date, status, scope, energy_sale_type, cpe, cui, request_number, client_name, operator_validated, paid_to_operator, electricity_paid, gas_paid')
+          .gte('date', dateStr),
+        supabase
+          .from('sales_energy_points')
+          .select('id, sale_id, point_type, point_code')
+      ]);
 
-      if (salesError) throw salesError;
+      if (salesResult.error) throw salesResult.error;
+      const sales = salesResult.data || [];
+      const energyPoints = energyPointsResult.data || [];
+
+      const pointsBySaleId = {};
+      for (const ep of energyPoints) {
+        if (!pointsBySaleId[ep.sale_id]) pointsBySaleId[ep.sale_id] = [];
+        pointsBySaleId[ep.sale_id].push(ep);
+      }
 
       const results = {
         processed: excelRows.length,
@@ -209,9 +222,27 @@ const OperatorValidations = ({ user }) => {
 
         if (row.cpe) {
           matched = sales.find(s => s.cpe && s.cpe.toUpperCase() === row.cpe.toUpperCase());
+          if (!matched) {
+            for (const sale of sales) {
+              const points = pointsBySaleId[sale.id];
+              if (points) {
+                const found = points.find(p => p.point_type === 'cpe' && p.point_code && p.point_code.toUpperCase() === row.cpe.toUpperCase());
+                if (found) { matched = sale; break; }
+              }
+            }
+          }
         }
         if (!matched && row.cui) {
           matched = sales.find(s => s.cui && s.cui.toUpperCase() === row.cui.toUpperCase());
+          if (!matched) {
+            for (const sale of sales) {
+              const points = pointsBySaleId[sale.id];
+              if (points) {
+                const found = points.find(p => p.point_type === 'cui' && p.point_code && p.point_code.toUpperCase() === row.cui.toUpperCase());
+                if (found) { matched = sale; break; }
+              }
+            }
+          }
         }
         if (!matched && row.req) {
           matched = sales.find(s => s.request_number && s.request_number.toUpperCase() === row.req.toUpperCase());

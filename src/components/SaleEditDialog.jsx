@@ -253,11 +253,26 @@ const SaleEditDialog = ({
             <div className="space-y-8">
               <FormSection icon={User} title="Identificação do Cliente" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  <FieldGroup label="Nome" locked>
-                    <Input value={editFormData.client_name} disabled className="bg-dark-900 border-dark-700 text-white opacity-60 cursor-not-allowed" />
+                  <FieldGroup label="Nome" locked={user?.role !== 'admin'}>
+                    <Input
+                      value={editFormData.client_name}
+                      disabled={user?.role !== 'admin'}
+                      onChange={(e) => update('client_name', e.target.value)}
+                      className={user?.role === 'admin'
+                        ? "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                        : "bg-dark-900 border-dark-700 text-white opacity-60 cursor-not-allowed"}
+                    />
                   </FieldGroup>
-                  <FieldGroup label="NIF" locked>
-                    <Input value={editFormData.client_nif} disabled className="bg-dark-900 border-dark-700 text-white opacity-60 cursor-not-allowed" />
+                  <FieldGroup label="NIF" locked={user?.role !== 'admin'}>
+                    <Input
+                      value={editFormData.client_nif}
+                      disabled={user?.role !== 'admin'}
+                      onChange={(e) => update('client_nif', e.target.value)}
+                      maxLength={9}
+                      className={user?.role === 'admin'
+                        ? "bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                        : "bg-dark-900 border-dark-700 text-white opacity-60 cursor-not-allowed"}
+                    />
                   </FieldGroup>
                 </div>
               </FormSection>
