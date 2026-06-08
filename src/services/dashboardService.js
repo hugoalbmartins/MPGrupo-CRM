@@ -302,7 +302,8 @@ async function getLast12MonthsData(partnerId = null) {
       .neq('status', 'Em proposta')
       .neq('status', 'Cancelado')
       .neq('status', 'Recusado')
-      .eq('is_mirror_copy', false);
+      .eq('is_mirror_copy', false)
+      .order('date', { ascending: false });
     if (partnerId) q = q.eq('partner_id', partnerId);
     return q;
   };

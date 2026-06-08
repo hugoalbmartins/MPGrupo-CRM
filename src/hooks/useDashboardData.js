@@ -157,7 +157,7 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
       }
 
-      const buildSalesQuery = () => supabase
+      const salesQuery = supabase
           .from('sales')
           .select('*, partners(name), operators(name, id)')
           .gte('date', startDate)
@@ -165,10 +165,12 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .neq('status', 'Em proposta')
           .neq('status', 'Cancelado')
           .neq('status', 'Recusado')
-          .eq('is_mirror_copy', false);
+          .eq('is_mirror_copy', false)
+          .order('date', { ascending: false })
+          .limit(1000);
 
-      const [currentSales, partnersResult, scopesResult] = await Promise.all([
-        fetchAllRows(buildSalesQuery),
+      const [salesResult, partnersResult, scopesResult] = await Promise.all([
+        salesQuery,
         supabase.from('partners').select('id, name'),
         supabase
           .from('scopes')
@@ -176,6 +178,7 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .eq('active', true)
       ]);
 
+      const currentSales = salesResult.data || [];
       const partners = partnersResult.data || [];
       const scopesMeta = scopesResult.data || [];
 
@@ -261,7 +264,8 @@ export const useMonthlySalesByOperator = (user) => {
           .neq('status', 'Em proposta')
           .neq('status', 'Cancelado')
           .neq('status', 'Recusado')
-          .eq('is_mirror_copy', false);
+          .eq('is_mirror_copy', false)
+          .order('date', { ascending: false });
         const isPartner = user?.role === 'partner' || user?.role === 'partner_commercial';
         if (isPartner && user?.partner_id) {
           q = q.eq('partner_id', user.partner_id);
