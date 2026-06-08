@@ -428,6 +428,11 @@ async function processBatch(
 
   for (const sale of sales) {
     try {
+      if (sale.status === 'Cancelado' || sale.status === 'Recusado') {
+        skippedCount++;
+        continue;
+      }
+
       if (!forceUpdate && sale.manual_commission && parseFloat(sale.manual_commission) > 0) {
         skippedCount++;
         continue;

@@ -1391,7 +1391,13 @@ const Sales = ({ user }) => {
           }
           if ('status' in siblingUpdate) {
             if (siblingUpdate.status === 'Ativo') siblingUpdate.activated_at = updatedData.activated_at;
-            if (siblingUpdate.status === 'Cancelado') siblingUpdate.cancelled_at = updatedData.cancelled_at;
+            if (siblingUpdate.status === 'Cancelado' || siblingUpdate.status === 'Recusado') {
+              siblingUpdate.cancelled_at = updatedData.cancelled_at;
+              siblingUpdate.calculated_commission = '0';
+              siblingUpdate.manual_commission = null;
+              siblingUpdate.direct_debit_value = null;
+              siblingUpdate.electronic_invoice_value = null;
+            }
           }
           await Promise.all(siblingIds.map(id => applyUpdateToSale(id, siblingUpdate, false, recalc)));
         }
@@ -1422,8 +1428,8 @@ const Sales = ({ user }) => {
         return;
       }
 
-      if (editFormData.status === 'Cancelado' && !editFormData.observations?.trim()) {
-        toast.error("Observacoes sao obrigatorias para o estado Cancelado (motivo do cancelamento)");
+      if ((editFormData.status === 'Cancelado' || editFormData.status === 'Recusado') && !editFormData.observations?.trim()) {
+        toast.error("Observacoes sao obrigatorias para o estado Cancelado/Recusado (motivo)");
         return;
       }
 
@@ -1432,8 +1438,12 @@ const Sales = ({ user }) => {
       if (editFormData.status === 'Ativo') {
         updatedData.activated_at = new Date().toISOString();
       }
-      if (editFormData.status === 'Cancelado') {
+      if (editFormData.status === 'Cancelado' || editFormData.status === 'Recusado') {
         updatedData.cancelled_at = new Date().toISOString();
+        updatedData.calculated_commission = '0';
+        updatedData.manual_commission = null;
+        updatedData.direct_debit_value = null;
+        updatedData.electronic_invoice_value = null;
       }
 
       const originalPartnerId = editingSale.partner_id || null;

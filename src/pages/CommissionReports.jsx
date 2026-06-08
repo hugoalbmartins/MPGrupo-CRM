@@ -178,6 +178,26 @@ const CommissionReports = ({ user }) => {
     });
   };
 
+  const filterCancelledSalesByMonth = (sales) => {
+    const cutoff = cutoffDate ? new Date(cutoffDate + 'T23:59:59') : null;
+
+    return sales.filter(sale => {
+      const dateField = sale.cancelled_at || sale.date;
+      if (!dateField) return false;
+
+      const saleDate = new Date(dateField);
+      if (isNaN(saleDate.getTime())) return false;
+
+      if (cutoff) {
+        return saleDate <= cutoff;
+      }
+
+      const saleMonth = saleDate.getMonth() + 1;
+      const saleYear = saleDate.getFullYear();
+      return saleMonth === selectedMonth && saleYear === selectedYear;
+    });
+  };
+
   const getFilteredPartners = () => {
     if (partnerTypeFilter === 'all') return partners;
     if (partnerTypeFilter === 'individual') {
@@ -195,8 +215,8 @@ const CommissionReports = ({ user }) => {
       finalSales = finalSales.filter(s => s.operator_id === selectedOperatorFilter);
     }
 
-    const canceledSalesAll = allSales.filter(sale => sale.status === 'Cancelado' || sale.status === 'Anulado');
-    let canceledSales = filterSalesByMonth(canceledSalesAll).filter(s => s.partner_id === partnerId);
+    const canceledSalesAll = allSales.filter(sale => sale.status === 'Cancelado' || sale.status === 'Anulado' || sale.status === 'Recusado');
+    let canceledSales = filterCancelledSalesByMonth(canceledSalesAll).filter(s => s.partner_id === partnerId);
     if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
       canceledSales = canceledSales.filter(s => s.operator_id === selectedOperatorFilter);
     }
