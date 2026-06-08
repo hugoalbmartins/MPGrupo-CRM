@@ -138,6 +138,12 @@ export const commissionReportsService = {
         .remove([report.file_path]);
     }
 
+    await supabase
+      .from('partner_advances')
+      .update({ commission_report_id: null, settled_amount: 0 })
+      .eq('commission_report_id', reportId)
+      .eq('is_settled', false);
+
     const { error } = await supabase
       .from('commission_reports')
       .delete()

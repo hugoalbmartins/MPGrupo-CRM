@@ -28,6 +28,7 @@ export const advancesService = {
       .select('*')
       .eq('partner_id', partnerId)
       .eq('is_settled', false)
+      .is('commission_report_id', null)
       .order('advance_date', { ascending: true });
 
     if (error) throw error;

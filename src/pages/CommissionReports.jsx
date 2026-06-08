@@ -700,40 +700,7 @@ const CommissionReports = ({ user }) => {
               });
               if (!uploadResponse.ok) throw new Error('Erro ao fazer upload do PDF: ' + await uploadResponse.text());
 
-              if (data.settledAdvances && data.settledAdvances.length > 0) {
-                btn.textContent = 'Liquidando adiantamentos...';
-                for (const adv of data.settledAdvances) {
-                  const newSettled = (adv.settled_amount || 0) + adv.settle_amount;
-                  const isFullySettled = newSettled >= adv.amount;
-                  const updateBody = { settled_amount: newSettled, is_settled: isFullySettled, settled_by: data.userId };
-                  if (isFullySettled) updateBody.settled_at = new Date().toISOString();
-                  await fetch(\`\${data.supabaseUrl}/rest/v1/partner_advances?id=eq.\${adv.id}\`, {
-                    method: 'PATCH',
-                    headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                    body: JSON.stringify(updateBody)
-                  });
-                }
-              }
-
-              if (data.chargebackIds && data.chargebackIds.length > 0) {
-                btn.textContent = 'Liquidando chargebacks...';
-                const reportInsertResp = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&order=version.desc&limit=1\`, {
-                  headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\` }
-                });
-                const reportRows = await reportInsertResp.json();
-                const reportId = reportRows && reportRows[0] ? reportRows[0].id : null;
-                if (reportId) {
-                  for (const cbId of data.chargebackIds) {
-                    await fetch(\`\${data.supabaseUrl}/rest/v1/chargebacks?id=eq.\${cbId}\`, {
-                      method: 'PATCH',
-                      headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                      body: JSON.stringify({ commission_report_id: reportId })
-                    });
-                  }
-                }
-              }
-
-              btn.textContent = 'Enviando email...';
+              btn.textContent = 'Registrando auto...';
               const emailData = { partnerId: data.partnerId, partnerEmail: data.partnerEmail, partnerName: data.partnerName, month: data.month, year: data.year, userId: data.userId, filePath, fileName, version, salesIds: data.salesIds || [], bccEmails: data.bccEmails || [] };
               const response = await fetch(\`\${data.supabaseUrl}/functions/v1/send-commission-report-email\`, {
                 method: 'POST',
@@ -743,6 +710,36 @@ const CommissionReports = ({ user }) => {
               if (!response.ok) {
                 const errorText = await response.text();
                 try { const ed = JSON.parse(errorText); throw new Error(ed.error || \`Erro (\${response.status})\`); } catch(e) { throw new Error(\`Erro (\${response.status}): \${errorText.substring(0, 200)}\`); }
+              }
+
+              btn.textContent = 'Associando dados ao auto...';
+              const reportInsertResp = await fetch(\`\${data.supabaseUrl}/rest/v1/commission_reports?partner_id=eq.\${data.partnerId}&month=eq.\${data.month}&year=eq.\${data.year}&order=version.desc&limit=1\`, {
+                headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\` }
+              });
+              const reportRows = await reportInsertResp.json();
+              const reportId = reportRows && reportRows[0] ? reportRows[0].id : null;
+
+              if (reportId) {
+                if (data.settledAdvances && data.settledAdvances.length > 0) {
+                  for (const adv of data.settledAdvances) {
+                    const newSettled = (adv.settled_amount || 0) + adv.settle_amount;
+                    await fetch(\`\${data.supabaseUrl}/rest/v1/partner_advances?id=eq.\${adv.id}\`, {
+                      method: 'PATCH',
+                      headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                      body: JSON.stringify({ commission_report_id: reportId, settled_amount: newSettled })
+                    });
+                  }
+                }
+
+                if (data.chargebackIds && data.chargebackIds.length > 0) {
+                  for (const cbId of data.chargebackIds) {
+                    await fetch(\`\${data.supabaseUrl}/rest/v1/chargebacks?id=eq.\${cbId}\`, {
+                      method: 'PATCH',
+                      headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                      body: JSON.stringify({ commission_report_id: reportId })
+                    });
+                  }
+                }
               }
 
               btn.textContent = 'Concluido!'; btn.style.backgroundColor = '#10b981'; btn.style.opacity = '1';
