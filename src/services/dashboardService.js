@@ -1000,7 +1000,7 @@ async function getAdminProposalStats(adminId, isCommissioned, adminPartnerId = n
   const [proposalsResult, adminUserResult] = await Promise.all([
     supabase
       .from('sales')
-      .select('*, partners(name)')
+      .select('*, partners!sales_partner_id_fkey(name)')
       .eq('status', 'Em proposta'),
     supabase
       .from('users')
@@ -1081,7 +1081,7 @@ async function getAdminProposalStats(adminId, isCommissioned, adminPartnerId = n
 async function getBOProposalStats() {
   const { data: proposals } = await supabase
     .from('sales')
-    .select('*, partners(name)')
+    .select('*, partners!sales_partner_id_fkey(name)')
     .eq('status', 'Em proposta');
 
   const now = new Date();
@@ -1182,7 +1182,7 @@ async function getPartnerProposalStats(partnerId) {
 async function getManagerProposalStats(managerId) {
   const { data: proposals } = await supabase
     .from('sales')
-    .select('*, partners(name)')
+    .select('*, partners!sales_partner_id_fkey(name)')
     .eq('status', 'Em proposta')
     .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`);
 

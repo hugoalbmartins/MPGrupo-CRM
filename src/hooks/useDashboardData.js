@@ -157,9 +157,9 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
       }
 
-      const salesQuery = supabase
+      const { data: salesData, error: salesError } = await supabase
           .from('sales')
-          .select('*, partners(name), operators(name, id)')
+          .select('partner_id, calculated_commission, manual_commission, scope, operator_id, custom_fields, partners!sales_partner_id_fkey(name), operators(name, id)')
           .gte('date', startDate)
           .lte('date', endDate)
           .neq('status', 'Em proposta')
@@ -167,10 +167,12 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .neq('status', 'Recusado')
           .eq('is_mirror_copy', false)
           .order('date', { ascending: false })
-          .limit(1000);
+          .limit(10000);
 
-      const [salesResult, partnersResult, scopesResult] = await Promise.all([
-        salesQuery,
+      if (salesError) throw salesError;
+      const currentSales = salesData || [];
+
+      const [partnersResult, scopesResult] = await Promise.all([
         supabase.from('partners').select('id, name'),
         supabase
           .from('scopes')
@@ -178,7 +180,6 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
           .eq('active', true)
       ]);
 
-      const currentSales = salesResult.data || [];
       const partners = partnersResult.data || [];
       const scopesMeta = scopesResult.data || [];
 
@@ -330,7 +331,7 @@ export const useProposals = (filterType) => {
     queryFn: async () => {
       const { data: proposals } = await supabase
         .from('sales')
-        .select('*, partners(name), operators(name)')
+        .select('*, partners!sales_partner_id_fkey(name), operators(name)')
         .eq('status', 'Em proposta')
         .order('created_at', { ascending: false });
 
