@@ -543,6 +543,8 @@ export const salesService = {
         updates[key] = value === '' || value === null || value === undefined ? null : parseFloat(value);
       } else if (OPTIONAL_FIELDS_WITH_CONSTRAINTS.includes(key)) {
         updates[key] = value === '' || value === null || value === undefined ? null : value;
+      } else if (key === 'observations') {
+        updates[key] = value || null;
       } else if (value !== null && value !== undefined && value !== '') {
         updates[key] = value;
       }
