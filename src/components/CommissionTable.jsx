@@ -438,7 +438,7 @@ const CommissionTable = ({
                       </td>
 
                       <td className="p-2">
-                        {config.commission_mode !== 'per_contract' && (
+                        {config.commission_mode !== 'per_contract' ? (
                           isEditing ? (
                             <Select value={config.tier_mode} onValueChange={(v) => onUpdateConfig(actualIndex, 'tier_mode', v)}>
                               <SelectTrigger className="h-8 text-xs bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
@@ -452,13 +452,13 @@ const CommissionTable = ({
                           ) : (
                             <span className="text-slate-300">{getTierModeLabel(config.tier_mode)}</span>
                           )
-                        )}
+                        ) : null}
                       </td>
 
                       <td className="p-2">
-                        {config.commission_mode !== 'per_contract' && (
+                        {config.commission_mode !== 'per_contract' ? (
                           <>
-                            {config.tier_mode === 'by_quantity' && (
+                            {config.tier_mode === 'by_quantity' ? (
                               isEditing ? (
                                 <Input
                                   type="number"
@@ -469,8 +469,8 @@ const CommissionTable = ({
                               ) : (
                                 <span className="text-slate-300">{config.min_sales || 0} vendas</span>
                               )
-                            )}
-                            {config.tier_mode === 'by_monthly_value' && (
+                            ) : null}
+                            {config.tier_mode === 'by_monthly_value' ? (
                               isEditing ? (
                                 <div className="flex gap-1 items-center">
                                   <Input
@@ -494,9 +494,9 @@ const CommissionTable = ({
                                   {(parseFloat(config.monthly_value_min) || 0).toFixed(2)} - {parseFloat(config.monthly_value_max) > 0 ? `${parseFloat(config.monthly_value_max).toFixed(2)}` : '\u221E'}
                                 </span>
                               )
-                            )}
+                            ) : null}
                           </>
-                        )}
+                        ) : null}
                       </td>
 
                       <td className="p-2">

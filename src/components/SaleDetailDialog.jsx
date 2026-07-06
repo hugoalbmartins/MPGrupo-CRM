@@ -927,7 +927,11 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                                       <p className="text-xs text-slate-400">Motivo: {cb.reason || 'N/A'}</p>
                                       <p className="text-xs text-slate-500">
                                         Criado em {new Date(cb.created_at).toLocaleDateString('pt-PT')}
-                                        {cb.commission_report_id && <Badge variant="outline" className="ml-2 text-xs border-amber-500/30 text-amber-400">Em Auto</Badge>}
+                                        {cb.commission_report_id ? (
+                                          <Badge variant="outline" className="ml-2 text-xs border-green-500/30 text-green-400">Descontado em Auto</Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="ml-2 text-xs border-red-500/30 text-red-400">Pendente</Badge>
+                                        )}
                                       </p>
                                     </div>
                                     {(user?.role === 'admin' || user?.role === 'bo') && !cb.commission_report_id && (

@@ -990,6 +990,8 @@ const Sales = ({ user }) => {
     if (filterStartDate && new Date(sale.date) < new Date(filterStartDate)) return false;
     if (filterEndDate && new Date(sale.date) > new Date(filterEndDate)) return false;
     if (filterChargeback === "yes" && !sale.has_chargeback) return false;
+    if (filterChargeback === "pending" && sale.chargeback_status !== 'pending') return false;
+    if (filterChargeback === "settled" && sale.chargeback_status !== 'settled') return false;
     if (filterChargeback === "no" && sale.has_chargeback) return false;
     if (filterPaidPartner === "yes" && !sale.paid_in_report_id) return false;
     if (filterPaidPartner === "no" && sale.paid_in_report_id) return false;
@@ -1702,8 +1704,11 @@ const Sales = ({ user }) => {
                 {sale.activation_type && (
                   <span className="text-xs text-slate-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>{sale.activation_type}</span>
                 )}
-                {sale.has_chargeback && (
-                  <span className="text-xs font-semibold text-red-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>Chargeback</span>
+                {sale.has_chargeback && sale.chargeback_status === 'pending' && (
+                  <span className="text-xs font-semibold text-red-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>Chargeback Pendente</span>
+                )}
+                {sale.has_chargeback && sale.chargeback_status === 'settled' && (
+                  <span className="text-xs font-semibold text-amber-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.25)' }}>Chargeback Descontado</span>
                 )}
                 {sale.paid_in_report_id && (
                   <span className="text-xs font-semibold text-blue-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>Pago Parceiro</span>
@@ -2202,6 +2207,8 @@ const Sales = ({ user }) => {
                 <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="yes">Com Chargeback</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="settled">Descontado</SelectItem>
                   <SelectItem value="no">Sem Chargeback</SelectItem>
                 </SelectContent>
               </Select>
