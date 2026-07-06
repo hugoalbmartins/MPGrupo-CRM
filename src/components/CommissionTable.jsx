@@ -329,6 +329,7 @@ const CommissionTable = ({
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Servico</th>
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Modo</th>
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Valor/Mult.</th>
+                <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">IVA</th>
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Patamar</th>
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Min Vendas / Range</th>
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Retencao</th>
@@ -417,7 +418,26 @@ const CommissionTable = ({
                       </td>
 
                       <td className="p-2">
-                        {config.commission_mode !== 'per_contract' && (
+                        {config.commission_mode === 'monthly_multiplier' && (
+                          isEditing ? (
+                            <Select value={config.multiply_without_vat ? 'sem_iva' : 'com_iva'} onValueChange={(v) => onUpdateConfig(actualIndex, 'multiply_without_vat', v === 'sem_iva')}>
+                              <SelectTrigger className="h-8 text-xs bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="com_iva">C/IVA</SelectItem>
+                                <SelectItem value="sem_iva">S/IVA</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className={`text-xs ${config.multiply_without_vat ? 'text-amber-400' : 'text-slate-300'}`}>
+                              {config.multiply_without_vat ? 'S/IVA' : 'C/IVA'}
+                            </span>
+                          )
+                        )}
+                      </td>
+
+                      <td className="p-2">
                           isEditing ? (
                             <Select value={config.tier_mode} onValueChange={(v) => onUpdateConfig(actualIndex, 'tier_mode', v)}>
                               <SelectTrigger className="h-8 text-xs bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">

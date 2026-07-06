@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { salesService } from "../services/salesService";
 import { operatorsService } from "../services/operatorsService";
 import { partnersService } from "../services/partnersService";
+import { chargebackService } from "../services/chargebackService";
 import { supabase } from "../lib/supabase";
 
 const STATUSES = [
@@ -40,6 +41,8 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [operators, setOperators] = useState([]);
   const [partners, setPartners] = useState([]);
+  const [chargebacks, setChargebacks] = useState([]);
+  const [editingChargeback, setEditingChargeback] = useState(null);
 
   useEffect(() => {
     if (open && saleId) {
@@ -70,6 +73,12 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
       ]);
       setSale(saleData);
       setAuditLogs(logs);
+
+      if (saleData.has_chargeback) {
+        chargebackService.getBySaleId(saleId).then(setChargebacks).catch(() => {});
+      } else {
+        setChargebacks([]);
+      }
       setEditData({
         date: saleData.date ? saleData.date.split('T')[0] : "",
         status: saleData.status,
@@ -868,6 +877,85 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                           </div>
                         </div>
                       )}
+
+                      {sale.paid_in_report_id && (
+                        <div className="col-span-2 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                          <div className="flex items-center gap-2 text-blue-400">
+                            <CheckCircle className="w-5 h-5" />
+                            <span className="font-bold">Pago ao Parceiro (Auto Emitido)</span>
+                            {sale.paid_in_report_at && (
+                              <span className="text-sm font-normal">
+                                em {new Date(sale.paid_in_report_at).toLocaleDateString('pt-PT')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {sale.has_chargeback && chargebacks.length > 0 && (
+                        <div className="col-span-2 bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                          <div className="flex items-center gap-2 text-red-400 mb-3">
+                            <AlertTriangle className="w-5 h-5" />
+                            <span className="font-bold">Chargeback</span>
+                          </div>
+                          <div className="space-y-2">
+                            {chargebacks.map(cb => (
+                              <div key={cb.id} className="bg-dark-900 border border-dark-700 rounded-lg p-3">
+                                {editingChargeback === cb.id ? (
+                                  <ChargebackEditForm
+                                    chargeback={cb}
+                                    onSave={async (updated) => {
+                                      try {
+                                        await supabase
+                                          .from('chargebacks')
+                                          .update({ reason: updated.reason, percentage: updated.percentage, chargeback_amount: parseFloat((updated.percentage * cb.commission_amount / 100).toFixed(2)) })
+                                          .eq('id', cb.id);
+                                        toast.success("Chargeback atualizado");
+                                        setEditingChargeback(null);
+                                        const fresh = await chargebackService.getBySaleId(saleId);
+                                        setChargebacks(fresh);
+                                      } catch (e) { toast.error("Erro ao atualizar chargeback"); }
+                                    }}
+                                    onCancel={() => setEditingChargeback(null)}
+                                  />
+                                ) : (
+                                  <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                      <p className="text-sm text-white">
+                                        <span className="text-red-400 font-semibold">{cb.percentage}%</span> da comissao = <span className="font-bold text-red-300">{parseFloat(cb.chargeback_amount || 0).toFixed(2)} EUR</span>
+                                      </p>
+                                      <p className="text-xs text-slate-400">Motivo: {cb.reason || 'N/A'}</p>
+                                      <p className="text-xs text-slate-500">
+                                        Criado em {new Date(cb.created_at).toLocaleDateString('pt-PT')}
+                                        {cb.commission_report_id && <Badge variant="outline" className="ml-2 text-xs border-amber-500/30 text-amber-400">Em Auto</Badge>}
+                                      </p>
+                                    </div>
+                                    {(user?.role === 'admin' || user?.role === 'bo') && !cb.commission_report_id && (
+                                      <div className="flex gap-1">
+                                        <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-400 hover:text-white" onClick={() => setEditingChargeback(cb.id)}>
+                                          Editar
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="h-7 text-xs text-red-400 hover:text-red-300" onClick={async () => {
+                                          if (!window.confirm("Anular este chargeback?")) return;
+                                          try {
+                                            await chargebackService.delete(cb.id, saleId);
+                                            toast.success("Chargeback anulado");
+                                            const fresh = await chargebackService.getBySaleId(saleId);
+                                            setChargebacks(fresh);
+                                            if (fresh.length === 0 && onSaleUpdated) onSaleUpdated();
+                                          } catch (e) { toast.error("Erro ao anular chargeback"); }
+                                        }}>
+                                          Anular
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1177,6 +1265,28 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
         )}
       </DialogContent>
     </Dialog>
+  );
+};
+
+const ChargebackEditForm = ({ chargeback, onSave, onCancel }) => {
+  const [reason, setReason] = useState(chargeback.reason || '');
+  const [percentage, setPercentage] = useState(chargeback.percentage || 100);
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label className="text-xs text-slate-400">Motivo</Label>
+        <Input className="h-8 text-xs bg-dark-800 border-dark-600" value={reason} onChange={(e) => setReason(e.target.value)} />
+      </div>
+      <div>
+        <Label className="text-xs text-slate-400">Percentagem (%)</Label>
+        <Input type="number" min="1" max="100" className="h-8 text-xs bg-dark-800 border-dark-600 w-24" value={percentage} onChange={(e) => setPercentage(Number(e.target.value))} />
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" className="h-7 text-xs" onClick={() => onSave({ reason, percentage })}>Guardar</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onCancel}>Cancelar</Button>
+      </div>
+    </div>
   );
 };
 

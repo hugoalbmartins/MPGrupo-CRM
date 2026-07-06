@@ -282,7 +282,10 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
   if (applicableTier.commission_mode === 'fixed_value') {
     baseCommission = parseFloat(applicableTier.commission_value || 0);
   } else if (applicableTier.commission_mode === 'monthly_multiplier') {
-    const monthlyValue = parseFloat(saleData.monthly_value || 0);
+    let monthlyValue = parseFloat(saleData.monthly_value || 0);
+    if (applicableTier.multiply_without_vat) {
+      monthlyValue = monthlyValue / 1.23;
+    }
     const multiplier = parseFloat(applicableTier.commission_value || 0);
     baseCommission = monthlyValue * multiplier;
   } else {
@@ -529,6 +532,10 @@ export async function calculateCommission(operator, saleData, supabase) {
 
     if ((saleData.service_type === 'REFID' || saleData.service_type === 'Refid') && saleData.contracted_monthly_fee) {
       monthlyValue = parseFloat(saleData.contracted_monthly_fee);
+    }
+
+    if (applicableTier.multiply_without_vat) {
+      monthlyValue = monthlyValue / 1.23;
     }
 
     const multiplier = parseFloat(applicableTier.commission_value || 0);

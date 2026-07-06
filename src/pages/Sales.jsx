@@ -60,6 +60,8 @@ const Sales = ({ user }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
+  const [filterChargeback, setFilterChargeback] = useState("all");
+  const [filterPaidPartner, setFilterPaidPartner] = useState("all");
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
   const [exportOperatorFilter, setExportOperatorFilter] = useState("all");
@@ -973,7 +975,7 @@ const Sales = ({ user }) => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedStatus, selectedPartner, selectedOperator, selectedScope, filterStartDate, filterEndDate, viewMode]);
+  }, [searchQuery, selectedStatus, selectedPartner, selectedOperator, selectedScope, filterStartDate, filterEndDate, filterChargeback, filterPaidPartner, viewMode]);
 
   const filteredSales = sales.filter(sale => {
     if (viewMode === "proposals") {
@@ -987,6 +989,10 @@ const Sales = ({ user }) => {
     if (selectedScope && selectedScope !== "all" && sale.scope !== selectedScope) return false;
     if (filterStartDate && new Date(sale.date) < new Date(filterStartDate)) return false;
     if (filterEndDate && new Date(sale.date) > new Date(filterEndDate)) return false;
+    if (filterChargeback === "yes" && !sale.has_chargeback) return false;
+    if (filterChargeback === "no" && sale.has_chargeback) return false;
+    if (filterPaidPartner === "yes" && !sale.paid_in_report_id) return false;
+    if (filterPaidPartner === "no" && sale.paid_in_report_id) return false;
     if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
       const haystack = [
@@ -1696,6 +1702,12 @@ const Sales = ({ user }) => {
                 {sale.activation_type && (
                   <span className="text-xs text-slate-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(17,29,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>{sale.activation_type}</span>
                 )}
+                {sale.has_chargeback && (
+                  <span className="text-xs font-semibold text-red-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>Chargeback</span>
+                )}
+                {sale.paid_in_report_id && (
+                  <span className="text-xs font-semibold text-blue-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>Pago Parceiro</span>
+                )}
               </div>
               <div className="flex gap-2 flex-wrap">
                 <Button
@@ -2176,6 +2188,40 @@ const Sales = ({ user }) => {
                 onChange={(e) => setFilterEndDate(e.target.value)}
                 className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
               />
+            </div>
+
+            <div>
+              <Label className="text-slate-400">Chargeback</Label>
+              <Select value={filterChargeback} onValueChange={setFilterChargeback}>
+                <SelectTrigger
+                  className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                  style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+                >
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="yes">Com Chargeback</SelectItem>
+                  <SelectItem value="no">Sem Chargeback</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-slate-400">Pago Parceiro</Label>
+              <Select value={filterPaidPartner} onValueChange={setFilterPaidPartner}>
+                <SelectTrigger
+                  className="focus:ring-cyan-500/20 focus:border-cyan-500 text-white"
+                  style={{ backgroundColor: '#0a0f1a', borderColor: '#1e3a5f' }}
+                >
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent style={{ backgroundColor: '#111d2e', borderColor: '#1e3a5f' }}>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="yes">Pago</SelectItem>
+                  <SelectItem value="no">Nao Pago</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -463,6 +463,7 @@ const CommissionReports = ({ user }) => {
       partnerId,
       partnerName: partner.name,
       partnerEmail: partner.email,
+      operatorName: (selectedOperatorFilter && selectedOperatorFilter !== 'all') ? (operators.find(op => op.id === selectedOperatorFilter)?.name || '') : '',
       month: selectedMonth,
       monthName,
       year: selectedYear,
@@ -689,7 +690,8 @@ const CommissionReports = ({ user }) => {
 
               const monthNames = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
               const mName = monthNames[data.month - 1];
-              const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}_Auto_\${mName}_\${data.year}_V\${version}.pdf\`;
+              const opSuffix = data.operatorName ? \`_\${data.operatorName.replace(/[^a-zA-Z0-9]/g, '_')}\` : '';
+              const fileName = \`\${data.partnerName.replace(/[^a-zA-Z0-9]/g, '_')}\${opSuffix}_Auto_\${mName}_\${data.year}_V\${version}.pdf\`;
               const filePath = \`\${data.partnerId}/\${data.year}/\${fileName}\`;
 
               btn.textContent = 'Enviando PDF...';

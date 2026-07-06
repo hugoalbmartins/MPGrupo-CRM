@@ -201,13 +201,16 @@ const OperatorValidations = ({ user }) => {
         supabase
           .from('sales')
           .select('id, sale_code, date, status, scope, energy_sale_type, cpe, cui, request_number, client_name, operator_validated, paid_to_operator, electricity_paid, gas_paid')
-          .gte('date', dateStr),
+          .gte('date', dateStr)
+          .limit(10000),
         supabase
           .from('sales_energy_points')
           .select('id, sale_id, point_type, point_code')
+          .limit(10000)
       ]);
 
       if (salesResult.error) throw salesResult.error;
+      if (energyPointsResult.error) throw energyPointsResult.error;
       const sales = salesResult.data || [];
       const energyPoints = energyPointsResult.data || [];
 
