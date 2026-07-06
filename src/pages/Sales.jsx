@@ -1147,6 +1147,8 @@ const Sales = ({ user }) => {
             return cols;
           })(),
           'Tipo Venda Energia': sale.energy_sale_type || '',
+          'Campanha': sale.campaign || '',
+          'Servicos Adicionais': sale.additional_services || '',
           ...((user?.role === 'admin' || user?.role === 'bo') ? {
             'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Nao',
             'Data Pagamento': formatDateExtended(sale.payment_date)

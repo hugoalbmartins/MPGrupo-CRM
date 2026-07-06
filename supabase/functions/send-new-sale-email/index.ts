@@ -70,6 +70,7 @@ interface SaleEmailPayload {
   from_smtp_user?: string | null;
   from_smtp_pass?: string | null;
   operator_requires_additional_services?: boolean;
+  campaign?: string;
   tratar_oop?: boolean;
   sale_type?: string;
   billing_address?: string | null;
@@ -244,6 +245,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
             ${hasField(payload, 'cui_tier') ? (payload.cui && payload.tier ? `<tr><td>CUI / Escalao:</td><td>${payload.cui} / ${payload.tier}</td></tr>` : payload.cui ? `<tr><td>CUI:</td><td>${payload.cui}</td></tr>` : payload.tier ? `<tr><td>Escalao:</td><td>${payload.tier}</td></tr>` : "") : ""}
           ` : ""}
           ${(payload.operator_requires_additional_services || (hasField(payload, 'additional_services') && payload.additional_services)) ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services || "Nenhum"}</td></tr>` : ""}
+          ${payload.campaign ? `<tr><td>Campanha:</td><td>${payload.campaign}</td></tr>` : ""}
           ` : ""}
 
           ${payload.scope === "solar" ? `

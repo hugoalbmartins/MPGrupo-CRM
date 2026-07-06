@@ -58,6 +58,7 @@ const Operators = ({ user }) => {
     requires_additional_services: false,
     requires_email: false,
     additional_services_list: [],
+    campaigns: [],
     notification_emails: [],
     notification_user_ids: [],
     email_fields: null,
@@ -69,6 +70,7 @@ const Operators = ({ user }) => {
   const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [newNotifEmail, setNewNotifEmail] = useState("");
   const [newServiceName, setNewServiceName] = useState("");
+  const [newCampaignName, setNewCampaignName] = useState("");
   const [adminBoUsers, setAdminBoUsers] = useState([]);
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -282,6 +284,7 @@ const Operators = ({ user }) => {
         requires_email: freshData.requires_email || false,
         requires_attachment: freshData.requires_attachment !== undefined ? freshData.requires_attachment : true,
         additional_services_list: freshData.additional_services_list || [],
+        campaigns: freshData.campaigns || [],
         notification_emails: freshData.notification_emails || [],
         notification_user_ids: freshData.notification_user_ids || [],
         email_fields: initialEmailFields,
@@ -1424,6 +1427,75 @@ const Operators = ({ user }) => {
                   </div>
                 </div>
               </div>
+
+              {selectedOperator?.scope === 'energia' && (
+                <div className="border-t border-dark-700 pt-4">
+                  <Label className="text-slate-300 text-sm font-semibold block mb-2">
+                    Campanhas
+                  </Label>
+                  <p className="text-xs text-slate-500 mb-3">
+                    Campanhas ativas para esta operadora. Aparecem como dropdown opcional na criacao de venda (energia).
+                  </p>
+                  <div className="space-y-2">
+                    {(editOperatorData.campaigns || []).map((campaign, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2">
+                        <span className="text-sm text-white flex-1 truncate">{typeof campaign === 'string' ? campaign : campaign.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditOperatorData(prev => ({
+                            ...prev,
+                            campaigns: prev.campaigns.filter((_, i) => i !== idx)
+                          }))}
+                          className="text-red-400 hover:text-red-300 shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Nome da campanha"
+                        value={newCampaignName}
+                        onChange={(e) => setNewCampaignName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const name = newCampaignName.trim();
+                            const existing = (editOperatorData.campaigns || []).map(c => typeof c === 'string' ? c : c.name);
+                            if (name && !existing.includes(name)) {
+                              setEditOperatorData(prev => ({
+                                ...prev,
+                                campaigns: [...(prev.campaigns || []), { name }]
+                              }));
+                              setNewCampaignName('');
+                            }
+                          }
+                        }}
+                        className="h-9 text-sm bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const name = newCampaignName.trim();
+                          const existing = (editOperatorData.campaigns || []).map(c => typeof c === 'string' ? c : c.name);
+                          if (name && !existing.includes(name)) {
+                            setEditOperatorData(prev => ({
+                              ...prev,
+                              campaigns: [...(prev.campaigns || []), { name }]
+                            }));
+                            setNewCampaignName('');
+                          }
+                        }}
+                        className="bg-gradient-to-r from-cyber-500 to-cyber-600 hover:from-cyber-400 hover:to-cyber-500 text-white shadow-lg shadow-cyber-500/20"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {(emailFieldsByScope[selectedOperator.scope] || []).length > 0 && (
                 <div className="border-t border-dark-700 pt-4">

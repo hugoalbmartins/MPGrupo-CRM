@@ -1222,6 +1222,27 @@ const SaleFormDialog = ({
                                 </Select>
                               </div>
                             )}
+
+                            {(currentOperator?.campaigns || []).length > 0 && (
+                              <div className="mt-4">
+                                <Label className="text-sm font-semibold mb-2 text-slate-400">Campanha</Label>
+                                <Select
+                                  value={formData.campaign || ""}
+                                  onValueChange={(v) => setFormData({...formData, campaign: v === '__none__' ? '' : v})}
+                                >
+                                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                    <SelectValue placeholder="Sem campanha" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">Sem campanha</SelectItem>
+                                    {(currentOperator.campaigns || []).map((c, idx) => {
+                                      const name = typeof c === 'string' ? c : c.name;
+                                      return <SelectItem key={idx} value={name}>{name}</SelectItem>;
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                           </>
                         )}
                       </>

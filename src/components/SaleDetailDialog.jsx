@@ -963,7 +963,7 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                     </div>
                   </div>
 
-                  {sale.scope === 'energia' && (sale.energy_sale_type || sale.entry_type || sale.power || sale.tier || sale.voltage_type || sale.additional_services) && (
+                  {sale.scope === 'energia' && (sale.energy_sale_type || sale.entry_type || sale.power || sale.tier || sale.voltage_type || sale.additional_services || sale.campaign) && (
                     <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
                       <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
                         <div className="w-1 h-6 bg-cyber-500 rounded"></div>
@@ -1004,6 +1004,12 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                           <div>
                             <Label className="text-slate-500 text-xs uppercase">Servicos Adicionais</Label>
                             <p className="font-semibold text-white mt-1">{sale.additional_services}</p>
+                          </div>
+                        )}
+                        {sale.campaign && (
+                          <div>
+                            <Label className="text-slate-500 text-xs uppercase">Campanha</Label>
+                            <p className="font-semibold text-white mt-1">{sale.campaign}</p>
                           </div>
                         )}
                       </div>
