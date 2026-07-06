@@ -418,7 +418,7 @@ const CommissionTable = ({
                       </td>
 
                       <td className="p-2">
-                        {config.commission_mode === 'monthly_multiplier' && (
+                        {config.commission_mode === 'monthly_multiplier' ? (
                           isEditing ? (
                             <Select value={config.multiply_without_vat ? 'sem_iva' : 'com_iva'} onValueChange={(v) => onUpdateConfig(actualIndex, 'multiply_without_vat', v === 'sem_iva')}>
                               <SelectTrigger className="h-8 text-xs bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
@@ -434,10 +434,11 @@ const CommissionTable = ({
                               {config.multiply_without_vat ? 'S/IVA' : 'C/IVA'}
                             </span>
                           )
-                        )}
+                        ) : null}
                       </td>
 
                       <td className="p-2">
+                        {config.commission_mode !== 'per_contract' && (
                           isEditing ? (
                             <Select value={config.tier_mode} onValueChange={(v) => onUpdateConfig(actualIndex, 'tier_mode', v)}>
                               <SelectTrigger className="h-8 text-xs bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20">
