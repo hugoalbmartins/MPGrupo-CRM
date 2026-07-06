@@ -134,11 +134,16 @@ const OperatorValidations = ({ user }) => {
               norm['payment date'] || null;
             const paymentDate = parseDate(paymentDateRaw);
 
+            const cleanIdentifier = (val) => {
+              if (!val) return null;
+              return String(val).replace(/\s+/g, '').trim() || null;
+            };
+
             return {
               lineNumber: index + 2,
-              cpe: norm.cpe ? String(norm.cpe).trim() : null,
-              cui: norm.cui ? String(norm.cui).trim() : null,
-              req: norm.req ? String(norm.req).trim() : (norm['requisição'] ? String(norm['requisição']).trim() : (norm['requisicao'] ? String(norm['requisicao']).trim() : null)),
+              cpe: cleanIdentifier(norm.cpe),
+              cui: cleanIdentifier(norm.cui),
+              req: cleanIdentifier(norm.req || norm['requisição'] || norm['requisicao']),
               status,
               activationDate,
               paidByOperator: isPaid,
@@ -170,6 +175,11 @@ const OperatorValidations = ({ user }) => {
     });
   };
 
+  const normalizeIdentifier = (value) => {
+    if (!value) return null;
+    return String(value).toUpperCase().replace(/\s+/g, '').trim();
+  };
+
   const handleValidation = async () => {
     if (!file) {
       toast.error('Por favor selecione um ficheiro Excel');
@@ -184,7 +194,7 @@ const OperatorValidations = ({ user }) => {
       const excelRows = await parseExcelFile(file);
 
       const lookbackDate = new Date();
-      lookbackDate.setDate(lookbackDate.getDate() - 120);
+      lookbackDate.setDate(lookbackDate.getDate() - 365);
       const dateStr = lookbackDate.toISOString().split('T')[0];
 
       const [salesResult, energyPointsResult] = await Promise.all([
@@ -207,6 +217,38 @@ const OperatorValidations = ({ user }) => {
         pointsBySaleId[ep.sale_id].push(ep);
       }
 
+      const cpeIndex = {};
+      const cuiIndex = {};
+      const reqIndex = {};
+
+      for (const sale of sales) {
+        if (sale.cpe) {
+          const normalized = normalizeIdentifier(sale.cpe);
+          if (normalized && !cpeIndex[normalized]) cpeIndex[normalized] = sale;
+        }
+        if (sale.cui) {
+          const normalized = normalizeIdentifier(sale.cui);
+          if (normalized && !cuiIndex[normalized]) cuiIndex[normalized] = sale;
+        }
+        if (sale.request_number) {
+          const normalized = normalizeIdentifier(sale.request_number);
+          if (normalized && !reqIndex[normalized]) reqIndex[normalized] = sale;
+        }
+      }
+
+      for (const ep of energyPoints) {
+        const normalized = normalizeIdentifier(ep.point_code);
+        if (!normalized) continue;
+        if (ep.point_type === 'cpe' && !cpeIndex[normalized]) {
+          const sale = sales.find(s => s.id === ep.sale_id);
+          if (sale) cpeIndex[normalized] = sale;
+        }
+        if (ep.point_type === 'cui' && !cuiIndex[normalized]) {
+          const sale = sales.find(s => s.id === ep.sale_id);
+          if (sale) cuiIndex[normalized] = sale;
+        }
+      }
+
       const results = {
         processed: excelRows.length,
         matched: 0,
@@ -221,31 +263,16 @@ const OperatorValidations = ({ user }) => {
         let matched = null;
 
         if (row.cpe) {
-          matched = sales.find(s => s.cpe && s.cpe.toUpperCase() === row.cpe.toUpperCase());
-          if (!matched) {
-            for (const sale of sales) {
-              const points = pointsBySaleId[sale.id];
-              if (points) {
-                const found = points.find(p => p.point_type === 'cpe' && p.point_code && p.point_code.toUpperCase() === row.cpe.toUpperCase());
-                if (found) { matched = sale; break; }
-              }
-            }
-          }
+          const normalized = normalizeIdentifier(row.cpe);
+          matched = cpeIndex[normalized] || null;
         }
         if (!matched && row.cui) {
-          matched = sales.find(s => s.cui && s.cui.toUpperCase() === row.cui.toUpperCase());
-          if (!matched) {
-            for (const sale of sales) {
-              const points = pointsBySaleId[sale.id];
-              if (points) {
-                const found = points.find(p => p.point_type === 'cui' && p.point_code && p.point_code.toUpperCase() === row.cui.toUpperCase());
-                if (found) { matched = sale; break; }
-              }
-            }
-          }
+          const normalized = normalizeIdentifier(row.cui);
+          matched = cuiIndex[normalized] || null;
         }
         if (!matched && row.req) {
-          matched = sales.find(s => s.request_number && s.request_number.toUpperCase() === row.req.toUpperCase());
+          const normalized = normalizeIdentifier(row.req);
+          matched = reqIndex[normalized] || null;
         }
 
         if (matched) {
