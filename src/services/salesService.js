@@ -973,14 +973,29 @@ export const salesService = {
     let partnerRecipients = [];
     let notificationRecipients = [];
 
-    // CALL 1 recipients: operator-specific users or all admins/BO
+    // CALL 1 recipients: operator-specific users + always admins, or all admins/BO
     if (operatorUserIds && Array.isArray(operatorUserIds) && operatorUserIds.length > 0) {
       const { data: operatorUsers } = await supabase
         .from('users')
-        .select('email, name')
+        .select('email, name, id')
         .in('id', operatorUserIds)
         .eq('email_alerts_enabled', true);
-      adminRecipients = operatorUsers || [];
+      adminRecipients = (operatorUsers || []).map(u => ({ email: u.email, name: u.name }));
+
+      const { data: extraAdmins } = await supabase
+        .from('users')
+        .select('email, name, id')
+        .eq('role', 'admin')
+        .eq('email_alerts_enabled', true)
+        .not('id', 'in', `(${operatorUserIds.join(',')})`);
+      if (extraAdmins && extraAdmins.length > 0) {
+        const existing = new Set(adminRecipients.map(r => r.email));
+        extraAdmins.forEach(u => {
+          if (!existing.has(u.email)) {
+            adminRecipients.push({ email: u.email, name: u.name });
+          }
+        });
+      }
     } else {
       const { data: adminBoUsers } = await supabase
         .from('users')
