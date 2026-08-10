@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { FileDown, Download, FileText, Trash2, Calendar, CircleCheck as CheckCircle, Loader as Loader2, Banknote, X } from "lucide-react";
+import { FileDown, Download, FileText, Trash2, Calendar, CircleCheck as CheckCircle, Loader as Loader2, Banknote, X, Shield } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,8 +15,10 @@ import { commissionReportsService } from "../services/commissionReportsService";
 import { salesService } from "../services/salesService";
 import { advancesService } from "../services/advancesService";
 import { operatorsService } from "../services/operatorsService";
+import { retentionService } from "../services/retentionService";
 import { supabase } from "../lib/supabase";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import RetentionManager from "../components/RetentionManager";
 
 const CommissionReports = ({ user }) => {
   const queryClient = useQueryClient();
@@ -250,12 +253,6 @@ const CommissionReports = ({ user }) => {
     const salesIds = finalSales.map(sale => sale.id);
 
     const today = new Date();
-    const retentionRefDate = new Date(selectedYear, selectedMonth - 1, 1);
-    const sixMonthsAgo = new Date(retentionRefDate);
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const refundMonthStart = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth(), 1);
-    const refundMonthEnd = new Date(sixMonthsAgo.getFullYear(), sixMonthsAgo.getMonth() + 1, 0);
-    const refundMonthLabel = sixMonthsAgo.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
 
     let totalCommissions = 0;
     let totalRetentions = 0;
@@ -294,11 +291,13 @@ const CommissionReports = ({ user }) => {
       return { sale, totalComm: 0, retentionValue: 0, isCanceled: true };
     });
 
-    const refundSales = finalSales.filter(sale => {
-      const saleDate = new Date(sale.activation_date || sale.date);
-      return sale.retention_value > 0 && saleDate >= refundMonthStart && saleDate <= refundMonthEnd;
-    });
-    refundSales.forEach(sale => { totalRefunds += parseFloat(sale.retention_value || 0); });
+    let pendingRetentionEntries = [];
+    try {
+      pendingRetentionEntries = await retentionService.getPendingRefundsForPartner(partnerId, selectedMonth, selectedYear);
+    } catch (e) {
+      console.error('Error fetching retention entries:', e);
+    }
+    pendingRetentionEntries.forEach(entry => { totalRefunds += parseFloat(entry.amount || 0); });
 
     // All chargebacks count as deductions
     pendingChargebacks.forEach(cb => { totalChargebacks += parseFloat(cb.chargeback_amount || 0); });
@@ -349,32 +348,22 @@ const CommissionReports = ({ user }) => {
     `;
     }).join('');
 
-    const refundTableHtml = (totalRefunds > 0 && refundSales.length > 0) ? `
+    const refundTableHtml = totalRefunds > 0 ? `
       <div style="margin-top:18px;">
         <table style="width:100%;border-collapse:collapse;font-size:9px;">
           <thead>
             <tr>
-              <th colspan="7" style="background:#1F4E78;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">
-                Retencoes a Devolver — Mes de referencia: ${refundMonthLabel}
+              <th colspan="8" style="background:#166534;color:white;padding:6px 4px;text-align:left;font-weight:bold;font-size:9px;">
+                Devolucao de Retencao
               </th>
-              <th style="background:#1F4E78;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;visibility:hidden">-</th>
-              <th style="background:#166534;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">A Devolver (\u20AC)</th>
+              <th style="background:#166534;color:white;padding:6px 4px;text-align:right;font-weight:bold;font-size:9px;">Valor (\u20AC)</th>
             </tr>
           </thead>
           <tbody>
-            ${refundSales.map(sale => `
-              <tr>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${getScopeOperatorLabel(sale)}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_name || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.client_nif || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cpe || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.cui || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;">${sale.request_number || '-'}</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;"></td>
-                <td style="padding:5px 4px;border:1px solid #ddd;"></td>
-                <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#166534;font-weight:bold;">\u20AC${parseFloat(sale.retention_value || 0).toFixed(2)}</td>
-              </tr>
-            `).join('')}
+            <tr>
+              <td colspan="8" style="padding:5px 4px;border:1px solid #ddd;color:#166534;">Total de retencao devolvida</td>
+              <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#166534;font-weight:bold;">\u20AC${totalRefunds.toFixed(2)}</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -474,6 +463,7 @@ const CommissionReports = ({ user }) => {
       salesIds: allSalesIds,
       settledAdvances: settledAdvances || [],
       chargebackIds: pendingChargebacks.map(cb => cb.id),
+      retentionEntryIds: pendingRetentionEntries.map(e => e.id),
       bccEmails: parsedBcc,
     };
 
@@ -739,6 +729,16 @@ const CommissionReports = ({ user }) => {
                       method: 'PATCH',
                       headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
                       body: JSON.stringify({ commission_report_id: reportId })
+                    });
+                  }
+                }
+
+                if (data.retentionEntryIds && data.retentionEntryIds.length > 0) {
+                  for (const reId of data.retentionEntryIds) {
+                    await fetch(\`\${data.supabaseUrl}/rest/v1/partner_retention_entries?id=eq.\${reId}\`, {
+                      method: 'PATCH',
+                      headers: { 'apikey': data.supabaseKey, 'Authorization': \`Bearer \${data.accessToken}\`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                      body: JSON.stringify({ refunded: true, refunded_at: new Date().toISOString(), commission_report_id: reportId })
                     });
                   }
                 }
@@ -1161,6 +1161,20 @@ const CommissionReports = ({ user }) => {
           <p className="font-medium mt-1 text-slate-400">Gere autos de comissoes para parceiros (apenas vendas pagas)</p>
         </div>
       </div>
+
+      <Tabs defaultValue="emissao" className="w-full">
+        <TabsList className="bg-dark-900 border border-dark-700 mb-4">
+          <TabsTrigger value="emissao" className="data-[state=active]:bg-dark-700 data-[state=active]:text-white">
+            <FileDown className="w-4 h-4 mr-2" />
+            Emissao de Autos
+          </TabsTrigger>
+          <TabsTrigger value="retencoes" className="data-[state=active]:bg-dark-700 data-[state=active]:text-white">
+            <Shield className="w-4 h-4 mr-2" />
+            Gestao de Retencoes
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="emissao" className="space-y-6">
 
       <Card className="bg-dark-850 border border-white/[0.06]">
         <CardHeader>
@@ -1593,6 +1607,13 @@ const CommissionReports = ({ user }) => {
           </div>
         </div>
       )}
+
+        </TabsContent>
+
+        <TabsContent value="retencoes">
+          <RetentionManager user={user} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
