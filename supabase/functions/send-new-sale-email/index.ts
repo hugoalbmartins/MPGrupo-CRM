@@ -83,6 +83,10 @@ interface SaleEmailPayload {
     point_code: string;
     power_kva?: number | null;
     tier?: string | null;
+    cpe_code?: string | null;
+    cpe_power?: number | null;
+    cui_code?: string | null;
+    cui_tier?: string | null;
     inst_street?: string | null;
     inst_postal_code?: string | null;
     inst_locality?: string | null;
@@ -93,6 +97,7 @@ interface SaleEmailPayload {
     voltage_type?: string | null;
     additional_services?: string | null;
   }>;
+  include_attachments?: boolean;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -232,7 +237,11 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
               const energyLabel = pt.energy_type === 'eletricidade' ? 'Eletricidade' : pt.energy_type === 'gas' ? 'Gás' : pt.energy_type === 'dual' ? 'Eletricidade + Gás' : (pt.energy_type || '');
               return `
               <tr><td colspan="2" style="padding: 10px 0 4px 0; border-top: 2px solid #d1d5db;"><strong style="color:#1e3a8a; font-size:13px;">Local ${i+1}${energyLabel ? ` — ${energyLabel}` : ''}</strong></td></tr>
-              <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">${pt.point_type === 'cpe' ? 'CPE / Potência' : 'CUI / Escalão'}:</td><td style="font-size:13px;">${pt.point_code}${pt.point_type === 'cpe' && pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}${pt.point_type === 'cui' && pt.tier ? ` / Esc. ${pt.tier}` : ''}</td></tr>
+              ${
+                (pt.cpe_code || pt.cui_code)
+                  ? `${pt.cpe_code ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE / Potência:</td><td style="font-size:13px;">${pt.cpe_code}${pt.cpe_power ? ` / ${pt.cpe_power}kVA` : ''}</td></tr>` : ''}${pt.cui_code ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CUI / Escalão:</td><td style="font-size:13px;">${pt.cui_code}${pt.cui_tier ? ` / Esc. ${pt.cui_tier}` : ''}</td></tr>` : ''}`
+                  : `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">${pt.point_type === 'cpe' ? 'CPE / Potência' : 'CUI / Escalão'}:</td><td style="font-size:13px;">${pt.point_code}${pt.point_type === 'cpe' && pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}${pt.point_type === 'cui' && pt.tier ? ` / Esc. ${pt.tier}` : ''}</td></tr>`
+              }
               ${instAddr ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${instAddr}</td></tr>` : ''}
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
               ${pt.entry_type ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tipo de Entrada:</td><td style="font-size:13px;">${pt.entry_type}</td></tr>` : ''}
@@ -610,7 +619,8 @@ Deno.serve(async (req: Request) => {
     const attachmentLinks: Array<{ filename: string; url: string }> = [];
     const MAX_INLINE_BYTES = 15 * 1024 * 1024;
 
-    if (payload.attachments && payload.attachments.length > 0 && payload.sale_id) {
+    const shouldIncludeAttachments = payload.include_attachments !== false;
+    if (shouldIncludeAttachments && payload.attachments && payload.attachments.length > 0 && payload.sale_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);

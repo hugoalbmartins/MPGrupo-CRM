@@ -7,7 +7,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const DEFAULT_EXPIRY_DAYS = 45;
+const DEFAULT_EXPIRY_DAYS_LARGE = 7;
+const DEFAULT_EXPIRY_DAYS_SMALL = 10;
+const LARGE_SIZE_THRESHOLD_BYTES = 10 * 1024 * 1024;
+
+function isExpired(uploadedAt: Date, sizeBytes: number | undefined, now: Date, largeDays: number, smallDays: number): boolean {
+  const days = (sizeBytes ?? 0) > LARGE_SIZE_THRESHOLD_BYTES ? largeDays : smallDays;
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - days);
+  return uploadedAt < cutoff;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -20,13 +29,15 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    let expiryDays = DEFAULT_EXPIRY_DAYS;
+    let largeExpiryDays = DEFAULT_EXPIRY_DAYS_LARGE;
+    let smallExpiryDays = DEFAULT_EXPIRY_DAYS_SMALL;
     let deleteExpiredPaths = false;
 
     if (req.method === "POST") {
       try {
         const body = await req.json();
-        if (body.expiry_days) expiryDays = parseInt(body.expiry_days, 10) || DEFAULT_EXPIRY_DAYS;
+        if (body.large_expiry_days) largeExpiryDays = parseInt(body.large_expiry_days, 10) || DEFAULT_EXPIRY_DAYS_LARGE;
+        if (body.small_expiry_days) smallExpiryDays = parseInt(body.small_expiry_days, 10) || DEFAULT_EXPIRY_DAYS_SMALL;
         if (body.delete_expired_paths) deleteExpiredPaths = Boolean(body.delete_expired_paths);
       } catch {
         // Ignore parse errors, use defaults
@@ -34,10 +45,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const now = new Date();
-    const cutoff = new Date(now);
-    cutoff.setDate(cutoff.getDate() - expiryDays);
 
-    console.log(`Cleaning attachments: cutoff=${cutoff.toISOString()} (${expiryDays} days), deleteExpiredPaths=${deleteExpiredPaths}`);
+    console.log(`Cleaning attachments: large>10MB=${largeExpiryDays}d, small<=10MB=${smallExpiryDays}d, deleteExpiredPaths=${deleteExpiredPaths}`);
 
     const { data: sales, error: salesError } = await supabase
       .from("sales")
@@ -82,7 +91,7 @@ Deno.serve(async (req: Request) => {
           continue;
         }
 
-        if (uploadedAt < cutoff) {
+        if (isExpired(uploadedAt, att.size, now, largeExpiryDays, smallExpiryDays)) {
           if (att.path) {
             const { error: removeError } = await supabase.storage
               .from("sales-documents")
@@ -98,6 +107,7 @@ Deno.serve(async (req: Request) => {
           updatedAttachments[i] = {
             id: att.id,
             filename: att.filename,
+            size: att.size,
             uploaded_at: att.uploaded_at,
             uploaded_by: att.uploaded_by || null,
             expired: true,
@@ -140,7 +150,7 @@ Deno.serve(async (req: Request) => {
 
           if (att.expired) continue;
 
-          if (uploadedAt < cutoff) {
+          if (isExpired(uploadedAt, att.size, now, largeExpiryDays, smallExpiryDays)) {
             if (att.path) {
               const { error: removeError } = await supabase.storage
                 .from("sales-documents")
@@ -156,6 +166,7 @@ Deno.serve(async (req: Request) => {
             noteAtts[ai] = {
               id: att.id,
               filename: att.filename,
+              size: att.size,
               uploaded_at: att.uploaded_at,
               expired: true,
               expired_at: new Date().toISOString(),
@@ -223,8 +234,9 @@ Deno.serve(async (req: Request) => {
         files_deleted: totalDeleted,
         attachments_marked_expired: totalMarked,
         orphaned_files_deleted: orphanedDeleted,
-        cutoff_date: cutoff.toISOString(),
-        expiry_days: expiryDays,
+        large_expiry_days: largeExpiryDays,
+        small_expiry_days: smallExpiryDays,
+        large_size_threshold_bytes: LARGE_SIZE_THRESHOLD_BYTES,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

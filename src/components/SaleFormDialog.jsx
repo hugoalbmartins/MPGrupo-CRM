@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import EnergyPointsManager from './EnergyPointsManager';
 import DynamicScopeFields from './DynamicScopeFields';
+import { processFilesForUpload } from '../lib/imageCompression';
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 const FIX_OPERATORS = ["MEO", "Vodafone", "NOS", "Digi", "Outro"];
@@ -66,6 +67,7 @@ const SaleFormDialog = ({
   dynamicScopeFields = [],
 }) => {
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
@@ -102,7 +104,7 @@ const SaleFormDialog = ({
     operatorNameLower.includes(key)
   )?.[1] || null;
 
-  const handleFileSelected = (e) => {
+  const handleFileSelected = async (e) => {
     const MAX_SIZE = 15 * 1024 * 1024;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -113,23 +115,44 @@ const SaleFormDialog = ({
       return;
     }
 
-    const newFiles = [];
+    const candidates = [];
     for (const file of files) {
       const alreadyAdded = uploadFiles.some(f => f.name === file.name && f.size === file.size);
       if (alreadyAdded) {
         toast.error(`Ficheiro "${file.name}" ja foi adicionado`);
       } else {
-        newFiles.push(file);
+        candidates.push(file);
       }
     }
 
-    if (newFiles.length > 0) {
-      setUploadFiles(prev => [...prev, ...newFiles]);
-      toast.success(`${newFiles.length} ficheiro${newFiles.length > 1 ? 's' : ''} adicionado${newFiles.length > 1 ? 's' : ''}`);
+    if (candidates.length === 0) {
+      setPendingFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     }
 
-    setPendingFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setIsProcessingFiles(true);
+    try {
+      const processed = await processFilesForUpload(candidates);
+      const finalFiles = (processed || []).filter(f => {
+        if (f.size > MAX_SIZE) {
+          toast.error(`Ficheiro "${f.name}" excede 15MB apos compressao e foi descartado`);
+          return false;
+        }
+        return true;
+      });
+
+      if (finalFiles.length > 0) {
+        setUploadFiles(prev => [...prev, ...finalFiles]);
+        toast.success(`${finalFiles.length} ficheiro${finalFiles.length > 1 ? 's' : ''} pronto${finalFiles.length > 1 ? 's' : ''} para anexar`);
+      }
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao preparar ficheiros');
+    } finally {
+      setIsProcessingFiles(false);
+      setPendingFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleRemoveFile = (index) => {
@@ -1372,7 +1395,14 @@ const SaleFormDialog = ({
                         </div>
                       )}
 
-                      <p className="text-xs text-slate-500">Obrigatorio. Tamanho maximo por ficheiro: 10MB. Imagens sao comprimidas automaticamente. Pode selecionar varios ficheiros de uma vez.</p>
+                      {isProcessingFiles && (
+                        <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
+                          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm text-blue-300">A preparar ficheiros... aguarde para submeter a venda.</span>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-500">Obrigatorio. Tamanho maximo por ficheiro: 15MB. Imagens sao comprimidas automaticamente. Pode selecionar varios ficheiros de uma vez. A submissao da venda so fica disponivel quando todos os anexos estiverem prontos.</p>
                     </div>
                   </div>
                 </div>
@@ -1400,7 +1430,7 @@ const SaleFormDialog = ({
                 <Button
                   type="button"
                   onClick={(e) => handleSubmitWithCheck(e, true)}
-                  disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
+                  disabled={isSubmitting || isProcessingFiles || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
                   variant="outline"
                   className="px-6 py-3 rounded-xl font-semibold border-amber-600/50 text-amber-400 hover:bg-amber-600/10 hover:border-amber-500 disabled:opacity-50"
                 >
@@ -1411,7 +1441,7 @@ const SaleFormDialog = ({
               <Button
                 type="submit"
                 onClick={handleSubmitWithCheck}
-                disabled={isSubmitting || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
+                disabled={isSubmitting || isProcessingFiles || uploadFiles.length === 0 || (formData.operator_id && operatorCommissions.length === 0)}
                 className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-cyber-500/25 disabled:opacity-50"
               >
                 {isSubmitting ? (
