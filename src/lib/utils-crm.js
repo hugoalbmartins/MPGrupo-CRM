@@ -253,8 +253,8 @@ async function calculateSingleEnergyCommission(operator, saleData, supabase, ene
     const saleMonth = saleDate.getMonth() + 1;
     const saleYear = saleDate.getFullYear();
 
-    const startOfMonth = new Date(saleYear, saleMonth - 1, 1).toISOString().split('T')[0];
-    const endOfMonth = new Date(saleYear, saleMonth, 0).toISOString().split('T')[0];
+    const startOfMonth = `${saleYear}-${String(saleMonth).padStart(2, '0')}-01`;
+    const endOfMonth = `${saleYear}-${String(saleMonth).padStart(2, '0')}-${String(new Date(saleYear, saleMonth, 0).getDate()).padStart(2, '0')}`;
 
     const countQuery = supabase
       .from('sales')
@@ -488,8 +488,8 @@ export async function calculateCommission(operator, saleData, supabase) {
     const saleMonth = saleDate.getMonth() + 1;
     const saleYear = saleDate.getFullYear();
 
-    const startOfMonth = new Date(saleYear, saleMonth - 1, 1).toISOString().split('T')[0];
-    const endOfMonth = new Date(saleYear, saleMonth, 0).toISOString().split('T')[0];
+    const startOfMonth = `${saleYear}-${String(saleMonth).padStart(2, '0')}-01`;
+    const endOfMonth = `${saleYear}-${String(saleMonth).padStart(2, '0')}-${String(new Date(saleYear, saleMonth, 0).getDate()).padStart(2, '0')}`;
 
     let countQuery = supabase
       .from('sales')

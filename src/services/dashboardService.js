@@ -1,5 +1,12 @@
 import { supabase } from '../lib/supabase';
 
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 async function fetchAllRows(buildQuery) {
   const PAGE_SIZE = 1000;
   let allData = [];
@@ -203,8 +210,8 @@ async function calculateRetentions(year, month, partnerId = null) {
   let returnQuery = supabase
     .from('sales')
     .select('*, operator_id')
-    .gte('date', returnStartDate.toISOString().split('T')[0])
-    .lt('date', returnEndDate.toISOString().split('T')[0])
+    .gte('date', formatLocalDate(returnStartDate))
+    .lt('date', formatLocalDate(returnEndDate))
     .eq('is_mirror_copy', false);
   if (partnerId) returnQuery = returnQuery.eq('partner_id', partnerId);
   const { data: returnSales } = await returnQuery;
@@ -292,7 +299,7 @@ async function calculateNetCommission(sales) {
 async function getLast12MonthsData(partnerId = null) {
   const now = new Date();
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-  const startDate = twelveMonthsAgo.toISOString().split('T')[0];
+  const startDate = formatLocalDate(twelveMonthsAgo);
 
   const buildQuery = () => {
     let q = supabase

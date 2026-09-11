@@ -2,6 +2,13 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboardService';
 import { supabase } from '../lib/supabase';
 
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 async function fetchAllRows(buildQuery) {
   const PAGE_SIZE = 1000;
   let allData = [];
@@ -49,8 +56,8 @@ const getWeekRange = (weekKey) => {
     sunday.setDate(monday.getDate() + 6);
     sunday.setHours(23, 59, 59, 999);
     return {
-      start: monday.toISOString().split('T')[0],
-      end: sunday.toISOString().split('T')[0],
+      start: formatLocalDate(monday),
+      end: formatLocalDate(sunday),
     };
   }
   const [year, week] = weekKey.split('-W').map(Number);
@@ -63,8 +70,8 @@ const getWeekRange = (weekKey) => {
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   return {
-    start: monday.toISOString().split('T')[0],
-    end: sunday.toISOString().split('T')[0],
+    start: formatLocalDate(monday),
+    end: formatLocalDate(sunday),
   };
 };
 
@@ -149,12 +156,12 @@ export const usePartnerStats = (user, filterMode = 'mensal', filterKey = null) =
         endDate = range.end;
       } else if (filterMode === 'mensal' && filterKey) {
         const [year, month] = filterKey.split('-').map(Number);
-        startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
-        endDate = new Date(year, month, 0).toISOString().split('T')[0];
+        startDate = formatLocalDate(new Date(year, month - 1, 1));
+        endDate = formatLocalDate(new Date(year, month, 0));
       } else {
         const now = new Date();
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        startDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
+        endDate = formatLocalDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
       }
 
       const { data: salesData, error: salesError } = await supabase
@@ -255,7 +262,7 @@ export const useMonthlySalesByOperator = (user) => {
     queryFn: async () => {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-      const startStr = start.toISOString().split('T')[0];
+      const startStr = formatLocalDate(start);
 
       const buildQuery = () => {
         let q = supabase
