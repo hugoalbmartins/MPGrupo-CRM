@@ -1,0 +1,47 @@
+[functions.send-new-sale-email]
+verify_jwt = false
+
+[functions.cleanup-expired-attachments]
+verify_jwt = false
+
+[functions.check-proposal-alerts]
+verify_jwt = false
+
+[functions.cleanup-orphaned-storage]
+verify_jwt = false
+
+[functions.create-user]
+verify_jwt = true
+
+[functions.delete-partner]
+verify_jwt = true
+
+[functions.delete-user]
+verify_jwt = true
+
+[functions.recalculate-commissions]
+verify_jwt = true
+
+[functions.reset-user-password]
+verify_jwt = true
+
+[functions.send-alert-email]
+verify_jwt = false
+
+[functions.send-alert-notifications]
+verify_jwt = false
+
+[functions.send-commission-report-email]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.send-simulator-contact]
+verify_jwt = false
+
+[functions.smtp-settings]
+verify_jwt = true
+
+[functions.update-user]
+verify_jwt = true

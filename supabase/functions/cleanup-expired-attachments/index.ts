@@ -7,6 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// Size-based attachment expiry: >10MB expires after 7 days, <=10MB after 10 days.
 const DEFAULT_EXPIRY_DAYS_LARGE = 7;
 const DEFAULT_EXPIRY_DAYS_SMALL = 10;
 const LARGE_SIZE_THRESHOLD_BYTES = 10 * 1024 * 1024;
