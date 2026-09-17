@@ -182,6 +182,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
     const expanded = [];
     locs.forEach(loc => {
       const locMeta = {
+        energy_type: loc.energy_type || null,
         installation_address: buildInstallationAddress(loc.inst_street, loc.inst_postal_code, loc.inst_locality) || null,
         inst_street: loc.inst_street || null,
         inst_postal_code: loc.inst_postal_code || null,
@@ -195,6 +196,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       if (loc.energy_type === 'eletricidade' || loc.energy_type === 'dual') {
         expanded.push({
           id: loc.id, point_type: 'cpe', point_code: loc.cpe,
+          cpe_code: loc.cpe || null,
           power_kva: parsePowerKva(loc.power_kva), tier: null,
           ...locMeta,
         });
@@ -203,6 +205,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
         expanded.push({
           id: loc.energy_type === 'dual' ? crypto.randomUUID() : loc.id,
           point_type: 'cui', point_code: loc.cui,
+          cui_code: loc.cui || null,
           power_kva: null, tier: loc.tier || null,
           ...locMeta,
         });
