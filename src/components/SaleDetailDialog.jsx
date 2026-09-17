@@ -1016,7 +1016,90 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                     </div>
                   )}
 
-                  {sale.scope === 'telecomunicacoes' && (sale.service_type || sale.activation_type || sale.has_tv || sale.has_net || sale.has_lr || (sale.mobile_numbers && sale.mobile_numbers.length > 0)) && (
+                  {sale.scope === 'energia' && sale.energy_points && sale.energy_points.length > 0 && (
+                    <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
+                      <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
+                        <div className="w-1 h-6 bg-cyber-500 rounded"></div>
+                        {sale.sale_type === 'multilocal' ? 'Locais' : 'Pontos'} ({sale.energy_points.length})
+                      </h3>
+                      <div className="space-y-4">
+                        {sale.energy_points.map((pt, i) => {
+                          const instAddr = pt.inst_street
+                            ? [pt.inst_street, pt.inst_postal_code, pt.inst_locality].filter(Boolean).join(', ')
+                            : (pt.installation_address || '');
+                          const energyLabel = pt.energy_type === 'eletricidade' ? 'Eletricidade' : pt.energy_type === 'gas' ? 'Gas' : pt.energy_type === 'dual' ? 'Eletricidade + Gas' : '';
+                          return (
+                            <div key={i} className="p-4 bg-dark-850 rounded-lg border border-dark-700">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="font-semibold text-white text-sm">Local {i + 1}</span>
+                                {energyLabel && (
+                                  <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs">{energyLabel}</Badge>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                {pt.point_type === 'cpe' && pt.point_code && (
+                                  <div>
+                                    <Label className="text-slate-500 text-xs uppercase">CPE</Label>
+                                    <p className="font-mono text-white text-sm mt-1">{pt.point_code}</p>
+                                  </div>
+                                )}
+                                {pt.point_type === 'cpe' && pt.power_kva && (
+                                  <div>
+                                    <Label className="text-slate-500 text-xs uppercase">Potencia</Label>
+                                    <p className="font-semibold text-white mt-1">{pt.power_kva}kVA</p>
+                                  </div>
+                                )}
+                                {pt.point_type === 'cui' && pt.point_code && (
+                                  <div>
+                                    <Label className="text-slate-500 text-xs uppercase">CUI</Label>
+                                    <p className="font-mono text-white text-sm mt-1">{pt.point_code}</p>
+                                  </div>
+                                )}
+                                {pt.point_type === 'cui' && pt.tier && (
+                                  <div>
+                                    <Label className="text-slate-500 text-xs uppercase">Escalao</Label>
+                                    <p className="font-semibold text-white mt-1">{pt.tier}</p>
+                                  </div>
+                                )}
+                                {instAddr && (
+                                  <div className="col-span-2">
+                                    <Label className="text-slate-500 text-xs uppercase">Morada de Instalacao</Label>
+                                    <p className="text-white text-sm mt-1">{instAddr}</p>
+                                  </div>
+                                )}
+                                {pt.billing_address && (
+                                  <div className="col-span-2">
+                                    <Label className="text-slate-500 text-xs uppercase">Morada de Faturacao</Label>
+                                    <p className="text-white text-sm mt-1">{pt.billing_address}</p>
+                                  </div>
+                                )}
+                                {pt.entry_type && (
+                                  <div>
+                                    <Label className="text-slate-500 text-xs uppercase">Tipo de Entrada</Label>
+                                    <p className="font-semibold text-white mt-1">{pt.entry_type}</p>
+                                  </div>
+                                )}
+                                {pt.voltage_type && (
+                                  <div>
+                                    <Label className="text-slate-500 text-xs uppercase">Tipo de Tensao</Label>
+                                    <p className="font-semibold text-white mt-1">{pt.voltage_type}</p>
+                                  </div>
+                                )}
+                                {pt.additional_services && (
+                                  <div className="col-span-2">
+                                    <Label className="text-slate-500 text-xs uppercase">Servicos Adicionais</Label>
+                                    <p className="font-semibold text-white mt-1">{pt.additional_services}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                        {sale.scope === 'telecomunicacoes' && (sale.service_type || sale.activation_type || sale.has_tv || sale.has_net || sale.has_lr || (sale.mobile_numbers && sale.mobile_numbers.length > 0)) && (
                     <div className="bg-dark-900 border border-dark-700 rounded-lg p-5">
                       <h3 className="font-bold text-lg text-white mb-4 flex items-center gap-2">
                         <div className="w-1 h-6 bg-cyber-500 rounded"></div>
