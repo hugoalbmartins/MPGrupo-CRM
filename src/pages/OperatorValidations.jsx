@@ -56,7 +56,7 @@ const OperatorValidations = ({ user }) => {
     try {
       const { data, error } = await supabase
         .from('operator_validations')
-        .select('*')
+        .select('id, filename, operator_name, records_processed, sales_updated, partially_paid, not_found, created_at')
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -193,6 +193,36 @@ const OperatorValidations = ({ user }) => {
     try {
       const excelRows = await parseExcelFile(file);
 
+      // Extract operator name from filename (e.g. "Iberdrola.xlsx" -> "Iberdrola")
+      const baseName = file.name.replace(/\.[^.]+$/, '').trim();
+
+      // Fetch operators to find the one matching the filename
+      const { data: operators } = await supabase
+        .from('operators')
+        .select('id, name')
+        .ilike('name', baseName)
+        .limit(1);
+
+      let operatorFilter = null;
+      if (operators && operators.length > 0) {
+        operatorFilter = operators[0];
+      } else {
+        // Try partial match
+        const { data: partialOps } = await supabase
+          .from('operators')
+          .select('id, name')
+          .ilike('name', `%${baseName}%`);
+        if (partialOps && partialOps.length === 1) {
+          operatorFilter = partialOps[0];
+        }
+      }
+
+      if (!operatorFilter) {
+        toast.error(`Operadora nao encontrada para o ficheiro "${file.name}". O nome do ficheiro deve corresponder ao nome da operadora.`);
+        setProcessing(false);
+        return;
+      }
+
       const lookbackDate = new Date();
       lookbackDate.setDate(lookbackDate.getDate() - 365);
       const dateStr = lookbackDate.toISOString().split('T')[0];
@@ -200,7 +230,8 @@ const OperatorValidations = ({ user }) => {
       const [salesResult, energyPointsResult] = await Promise.all([
         supabase
           .from('sales')
-          .select('id, sale_code, date, status, scope, energy_sale_type, cpe, cui, request_number, client_name, operator_validated, paid_to_operator, electricity_paid, gas_paid')
+          .select('id, sale_code, date, status, scope, energy_sale_type, cpe, cui, request_number, client_name, operator_validated, paid_to_operator, electricity_paid, gas_paid, operator_id')
+          .eq('operator_id', operatorFilter.id)
           .gte('date', dateStr)
           .limit(10000),
         supabase
@@ -212,7 +243,7 @@ const OperatorValidations = ({ user }) => {
       if (salesResult.error) throw salesResult.error;
       if (energyPointsResult.error) throw energyPointsResult.error;
       const sales = salesResult.data || [];
-      const energyPoints = energyPointsResult.data || [];
+      const energyPoints = (energyPointsResult.data || []).filter(ep => sales.some(s => s.id === ep.sale_id));
 
       const pointsBySaleId = {};
       for (const ep of energyPoints) {
@@ -363,6 +394,7 @@ const OperatorValidations = ({ user }) => {
         .insert({
           user_id: user.id,
           filename: file.name,
+          operator_name: operatorFilter.name,
           records_processed: results.processed,
           sales_updated: results.updated.length,
           partially_paid: 0,
@@ -458,9 +490,12 @@ const OperatorValidations = ({ user }) => {
                   </ul>
                 </div>
               </div>
-              <p className="mt-3 text-slate-500">
-                O sistema pesquisa vendas dos ultimos 90 dias e aplica o estado que constar em cada linha do ficheiro.
-              </p>
+              <div className="mt-3 p-3 rounded-lg bg-cyber-500/5 border border-cyber-500/20">
+                <p className="text-cyber-400 font-semibold text-xs uppercase tracking-wider mb-1">Importante</p>
+                <p className="text-slate-300">
+                  O <strong className="text-white">nome do ficheiro</strong> deve corresponder ao nome da operadora a validar (ex: <span className="font-mono text-cyber-400">Iberdrola.xlsx</span>). Apenas as vendas dessa operadora serao atualizadas, nao afetando vendas de outras operadoras.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -641,6 +676,7 @@ const OperatorValidations = ({ user }) => {
                 <div className="flex-1">
                   <p className="font-medium text-white">{validation.filename}</p>
                   <p className="text-sm text-slate-400">
+                    {validation.operator_name && <span className="text-cyber-400">{validation.operator_name} · </span>}
                     {new Date(validation.created_at).toLocaleString('pt-PT')}
                   </p>
                 </div>
