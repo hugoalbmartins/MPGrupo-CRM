@@ -333,31 +333,32 @@ const OperatorValidations = ({ user }) => {
         };
 
         if (isAtivo) {
-          const activationDate = row.activationDate || new Date().toISOString().split('T')[0];
           updateData.operator_validated = true;
           updateData.operator_validation_date = new Date().toISOString();
-          updateData.activated_at = activationDate;
-          updateData.activation_date = activationDate;
+          if (row.activationDate) {
+            updateData.activated_at = row.activationDate;
+            updateData.activation_date = row.activationDate;
+          }
         }
 
         if (row.paidByOperator) {
-          const payDate = row.paymentDate || row.activationDate || new Date().toISOString().split('T')[0];
+          const payDate = row.paymentDate || null;
           updateData.paid_to_operator = true;
-          updateData.payment_date = payDate;
+          if (payDate) updateData.payment_date = payDate;
 
           if (sale.scope === 'energia') {
             if (sale.energy_sale_type === 'dual') {
               updateData.electricity_paid = true;
-              updateData.electricity_payment_date = payDate;
+              if (payDate) updateData.electricity_payment_date = payDate;
               updateData.gas_paid = true;
-              updateData.gas_payment_date = payDate;
+              if (payDate) updateData.gas_payment_date = payDate;
               updateData.is_partial_payment = false;
             } else if (sale.energy_sale_type === 'eletricidade') {
               updateData.electricity_paid = true;
-              updateData.electricity_payment_date = payDate;
+              if (payDate) updateData.electricity_payment_date = payDate;
             } else if (sale.energy_sale_type === 'gas') {
               updateData.gas_paid = true;
-              updateData.gas_payment_date = payDate;
+              if (payDate) updateData.gas_payment_date = payDate;
             }
           }
         }
@@ -379,8 +380,8 @@ const OperatorValidations = ({ user }) => {
             req: row.req,
             status: rowStatus,
             paid: row.paidByOperator,
-            activationDate: isAtivo ? (row.activationDate || new Date().toISOString().split('T')[0]) : null,
-            paymentDate: row.paidByOperator ? (row.paymentDate || row.activationDate || null) : null,
+            activationDate: isAtivo ? (row.activationDate || null) : null,
+            paymentDate: row.paidByOperator ? (row.paymentDate || null) : null,
           });
         }
 
