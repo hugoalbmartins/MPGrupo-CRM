@@ -1322,21 +1322,25 @@ const SaleFormDialog = ({
 
               <FormSection icon={FileText} title="Informações Adicionais" gradient="from-cyber-500 to-cyber-600">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-5 bg-dark-900 border border-dark-700 rounded-xl">
-                    <input
-                      type="checkbox"
-                      id="is_proposal"
-                      checked={formData.is_proposal}
-                      onChange={(e) => setFormData({...formData, is_proposal: e.target.checked})}
-                      className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
-                    />
-                    <Label htmlFor="is_proposal" className="cursor-pointer font-medium text-white">
-                      Esta venda é uma proposta?
-                    </Label>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Propostas ficam no estado "Em proposta" e aparecem apenas no separador Propostas
-                  </p>
+                  {(user?.role === 'admin' || user?.role === 'bo') && (
+                    <>
+                      <div className="flex items-center space-x-3 p-5 bg-dark-900 border border-dark-700 rounded-xl">
+                        <input
+                          type="checkbox"
+                          id="is_proposal"
+                          checked={formData.is_proposal}
+                          onChange={(e) => setFormData({...formData, is_proposal: e.target.checked})}
+                          className="w-5 h-5 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                        />
+                        <Label htmlFor="is_proposal" className="cursor-pointer font-medium text-white">
+                          Esta venda é uma proposta?
+                        </Label>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Propostas ficam no estado "Em proposta" e aparecem apenas no separador Propostas
+                      </p>
+                    </>
+                  )}
 
                   <div>
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Observações</Label>
