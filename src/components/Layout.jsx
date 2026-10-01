@@ -89,6 +89,7 @@ const Layout = ({ children, user, onLogout }) => {
     { path: "/forms", label: "Formularios", icon: FileText, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
     { path: "/alerts", label: "Alertas", icon: Bell, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], badge: unreadCount, excludeD2D: true, section: "MENU PRINCIPAL" },
     { path: "/refidelizacoes", label: "Refidelizacao", icon: RotateCcw, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
+    { path: "/clients", label: "Clientes", icon: User, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
     { path: "/simulador-energia", label: "Simulador Energia", icon: Zap, roles: ["admin", "bo", "partner", "partner_commercial", "gestor_nv1"], section: "MENU PRINCIPAL" },
   ];
 

@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Zap, TrendingUp, Building2, User, MapPin, FileText, Clock, Plus, Trash2, Info, MailX, TriangleAlert, Car } from 'lucide-react';
+import { X, Zap, TrendingUp, Building2, User, MapPin, FileText, Clock, Plus, Trash2, Info, MailX, TriangleAlert, Car, Search } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import EnergyPointsManager from './EnergyPointsManager';
 import DynamicScopeFields from './DynamicScopeFields';
 import { processFilesForUpload } from '../lib/imageCompression';
+import { clientsService } from '../services/clientsService';
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
 const FIX_OPERATORS = ["MEO", "Vodafone", "NOS", "Digi", "Outro"];
@@ -69,6 +70,48 @@ const SaleFormDialog = ({
   const [attachmentInfoOpen, setAttachmentInfoOpen] = useState(false);
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
   const fileInputRef = useRef(null);
+  const [nifLookupStatus, setNifLookupStatus] = useState(null);
+  const [clientFound, setClientFound] = useState(null);
+
+  const handleNifLookup = useCallback(async (nif) => {
+    const cleanNif = (nif || '').toString().trim();
+    if (cleanNif.length < 9) {
+      setNifLookupStatus(null);
+      setClientFound(null);
+      return;
+    }
+    setNifLookupStatus('searching');
+    try {
+      const client = await clientsService.findByNif(cleanNif);
+      if (client) {
+        setClientFound(client);
+        setNifLookupStatus('found');
+        setFormData(prev => ({
+          ...prev,
+          client_name: client.client_name || prev.client_name,
+          client_contact: client.client_contact || prev.client_contact,
+          client_email: client.client_email || prev.client_email,
+          client_iban: client.client_iban || prev.client_iban,
+          has_direct_debit: !!client.client_iban,
+        }));
+      } else {
+        setClientFound(null);
+        setNifLookupStatus('not_found');
+      }
+    } catch {
+      setNifLookupStatus(null);
+      setClientFound(null);
+    }
+  }, [setFormData]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.client_nif && formData.client_nif.trim().length >= 9) {
+        handleNifLookup(formData.client_nif);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData.client_nif, handleNifLookup]);
 
   if (!isOpen) return null;
 
@@ -471,6 +514,36 @@ const SaleFormDialog = ({
               <FormSection icon={User} title="Dados do Cliente" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
+                    <Label className="text-sm font-semibold mb-2 text-slate-400">NIF *</Label>
+                    <div className="relative">
+                      <Input
+                        value={formData.client_nif}
+                        onChange={(e) => setFormData({...formData, client_nif: e.target.value})}
+                        required
+                        className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white pr-10"
+                        placeholder="000000000"
+                      />
+                      {nifLookupStatus === 'searching' && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-cyber-500/30 border-t-cyber-400 rounded-full animate-spin" />
+                        </div>
+                      )}
+                      {nifLookupStatus === 'found' && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Search className="w-4 h-4 text-emerald-400" />
+                        </div>
+                      )}
+                    </div>
+                    {nifLookupStatus === 'found' && clientFound && (
+                      <p className="text-xs text-emerald-400 mt-1">
+                        Cliente encontrado: {clientFound.client_name} — dados preenchidos automaticamente
+                      </p>
+                    )}
+                    {nifLookupStatus === 'not_found' && formData.client_nif?.length >= 9 && (
+                      <p className="text-xs text-slate-500 mt-1">Novo cliente — preencha os dados</p>
+                    )}
+                  </div>
+                  <div>
                     <Label className="text-sm font-semibold mb-2 text-slate-400">Nome Completo *</Label>
                     <Input
                       value={formData.client_name}
@@ -478,16 +551,6 @@ const SaleFormDialog = ({
                       required
                       className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
                       placeholder="Nome completo do cliente"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm font-semibold mb-2 text-slate-400">NIF *</Label>
-                    <Input
-                      value={formData.client_nif}
-                      onChange={(e) => setFormData({...formData, client_nif: e.target.value})}
-                      required
-                      className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
-                      placeholder="000000000"
                     />
                   </div>
                   <div>

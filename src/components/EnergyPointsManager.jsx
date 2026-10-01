@@ -332,6 +332,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
                         <SelectItem value="Escalão 1">Escalao 1</SelectItem>
                         <SelectItem value="Escalão 2">Escalao 2</SelectItem>
                         <SelectItem value="Escalão 3">Escalao 3</SelectItem>
+                        <SelectItem value="Escalão 4">Escalao 4</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -655,6 +656,7 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
                       <SelectItem value="Escalão 1">Escalao 1</SelectItem>
                       <SelectItem value="Escalão 2">Escalao 2</SelectItem>
                       <SelectItem value="Escalão 3">Escalao 3</SelectItem>
+                      <SelectItem value="Escalão 4">Escalao 4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

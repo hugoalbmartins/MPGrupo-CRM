@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -19,6 +19,7 @@ import { salesService } from "../services/salesService";
 import { partnersService } from "../services/partnersService";
 import { operatorsService } from "../services/operatorsService";
 import { energyPointsService } from "../services/energyPointsService";
+import { clientsService } from "../services/clientsService";
 import { recalculateAllCommissions, recalculateSaleCommission } from "../services/commissionRecalculator";
 import { supabase } from "../lib/supabase";
 import { generateSaleCode } from "../lib/utils-crm";
@@ -716,6 +717,21 @@ const Sales = ({ user }) => {
 
       let createdSale;
 
+      const dupReasons = await clientsService.checkDuplicates({
+        contact: submitData.client_contact,
+        email: submitData.client_email,
+        iban: submitData.client_iban,
+        excludeNif: submitData.client_nif,
+      });
+
+      const isPendingValidation = dupReasons.length > 0;
+
+      if (isPendingValidation) {
+        submitData.pending_validation = true;
+        submitData.validation_reason = dupReasons.join('; ');
+        submitData.is_bulk_import = true;
+      }
+
       if (!pendingSubmit) {
         const result = await salesService.checkWarningsAndCreateSale(submitData, uploadFiles);
 
@@ -731,7 +747,11 @@ const Sales = ({ user }) => {
         createdSale = await salesService.create(submitData, uploadFiles);
       }
 
-      toast.success("Venda criada com sucesso!");
+      if (isPendingValidation) {
+        toast.warning(`Venda criada em validação pendente: ${dupReasons.join('; ')}. Será enviada para aprovação de admin/BO.`);
+      } else {
+        toast.success("Venda criada com sucesso!");
+      }
       setDialogOpen(false);
       resetForm();
       setValidationWarnings([]);
@@ -742,7 +762,20 @@ const Sales = ({ user }) => {
         energyPointsService.replacePointsForSale(createdSale.id, energyPoints).catch(() => {});
       }
 
-      if (createdSale && createdSale.id && !shouldSkipEmail) {
+      if (!isPendingValidation && submitData.client_nif) {
+        const selectedPartner = partners.find(p => p.id === submitData.partner_id);
+        clientsService.upsert({
+          client_nif: submitData.client_nif.trim(),
+          client_name: submitData.client_name,
+          client_contact: submitData.client_contact,
+          client_email: submitData.client_email || null,
+          client_iban: submitData.client_iban || null,
+          partner_id: submitData.partner_id || null,
+          partner_name: selectedPartner?.name || null,
+        }).catch(() => {});
+      }
+
+      if (createdSale && createdSale.id && !shouldSkipEmail && !isPendingValidation) {
         try {
           await salesService.resendNewSaleEmail(createdSale.id, {}, true);
         } catch (emailErr) {
@@ -1579,6 +1612,41 @@ const Sales = ({ user }) => {
     );
   };
 
+  const handleApprovePendingSale = async (sale) => {
+    try {
+      await salesService.update(sale.id, {
+        pending_validation: false,
+        validation_reason: null,
+        status: 'Para registo',
+        is_bulk_import: false,
+      });
+
+      if (sale.client_nif) {
+        const selectedPartner = partners.find(p => p.id === sale.partner_id);
+        clientsService.upsert({
+          client_nif: sale.client_nif.trim(),
+          client_name: sale.client_name,
+          client_contact: sale.client_contact,
+          client_email: sale.client_email || null,
+          client_iban: sale.client_iban || null,
+          partner_id: sale.partner_id || null,
+          partner_name: selectedPartner?.name || null,
+        }).catch(() => {});
+      }
+
+      try {
+        await salesService.resendNewSaleEmail(sale.id, {}, true);
+      } catch (emailErr) {
+        toast.warning("Venda aprovada, mas o email de notificacao falhou. Pode reenviar manualmente.");
+      }
+
+      toast.success("Venda aprovada e movida para registo");
+      fetchData();
+    } catch (error) {
+      toast.error("Erro ao aprovar venda: " + error.message);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusColors = {
       'Para registo': 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
@@ -1712,6 +1780,11 @@ const Sales = ({ user }) => {
                 {sale.has_chargeback && sale.chargeback_status === 'settled' && (
                   <span className="text-xs font-semibold text-amber-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.25)' }}>Chargeback Descontado</span>
                 )}
+                {sale.pending_validation && (
+                  <span className="text-xs font-semibold text-orange-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.25)' }}>
+                    Validacao Pendente{sale.validation_reason ? `: ${sale.validation_reason}` : ''}
+                  </span>
+                )}
                 {sale.paid_in_report_id && (
                   <span className="text-xs font-semibold text-blue-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>Pago Parceiro</span>
                 )}
@@ -1750,6 +1823,18 @@ const Sales = ({ user }) => {
                         <Mail className="w-4 h-4 mr-2" />
                         Reenviar Alerta de Edicao
                       </DropdownMenuItem>
+                      {sale.pending_validation && (user?.role === 'admin' || user?.role === 'bo') && (
+                        <>
+                          <DropdownMenuSeparator style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
+                          <DropdownMenuItem
+                            onClick={() => handleApprovePendingSale(sale)}
+                            className="cursor-pointer text-emerald-400 focus:bg-emerald-500/10 focus:text-emerald-400"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Aprovar Venda
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       {user?.role === 'admin' && (
                         <>
                           <DropdownMenuSeparator style={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />

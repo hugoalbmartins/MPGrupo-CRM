@@ -31,6 +31,7 @@ const EnergySimulatorNew = lazy(() => import("./pages/EnergySimulatorNew.jsx"));
 const EnergySimulatorAdmin = lazy(() => import("./pages/EnergySimulatorAdmin.jsx"));
 const Advances = lazy(() => import("./pages/Advances.jsx"));
 const Refidelizacoes = lazy(() => import("./pages/Refidelizacoes.jsx"));
+const Clients = lazy(() => import("./pages/Clients.jsx"));
 const ScopesManagement = lazy(() => import("./pages/ScopesManagement.jsx"));
 const PartnerTypesManagement = lazy(() => import("./pages/PartnerTypesManagement.jsx"));
 const EmailSettings = lazy(() => import("./pages/EmailSettings.jsx"));
@@ -375,6 +376,7 @@ function App() {
                 <Route path="/forms/:operatorId" element={<Forms user={user} />} />
                 <Route path="/simulador-energia" element={<EnergySimulatorNew user={user} />} />
                 <Route path="/refidelizacoes" element={<Refidelizacoes user={user} />} />
+                <Route path="/clients" element={<Clients user={user} />} />
                 {user?.role === "partner" && (
                   <Route path="/my-reports" element={<CommissionReportsPartner user={user} />} />
                 )}
