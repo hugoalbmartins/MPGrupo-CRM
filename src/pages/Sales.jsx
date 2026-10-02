@@ -724,11 +724,29 @@ const Sales = ({ user }) => {
         excludeNif: submitData.client_nif,
       });
 
-      const isPendingValidation = dupReasons.length > 0;
+      const existingClient = formData._existing_client;
+      const mismatchReasons = [];
+      if (existingClient) {
+        if (existingClient.client_name && submitData.client_name && existingClient.client_name.trim().toLowerCase() !== submitData.client_name.trim().toLowerCase()) {
+          mismatchReasons.push('Nome do cliente diferente do registado');
+        }
+        if (existingClient.client_contact && submitData.client_contact && existingClient.client_contact.trim() !== submitData.client_contact.trim()) {
+          mismatchReasons.push('Contacto diferente do registado');
+        }
+        if (existingClient.client_email && submitData.client_email && existingClient.client_email.trim().toLowerCase() !== submitData.client_email.trim().toLowerCase()) {
+          mismatchReasons.push('Email diferente do registado');
+        }
+        if (existingClient.client_iban && submitData.client_iban && existingClient.client_iban.trim().replace(/\s/g, '') !== submitData.client_iban.trim().replace(/\s/g, '')) {
+          mismatchReasons.push('IBAN diferente do registado');
+        }
+      }
+
+      const allReasons = [...dupReasons, ...mismatchReasons];
+      const isPendingValidation = allReasons.length > 0;
 
       if (isPendingValidation) {
         submitData.pending_validation = true;
-        submitData.validation_reason = dupReasons.join('; ');
+        submitData.validation_reason = allReasons.join('; ');
         submitData.is_bulk_import = true;
       }
 
@@ -748,7 +766,7 @@ const Sales = ({ user }) => {
       }
 
       if (isPendingValidation) {
-        toast.warning(`Venda criada em validação pendente: ${dupReasons.join('; ')}. Será enviada para aprovação de admin/BO.`);
+        toast.warning(`Venda criada em validação pendente: ${allReasons.join('; ')}. Será enviada para aprovação de admin/BO.`);
       } else {
         toast.success("Venda criada com sucesso!");
       }
@@ -1013,8 +1031,11 @@ const Sales = ({ user }) => {
   const filteredSales = sales.filter(sale => {
     if (viewMode === "proposals") {
       if (sale.status !== "Em proposta") return false;
+    } else if (viewMode === "validation") {
+      if (!sale.pending_validation) return false;
     } else {
       if (sale.status === "Em proposta") return false;
+      if (sale.pending_validation) return false;
     }
     if (selectedStatus && sale.status !== selectedStatus) return false;
     if (selectedPartner && selectedPartner !== "all" && sale.partner_id !== selectedPartner) return false;
@@ -2064,6 +2085,23 @@ const Sales = ({ user }) => {
         >
           Propostas
         </Button>
+        <Button
+          onClick={() => {
+            setViewMode("validation");
+            setSelectedStatus("");
+          }}
+          variant={viewMode === "validation" ? "default" : "ghost"}
+          size="sm"
+          className={viewMode === "validation" ? "text-white" : "text-slate-400 hover:text-white"}
+          style={viewMode === "validation" ? { background: 'linear-gradient(135deg, #f97316, #ea580c)' } : {}}
+        >
+          Validação
+          {sales.filter(s => s.pending_validation).length > 0 && (
+            <span className="ml-2 text-white text-[10px] rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center font-bold" style={{ background: '#f97316' }}>
+              {sales.filter(s => s.pending_validation).length}
+            </span>
+          )}
+        </Button>
       </motion.div>
 
       {/* Status Filters */}
@@ -2142,6 +2180,34 @@ const Sales = ({ user }) => {
             style={
               showAdvancedFilters
                 ? { background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }
+                : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
+            }
+          >
+            <Filter className="w-4 h-4" />
+            Filtros Avancados
+          </Button>
+        </motion.div>
+      )}
+
+      {viewMode === "validation" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+          className="flex flex-wrap gap-2"
+        >
+          <Button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            variant={showAdvancedFilters ? "default" : "outline"}
+            size="sm"
+            className={
+              showAdvancedFilters
+                ? "gap-2 spring-transition text-white"
+                : "gap-2 spring-transition text-slate-400 hover:text-white"
+            }
+            style={
+              showAdvancedFilters
+                ? { background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none' }
                 : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
             }
           >

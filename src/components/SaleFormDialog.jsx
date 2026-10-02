@@ -78,6 +78,7 @@ const SaleFormDialog = ({
     if (cleanNif.length < 9) {
       setNifLookupStatus(null);
       setClientFound(null);
+      setFormData(prev => ({ ...prev, _existing_client: null }));
       return;
     }
     setNifLookupStatus('searching');
@@ -85,24 +86,33 @@ const SaleFormDialog = ({
       const client = await clientsService.findByNif(cleanNif);
       if (client) {
         setClientFound(client);
-        setNifLookupStatus('found');
-        setFormData(prev => ({
-          ...prev,
-          client_name: client.client_name || prev.client_name,
-          client_contact: client.client_contact || prev.client_contact,
-          client_email: client.client_email || prev.client_email,
-          client_iban: client.client_iban || prev.client_iban,
-          has_direct_debit: !!client.client_iban,
-        }));
+        const samePartner = !client.partner_id || !formData.partner_id || client.partner_id === formData.partner_id;
+        if (samePartner) {
+          setNifLookupStatus('found');
+          setFormData(prev => ({
+            ...prev,
+            client_name: client.client_name || prev.client_name,
+            client_contact: client.client_contact || prev.client_contact,
+            client_email: client.client_email || prev.client_email,
+            client_iban: client.client_iban || prev.client_iban,
+            has_direct_debit: !!client.client_iban,
+            _existing_client: client,
+          }));
+        } else {
+          setNifLookupStatus('found_other_partner');
+          setFormData(prev => ({ ...prev, _existing_client: client }));
+        }
       } else {
         setClientFound(null);
         setNifLookupStatus('not_found');
+        setFormData(prev => ({ ...prev, _existing_client: null }));
       }
     } catch {
       setNifLookupStatus(null);
       setClientFound(null);
+      setFormData(prev => ({ ...prev, _existing_client: null }));
     }
-  }, [setFormData]);
+  }, [setFormData, formData.partner_id]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -533,10 +543,20 @@ const SaleFormDialog = ({
                           <Search className="w-4 h-4 text-emerald-400" />
                         </div>
                       )}
+                      {nifLookupStatus === 'found_other_partner' && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <TriangleAlert className="w-4 h-4 text-amber-400" />
+                        </div>
+                      )}
                     </div>
                     {nifLookupStatus === 'found' && clientFound && (
                       <p className="text-xs text-emerald-400 mt-1">
                         Cliente encontrado: {clientFound.client_name} — dados preenchidos automaticamente
+                      </p>
+                    )}
+                    {nifLookupStatus === 'found_other_partner' && clientFound && (
+                      <p className="text-xs text-amber-400 mt-1">
+                        NIF ja registado por outro parceiro ({clientFound.partner_name || 'desconhecido'}). Preencha os dados — a venda ficara em validacao se os dados diferirem.
                       </p>
                     )}
                     {nifLookupStatus === 'not_found' && formData.client_nif?.length >= 9 && (
