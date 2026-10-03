@@ -65,6 +65,8 @@ export const operatorsService = {
         commission_mode: operatorData.commission_mode || 'tier',
         pays_direct_debit: operatorData.pays_direct_debit || false,
         pays_electronic_invoice: operatorData.pays_electronic_invoice || false,
+        pays_fix_portability: operatorData.pays_fix_portability || false,
+        pays_mobile_portability: operatorData.pays_mobile_portability || false,
         allowed_technologies: operatorData.allowed_technologies || ['Fibra'],
         sat_commission_mode: operatorData.sat_commission_mode || null,
         sat_commission_percentage: operatorData.sat_commission_percentage || null,
@@ -128,6 +130,12 @@ export const operatorsService = {
     }
     if (settingsData.hasOwnProperty('pays_electronic_invoice')) {
       updateData.pays_electronic_invoice = settingsData.pays_electronic_invoice;
+    }
+    if (settingsData.hasOwnProperty('pays_fix_portability')) {
+      updateData.pays_fix_portability = settingsData.pays_fix_portability;
+    }
+    if (settingsData.hasOwnProperty('pays_mobile_portability')) {
+      updateData.pays_mobile_portability = settingsData.pays_mobile_portability;
     }
     if (settingsData.hasOwnProperty('requires_voltage_type')) {
       updateData.requires_voltage_type = settingsData.requires_voltage_type;
@@ -280,6 +288,8 @@ export const operatorsService = {
         retention_months: config.retention_months || 0,
         direct_debit_bonus: config.direct_debit_bonus || 0,
         electronic_invoice_bonus: config.electronic_invoice_bonus || 0,
+        fix_portability_bonus: config.fix_portability_bonus || 0,
+        mobile_portability_bonus: config.mobile_portability_bonus || 0,
         tier_mode: config.tier_mode || 'by_quantity',
         monthly_value_min: config.monthly_value_min || 0,
         monthly_value_max: config.monthly_value_max || 0,

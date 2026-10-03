@@ -54,6 +54,8 @@ const Operators = ({ user }) => {
     allowed_technologies: ['Fibra'],
     pays_direct_debit: false,
     pays_electronic_invoice: false,
+    pays_fix_portability: false,
+    pays_mobile_portability: false,
     requires_voltage_type: false,
     requires_additional_services: false,
     requires_email: false,
@@ -86,6 +88,8 @@ const Operators = ({ user }) => {
     commission_mode: "tier",
     pays_direct_debit: false,
     pays_electronic_invoice: false,
+    pays_fix_portability: false,
+    pays_mobile_portability: false,
     allowed_technologies: ['Fibra'],
     sat_commission_mode: '',
     sat_commission_percentage: ''
@@ -187,6 +191,8 @@ const Operators = ({ user }) => {
       commission_mode: "tier",
       pays_direct_debit: false,
       pays_electronic_invoice: false,
+      pays_fix_portability: false,
+      pays_mobile_portability: false,
       allowed_technologies: ['Fibra'],
       sat_commission_mode: '',
       sat_commission_percentage: ''
@@ -279,6 +285,8 @@ const Operators = ({ user }) => {
         allowed_client_types: freshData.allowed_client_types || ['particular', 'empresarial'],
         pays_direct_debit: freshData.pays_direct_debit || false,
         pays_electronic_invoice: freshData.pays_electronic_invoice || false,
+        pays_fix_portability: freshData.pays_fix_portability || false,
+        pays_mobile_portability: freshData.pays_mobile_portability || false,
         requires_voltage_type: freshData.requires_voltage_type || false,
         requires_additional_services: freshData.requires_additional_services || false,
         requires_email: freshData.requires_email || false,
@@ -586,7 +594,7 @@ const Operators = ({ user }) => {
                           <div>
                             <Label className="text-sm font-semibold mb-2 text-white">Tipos de Ativação Permitidos *</Label>
                             <div className="mt-2 space-y-2">
-                              {['M2', 'M3', 'M4'].map(type => (
+                              {['M1', 'M2', 'M3', 'M4', 'Movel'].map(type => (
                                 <div key={type} className="flex items-center gap-2">
                                   <input
                                     type="checkbox"
@@ -599,7 +607,7 @@ const Operators = ({ user }) => {
                                 </div>
                               ))}
                             </div>
-                            <p className="text-xs text-slate-500 mt-1">Selecione os tipos de ativação permitidos (M2, M3, M4)</p>
+                            <p className="text-xs text-slate-500 mt-1">Selecione os tipos de ativação permitidos (M1, M2, M3, M4, Movel)</p>
                           </div>
                         </div>
                       </FormSection>
@@ -785,6 +793,42 @@ const Operators = ({ user }) => {
                         </p>
                       </div>
                     </FormSection>
+
+                    {formData.scope === 'telecomunicacoes' && (
+                      <FormSection icon={CreditCard} title="Portabilidades" gradient="from-cyber-500 to-cyber-600">
+                        <div className="grid grid-cols-1 gap-6">
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="pays_fix_portability"
+                                checked={formData.pays_fix_portability}
+                                onChange={(e) => setFormData({...formData, pays_fix_portability: e.target.checked})}
+                                className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                              />
+                              <Label htmlFor="pays_fix_portability" className="cursor-pointer font-normal text-slate-300">
+                                Paga Portabilidades Fixas
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="pays_mobile_portability"
+                                checked={formData.pays_mobile_portability}
+                                onChange={(e) => setFormData({...formData, pays_mobile_portability: e.target.checked})}
+                                className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                              />
+                              <Label htmlFor="pays_mobile_portability" className="cursor-pointer font-normal text-slate-300">
+                                Paga Portabilidades Móveis
+                              </Label>
+                            </div>
+                          </div>
+                          <p className="text-xs text-slate-500">
+                            Os valores por portabilidade são definidos na configuração de comissões por patamar
+                          </p>
+                        </div>
+                      </FormSection>
+                    )}
                   </div>
                 </div>
 
@@ -1075,7 +1119,7 @@ const Operators = ({ user }) => {
                 <div>
                   <Label className="text-slate-300 text-sm font-semibold">Tipos de Ativação Permitidos</Label>
                   <div className="mt-2 space-y-2">
-                    {['M2', 'M3', 'M4'].map(type => (
+                    {['M1', 'M2', 'M3', 'M4', 'Movel'].map(type => (
                       <div key={type} className="flex items-center gap-2">
                         <input
                           type="checkbox"
@@ -1252,6 +1296,38 @@ const Operators = ({ user }) => {
                   </div>
                 </div>
               </div>
+
+              {selectedOperator.scope === 'telecomunicacoes' && (
+                <div className="border-t border-dark-700 pt-4">
+                  <Label className="text-slate-300 text-sm font-semibold block mb-3">Portabilidades</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="edit_pays_fix_portability"
+                        checked={editOperatorData.pays_fix_portability}
+                        onChange={(e) => setEditOperatorData(prev => ({ ...prev, pays_fix_portability: e.target.checked }))}
+                        className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                      />
+                      <Label htmlFor="edit_pays_fix_portability" className="cursor-pointer font-normal text-slate-300">
+                        Paga Portabilidades Fixas
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="edit_pays_mobile_portability"
+                        checked={editOperatorData.pays_mobile_portability}
+                        onChange={(e) => setEditOperatorData(prev => ({ ...prev, pays_mobile_portability: e.target.checked }))}
+                        className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                      />
+                      <Label htmlFor="edit_pays_mobile_portability" className="cursor-pointer font-normal text-slate-300">
+                        Paga Portabilidades Móveis
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="border-t border-dark-700 pt-4">
                 <Label className="text-slate-300 text-sm font-semibold block mb-1">Tempo de Intervenção com Cliente</Label>

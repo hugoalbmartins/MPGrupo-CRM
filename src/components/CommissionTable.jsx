@@ -24,6 +24,8 @@ function getEmptyConfig(technology = null) {
     retention_months: 0,
     direct_debit_bonus: 0,
     electronic_invoice_bonus: 0,
+    fix_portability_bonus: 0,
+    mobile_portability_bonus: 0,
     tier_mode: 'by_quantity',
     monthly_value_min: 0,
     monthly_value_max: 0,
@@ -95,6 +97,8 @@ const PowerCommissionSubTable = ({
       retention_months: 0,
       direct_debit_bonus: 0,
       electronic_invoice_bonus: 0,
+      fix_portability_bonus: 0,
+      mobile_portability_bonus: 0,
       tier_mode: 'by_power',
       monthly_value_min: 0,
       monthly_value_max: 0,
@@ -119,6 +123,7 @@ const PowerCommissionSubTable = ({
             <th className="text-left p-2.5 font-bold text-slate-400 text-xs uppercase tracking-wide">Comissao (€)</th>
             <th className="text-left p-2.5 font-bold text-slate-400 text-xs uppercase tracking-wide">DD (€)</th>
             <th className="text-left p-2.5 font-bold text-slate-400 text-xs uppercase tracking-wide">FE (€)</th>
+            <th className="text-left p-2.5 font-bold text-slate-400 text-xs uppercase tracking-wide">Port. Fixa/Movel</th>
             <th className="text-right p-2.5 font-bold text-slate-400 text-xs uppercase tracking-wide w-16">Acao</th>
           </tr>
         </thead>
@@ -134,7 +139,7 @@ const PowerCommissionSubTable = ({
                   <td className="p-2.5">
                     <span className="text-sm font-medium text-slate-400">{powerValue}</span>
                   </td>
-                  <td className="p-2.5" colSpan="3">
+                  <td className="p-2.5" colSpan="4">
                     <span className="text-xs text-slate-600 italic">Nao configurado</span>
                   </td>
                   <td className="p-2.5 text-right">
@@ -334,13 +339,14 @@ const CommissionTable = ({
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Min Vendas / Range</th>
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Retencao</th>
                 <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">DD/FE</th>
+                <th className="text-left p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide">Port. Fixa/Movel</th>
                 <th className="text-right p-3 font-bold text-cyber-400 text-xs uppercase tracking-wide w-24">Acoes</th>
               </tr>
             </thead>
             <tbody>
               {nonPowerConfigs.length === 0 && powerGroups.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="text-center p-8 text-slate-400">
+                  <td colSpan="10" className="text-center p-8 text-slate-400">
                     Nenhuma configuracao. Clique em "+ Nova Regra" para adicionar.
                   </td>
                 </tr>
@@ -577,6 +583,41 @@ const CommissionTable = ({
                         )}
                       </td>
 
+                      <td className="p-2">
+                        {isEditing ? (
+                          <div className="flex gap-1 text-xs">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="h-7 text-xs w-16 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20"
+                              value={config.fix_portability_bonus || 0}
+                              onChange={(e) => onUpdateConfig(actualIndex, 'fix_portability_bonus', e.target.value)}
+                              placeholder="Fixa"
+                            />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="h-7 text-xs w-16 bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20"
+                              value={config.mobile_portability_bonus || 0}
+                              onChange={(e) => onUpdateConfig(actualIndex, 'mobile_portability_bonus', e.target.value)}
+                              placeholder="Movel"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-300">
+                            {parseFloat(config.fix_portability_bonus) > 0 || parseFloat(config.mobile_portability_bonus) > 0 ? (
+                              <>
+                                {parseFloat(config.fix_portability_bonus) > 0 && `PF: ${parseFloat(config.fix_portability_bonus).toFixed(2)}\u20AC`}
+                                {parseFloat(config.fix_portability_bonus) > 0 && parseFloat(config.mobile_portability_bonus) > 0 && ' | '}
+                                {parseFloat(config.mobile_portability_bonus) > 0 && `PM: ${parseFloat(config.mobile_portability_bonus).toFixed(2)}\u20AC`}
+                              </>
+                            ) : (
+                              <span className="text-slate-500">-</span>
+                            )}
+                          </span>
+                        )}
+                      </td>
+
                       <td className="p-2 text-right">
                         <div className="flex gap-1 justify-end">
                           {isEditing ? (
@@ -687,7 +728,8 @@ const CommissionTable = ({
                   <SelectContent>
                     {(newConfig.service_type === 'NI' || newConfig.service_type === 'MC') && (
                       <>
-                        <SelectItem value="all">Todos (M2/M3/M4)</SelectItem>
+                        <SelectItem value="all">Todos (M1/M2/M3/M4/Movel)</SelectItem>
+                        <SelectItem value="M1">M1</SelectItem>
                         <SelectItem value="M2">M2</SelectItem>
                         <SelectItem value="M3">M3</SelectItem>
                         <SelectItem value="M4">M4</SelectItem>

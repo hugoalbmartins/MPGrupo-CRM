@@ -22,6 +22,8 @@ interface CommissionConfig {
   activation_type: string | null;
   direct_debit_bonus: string;
   electronic_invoice_bonus: string;
+  fix_portability_bonus: string;
+  mobile_portability_bonus: string;
   d2d_level: string | null;
   rev_level: number | null;
   refid_operation_type: string | null;
@@ -268,6 +270,12 @@ async function calculateCommission(
   }
   if (saleData.has_electronic_invoice) {
     bonuses += parseFloat(applicableTier.electronic_invoice_bonus || "0");
+  }
+  if (saleData.fix_ported && applicableTier.fix_portability_bonus) {
+    bonuses += parseFloat(applicableTier.fix_portability_bonus || "0");
+  }
+  if ((saleData.activation_type === "M4" || saleData.activation_type === "Movel") && saleData.mobile_count > 0 && applicableTier.mobile_portability_bonus) {
+    bonuses += parseFloat(applicableTier.mobile_portability_bonus || "0") * saleData.mobile_count;
   }
 
   let totalCommission = baseCommission + bonuses;
