@@ -742,6 +742,13 @@ const Sales = ({ user }) => {
       }
 
       const allReasons = [...dupReasons, ...mismatchReasons];
+
+      const selectedPartner = partners.find(p => p.id === submitData.partner_id);
+      const isPartnerBlocked = selectedPartner?.sales_blocked === true;
+      if (isPartnerBlocked && !allReasons.includes('Parceiro com vendas bloqueadas para validacao')) {
+        allReasons.push('Parceiro com vendas bloqueadas para validacao');
+      }
+
       const isPendingValidation = allReasons.length > 0;
 
       if (isPendingValidation) {
@@ -793,9 +800,15 @@ const Sales = ({ user }) => {
         }).catch(() => {});
       }
 
-      if (createdSale && createdSale.id && !shouldSkipEmail && !isPendingValidation) {
+      if (createdSale && createdSale.id && !shouldSkipEmail) {
         try {
-          await salesService.resendNewSaleEmail(createdSale.id, {}, true);
+          if (isPendingValidation) {
+            await salesService.resendNewSaleEmail(createdSale.id, {
+              message: `Venda pendente de validacao - ${allReasons.join('; ')}`,
+            }, true);
+          } else {
+            await salesService.resendNewSaleEmail(createdSale.id, {}, true);
+          }
         } catch (emailErr) {
           toast.warning("Venda criada, mas o email de notificacao falhou. Pode reenviar manualmente.");
         }

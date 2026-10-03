@@ -55,6 +55,7 @@ const Partners = ({ user }) => {
     manager_id: "",
     email_bcc_enabled: false,
     is_vat_exempt: false,
+    sales_blocked: false,
   });
 
   const { data: partners = [], isLoading: partnersLoading, refetch: refetchPartners } = useQuery({
@@ -178,6 +179,7 @@ const Partners = ({ user }) => {
       iban: partner.iban || "",
       email_bcc_enabled: partner.email_bcc_enabled || false,
       is_vat_exempt: partner.is_vat_exempt || false,
+      sales_blocked: partner.sales_blocked || false,
     });
     setDialogOpen(true);
 
@@ -303,6 +305,7 @@ const Partners = ({ user }) => {
       iban: "",
       email_bcc_enabled: false,
       is_vat_exempt: false,
+      sales_blocked: false,
     });
   };
 
@@ -671,6 +674,29 @@ const Partners = ({ user }) => {
                     </p>
                   )}
                 </div>
+
+                {editingPartner && user?.role === 'admin' && (
+                  <div className="border border-red-500/20 rounded-xl p-4 bg-red-500/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-slate-300 font-semibold">Bloqueio de Vendas</Label>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Se ativo, todas as vendas enviadas por este parceiro ficam pendentes de validacao de BO ou admin antes de serem processadas
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.sales_blocked}
+                        onCheckedChange={(v) => setFormData({...formData, sales_blocked: v})}
+                        className="data-[state=checked]:bg-red-500"
+                      />
+                    </div>
+                    {formData.sales_blocked && (
+                      <p className="text-xs text-red-400 mt-2">
+                        As vendas deste parceiro serao criadas em estado de validacao pendente. Um email sera enviado a BO e admins para notificacao.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {editingPartner && (
                   <div className="border border-dark-700 rounded-xl p-4 bg-dark-900">
