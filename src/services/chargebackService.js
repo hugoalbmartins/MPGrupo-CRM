@@ -1,21 +1,27 @@
 import { supabase } from '../lib/supabase';
 
 export const chargebackService = {
-  async create({ saleId, partnerId, reason, reasonDate, percentage, commissionAmount, createdBy }) {
+  async create({ saleId, partnerId, reason, reasonDate, percentage, commissionAmount, createdBy, chargebackType = 'full', activationIndication = null, activationDate = null }) {
     const chargebackAmount = parseFloat((commissionAmount * percentage / 100).toFixed(2));
+
+    const insertData = {
+      sale_id: saleId,
+      partner_id: partnerId,
+      reason,
+      reason_date: reasonDate,
+      percentage,
+      commission_amount: commissionAmount,
+      chargeback_amount: chargebackAmount,
+      created_by: createdBy,
+      chargeback_type: chargebackType,
+    };
+
+    if (activationIndication) insertData.activation_indication = activationIndication;
+    if (activationDate) insertData.activation_date = activationDate;
 
     const { data, error } = await supabase
       .from('chargebacks')
-      .insert({
-        sale_id: saleId,
-        partner_id: partnerId,
-        reason,
-        reason_date: reasonDate,
-        percentage,
-        commission_amount: commissionAmount,
-        chargeback_amount: chargebackAmount,
-        created_by: createdBy
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -119,7 +125,31 @@ export const chargebackService = {
     if (error) throw error;
   },
 
+  async getChargebackForSale(saleId) {
+    const { data, error } = await supabase
+      .from('chargebacks')
+      .select('*')
+      .eq('sale_id', saleId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  },
+
   async delete(chargebackId, saleId) {
+    const { data: chargeback, error: fetchError } = await supabase
+      .from('chargebacks')
+      .select('commission_report_id')
+      .eq('id', chargebackId)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+    if (!chargeback) throw new Error('Chargeback nao encontrado');
+
+    if (chargeback.commission_report_id) {
+      throw new Error('Nao e possivel anular um chargeback ja incluido num auto de comissoes pago');
+    }
+
     const { error } = await supabase
       .from('chargebacks')
       .delete()

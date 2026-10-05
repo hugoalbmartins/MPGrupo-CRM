@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { TriangleAlert as AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap, Paperclip, Upload, X, Download, RotateCcw } from "lucide-react";
+import { TriangleAlert as AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap, Paperclip, Upload, X, Download, RotateCcw, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -160,9 +160,24 @@ const SaleEditDialog = ({
   };
 
   const [chargebackDialogOpen, setChargebackDialogOpen] = useState(false);
-  const [chargebackForm, setChargebackForm] = useState({ reason: '', reason_date: '', percentage: 100 });
+  const [chargebackForm, setChargebackForm] = useState({ reason: '', reason_date: '', percentage: 100, chargeback_type: 'full', activation_indication: '', activation_date: '' });
   const [chargebackPaidReport, setChargebackPaidReport] = useState(null);
   const [savingChargeback, setSavingChargeback] = useState(false);
+  const [existingChargeback, setExistingChargeback] = useState(null);
+  const [annulChargebackOpen, setAnnulChargebackOpen] = useState(false);
+  const [annulling, setAnnulling] = useState(false);
+
+  const isDualEnergy = editFormData.energy_sale_type === 'dual' || editFormData.scope === 'energia' || editFormData.scope === 'energias';
+
+  React.useEffect(() => {
+    if (open && editingSale?.has_chargeback && editingSale?.id) {
+      chargebackService.getChargebackForSale(editingSale.id).then(cb => {
+        setExistingChargeback(cb);
+      }).catch(() => setExistingChargeback(null));
+    } else {
+      setExistingChargeback(null);
+    }
+  }, [open, editingSale?.has_chargeback, editingSale?.id]);
 
   const saleOperator = operators.find(op => op.id === editFormData.operator_id);
   const canEditCommission = user?.role === 'admin';
@@ -171,13 +186,28 @@ const SaleEditDialog = ({
   const isRefid = editFormData.service_type === 'REFID' || editFormData.service_type === 'Refid';
 
   const openChargebackDialog = async () => {
-    setChargebackForm({ reason: '', reason_date: '', percentage: 100 });
+    setChargebackForm({ reason: '', reason_date: '', percentage: 100, chargeback_type: 'full', activation_indication: '', activation_date: '' });
     setChargebackPaidReport(null);
     try {
       const paidReport = await chargebackService.checkSaleInPaidReport(editingSale?.id);
       setChargebackPaidReport(paidReport);
     } catch {}
     setChargebackDialogOpen(true);
+  };
+
+  const handleAnnulChargeback = async () => {
+    if (!existingChargeback) return;
+    setAnnulling(true);
+    try {
+      await chargebackService.delete(existingChargeback.id, editingSale.id);
+      toast.success('Chargeback anulado com sucesso');
+      setExistingChargeback(null);
+      setAnnulChargebackOpen(false);
+    } catch (err) {
+      toast.error('Erro ao anular chargeback: ' + err.message);
+    } finally {
+      setAnnulling(false);
+    }
   };
 
   const handleSaveChargeback = async () => {
@@ -197,7 +227,12 @@ const SaleEditDialog = ({
         percentage: parseFloat(chargebackForm.percentage),
         commissionAmount,
         createdBy: user?.id,
+        chargebackType: chargebackForm.chargeback_type,
+        activationIndication: chargebackForm.activation_indication || null,
+        activationDate: chargebackForm.activation_date || null,
       });
+      const cb = await chargebackService.getChargebackForSale(editingSale.id);
+      setExistingChargeback(cb);
       toast.success('Chargeback registado com sucesso');
       setChargebackDialogOpen(false);
     } catch (err) {
@@ -1089,7 +1124,7 @@ const SaleEditDialog = ({
           <div className="sticky bottom-0 bg-dark-850 border-t border-dark-700 px-4 sm:px-8 py-4">
             <div className="flex justify-between gap-3">
               <div>
-                {(user?.role === 'admin' || user?.role === 'bo') && editFormData.status === 'Ativo' && !editingSale?.has_chargeback && (
+                {(user?.role === 'admin' || user?.role === 'bo') && editFormData.status === 'Ativo' && !existingChargeback && (
                   <Button
                     type="button"
                     variant="outline"
@@ -1100,11 +1135,36 @@ const SaleEditDialog = ({
                     Registar Chargeback
                   </Button>
                 )}
-                {editingSale?.has_chargeback && (
-                  <span className="text-xs text-red-400 flex items-center gap-1">
-                    <RotateCcw className="w-3 h-3" />
-                    Chargeback registado
-                  </span>
+                {existingChargeback && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-red-400 flex items-center gap-1">
+                      <RotateCcw className="w-3 h-3" />
+                      Chargeback registado
+                      {existingChargeback.chargeback_type && existingChargeback.chargeback_type !== 'full' && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-semibold uppercase">
+                          {existingChargeback.chargeback_type === 'electricity' ? 'Luz' : existingChargeback.chargeback_type === 'gas' ? 'Gas' : existingChargeback.chargeback_type}
+                        </span>
+                      )}
+                    </span>
+                    {(user?.role === 'admin' || user?.role === 'bo') && !existingChargeback.commission_report_id && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAnnulChargebackOpen(true)}
+                        className="bg-dark-900 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-400 gap-1 h-7 text-xs"
+                      >
+                        <Ban className="w-3 h-3" />
+                        Anular Chargeback
+                      </Button>
+                    )}
+                    {existingChargeback.commission_report_id && (
+                      <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Ja incluido em auto pago
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex gap-3">
@@ -1158,6 +1218,51 @@ const SaleEditDialog = ({
               className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white"
             />
           </div>
+          {isDualEnergy && (
+            <div>
+              <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Tipo de Chargeback (Dual)</Label>
+              <Select
+                value={chargebackForm.chargeback_type}
+                onValueChange={(v) => setChargebackForm(prev => ({ ...prev, chargeback_type: v }))}
+              >
+                <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full">Total (Luz + Gas)</SelectItem>
+                  <SelectItem value="electricity">Apenas Luz</SelectItem>
+                  <SelectItem value="gas">Apenas Gas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div>
+            <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Indicacao de Ativacao</Label>
+            <Select
+              value={chargebackForm.activation_indication || 'none'}
+              onValueChange={(v) => setChargebackForm(prev => ({ ...prev, activation_indication: v === 'none' ? '' : v }))}
+            >
+              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white">
+                <SelectValue placeholder="Selecionar..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">N/A</SelectItem>
+                <SelectItem value="activated">Ativada</SelectItem>
+                <SelectItem value="not_activated">Nao Ativada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {chargebackForm.activation_indication === 'activated' && (
+            <div>
+              <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Data de Ativacao</Label>
+              <Input
+                type="date"
+                value={chargebackForm.activation_date}
+                onChange={(e) => setChargebackForm(prev => ({ ...prev, activation_date: e.target.value }))}
+                className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white"
+              />
+            </div>
+          )}
           <div>
             <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Percentagem de Chargeback (%)</Label>
             <Input
@@ -1184,6 +1289,55 @@ const SaleEditDialog = ({
             className="bg-red-600 hover:bg-red-500 text-white font-semibold gap-2"
           >
             {savingChargeback ? 'A guardar...' : 'Confirmar Chargeback'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={annulChargebackOpen} onOpenChange={setAnnulChargebackOpen}>
+      <DialogContent className="max-w-md bg-dark-850 border border-red-500/20">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <Ban className="w-5 h-5 text-red-400" />
+            Anular Chargeback
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Venda: {editingSale?.sale_code} — {editingSale?.customer_name}
+          </DialogDescription>
+        </DialogHeader>
+        {existingChargeback && (
+          <div className="space-y-3 py-2">
+            <div className="bg-dark-900 border border-dark-700 rounded-lg p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between"><span className="text-slate-400">Motivo:</span><span className="text-white text-right">{existingChargeback.reason}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Data motivo:</span><span className="text-white">{existingChargeback.reason_date}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Percentagem:</span><span className="text-white">{existingChargeback.percentage}%</span></div>
+              {existingChargeback.chargeback_type && existingChargeback.chargeback_type !== 'full' && (
+                <div className="flex justify-between"><span className="text-slate-400">Tipo:</span><span className="text-white">{existingChargeback.chargeback_type === 'electricity' ? 'Luz' : existingChargeback.chargeback_type === 'gas' ? 'Gas' : existingChargeback.chargeback_type}</span></div>
+              )}
+              {existingChargeback.activation_indication && (
+                <div className="flex justify-between"><span className="text-slate-400">Ativacao:</span><span className="text-white">{existingChargeback.activation_indication === 'activated' ? 'Ativada' : 'Nao Ativada'}</span></div>
+              )}
+              {existingChargeback.activation_date && (
+                <div className="flex justify-between"><span className="text-slate-400">Data ativacao:</span><span className="text-white">{existingChargeback.activation_date}</span></div>
+              )}
+              <div className="flex justify-between"><span className="text-slate-400">Valor:</span><span className="text-red-400 font-semibold">-{existingChargeback.chargeback_amount}€</span></div>
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300">
+              <AlertTriangle className="w-4 h-4 inline mr-1.5 mb-0.5" />
+              Tem a certeza que deseja anular este chargeback? Esta acao nao pode ser revertida.
+            </div>
+          </div>
+        )}
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="outline" onClick={() => setAnnulChargebackOpen(false)} className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800">
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleAnnulChargeback}
+            disabled={annulling}
+            className="bg-red-600 hover:bg-red-500 text-white font-semibold gap-2"
+          >
+            {annulling ? 'A anular...' : 'Confirmar Anulacao'}
           </Button>
         </div>
       </DialogContent>
