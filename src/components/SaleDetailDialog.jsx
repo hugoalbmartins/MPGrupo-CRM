@@ -1012,6 +1012,33 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                             <p className="font-semibold text-white mt-1">{sale.campaign}</p>
                           </div>
                         )}
+                        {sale.energy_sale_type === 'dual' && sale.status === 'Ativo' && (
+                          <div className="col-span-2 border-t border-dark-700 pt-3 mt-1">
+                            <Label className="text-slate-500 text-xs uppercase mb-2 block">Ativacao Individual (Dual)</Label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="flex items-center gap-2">
+                                {sale.electricity_activated ? (
+                                  <Badge className="bg-cyber-500/10 text-cyber-400 border-cyber-500/20 text-xs">Luz Ativada</Badge>
+                                ) : (
+                                  <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 text-xs">Luz Nao Ativada</Badge>
+                                )}
+                                {sale.electricity_activation_date && (
+                                  <span className="text-sm text-slate-300">{sale.electricity_activation_date}</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {sale.gas_activated ? (
+                                  <Badge className="bg-cyber-500/10 text-cyber-400 border-cyber-500/20 text-xs">Gas Ativado</Badge>
+                                ) : (
+                                  <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 text-xs">Gas Nao Ativado</Badge>
+                                )}
+                                {sale.gas_activation_date && (
+                                  <span className="text-sm text-slate-300">{sale.gas_activation_date}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

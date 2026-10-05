@@ -1412,6 +1412,10 @@ const Sales = ({ user }) => {
       attachments: sale.attachments || [],
       activated_at: sale.activated_at ? sale.activated_at.split('T')[0] : "",
       activation_date: sale.activation_date || "",
+      electricity_activated: Boolean(sale.electricity_activated),
+      gas_activated: Boolean(sale.gas_activated),
+      electricity_activation_date: sale.electricity_activation_date || "",
+      gas_activation_date: sale.gas_activation_date || "",
       refidelizacao_prazo: sale.refidelizacao_prazo || null,
       refidelizacao_unidade: sale.refidelizacao_unidade || 'dias',
       has_chargeback: Boolean(sale.has_chargeback),
@@ -1424,6 +1428,7 @@ const Sales = ({ user }) => {
   const GROUP_SHARED_FIELDS = [
     'date', 'status', 'activation_date', 'activated_at', 'cancelled_at',
     'paid_to_operator', 'payment_date',
+    'electricity_activated', 'gas_activated', 'electricity_activation_date', 'gas_activation_date',
     'client_type', 'client_name', 'client_nif', 'client_contact', 'client_email', 'client_iban',
   ];
 
@@ -1500,9 +1505,25 @@ const Sales = ({ user }) => {
         }
       }
 
-      if (editFormData.status === 'Ativo' && !editFormData.activation_date) {
-        toast.error("Data de ativacao e obrigatoria para o estado Ativo");
-        return;
+      if (editFormData.status === 'Ativo') {
+        const isDual = editFormData.energy_sale_type === 'dual' && editFormData.scope === 'energia';
+        if (isDual) {
+          if (!editFormData.electricity_activated && !editFormData.gas_activated) {
+            toast.error("Pelo menos uma componente (Luz ou Gas) deve estar ativada para o estado Ativo");
+            return;
+          }
+          if (editFormData.electricity_activated && !editFormData.electricity_activation_date) {
+            toast.error("Data de ativacao da Luz e obrigatoria");
+            return;
+          }
+          if (editFormData.gas_activated && !editFormData.gas_activation_date) {
+            toast.error("Data de ativacao do Gas e obrigatoria");
+            return;
+          }
+        } else if (!editFormData.activation_date) {
+          toast.error("Data de ativacao e obrigatoria para o estado Ativo");
+          return;
+        }
       }
 
       if ((editFormData.status === 'Cancelado' || editFormData.status === 'Recusado') && !editFormData.observations?.trim()) {
@@ -1514,6 +1535,13 @@ const Sales = ({ user }) => {
 
       if (editFormData.status === 'Ativo') {
         updatedData.activated_at = new Date().toISOString();
+        const isDual = editFormData.energy_sale_type === 'dual' && editFormData.scope === 'energia';
+        if (isDual) {
+          const dates = [editFormData.electricity_activation_date, editFormData.gas_activation_date].filter(Boolean).sort();
+          updatedData.activation_date = dates[0] || new Date().toLocaleDateString('sv-SE');
+          if (!editFormData.electricity_activated) { updatedData.electricity_activation_date = null; }
+          if (!editFormData.gas_activated) { updatedData.gas_activation_date = null; }
+        }
       }
       if (editFormData.status === 'Cancelado' || editFormData.status === 'Recusado') {
         updatedData.cancelled_at = new Date().toISOString();

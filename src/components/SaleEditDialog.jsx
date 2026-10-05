@@ -350,7 +350,48 @@ const SaleEditDialog = ({
                     </Select>
                   </FieldGroup>
 
-                  {editFormData.status === 'Ativo' && (
+                  {editFormData.status === 'Ativo' && editFormData.energy_sale_type === 'dual' && editFormData.scope === 'energia' ? (
+                    <>
+                      <FieldGroup label="Ativacao Luz">
+                        <div className="flex gap-2 items-center">
+                          <button
+                            type="button"
+                            onClick={() => update('electricity_activated', !editFormData.electricity_activated)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-semibold transition-all ${editFormData.electricity_activated ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
+                          >
+                            {editFormData.electricity_activated ? 'Ativada' : 'Nao Ativada'}
+                          </button>
+                          {editFormData.electricity_activated && (
+                            <Input
+                              type="date"
+                              value={editFormData.electricity_activation_date || ""}
+                              onChange={(e) => update('electricity_activation_date', e.target.value)}
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                            />
+                          )}
+                        </div>
+                      </FieldGroup>
+                      <FieldGroup label="Ativacao Gas">
+                        <div className="flex gap-2 items-center">
+                          <button
+                            type="button"
+                            onClick={() => update('gas_activated', !editFormData.gas_activated)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-semibold transition-all ${editFormData.gas_activated ? 'bg-cyber-500 border-cyber-500 text-dark-900' : 'bg-dark-900 border-dark-700 text-slate-400 hover:border-cyber-500'}`}
+                          >
+                            {editFormData.gas_activated ? 'Ativada' : 'Nao Ativada'}
+                          </button>
+                          {editFormData.gas_activated && (
+                            <Input
+                              type="date"
+                              value={editFormData.gas_activation_date || ""}
+                              onChange={(e) => update('gas_activation_date', e.target.value)}
+                              className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"
+                            />
+                          )}
+                        </div>
+                      </FieldGroup>
+                    </>
+                  ) : editFormData.status === 'Ativo' ? (
                     <FieldGroup label="Data de Ativacao *">
                       <Input
                         type="date"
@@ -361,7 +402,7 @@ const SaleEditDialog = ({
                       />
                       <p className="text-xs mt-1 text-slate-500">Data em que a venda foi ativada pelo operador</p>
                     </FieldGroup>
-                  )}
+                  ) : null}
 
                   <FieldGroup label="Parceiro *">
                     <Select
