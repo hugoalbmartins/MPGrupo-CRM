@@ -43,6 +43,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
   const [partners, setPartners] = useState([]);
   const [chargebacks, setChargebacks] = useState([]);
   const [editingChargeback, setEditingChargeback] = useState(null);
+  const [showTratamentoDialog, setShowTratamentoDialog] = useState(false);
+  const [oportunidadeNumber, setOportunidadeNumber] = useState("");
+  const [savingTratamento, setSavingTratamento] = useState(false);
 
   useEffect(() => {
     if (open && saleId) {
@@ -230,6 +233,27 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
     }
   };
 
+  const handleMarkTratadoInterno = async () => {
+    if (!oportunidadeNumber.trim()) {
+      toast.error("O número de oportunidade/registo é obrigatório");
+      return;
+    }
+    try {
+      setSavingTratamento(true);
+      await salesService.markInternalTreatmentDone(sale.id, oportunidadeNumber.trim());
+      toast.success("Venda marcada como tratada. Emails de venda enviados.");
+      setShowTratamentoDialog(false);
+      setOportunidadeNumber("");
+      await fetchSaleDetails();
+      if (onSaleUpdated) onSaleUpdated();
+    } catch (error) {
+      toast.error("Erro ao marcar tratamento: " + error.message);
+      console.error(error);
+    } finally {
+      setSavingTratamento(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       "Pendente": "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
@@ -281,21 +305,36 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
               </DialogDescription>
             </div>
             {(user?.role === 'admin' || user?.role === 'bo') && sale && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  if (onEditRequested) {
-                    onEditRequested(sale);
-                    onOpenChange(false);
-                  } else {
-                    setIsEditing(true);
-                  }
-                }}
-                className="gap-2 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white"
-              >
-                <Edit2 className="w-4 h-4" />
-                <span>Editar</span>
-              </Button>
+              <div className="flex gap-2">
+                {sale.internal_treatment && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setOportunidadeNumber("");
+                      setShowTratamentoDialog(true);
+                    }}
+                    className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Tratado Interno</span>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (onEditRequested) {
+                      onEditRequested(sale);
+                      onOpenChange(false);
+                    } else {
+                      setIsEditing(true);
+                    }
+                  }}
+                  className="gap-2 bg-gradient-to-r from-cyber-500 to-cyber-600 text-white"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  <span>Editar</span>
+                </Button>
+              </div>
             )}
           </div>
         </DialogHeader>
@@ -829,6 +868,13 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                         <div>
                           <Label className="text-slate-500 text-xs uppercase">Requisição</Label>
                           <p className="font-semibold text-white mt-1">{sale.request_number}</p>
+                        </div>
+                      )}
+
+                      {sale.oportunidade_number && (
+                        <div className="col-span-2 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                          <Label className="text-amber-400 text-xs uppercase font-semibold">Nr. Oportunidade/Registo</Label>
+                          <p className="font-bold text-amber-300 mt-1 text-lg">{sale.oportunidade_number}</p>
                         </div>
                       )}
 
@@ -1384,6 +1430,46 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
           <div className="text-center py-8 text-slate-500">Venda não encontrada</div>
         )}
       </DialogContent>
+
+      {showTratamentoDialog && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
+          <div className="bg-dark-850 border border-amber-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">Tratado Interno</h3>
+            <p className="text-sm text-slate-400 mb-4">
+              Insira o número de oportunidade/registo. Ao confirmar, a venda será movida para "Para registo" e os emails normais de venda serão enviados.
+            </p>
+            <div className="mb-4">
+              <Label className="text-slate-300 mb-1 block">Número de Oportunidade/Registo *</Label>
+              <Input
+                type="text"
+                value={oportunidadeNumber}
+                onChange={(e) => setOportunidadeNumber(e.target.value)}
+                placeholder="Ex: OPP-12345"
+                className="bg-dark-900 border-dark-700 focus:border-amber-500 focus:ring-amber-500/20 text-white"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setShowTratamentoDialog(false); setOportunidadeNumber(""); }}
+                className="text-slate-400 hover:bg-dark-800"
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleMarkTratadoInterno}
+                disabled={savingTratamento || !oportunidadeNumber.trim()}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 text-white"
+              >
+                {savingTratamento ? "A processar..." : "Confirmar e Enviar Emails"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Dialog>
   );
 };

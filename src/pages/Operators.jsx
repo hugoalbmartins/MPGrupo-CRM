@@ -68,6 +68,7 @@ const Operators = ({ user }) => {
     email_envio_password: '',
     sat_commission_mode: '',
     sat_commission_percentage: '',
+    requires_internal_treatment: false,
   });
   const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [newNotifEmail, setNewNotifEmail] = useState("");
@@ -304,6 +305,7 @@ const Operators = ({ user }) => {
         sat_commission_mode: freshData.sat_commission_mode || '',
         sat_commission_percentage: freshData.sat_commission_percentage || '',
         sales_access: freshData.sales_access || 'all_commissioned',
+        requires_internal_treatment: freshData.requires_internal_treatment || false,
       });
       setShowEmailPassword(false);
       setNewNotifEmail("");
@@ -1403,6 +1405,23 @@ const Operators = ({ user }) => {
                       Requer Anexo Obrigatório
                     </Label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit_requires_internal_treatment"
+                      checked={editOperatorData.requires_internal_treatment}
+                      onChange={(e) => setEditOperatorData(prev => ({ ...prev, requires_internal_treatment: e.target.checked }))}
+                      className="w-4 h-4 rounded border-dark-700 text-cyber-500 focus:ring-cyber-500/20 bg-dark-900"
+                    />
+                    <Label htmlFor="edit_requires_internal_treatment" className="cursor-pointer font-normal text-slate-300">
+                      Pré-Tratamento Interno
+                    </Label>
+                  </div>
+                  {editOperatorData.requires_internal_treatment && (
+                    <p className="text-xs text-amber-400 ml-6">
+                      Vendas desta operadora ficam em "Para Tratamento". Será enviado email apenas aos Admins/BO selecionados abaixo. Ao marcar como "Tratado Interno", os emails normais de venda são enviados.
+                    </p>
+                  )}
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <input

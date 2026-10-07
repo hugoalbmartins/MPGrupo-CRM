@@ -751,12 +751,20 @@ const Sales = ({ user }) => {
 
       const isPendingValidation = allReasons.length > 0;
 
+      const selectedOperator = operators.find(o => o.id === submitData.operator_id);
+      const isInternalTreatment = selectedOperator?.requires_internal_treatment === true;
+
       if (isPendingValidation) {
         submitData.pending_validation = true;
         submitData.validation_reason = allReasons.join('; ');
-        if (!isPartnerBlocked) {
+        if (!isPartnerBlocked && !isInternalTreatment) {
           submitData.is_bulk_import = true;
         }
+      }
+
+      if (isInternalTreatment && !isPendingValidation) {
+        submitData.internal_treatment = true;
+        submitData.is_bulk_import = true;
       }
 
       if (!pendingSubmit) {
@@ -776,6 +784,8 @@ const Sales = ({ user }) => {
 
       if (isPendingValidation) {
         toast.warning(`Venda criada em validação pendente: ${allReasons.join('; ')}. Será enviada para aprovação de admin/BO.`);
+      } else if (isInternalTreatment) {
+        toast.success("Venda criada em Para Tratamento. Email enviado aos Admins/BO.");
       } else {
         toast.success("Venda criada com sucesso!");
       }
@@ -808,6 +818,8 @@ const Sales = ({ user }) => {
             await salesService.resendNewSaleEmail(createdSale.id, {
               message: `Venda pendente de validacao - ${allReasons.join('; ')}`,
             }, true);
+          } else if (isInternalTreatment) {
+            await salesService.sendInternalTreatmentEmail(createdSale.id);
           } else if (!isPendingValidation) {
             await salesService.resendNewSaleEmail(createdSale.id, {}, true);
           }
@@ -1048,9 +1060,12 @@ const Sales = ({ user }) => {
       if (sale.status !== "Em proposta") return false;
     } else if (viewMode === "validation") {
       if (!sale.pending_validation) return false;
+    } else if (viewMode === "treatment") {
+      if (!sale.internal_treatment) return false;
     } else {
       if (sale.status === "Em proposta") return false;
       if (sale.pending_validation) return false;
+      if (sale.internal_treatment) return false;
     }
     if (selectedStatus && sale.status !== selectedStatus) return false;
     if (selectedPartner && selectedPartner !== "all" && sale.partner_id !== selectedPartner) return false;
@@ -1849,6 +1864,11 @@ const Sales = ({ user }) => {
                     Validacao Pendente{sale.validation_reason ? `: ${sale.validation_reason}` : ''}
                   </span>
                 )}
+                {sale.internal_treatment && (
+                  <span className="text-xs font-semibold text-purple-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
+                    Para Tratamento
+                  </span>
+                )}
                 {sale.paid_in_report_id && (
                   <span className="text-xs font-semibold text-blue-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)' }}>Pago Parceiro</span>
                 )}
@@ -2145,9 +2165,24 @@ const Sales = ({ user }) => {
             </span>
           )}
         </Button>
+        <Button
+          onClick={() => {
+            setViewMode("treatment");
+            setSelectedStatus("");
+          }}
+          variant={viewMode === "treatment" ? "default" : "ghost"}
+          size="sm"
+          className={viewMode === "treatment" ? "text-white" : "text-slate-400 hover:text-white"}
+          style={viewMode === "treatment" ? { background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' } : {}}
+        >
+          Para Tratamento
+          {sales.filter(s => s.internal_treatment).length > 0 && (
+            <span className="ml-2 text-white text-[10px] rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center font-bold" style={{ background: '#8b5cf6' }}>
+              {sales.filter(s => s.internal_treatment).length}
+            </span>
+          )}
+        </Button>
       </motion.div>
-
-      {/* Status Filters */}
       {viewMode === "sales" && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -2251,6 +2286,34 @@ const Sales = ({ user }) => {
             style={
               showAdvancedFilters
                 ? { background: 'linear-gradient(135deg, #f97316, #ea580c)', border: 'none' }
+                : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
+            }
+          >
+            <Filter className="w-4 h-4" />
+            Filtros Avancados
+          </Button>
+        </motion.div>
+      )}
+
+      {viewMode === "treatment" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.3 }}
+          className="flex flex-wrap gap-2"
+        >
+          <Button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            variant={showAdvancedFilters ? "default" : "outline"}
+            size="sm"
+            className={
+              showAdvancedFilters
+                ? "gap-2 spring-transition text-white"
+                : "gap-2 spring-transition text-slate-400 hover:text-white"
+            }
+            style={
+              showAdvancedFilters
+                ? { background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', border: 'none' }
                 : { backgroundColor: 'transparent', borderColor: '#1e3a5f' }
             }
           >

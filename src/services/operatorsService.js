@@ -192,6 +192,9 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('sales_access')) {
       updateData.sales_access = settingsData.sales_access || 'all_commissioned';
     }
+    if (settingsData.hasOwnProperty('requires_internal_treatment')) {
+      updateData.requires_internal_treatment = settingsData.requires_internal_treatment;
+    }
 
     const { data, error } = await supabase
       .from('operators')

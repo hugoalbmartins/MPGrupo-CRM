@@ -99,6 +99,8 @@ interface SaleEmailPayload {
   }>;
   include_attachments?: boolean;
   is_blocked_sale?: boolean;
+  is_internal_treatment?: boolean;
+  oportunidade_number?: string;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -143,6 +145,12 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
       <p>Foi registada uma nova venda no sistema CRM${hidePartner ? '.' : ` no parceiro <strong>${payload.partner_name || 'N/A'}</strong>.`}</p>
 
       <div class="badge">Nova Venda</div>
+
+      ${payload.oportunidade_number ? `
+      <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 12px 16px; border-radius: 8px; margin: 16px 0;">
+        <span style="color: #92400e; font-weight: 700; font-size: 14px;">Nr. Oportunidade/Registo: ${payload.oportunidade_number}</span>
+      </div>
+      ` : ""}
 
       <div class="sale-info">
         <table>
@@ -677,7 +685,7 @@ Deno.serve(async (req: Request) => {
 
     const customerNameShort = getFirstFourNames(payload.customer_name);
     const nifPart = payload.customer_nif ? ` NIF ${payload.customer_nif}` : '';
-    const subjectPrefix = payload.is_blocked_sale ? 'VENDA BLOQUEADA - ' : '';
+    const subjectPrefix = payload.is_blocked_sale ? 'VENDA BLOQUEADA - ' : payload.is_internal_treatment ? 'TRATAMENTO INTERNO - ' : '';
     const subject = `${subjectPrefix}MPGrupo - ${payload.operator_name} - ${customerNameShort}${nifPart}`;
 
     const showPartner = payload.show_partner !== false;

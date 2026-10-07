@@ -480,6 +480,7 @@ export const salesService = {
       custom_fields: buildCustomFields(saleData),
       pending_validation: saleData.pending_validation || false,
       validation_reason: saleData.validation_reason || null,
+      internal_treatment: saleData.internal_treatment || false,
     };
 
     const { data, error } = await supabase
@@ -529,8 +530,8 @@ export const salesService = {
     if (!oldSale) throw new Error('Sale not found');
 
     const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address', 'billing_address'];
-    const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint', 'tratar_oop', 'pending_validation'];
-    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'cui', 'cpe', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'cancelled_at', 'activation_date', 'refidelizacao_prazo', 'refidelizacao_unidade', 'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months', 'voltage_type', 'additional_services', 'validation_reason'];
+    const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint', 'tratar_oop', 'pending_validation', 'internal_treatment'];
+    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'cui', 'cpe', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'cancelled_at', 'activation_date', 'refidelizacao_prazo', 'refidelizacao_unidade', 'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months', 'voltage_type', 'additional_services', 'validation_reason', 'oportunidade_number'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
@@ -1076,6 +1077,185 @@ export const salesService = {
       sent_count: sentCount,
       total_recipients: totalRecipients,
     };
+  },
+
+  async sendInternalTreatmentEmail(saleId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: sale, error: saleError } = await supabase
+      .from('sales')
+      .select(`
+        *,
+        partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
+        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields, email_envio, email_envio_password, requires_additional_services)
+      `)
+      .eq('id', saleId)
+      .maybeSingle();
+
+    if (saleError || !sale) throw new Error('Sale not found');
+
+    const parentSaleIdForPoints = sale.parent_sale_id || saleId;
+    let parentSale = sale;
+    if ((sale.sale_type === 'multiponto' || sale.sale_type === 'multilocal') && sale.parent_sale_id) {
+      const { data: pSale } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
+          operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields, email_envio, email_envio_password, requires_additional_services)
+        `)
+        .eq('id', sale.parent_sale_id)
+        .maybeSingle();
+      if (pSale) parentSale = pSale;
+    }
+
+    const { data: attachmentsData } = await supabase
+      .from('sales')
+      .select('attachments')
+      .eq('id', parentSaleIdForPoints)
+      .maybeSingle();
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const fromEmail = parentSale.operator?.email_envio ? `${parentSale.operator.email_envio}@mpgrupo.pt` : null;
+    const fromSmtpPass = (parentSale.operator?.email_envio && parentSale.operator?.email_envio_password)
+      ? parentSale.operator.email_envio_password
+      : null;
+
+    const basePayload = {
+      sale_code: parentSale.sale_code,
+      customer_name: parentSale.client_name,
+      customer_nif: parentSale.client_nif || '',
+      operator_name: parentSale.operator?.name || 'N/A',
+      partner_name: parentSale.partner?.name || parentSale.partner_name || 'N/A',
+      message: `Venda para tratamento interno - ${parentSale.client_name}`,
+      attachments: attachmentsData?.attachments || [],
+      sale_id: parentSale.id,
+      scope: parentSale.scope,
+      client_contact: parentSale.client_contact,
+      client_email: parentSale.client_email,
+      client_iban: parentSale.client_iban,
+      address: [parentSale.street, parentSale.postal_code, parentSale.locality].filter(Boolean).join(', '),
+      installation_address: parentSale.installation_address,
+      billing_address: parentSale.billing_address,
+      entry_type: parentSale.entry_type,
+      energy_sale_type: parentSale.energy_sale_type,
+      cpe: parentSale.cpe,
+      power: parentSale.power,
+      cui: parentSale.cui,
+      tier: parentSale.tier,
+      autoriza_documentos: parentSale.autoriza_documentos,
+      service_type: parentSale.service_type,
+      activation_type: parentSale.activation_type,
+      monthly_value: parentSale.monthly_value,
+      has_tv: parentSale.has_tv,
+      has_net: parentSale.has_net,
+      has_lr: parentSale.has_lr,
+      has_direct_debit: parentSale.has_direct_debit,
+      has_electronic_invoice: parentSale.has_electronic_invoice,
+      fix_ported: parentSale.fix_ported,
+      fix_number: parentSale.fix_number,
+      fix_operator: parentSale.fix_operator,
+      fix_cvp: parentSale.fix_cvp,
+      mobile_count: parentSale.mobile_count,
+      mobile_numbers: parentSale.mobile_numbers,
+      observations: parentSale.observations,
+      email_fields: parentSale.operator?.email_fields || null,
+      voltage_type: parentSale.voltage_type,
+      additional_services: parentSale.additional_services,
+      operator_requires_additional_services: parentSale.operator?.requires_additional_services || false,
+      campaign: parentSale.campaign,
+      sale_type: parentSale.sale_type || 'normal',
+      from_email: fromEmail,
+      from_smtp_user: fromEmail,
+      from_smtp_pass: fromSmtpPass,
+    };
+
+    const operatorUserIds = parentSale.operator?.notification_user_ids;
+    let recipients = [];
+
+    if (operatorUserIds && Array.isArray(operatorUserIds) && operatorUserIds.length > 0) {
+      const { data: operatorUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('id', operatorUserIds)
+        .eq('email_alerts_enabled', true);
+      recipients = (operatorUsers || []).map(u => ({ email: u.email, name: u.name }));
+    } else {
+      const { data: adminBoUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('role', ['admin', 'bo'])
+        .eq('email_alerts_enabled', true);
+      recipients = adminBoUsers || [];
+    }
+
+    if (recipients.length === 0) {
+      return { success: true, to_count: 0, sent_count: 0, total_recipients: 0 };
+    }
+
+    const finalPayload = {
+      ...basePayload,
+      to_recipients: recipients,
+      show_partner: false,
+      include_attachments: true,
+      is_internal_treatment: true,
+    };
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-new-sale-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify(finalPayload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to send internal treatment email');
+    }
+
+    return {
+      success: true,
+      to_count: recipients.length,
+      sent_count: 1,
+      total_recipients: recipients.length,
+    };
+  },
+
+  async markInternalTreatmentDone(saleId, oportunidadeNumber) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!currentUser || !['admin', 'bo'].includes(currentUser.role)) {
+      throw new Error('Only administrators and backoffice can mark treatment as done');
+    }
+
+    if (!oportunidadeNumber || !oportunidadeNumber.trim()) {
+      throw new Error('O número de oportunidade/registo é obrigatório');
+    }
+
+    await this.update(saleId, {
+      internal_treatment: false,
+      oportunidade_number: oportunidadeNumber.trim(),
+      status: 'Para registo',
+      is_bulk_import: false,
+    });
+
+    await this.resendNewSaleEmail(saleId, {
+      oportunidade_number: oportunidadeNumber.trim(),
+    }, true);
+
+    return { success: true };
   },
 
   async resendEditAlert(saleId) {
