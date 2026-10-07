@@ -160,7 +160,7 @@ const SaleEditDialog = ({
   };
 
   const [chargebackDialogOpen, setChargebackDialogOpen] = useState(false);
-  const [chargebackForm, setChargebackForm] = useState({ reason: '', reason_date: '', percentage: 100, chargeback_type: 'full', activation_indication: '', activation_date: '' });
+  const [chargebackForm, setChargebackForm] = useState({ reason: '', reason_date: '', percentage: 100, chargeback_type: 'full' });
   const [chargebackPaidReport, setChargebackPaidReport] = useState(null);
   const [savingChargeback, setSavingChargeback] = useState(false);
   const [existingChargeback, setExistingChargeback] = useState(null);
@@ -186,7 +186,7 @@ const SaleEditDialog = ({
   const isRefid = editFormData.service_type === 'REFID' || editFormData.service_type === 'Refid';
 
   const openChargebackDialog = async () => {
-    setChargebackForm({ reason: '', reason_date: '', percentage: 100, chargeback_type: 'full', activation_indication: '', activation_date: '' });
+    setChargebackForm({ reason: '', reason_date: '', percentage: 100, chargeback_type: 'full' });
     setChargebackPaidReport(null);
     try {
       const paidReport = await chargebackService.checkSaleInPaidReport(editingSale?.id);
@@ -228,8 +228,6 @@ const SaleEditDialog = ({
         commissionAmount,
         createdBy: user?.id,
         chargebackType: chargebackForm.chargeback_type,
-        activationIndication: chargebackForm.activation_indication || null,
-        activationDate: chargebackForm.activation_date || null,
       });
       const cb = await chargebackService.getChargebackForSale(editingSale.id);
       setExistingChargeback(cb);
@@ -1278,33 +1276,6 @@ const SaleEditDialog = ({
             </div>
           )}
           <div>
-            <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Indicacao de Ativacao</Label>
-            <Select
-              value={chargebackForm.activation_indication || 'none'}
-              onValueChange={(v) => setChargebackForm(prev => ({ ...prev, activation_indication: v === 'none' ? '' : v }))}
-            >
-              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white">
-                <SelectValue placeholder="Selecionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">N/A</SelectItem>
-                <SelectItem value="activated">Ativada</SelectItem>
-                <SelectItem value="not_activated">Nao Ativada</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {chargebackForm.activation_indication === 'activated' && (
-            <div>
-              <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Data de Ativacao</Label>
-              <Input
-                type="date"
-                value={chargebackForm.activation_date}
-                onChange={(e) => setChargebackForm(prev => ({ ...prev, activation_date: e.target.value }))}
-                className="bg-dark-900 border-dark-700 focus:border-red-500/50 focus:ring-red-500/10 text-white"
-              />
-            </div>
-          )}
-          <div>
             <Label className="text-slate-300 text-sm font-semibold mb-1.5 block">Percentagem de Chargeback (%)</Label>
             <Input
               type="number"
@@ -1354,12 +1325,6 @@ const SaleEditDialog = ({
               <div className="flex justify-between"><span className="text-slate-400">Percentagem:</span><span className="text-white">{existingChargeback.percentage}%</span></div>
               {existingChargeback.chargeback_type && existingChargeback.chargeback_type !== 'full' && (
                 <div className="flex justify-between"><span className="text-slate-400">Tipo:</span><span className="text-white">{existingChargeback.chargeback_type === 'electricity' ? 'Luz' : existingChargeback.chargeback_type === 'gas' ? 'Gas' : existingChargeback.chargeback_type}</span></div>
-              )}
-              {existingChargeback.activation_indication && (
-                <div className="flex justify-between"><span className="text-slate-400">Ativacao:</span><span className="text-white">{existingChargeback.activation_indication === 'activated' ? 'Ativada' : 'Nao Ativada'}</span></div>
-              )}
-              {existingChargeback.activation_date && (
-                <div className="flex justify-between"><span className="text-slate-400">Data ativacao:</span><span className="text-white">{existingChargeback.activation_date}</span></div>
               )}
               <div className="flex justify-between"><span className="text-slate-400">Valor:</span><span className="text-red-400 font-semibold">-{existingChargeback.chargeback_amount}€</span></div>
             </div>

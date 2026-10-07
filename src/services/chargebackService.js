@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 export const chargebackService = {
-  async create({ saleId, partnerId, reason, reasonDate, percentage, commissionAmount, createdBy, chargebackType = 'full', activationIndication = null, activationDate = null }) {
+  async create({ saleId, partnerId, reason, reasonDate, percentage, commissionAmount, createdBy, chargebackType = 'full' }) {
     const chargebackAmount = parseFloat((commissionAmount * percentage / 100).toFixed(2));
 
     const insertData = {
@@ -15,9 +15,6 @@ export const chargebackService = {
       created_by: createdBy,
       chargeback_type: chargebackType,
     };
-
-    if (activationIndication) insertData.activation_indication = activationIndication;
-    if (activationDate) insertData.activation_date = activationDate;
 
     const { data, error } = await supabase
       .from('chargebacks')
