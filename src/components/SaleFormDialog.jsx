@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { X, Zap, TrendingUp, Building2, User, MapPin, FileText, Clock, Plus, Trash2, Info, MailX, TriangleAlert, Car, Search } from 'lucide-react';
+import { X, Zap, TrendingUp, Building2, User, MapPin, FileText, Clock, Plus, Trash2, Info, MailX, TriangleAlert, Car, Search, Star } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -399,6 +399,14 @@ const SaleFormDialog = ({
                           power: '',
                           cui: '',
                           tier: '',
+                          tariff_schedule: '',
+                          campaign: (() => {
+                            const camps = operator?.campaigns || [];
+                            for (const c of camps) {
+                              if (typeof c === 'object' && c.is_default) return c.name;
+                            }
+                            return '';
+                          })(),
                           technology: 'Fibra'
                         });
 
@@ -1329,26 +1337,63 @@ const SaleFormDialog = ({
                               </div>
                             )}
 
-                            {(currentOperator?.campaigns || []).length > 0 && (
-                              <div className="mt-4">
-                                <Label className="text-sm font-semibold mb-2 text-slate-400">Campanha</Label>
-                                <Select
-                                  value={formData.campaign || ""}
-                                  onValueChange={(v) => setFormData({...formData, campaign: v === '__none__' ? '' : v})}
-                                >
-                                  <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                                    <SelectValue placeholder="Sem campanha" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__none__">Sem campanha</SelectItem>
-                                    {(currentOperator.campaigns || []).map((c, idx) => {
-                                      const name = typeof c === 'string' ? c : c.name;
-                                      return <SelectItem key={idx} value={name}>{name}</SelectItem>;
-                                    })}
-                                  </SelectContent>
-                                </Select>
+                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <Label className="text-sm font-semibold mb-2 text-slate-400 flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  Tarifa Horária {(() => {
+                                    const pwr = formData.energy_points?.find(p => p.point_type === 'cpe')?.power_kva || formData.power;
+                                    const num = pwr ? parseFloat(String(pwr).replace(/kVA$/i, '').trim()) : null;
+                                    return num && num > 20.7 ? <span className="text-amber-400">(auto)</span> : null;
+                                  })()}
+                                </Label>
+                                {(() => {
+                                  const pwr = formData.energy_points?.find(p => p.point_type === 'cpe')?.power_kva || formData.power;
+                                  const num = pwr && pwr !== 'Outros' ? parseFloat(String(pwr).replace(/kVA$/i, '').trim()) : null;
+                                  const overThreshold = num && num > 20.7;
+                                  const available = overThreshold ? ["Tri-horário"] : ["Simples", "Bi-horário"];
+                                  return (
+                                    <Select
+                                      value={formData.tariff_schedule || ''}
+                                      onValueChange={(v) => setFormData({...formData, tariff_schedule: v})}
+                                      disabled={!!overThreshold}
+                                    >
+                                      <SelectTrigger className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white ${overThreshold ? 'opacity-70' : ''}`}>
+                                        <SelectValue placeholder="Selecione..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {available.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                      </SelectContent>
+                                    </Select>
+                                  );
+                                })()}
                               </div>
-                            )}
+
+                              {(currentOperator?.campaigns || []).length > 0 && (
+                                <div>
+                                  <Label className="text-sm font-semibold mb-2 text-slate-400 flex items-center gap-1">
+                                    <Star className="w-3.5 h-3.5" />
+                                    Campanha
+                                  </Label>
+                                  <Select
+                                    value={formData.campaign || "__none__"}
+                                    onValueChange={(v) => setFormData({...formData, campaign: v === '__none__' ? '' : v})}
+                                  >
+                                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                      <SelectValue placeholder="Sem campanha" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="__none__">Sem campanha</SelectItem>
+                                      {(currentOperator.campaigns || []).map((c, idx) => {
+                                        const name = typeof c === 'string' ? c : c.name;
+                                        const isDefault = typeof c === 'object' ? c.is_default : false;
+                                        return <SelectItem key={idx} value={name}>{name}{isDefault ? ' ★' : ''}</SelectItem>;
+                                      })}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                            </div>
                           </>
                         )}
                       </>

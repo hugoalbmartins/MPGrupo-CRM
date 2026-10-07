@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard, Users, FileText } from "lucide-react";
+import { Plus, Eye, EyeOff, Upload, Trash2, Download, Settings, Pencil, Mail, X, Building2, Zap, DollarSign, CreditCard, Users, FileText, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1529,24 +1529,42 @@ const Operators = ({ user }) => {
                     Campanhas
                   </Label>
                   <p className="text-xs text-slate-500 mb-3">
-                    Campanhas ativas para esta operadora. Aparecem como dropdown opcional na criacao de venda (energia).
+                    Campanhas ativas para esta operadora. Aparecem como dropdown na criacao de venda (energia). Clique na estrela para definir a campanha pre-selecionada por defeito.
                   </p>
                   <div className="space-y-2">
-                    {(editOperatorData.campaigns || []).map((campaign, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2">
-                        <span className="text-sm text-white flex-1 truncate">{typeof campaign === 'string' ? campaign : campaign.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => setEditOperatorData(prev => ({
-                            ...prev,
-                            campaigns: prev.campaigns.filter((_, i) => i !== idx)
-                          }))}
-                          className="text-red-400 hover:text-red-300 shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                    {(editOperatorData.campaigns || []).map((campaign, idx) => {
+                      const cName = typeof campaign === 'string' ? campaign : campaign.name;
+                      const isDefault = typeof campaign === 'object' && campaign.is_default === true;
+                      return (
+                        <div key={idx} className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${isDefault ? 'bg-cyber-500/10 border-cyber-500/40' : 'bg-dark-900 border-dark-700'}`}>
+                          <span className="text-sm text-white flex-1 truncate">{cName}</span>
+                          <button
+                            type="button"
+                            title="Definir como campanha por defeito"
+                            onClick={() => setEditOperatorData(prev => ({
+                              ...prev,
+                              campaigns: (prev.campaigns || []).map((c, i) => {
+                                const base = typeof c === 'string' ? { name: c } : { ...c };
+                                return { ...base, is_default: i === idx ? !isDefault : false };
+                              })
+                            }))}
+                            className={`shrink-0 ${isDefault ? 'text-cyber-400' : 'text-slate-500 hover:text-cyber-400'}`}
+                          >
+                            <Star className={`w-4 h-4 ${isDefault ? 'fill-cyber-400' : ''}`} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditOperatorData(prev => ({
+                              ...prev,
+                              campaigns: prev.campaigns.filter((_, i) => i !== idx)
+                            }))}
+                            className="text-red-400 hover:text-red-300 shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
                     <div className="flex gap-2">
                       <Input
                         type="text"

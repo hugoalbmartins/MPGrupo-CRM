@@ -5,9 +5,32 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, MapPin } from "lucide-react";
+import { Plus, Trash2, MapPin, Clock, Star } from "lucide-react";
 
 const POWER_OPTIONS = ["1.15kVA", "2.3kVA", "3.45kVA", "4.6kVA", "5.75kVA", "6.9kVA", "10.35kVA", "13.8kVA", "17.25kVA", "20.7kVA", "27.6kVA", "34.5kVA", "41.4kVA", "Outros"];
+
+const TARIFF_OPTIONS = ["Simples", "Bi-horário", "Tri-horário"];
+
+const isPowerOverThreshold = (power) => {
+  if (!power || power === 'Outros') return false;
+  const num = parseFloat(String(power).replace(/kVA$/i, '').trim());
+  return !isNaN(num) && num > 20.7;
+};
+
+const getAvailableTariffs = (power) => {
+  if (isPowerOverThreshold(power)) return ["Tri-horário"];
+  return ["Simples", "Bi-horário"];
+};
+
+const getDefaultCampaign = (operator) => {
+  const campaigns = operator?.campaigns || [];
+  for (const c of campaigns) {
+    if (typeof c === 'object' && c.is_default) return c.name;
+  }
+  return '';
+};
+
+const getCampaignName = (c) => (typeof c === 'string' ? c : c.name);
 
 const parsePowerKva = (value) => {
   if (!value) return null;
@@ -32,21 +55,25 @@ const buildInstallationAddress = (street, postalCode, locality) => {
   return parts.join(', ');
 };
 
-const createEmptyMultipuntoPoint = () => ({
+const createEmptyMultipuntoPoint = (operator) => ({
   id: crypto.randomUUID(),
   point_code: '',
   power_kva: '',
+  tariff_schedule: '',
+  campaign: getDefaultCampaign(operator),
   inst_street: '',
   inst_postal_code: '',
   inst_locality: '',
   billing_address: '',
 });
 
-const createEmptyMultilocalLocation = () => ({
+const createEmptyMultilocalLocation = (operator) => ({
   id: crypto.randomUUID(),
   energy_type: 'eletricidade',
   cpe: '',
   power_kva: '',
+  tariff_schedule: '',
+  campaign: getDefaultCampaign(operator),
   cui: '',
   tier: '',
   inst_street: '',
@@ -56,7 +83,79 @@ const createEmptyMultilocalLocation = () => ({
   entry_type: '',
   voltage_type: '',
   additional_services: '',
+  has_direct_debit: false,
+  has_electronic_invoice: false,
 });
+
+const TariffScheduleSelect = ({ value, power, onChange, compact = false }) => {
+  const overThreshold = isPowerOverThreshold(power);
+  const available = getAvailableTariffs(power);
+
+  return (
+    <div>
+      <Label className={`text-slate-400 ${compact ? 'text-xs' : ''} flex items-center gap-1`}>
+        <Clock className="w-3 h-3" />
+        Tarifa Horária {overThreshold && <span className="text-amber-400">(auto)</span>}
+      </Label>
+      <Select
+        value={value || ''}
+        onValueChange={onChange}
+        disabled={overThreshold}
+      >
+        <SelectTrigger className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 ${compact ? 'text-sm' : ''} ${overThreshold ? 'opacity-70' : ''}`}>
+          <SelectValue placeholder="Selecione..." />
+        </SelectTrigger>
+        <SelectContent>
+          {available.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
+const CampaignSelect = ({ value, operator, onChange, compact = false }) => {
+  const campaigns = operator?.campaigns || [];
+  if (campaigns.length === 0) return null;
+
+  return (
+    <div>
+      <Label className={`text-slate-400 ${compact ? 'text-xs' : ''} flex items-center gap-1`}>
+        <Star className="w-3 h-3" />
+        Campanha
+      </Label>
+      <Select
+        value={value || '__none__'}
+        onValueChange={onChange}
+      >
+        <SelectTrigger className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 ${compact ? 'text-sm' : ''}`}>
+          <SelectValue placeholder="Sem campanha" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none__">Sem campanha</SelectItem>
+          {campaigns.map((c, idx) => {
+            const name = getCampaignName(c);
+            const isDefault = typeof c === 'object' ? c.is_default : false;
+            return (
+              <SelectItem key={idx} value={name}>
+                {name}{isDefault ? ' ★' : ''}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
+const handlePowerChangeWithTariff = (point, newPower) => {
+  const updated = { ...point, power_kva: newPower };
+  if (isPowerOverThreshold(newPower)) {
+    updated.tariff_schedule = 'Tri-horário';
+  } else if (updated.tariff_schedule === 'Tri-horário') {
+    updated.tariff_schedule = '';
+  }
+  return updated;
+};
 
 const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, energySaleMode, onEnergySaleModeChange, currentOperator }) => {
   const canSeeOperatorPaid = user?.role === 'admin' || user?.role === 'bo';
@@ -71,6 +170,8 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       cui_code: '',
       cui_id: null,
       power_kva: '',
+      tariff_schedule: '',
+      campaign: getDefaultCampaign(currentOperator),
       tier: '',
       activation_status: 'pending',
       activation_date: null,
@@ -79,7 +180,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
   };
 
   const [localPoints, setLocalPoints] = useState([]);
-  const [multilocalLocations, setMultilocalLocations] = useState([createEmptyMultilocalLocation()]);
+  const [multilocalLocations, setMultilocalLocations] = useState([createEmptyMultilocalLocation(currentOperator)]);
 
   useEffect(() => {
     if (energySaleMode === 'multilocal') return;
@@ -98,6 +199,8 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
             point_code: cpePoints[i]?.point_code || '',
             cui_code: cuiPoints[i]?.point_code || '',
             power_kva: formatPowerKvaForDisplay(cpePoints[i]?.power_kva),
+            tariff_schedule: cpePoints[i]?.tariff_schedule || '',
+            campaign: cpePoints[i]?.campaign || '',
             tier: cuiPoints[i]?.tier || '',
             activation_status: cpePoints[i]?.activation_status || 'pending',
             activation_date: cpePoints[i]?.activation_date || null,
@@ -105,20 +208,31 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
           });
         }
         setLocalPoints(merged);
-      } else if (energySaleMode === 'multiponto') {
+      } else if (energySaleMode === 'multipunto') {
         const cpes = points.filter(p => p.point_type === 'cpe' || saleType === 'eletricidade');
         setLocalPoints(cpes.map(p => ({
           id: p.id || crypto.randomUUID(),
           point_code: p.point_code || '',
           power_kva: formatPowerKvaForDisplay(p.power_kva),
+          tariff_schedule: p.tariff_schedule || '',
+          campaign: p.campaign || '',
+          inst_street: p.inst_street || '',
+          inst_postal_code: p.inst_postal_code || '',
+          inst_locality: p.inst_locality || '',
+          billing_address: p.billing_address || '',
         })));
       } else {
-        const displayPoints = points.map(p => ({ ...p, power_kva: formatPowerKvaForDisplay(p.power_kva) }));
+        const displayPoints = points.map(p => ({
+          ...p,
+          power_kva: formatPowerKvaForDisplay(p.power_kva),
+          tariff_schedule: p.tariff_schedule || (p.point_type === 'cpe' ? (p.tariff_schedule || '') : ''),
+          campaign: p.campaign || (p.point_type === 'cpe' ? (p.campaign || '') : ''),
+        }));
         setLocalPoints(displayPoints);
       }
     } else {
-      if (energySaleMode === 'multiponto') {
-        setLocalPoints([createEmptyMultipuntoPoint(), createEmptyMultipuntoPoint()]);
+      if (energySaleMode === 'multipunto') {
+        setLocalPoints([createEmptyMultipuntoPoint(currentOperator), createEmptyMultipuntoPoint(currentOperator)]);
       } else {
         setLocalPoints([createNormalPoint()]);
       }
@@ -131,6 +245,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       expanded = pts.map(p => ({
         id: p.id, point_type: 'cui', point_code: p.point_code,
         power_kva: null, tier: p.tier || null,
+        tariff_schedule: null, campaign: p.campaign || null,
         activation_status: p.activation_status || 'pending',
         activation_date: p.activation_date || null, operator_paid: p.operator_paid || false,
       }));
@@ -138,6 +253,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       expanded = pts.map(p => ({
         id: p.id, point_type: 'cpe', point_code: p.point_code,
         power_kva: parsePowerKva(p.power_kva), tier: null,
+        tariff_schedule: p.tariff_schedule || null, campaign: p.campaign || null,
         activation_status: p.activation_status || 'pending',
         activation_date: p.activation_date || null, operator_paid: p.operator_paid || false,
       }));
@@ -147,6 +263,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
           expanded.push({
             id: point.id, point_type: 'cpe', point_code: point.point_code,
             power_kva: parsePowerKva(point.power_kva), tier: null,
+            tariff_schedule: point.tariff_schedule || null, campaign: point.campaign || null,
             activation_status: point.activation_status || 'pending',
             activation_date: point.activation_date || null, operator_paid: point.operator_paid || false,
           });
@@ -155,6 +272,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
           expanded.push({
             id: point.cui_id || crypto.randomUUID(), point_type: 'cui', point_code: point.cui_code,
             power_kva: null, tier: point.tier || null,
+            tariff_schedule: null, campaign: point.campaign || null,
             activation_status: point.activation_status || 'pending',
             activation_date: point.activation_date || null, operator_paid: point.operator_paid || false,
           });
@@ -168,6 +286,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
     const expanded = pts.map(p => ({
       id: p.id, point_type: 'cpe', point_code: p.point_code,
       power_kva: parsePowerKva(p.power_kva), tier: null,
+      tariff_schedule: p.tariff_schedule || null, campaign: p.campaign || null,
       installation_address: buildInstallationAddress(p.inst_street, p.inst_postal_code, p.inst_locality) || null,
       inst_street: p.inst_street || null,
       inst_postal_code: p.inst_postal_code || null,
@@ -175,7 +294,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       billing_address: p.billing_address || null,
       activation_status: 'pending', activation_date: null, operator_paid: false,
     }));
-    onChange(expanded, 'multiponto');
+    onChange(expanded, 'multipunto');
   };
 
   const emitMultilocalChange = (locs) => {
@@ -191,6 +310,10 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
         entry_type: loc.entry_type || null,
         voltage_type: loc.voltage_type || null,
         additional_services: loc.additional_services || null,
+        tariff_schedule: loc.tariff_schedule || null,
+        campaign: loc.campaign || null,
+        has_direct_debit: loc.has_direct_debit || false,
+        has_electronic_invoice: loc.has_electronic_invoice || false,
         activation_status: 'pending', activation_date: null, operator_paid: false,
       };
       if (loc.energy_type === 'eletricidade' || loc.energy_type === 'dual') {
@@ -216,13 +339,14 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
 
   if (!saleType) return null;
 
-  if (energySaleMode === 'multiponto') {
+  if (energySaleMode === 'multipunto') {
     return (
       <MultipuntoManager
         points={localPoints}
         setPoints={(pts) => { setLocalPoints(pts); emitMultipuntoChange(pts); }}
         canSeeOperatorPaid={canSeeOperatorPaid}
         isNew={isNew}
+        currentOperator={currentOperator}
       />
     );
   }
@@ -275,7 +399,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
                       value={point.power_kva}
                       onValueChange={(v) => {
                         const updated = [...localPoints];
-                        updated[index] = { ...updated[index], power_kva: v };
+                        updated[index] = handlePowerChangeWithTariff(updated[index], v);
                         setLocalPoints(updated);
                         emitNormalChange(updated);
                       }}
@@ -290,6 +414,26 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
                       </SelectContent>
                     </Select>
                   </div>
+                  <TariffScheduleSelect
+                    value={point.tariff_schedule}
+                    power={point.power_kva}
+                    onChange={(v) => {
+                      const updated = [...localPoints];
+                      updated[index] = { ...updated[index], tariff_schedule: v };
+                      setLocalPoints(updated);
+                      emitNormalChange(updated);
+                    }}
+                  />
+                  <CampaignSelect
+                    value={point.campaign}
+                    operator={currentOperator}
+                    onChange={(v) => {
+                      const updated = [...localPoints];
+                      updated[index] = { ...updated[index], campaign: v === '__none__' ? '' : v };
+                      setLocalPoints(updated);
+                      emitNormalChange(updated);
+                    }}
+                  />
                 </>
               )}
 
@@ -407,15 +551,21 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
   );
 };
 
-const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew }) => {
+const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew, currentOperator }) => {
   const handlePointChange = (index, field, value) => {
     const updated = [...points];
     updated[index] = { ...updated[index], [field]: value };
     setPoints(updated);
   };
 
+  const handlePowerChange = (index, newPower) => {
+    const updated = [...points];
+    updated[index] = handlePowerChangeWithTariff(updated[index], newPower);
+    setPoints(updated);
+  };
+
   const handleAddPoint = () => {
-    setPoints([...points, createEmptyMultipuntoPoint()]);
+    setPoints([...points, createEmptyMultipuntoPoint(currentOperator)]);
   };
 
   const handleRemovePoint = (index) => {
@@ -463,7 +613,7 @@ const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew }) => 
                 <Label className="text-slate-400 text-xs">Potencia *</Label>
                 <Select
                   value={point.power_kva}
-                  onValueChange={(v) => handlePointChange(index, 'power_kva', v)}
+                  onValueChange={(v) => handlePowerChange(index, v)}
                 >
                   <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm">
                     <SelectValue placeholder="Selecione..." />
@@ -475,6 +625,18 @@ const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew }) => 
                   </SelectContent>
                 </Select>
               </div>
+              <TariffScheduleSelect
+                value={point.tariff_schedule}
+                power={point.power_kva}
+                compact
+                onChange={(v) => handlePointChange(index, 'tariff_schedule', v)}
+              />
+              <CampaignSelect
+                value={point.campaign}
+                operator={currentOperator}
+                compact
+                onChange={(v) => handlePointChange(index, 'campaign', v === '__none__' ? '' : v)}
+              />
               <div className="col-span-1 sm:col-span-2 pt-1 border-t border-dark-700">
                 <p className="text-xs font-semibold text-slate-300 mb-2">Morada de Instalação *</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -541,14 +703,21 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
     if (field === 'energy_type') {
       updated[index].cpe = '';
       updated[index].power_kva = '';
+      updated[index].tariff_schedule = '';
       updated[index].cui = '';
       updated[index].tier = '';
     }
     setLocations(updated);
   };
 
+  const handlePowerChange = (index, newPower) => {
+    const updated = [...locations];
+    updated[index] = handlePowerChangeWithTariff(updated[index], newPower);
+    setLocations(updated);
+  };
+
   const handleAddLocation = () => {
-    setLocations([...locations, createEmptyMultilocalLocation()]);
+    setLocations([...locations, createEmptyMultilocalLocation(currentOperator)]);
   };
 
   const handleRemoveLocation = (index) => {
@@ -617,7 +786,7 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
                   <Label className="text-slate-400 text-xs">Potencia *</Label>
                   <Select
                     value={loc.power_kva}
-                    onValueChange={(v) => handleLocationChange(index, 'power_kva', v)}
+                    onValueChange={(v) => handlePowerChange(index, v)}
                   >
                     <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-sm">
                       <SelectValue placeholder="Selecione..." />
@@ -629,6 +798,18 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
                     </SelectContent>
                   </Select>
                 </div>
+                <TariffScheduleSelect
+                  value={loc.tariff_schedule}
+                  power={loc.power_kva}
+                  compact
+                  onChange={(v) => handleLocationChange(index, 'tariff_schedule', v)}
+                />
+                <CampaignSelect
+                  value={loc.campaign}
+                  operator={currentOperator}
+                  compact
+                  onChange={(v) => handleLocationChange(index, 'campaign', v === '__none__' ? '' : v)}
+                />
               </div>
             )}
 
@@ -764,6 +945,29 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
                 </Select>
               </div>
             )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-dark-700/60">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`dd-${loc.id || index}`}
+                  checked={loc.has_direct_debit || false}
+                  onCheckedChange={(checked) => handleLocationChange(index, 'has_direct_debit', checked)}
+                />
+                <Label htmlFor={`dd-${loc.id || index}`} className="text-xs text-slate-300 cursor-pointer">
+                  Adesão a Débito Direto
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`fe-${loc.id || index}`}
+                  checked={loc.has_electronic_invoice || false}
+                  onCheckedChange={(checked) => handleLocationChange(index, 'has_electronic_invoice', checked)}
+                />
+                <Label htmlFor={`fe-${loc.id || index}`} className="text-xs text-slate-300 cursor-pointer">
+                  Fatura Eletrónica
+                </Label>
+              </div>
+            </div>
           </Card>
         ))}
       </div>

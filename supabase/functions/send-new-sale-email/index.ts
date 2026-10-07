@@ -71,6 +71,7 @@ interface SaleEmailPayload {
   from_smtp_pass?: string | null;
   operator_requires_additional_services?: boolean;
   campaign?: string;
+  tariff_schedule?: string;
   tratar_oop?: boolean;
   sale_type?: string;
   billing_address?: string | null;
@@ -96,6 +97,10 @@ interface SaleEmailPayload {
     entry_type?: string | null;
     voltage_type?: string | null;
     additional_services?: string | null;
+    tariff_schedule?: string | null;
+    campaign?: string | null;
+    has_direct_debit?: boolean | null;
+    has_electronic_invoice?: boolean | null;
   }>;
   include_attachments?: boolean;
   is_blocked_sale?: boolean;
@@ -233,6 +238,8 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
               return `
               <tr><td colspan="2" style="padding: 10px 0 4px 0; border-top: 2px solid #d1d5db;"><strong style="color:#1e3a8a; font-size:13px;">Local ${i+1}</strong></td></tr>
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE / Potência:</td><td style="font-size:13px;">${pt.point_code}${pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}</td></tr>
+              ${pt.tariff_schedule ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tarifa Horária:</td><td style="font-size:13px;">${pt.tariff_schedule}</td></tr>` : ''}
+              ${pt.campaign ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Campanha:</td><td style="font-size:13px;">${pt.campaign}</td></tr>` : ''}
               ${instAddr ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${instAddr}</td></tr>` : ''}
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
             `}).join('')}
@@ -253,9 +260,13 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
               }
               ${instAddr ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${instAddr}</td></tr>` : ''}
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
+              ${pt.tariff_schedule ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tarifa Horária:</td><td style="font-size:13px;">${pt.tariff_schedule}</td></tr>` : ''}
+              ${pt.campaign ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Campanha:</td><td style="font-size:13px;">${pt.campaign}</td></tr>` : ''}
               ${pt.entry_type ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tipo de Entrada:</td><td style="font-size:13px;">${pt.entry_type}</td></tr>` : ''}
               ${pt.voltage_type ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tipo de Tensão:</td><td style="font-size:13px;">${pt.voltage_type}</td></tr>` : ''}
               ${pt.additional_services ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Serviços Adicionais:</td><td style="font-size:13px;">${pt.additional_services}</td></tr>` : ''}
+              ${pt.has_direct_debit !== undefined && pt.has_direct_debit !== null ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Débito Direto:</td><td style="font-size:13px;">${pt.has_direct_debit ? '<strong>SIM</strong>' : 'Não'}</td></tr>` : ''}
+              ${pt.has_electronic_invoice !== undefined && pt.has_electronic_invoice !== null ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Fatura Eletrónica:</td><td style="font-size:13px;">${pt.has_electronic_invoice ? '<strong>SIM</strong>' : 'Não'}</td></tr>` : ''}
             `}).join('')}
           ` : ""}
           ${(!payload.sale_type || payload.sale_type === 'normal') ? `
@@ -264,6 +275,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           ` : ""}
           ${(payload.operator_requires_additional_services || (hasField(payload, 'additional_services') && payload.additional_services)) ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services || "Nenhum"}</td></tr>` : ""}
           ${payload.campaign ? `<tr><td>Campanha:</td><td>${payload.campaign}</td></tr>` : ""}
+          ${payload.tariff_schedule ? `<tr><td>Tarifa Horária:</td><td>${payload.tariff_schedule}</td></tr>` : ""}
           ` : ""}
 
           ${payload.scope === "solar" ? `

@@ -445,6 +445,8 @@ export const salesService = {
       energy_sale_type: saleData.energy_sale_type || null,
       cpe: saleData.cpe?.toUpperCase() || null,
       power: saleData.power || null,
+      tariff_schedule: saleData.tariff_schedule || null,
+      campaign: saleData.campaign || null,
       entry_type: saleData.entry_type || null,
       cui: saleData.cui?.toUpperCase() || null,
       tier: saleData.tier || null,
@@ -531,7 +533,7 @@ export const salesService = {
 
     const ADDRESS_FIELDS = ['street', 'postal_code', 'locality', 'installation_address', 'billing_address'];
     const BOOLEAN_FIELDS = ['paid_to_operator', 'has_direct_debit', 'has_electronic_invoice', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'is_gestor_own_sale', 'operator_validated', 'electricity_paid', 'gas_paid', 'is_partial_payment', 'retention_paid', 'is_multibanco', 'is_multipoint', 'tratar_oop', 'pending_validation', 'internal_treatment'];
-    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'cui', 'cpe', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'cancelled_at', 'activation_date', 'refidelizacao_prazo', 'refidelizacao_unidade', 'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months', 'voltage_type', 'additional_services', 'validation_reason', 'oportunidade_number'];
+    const OPTIONAL_FIELDS_WITH_CONSTRAINTS = ['energy_sale_type', 'refid_type', 'activation_type', 'service_type', 'power', 'entry_type', 'tier', 'cui', 'cpe', 'fix_number', 'fix_operator', 'fix_cvp', 'activated_at', 'cancelled_at', 'activation_date', 'refidelizacao_prazo', 'refidelizacao_unidade', 'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months', 'voltage_type', 'additional_services', 'validation_reason', 'oportunidade_number', 'tariff_schedule', 'campaign'];
 
     const updates = {};
     Object.keys(updateData).forEach(key => {
@@ -881,7 +883,7 @@ export const salesService = {
     if (isMultiSale && !energyPointsList) {
       const { data: points } = await supabase
         .from('sales_energy_points')
-        .select('point_type, point_code, power_kva, tier, inst_street, inst_postal_code, inst_locality, installation_address, billing_address, energy_type, entry_type, voltage_type, additional_services')
+        .select('point_type, point_code, power_kva, tier, inst_street, inst_postal_code, inst_locality, installation_address, billing_address, energy_type, entry_type, voltage_type, additional_services, tariff_schedule, campaign, has_direct_debit, has_electronic_invoice')
         .eq('sale_id', parentSaleIdForPoints)
         .order('created_at', { ascending: true });
 
@@ -900,6 +902,10 @@ export const salesService = {
           entry_type: pt.entry_type || null,
           voltage_type: pt.voltage_type || null,
           additional_services: pt.additional_services || null,
+          tariff_schedule: pt.tariff_schedule || null,
+          campaign: pt.campaign || null,
+          has_direct_debit: pt.has_direct_debit || false,
+          has_electronic_invoice: pt.has_electronic_invoice || false,
         }));
       }
     }
@@ -953,6 +959,8 @@ export const salesService = {
       voltage_type: parentSale.voltage_type,
       additional_services: parentSale.additional_services,
       operator_requires_additional_services: parentSale.operator?.requires_additional_services || false,
+      campaign: parentSale.campaign,
+      tariff_schedule: parentSale.tariff_schedule,
       from_email: fromEmail,
       from_smtp_user: fromEmail,
       from_smtp_pass: fromSmtpPass,
@@ -1167,6 +1175,7 @@ export const salesService = {
       additional_services: parentSale.additional_services,
       operator_requires_additional_services: parentSale.operator?.requires_additional_services || false,
       campaign: parentSale.campaign,
+      tariff_schedule: parentSale.tariff_schedule,
       sale_type: parentSale.sale_type || 'normal',
       from_email: fromEmail,
       from_smtp_user: fromEmail,

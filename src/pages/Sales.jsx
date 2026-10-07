@@ -125,6 +125,8 @@ const Sales = ({ user }) => {
     energy_sale_type: "",
     cpe: "",
     power: "",
+    tariff_schedule: "",
+    campaign: "",
     entry_type: "",
     cui: "",
     tier: "",
@@ -537,6 +539,8 @@ const Sales = ({ user }) => {
               ...submitData,
               cpe: pt.point_code?.toUpperCase() || '',
               power: formatPowerForEdit(pt.power_kva) || '',
+              tariff_schedule: pt.tariff_schedule || submitData.tariff_schedule || '',
+              campaign: pt.campaign || submitData.campaign || '',
               energy_sale_type: 'eletricidade',
               sale_type: 'multiponto',
               parent_sale_id: parentSaleId,
@@ -573,6 +577,8 @@ const Sales = ({ user }) => {
               point_type: 'cpe',
               point_code: p.point_code?.toUpperCase() || '',
               power_kva: p.power_kva || null,
+              tariff_schedule: p.tariff_schedule || null,
+              campaign: p.campaign || null,
               inst_street: p.inst_street || null,
               inst_postal_code: p.inst_postal_code || null,
               inst_locality: p.inst_locality || null,
@@ -622,6 +628,10 @@ const Sales = ({ user }) => {
               ...submitData,
               cpe: type === 'cpe' ? (point.point_code?.toUpperCase() || '') : '',
               power: type === 'cpe' ? (formatPowerForEdit(point.power_kva) || '') : '',
+              tariff_schedule: point.tariff_schedule || submitData.tariff_schedule || '',
+              campaign: point.campaign || submitData.campaign || '',
+              has_direct_debit: point.has_direct_debit ?? submitData.has_direct_debit ?? false,
+              has_electronic_invoice: point.has_electronic_invoice ?? submitData.has_electronic_invoice ?? false,
               cui: type === 'cui' ? (point.point_code?.toUpperCase() || '') : '',
               tier: type === 'cui' ? (point.tier || '') : '',
               energy_sale_type,
@@ -657,6 +667,10 @@ const Sales = ({ user }) => {
             point_code: point.point_code?.toUpperCase() || '',
             power_kva: type === 'cpe' ? (point.power_kva || null) : null,
             tier: type === 'cui' ? (point.tier || null) : null,
+            tariff_schedule: point.tariff_schedule || null,
+            campaign: point.campaign || null,
+            has_direct_debit: point.has_direct_debit || false,
+            has_electronic_invoice: point.has_electronic_invoice || false,
             inst_street: point.inst_street || null,
             inst_postal_code: point.inst_postal_code || null,
             inst_locality: point.inst_locality || null,
@@ -704,6 +718,8 @@ const Sales = ({ user }) => {
         if (saleType === 'eletricidade' || saleType === 'dual') {
           submitData.cpe = firstCPE?.point_code || '';
           submitData.power = formatPowerForEdit(firstCPE?.power_kva) || '';
+          if (firstCPE?.tariff_schedule) submitData.tariff_schedule = firstCPE.tariff_schedule;
+          if (firstCPE?.campaign) submitData.campaign = firstCPE.campaign;
         }
 
         if (saleType === 'gas') {
@@ -883,6 +899,8 @@ const Sales = ({ user }) => {
       energy_sale_type: "",
       cpe: "",
       power: "",
+      tariff_schedule: "",
+      campaign: "",
       entry_type: "",
       cui: "",
       tier: "",
