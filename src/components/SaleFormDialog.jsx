@@ -1337,38 +1337,7 @@ const SaleFormDialog = ({
                               </div>
                             )}
 
-                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <Label className="text-sm font-semibold mb-2 text-slate-400 flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  Tarifa Horária {(() => {
-                                    const pwr = formData.energy_points?.find(p => p.point_type === 'cpe')?.power_kva || formData.power;
-                                    const num = pwr ? parseFloat(String(pwr).replace(/kVA$/i, '').trim()) : null;
-                                    return num && num > 20.7 ? <span className="text-amber-400">(auto)</span> : null;
-                                  })()}
-                                </Label>
-                                {(() => {
-                                  const pwr = formData.energy_points?.find(p => p.point_type === 'cpe')?.power_kva || formData.power;
-                                  const num = pwr && pwr !== 'Outros' ? parseFloat(String(pwr).replace(/kVA$/i, '').trim()) : null;
-                                  const overThreshold = num && num > 20.7;
-                                  const available = overThreshold ? ["Tri-horário"] : ["Simples", "Bi-horário"];
-                                  return (
-                                    <Select
-                                      value={formData.tariff_schedule || ''}
-                                      onValueChange={(v) => setFormData({...formData, tariff_schedule: v})}
-                                      disabled={!!overThreshold}
-                                    >
-                                      <SelectTrigger className={`bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white ${overThreshold ? 'opacity-70' : ''}`}>
-                                        <SelectValue placeholder="Selecione..." />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {available.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                      </SelectContent>
-                                    </Select>
-                                  );
-                                })()}
-                              </div>
-
+                            <div className="mt-4">
                               {(currentOperator?.campaigns || []).length > 0 && (
                                 <div>
                                   <Label className="text-sm font-semibold mb-2 text-slate-400 flex items-center gap-1">
