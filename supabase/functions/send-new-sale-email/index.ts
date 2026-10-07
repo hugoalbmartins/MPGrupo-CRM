@@ -98,6 +98,7 @@ interface SaleEmailPayload {
     additional_services?: string | null;
   }>;
   include_attachments?: boolean;
+  is_blocked_sale?: boolean;
 }
 
 function hasField(payload: SaleEmailPayload, key: string): boolean {
@@ -676,7 +677,8 @@ Deno.serve(async (req: Request) => {
 
     const customerNameShort = getFirstFourNames(payload.customer_name);
     const nifPart = payload.customer_nif ? ` NIF ${payload.customer_nif}` : '';
-    const subject = `MPGrupo - ${payload.operator_name} - ${customerNameShort}${nifPart}`;
+    const subjectPrefix = payload.is_blocked_sale ? 'VENDA BLOQUEADA - ' : '';
+    const subject = `${subjectPrefix}MPGrupo - ${payload.operator_name} - ${customerNameShort}${nifPart}`;
 
     const showPartner = payload.show_partner !== false;
     const html = buildEmailTemplate(payload, showPartner, attachmentLinks);

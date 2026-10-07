@@ -754,7 +754,9 @@ const Sales = ({ user }) => {
       if (isPendingValidation) {
         submitData.pending_validation = true;
         submitData.validation_reason = allReasons.join('; ');
-        submitData.is_bulk_import = true;
+        if (!isPartnerBlocked) {
+          submitData.is_bulk_import = true;
+        }
       }
 
       if (!pendingSubmit) {
@@ -802,11 +804,11 @@ const Sales = ({ user }) => {
 
       if (createdSale && createdSale.id && !shouldSkipEmail) {
         try {
-          if (isPendingValidation) {
+          if (isPendingValidation && !isPartnerBlocked) {
             await salesService.resendNewSaleEmail(createdSale.id, {
               message: `Venda pendente de validacao - ${allReasons.join('; ')}`,
             }, true);
-          } else {
+          } else if (!isPendingValidation) {
             await salesService.resendNewSaleEmail(createdSale.id, {}, true);
           }
         } catch (emailErr) {
