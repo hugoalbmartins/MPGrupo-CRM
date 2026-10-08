@@ -836,8 +836,6 @@ const Sales = ({ user }) => {
             await salesService.sendPendingValidationEmail(createdSale.id, allReasons.join('; '));
           } else if (isInternalTreatment) {
             await salesService.sendInternalTreatmentEmail(createdSale.id);
-          } else if (!isPendingValidation) {
-            await salesService.resendNewSaleEmail(createdSale.id, {}, true);
           }
         } catch (emailErr) {
           toast.warning("Venda criada, mas o email de notificacao falhou. Pode reenviar manualmente.");
