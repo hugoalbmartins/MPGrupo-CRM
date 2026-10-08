@@ -316,8 +316,11 @@ const Sales = ({ user }) => {
     }
 
     if (uploadFiles.length === 0) {
-      toast.error("E obrigatorio adicionar pelo menos 1 anexo para criar a venda!");
-      return;
+      const selectedOperatorForAttachment = operators.find(op => op.id === formData.operator_id);
+      if (selectedOperatorForAttachment?.requires_attachment !== false) {
+        toast.error("E obrigatorio adicionar pelo menos 1 anexo para criar a venda!");
+        return;
+      }
     }
 
     if (formData.scope === 'energia') {
@@ -508,6 +511,8 @@ const Sales = ({ user }) => {
     try {
       const shouldSkipEmail = skipEmail || forceSkipEmail;
       const submitData = { ...formData };
+      const selectedOperatorForSubmit = operators.find(op => op.id === formData.operator_id);
+      submitData._operator_requires_attachment = selectedOperatorForSubmit?.requires_attachment !== false;
       if (shouldSkipEmail) submitData.is_bulk_import = true;
       if (submitData.monthly_value) submitData.monthly_value = parseFloat(submitData.monthly_value);
       if (submitData.current_monthly_fee) submitData.current_monthly_fee = parseFloat(submitData.current_monthly_fee);
@@ -836,6 +841,8 @@ const Sales = ({ user }) => {
             await salesService.sendPendingValidationEmail(createdSale.id, allReasons.join('; '));
           } else if (isInternalTreatment) {
             await salesService.sendInternalTreatmentEmail(createdSale.id);
+          } else {
+            await salesService.resendNewSaleEmail(createdSale.id, {}, true);
           }
         } catch (emailErr) {
           toast.warning("Venda criada, mas o email de notificacao falhou. Pode reenviar manualmente.");

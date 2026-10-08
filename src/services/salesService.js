@@ -291,7 +291,9 @@ export const salesService = {
       throw new Error('Cannot create sales with future dates');
     }
 
-    if (saleData.is_bulk_import !== true && (!files || files.length === 0)) {
+    const isBulkImport = saleData.is_bulk_import === true;
+    const opRequiresAttachment = saleData._operator_requires_attachment !== false;
+    if (!isBulkImport && opRequiresAttachment && (!files || files.length === 0)) {
       throw new Error('E obrigatorio adicionar pelo menos 1 anexo para criar a venda.');
     }
 
@@ -468,7 +470,8 @@ export const salesService = {
       tratar_oop: saleData.scope === 'telecomunicacoes' ? (saleData.tratar_oop || false) : false,
       calculated_commission: commission,
       attachments: [],
-      is_bulk_import: saleData.is_bulk_import === true,
+      is_bulk_import: true,
+      _was_bulk_import: isBulkImport,
       sale_type: saleData.sale_type || 'normal',
       parent_sale_id: saleData.parent_sale_id || null,
       billing_address: saleData.billing_address || null,
@@ -511,9 +514,8 @@ export const salesService = {
         .eq('id', saleId);
     }
 
-    const wasExplicitBulkImport = saleData.is_bulk_import === true;
     data._skip_trigger_email = true;
-    data._was_bulk_import = wasExplicitBulkImport;
+    data._was_bulk_import = isBulkImport;
 
     return data;
   },
@@ -1049,21 +1051,21 @@ export const salesService = {
 
     if (adminRecipients.length > 0) {
       try {
-        await sendEmail({ to_recipients: adminRecipients, show_partner: true, attachments: [] });
+        await sendEmail({ to_recipients: adminRecipients, show_partner: true, include_attachments: false, attachments: [] });
         sentCount++;
       } catch (e) { errors.push(e.message); }
     }
 
     if (partnerRecipients.length > 0) {
       try {
-        await sendEmail({ to_recipients: partnerRecipients, show_partner: true, attachments: [] });
+        await sendEmail({ to_recipients: partnerRecipients, show_partner: true, include_attachments: false, attachments: [] });
         sentCount++;
       } catch (e) { errors.push(e.message); }
     }
 
     if (notificationRecipients.length > 0) {
       try {
-        await sendEmail({ to_recipients: notificationRecipients, show_partner: false });
+        await sendEmail({ to_recipients: notificationRecipients, show_partner: false, include_attachments: true });
         sentCount++;
       } catch (e) { errors.push(e.message); }
     }
