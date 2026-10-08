@@ -179,7 +179,6 @@ const SaleFormDialog = ({
     }
 
     if (candidates.length === 0) {
-      setPendingFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -203,7 +202,6 @@ const SaleFormDialog = ({
       toast.error(err?.message || 'Erro ao preparar ficheiros');
     } finally {
       setIsProcessingFiles(false);
-      setPendingFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
