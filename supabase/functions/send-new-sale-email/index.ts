@@ -105,6 +105,7 @@ interface SaleEmailPayload {
   include_attachments?: boolean;
   is_blocked_sale?: boolean;
   is_internal_treatment?: boolean;
+  is_pending_validation?: boolean;
   oportunidade_number?: string;
 }
 
@@ -697,7 +698,7 @@ Deno.serve(async (req: Request) => {
 
     const customerNameShort = getFirstFourNames(payload.customer_name);
     const nifPart = payload.customer_nif ? ` NIF ${payload.customer_nif}` : '';
-    const subjectPrefix = payload.is_blocked_sale ? 'VENDA BLOQUEADA - ' : payload.is_internal_treatment ? 'TRATAMENTO INTERNO - ' : '';
+    const subjectPrefix = payload.is_blocked_sale ? 'VENDA BLOQUEADA - ' : payload.is_internal_treatment ? 'TRATAMENTO INTERNO - ' : payload.is_pending_validation ? 'VENDA PARA VALIDACAO - ' : '';
     const subject = `${subjectPrefix}MPGrupo - ${payload.operator_name} - ${customerNameShort}${nifPart}`;
 
     const showPartner = payload.show_partner !== false;

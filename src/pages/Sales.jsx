@@ -833,9 +833,7 @@ const Sales = ({ user }) => {
           if (isPendingValidation && isPartnerBlocked) {
             await salesService.sendBlockedSaleEmail(createdSale.id);
           } else if (isPendingValidation && !isPartnerBlocked) {
-            await salesService.resendNewSaleEmail(createdSale.id, {
-              message: `Venda pendente de validacao - ${allReasons.join('; ')}`,
-            }, true);
+            await salesService.sendPendingValidationEmail(createdSale.id, allReasons.join('; '));
           } else if (isInternalTreatment) {
             await salesService.sendInternalTreatmentEmail(createdSale.id);
           } else if (!isPendingValidation) {

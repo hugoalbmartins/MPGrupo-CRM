@@ -15,6 +15,7 @@ const PendingSalesPopup = ({ user }) => {
   const [oportunidadeModal, setOportunidadeModal] = useState(null);
   const [oportunidadeNumber, setOportunidadeNumber] = useState("");
   const [savingTratamento, setSavingTratamento] = useState(false);
+  const [approvingId, setApprovingId] = useState(null);
 
   const fetchPendingSales = useCallback(async () => {
     if (!user || (user.role !== 'admin' && user.role !== 'bo')) return;
@@ -62,6 +63,8 @@ const PendingSalesPopup = ({ user }) => {
   };
 
   const handleApprove = async (sale) => {
+    if (approvingId) return;
+    setApprovingId(sale.id);
     try {
       await salesService.update(sale.id, {
         pending_validation: false,
@@ -81,6 +84,8 @@ const PendingSalesPopup = ({ user }) => {
       if (pendingSales.length <= 1) setVisible(false);
     } catch (err) {
       toast.error("Erro ao aprovar venda: " + err.message);
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -208,17 +213,19 @@ const PendingSalesPopup = ({ user }) => {
                         {sale.pending_validation && (
                           <button
                             onClick={() => handleApprove(sale)}
-                            className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 px-2.5 py-1.5 rounded-lg transition-colors"
+                            disabled={approvingId === sale.id}
+                            className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}
                           >
                             <CheckCircle className="w-3.5 h-3.5" />
-                            Aprovar
+                            {approvingId === sale.id ? "A aprovar..." : "Aprovar"}
                           </button>
                         )}
                         {sale.internal_treatment && (
                           <button
                             onClick={() => handleOpenTratamento(sale)}
-                            className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 px-2.5 py-1.5 rounded-lg transition-colors"
+                            disabled={!!oportunidadeModal}
+                            className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.15)' }}
                           >
                             <CheckCircle className="w-3.5 h-3.5" />
