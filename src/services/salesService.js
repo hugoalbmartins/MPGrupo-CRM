@@ -471,7 +471,6 @@ export const salesService = {
       calculated_commission: commission,
       attachments: [],
       is_bulk_import: true,
-      _was_bulk_import: isBulkImport,
       sale_type: saleData.sale_type || 'normal',
       parent_sale_id: saleData.parent_sale_id || null,
       billing_address: saleData.billing_address || null,
