@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
 import { notificationService } from "../services/notificationService";
+import PendingSalesPopup from "./PendingSalesPopup";
 
 const Layout = ({ children, user, onLogout }) => {
   const location = useLocation();
@@ -599,6 +600,7 @@ const Layout = ({ children, user, onLogout }) => {
           </div>
         </div>
       </main>
+      <PendingSalesPopup user={user} />
     </div>
   );
 };

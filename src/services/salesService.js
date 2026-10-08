@@ -468,7 +468,7 @@ export const salesService = {
       tratar_oop: saleData.scope === 'telecomunicacoes' ? (saleData.tratar_oop || false) : false,
       calculated_commission: commission,
       attachments: [],
-      is_bulk_import: true,
+      is_bulk_import: saleData.is_bulk_import === true,
       sale_type: saleData.sale_type || 'normal',
       parent_sale_id: saleData.parent_sale_id || null,
       billing_address: saleData.billing_address || null,
@@ -504,11 +504,6 @@ export const salesService = {
       }
     }
 
-    const wasExplicitBulkImport = saleData.is_bulk_import === true;
-    if (!wasExplicitBulkImport) {
-      updateFields.is_bulk_import = false;
-    }
-
     if (Object.keys(updateFields).length > 0) {
       await supabase
         .from('sales')
@@ -516,6 +511,7 @@ export const salesService = {
         .eq('id', saleId);
     }
 
+    const wasExplicitBulkImport = saleData.is_bulk_import === true;
     data._skip_trigger_email = true;
     data._was_bulk_import = wasExplicitBulkImport;
 
@@ -1225,6 +1221,185 @@ export const salesService = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.error || 'Failed to send internal treatment email');
+    }
+
+    return {
+      success: true,
+      to_count: recipients.length,
+      sent_count: 1,
+      total_recipients: recipients.length,
+    };
+  },
+
+  async sendBlockedSaleEmail(saleId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: sale, error: saleError } = await supabase
+      .from('sales')
+      .select(`
+        *,
+        partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
+        operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields, email_envio, email_envio_password, requires_additional_services)
+      `)
+      .eq('id', saleId)
+      .maybeSingle();
+
+    if (saleError || !sale) throw new Error('Sale not found');
+
+    const parentSaleIdForPoints = sale.parent_sale_id || saleId;
+    let parentSale = sale;
+    if ((sale.sale_type === 'multiponto' || sale.sale_type === 'multilocal') && sale.parent_sale_id) {
+      const { data: pSale } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          partner:partners!sales_partner_id_fkey(id, name, user_id, partner_type),
+          operator:operators!sales_operator_id_fkey(id, name, notification_emails, notification_user_ids, email_fields, email_envio, email_envio_password, requires_additional_services)
+        `)
+        .eq('id', sale.parent_sale_id)
+        .maybeSingle();
+      if (pSale) parentSale = pSale;
+    }
+
+    const { data: attachmentsData } = await supabase
+      .from('sales')
+      .select('attachments')
+      .eq('id', parentSaleIdForPoints)
+      .maybeSingle();
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const fromEmail = parentSale.operator?.email_envio ? `${parentSale.operator.email_envio}@mpgrupo.pt` : null;
+    const fromSmtpPass = (parentSale.operator?.email_envio && parentSale.operator?.email_envio_password)
+      ? parentSale.operator.email_envio_password
+      : null;
+
+    let energyPointsList = null;
+    if (parentSale.sale_type === 'multiponto' || parentSale.sale_type === 'multilocal') {
+      const { data: points } = await supabase
+        .from('sales_energy_points')
+        .select('point_type, point_code, power_kva, tier, inst_street, inst_postal_code, inst_locality, installation_address, billing_address, energy_type, entry_type, voltage_type, additional_services, tariff_schedule, campaign, has_direct_debit, has_electronic_invoice')
+        .eq('sale_id', parentSaleIdForPoints)
+        .order('created_at', { ascending: true });
+      if (points && points.length > 0) {
+        energyPointsList = points.map(pt => ({
+          point_type: pt.point_type,
+          point_code: pt.point_code || '',
+          power_kva: pt.power_kva || null,
+          tier: pt.tier || null,
+          inst_street: pt.inst_street || null,
+          inst_postal_code: pt.inst_postal_code || null,
+          inst_locality: pt.inst_locality || null,
+          installation_address: pt.installation_address || null,
+          billing_address: pt.billing_address || null,
+          energy_type: pt.energy_type || null,
+          entry_type: pt.entry_type || null,
+          voltage_type: pt.voltage_type || null,
+          additional_services: pt.additional_services || null,
+          tariff_schedule: pt.tariff_schedule || null,
+          campaign: pt.campaign || null,
+          has_direct_debit: pt.has_direct_debit || false,
+          has_electronic_invoice: pt.has_electronic_invoice || false,
+        }));
+      }
+    }
+
+    const basePayload = {
+      sale_code: parentSale.sale_code,
+      customer_name: parentSale.client_name,
+      customer_nif: parentSale.client_nif || '',
+      operator_name: parentSale.operator?.name || 'N/A',
+      partner_name: parentSale.partner?.name || parentSale.partner_name || 'N/A',
+      message: `VENDA BLOQUEADA - Venda para validacao: ${parentSale.client_name}`,
+      attachments: attachmentsData?.attachments || [],
+      sale_id: parentSale.id,
+      scope: parentSale.scope,
+      client_contact: parentSale.client_contact,
+      client_email: parentSale.client_email,
+      client_iban: parentSale.client_iban,
+      address: [parentSale.street, parentSale.postal_code, parentSale.locality].filter(Boolean).join(', '),
+      installation_address: parentSale.installation_address,
+      billing_address: parentSale.billing_address,
+      entry_type: parentSale.entry_type,
+      energy_sale_type: parentSale.energy_sale_type,
+      cpe: parentSale.cpe,
+      power: parentSale.power,
+      cui: parentSale.cui,
+      tier: parentSale.tier,
+      autoriza_documentos: parentSale.autoriza_documentos,
+      service_type: parentSale.service_type,
+      activation_type: parentSale.activation_type,
+      monthly_value: parentSale.monthly_value,
+      has_tv: parentSale.has_tv,
+      has_net: parentSale.has_net,
+      has_lr: parentSale.has_lr,
+      has_direct_debit: parentSale.has_direct_debit,
+      has_electronic_invoice: parentSale.has_electronic_invoice,
+      fix_ported: parentSale.fix_ported,
+      fix_number: parentSale.fix_number,
+      fix_operator: parentSale.fix_operator,
+      fix_cvp: parentSale.fix_cvp,
+      mobile_count: parentSale.mobile_count,
+      mobile_numbers: parentSale.mobile_numbers,
+      observations: parentSale.observations,
+      email_fields: parentSale.operator?.email_fields || null,
+      voltage_type: parentSale.voltage_type,
+      additional_services: parentSale.additional_services,
+      operator_requires_additional_services: parentSale.operator?.requires_additional_services || false,
+      campaign: parentSale.campaign,
+      tariff_schedule: parentSale.tariff_schedule,
+      sale_type: parentSale.sale_type || 'normal',
+      from_email: fromEmail,
+      from_smtp_user: fromEmail,
+      from_smtp_pass: fromSmtpPass,
+      is_blocked_sale: true,
+      ...(energyPointsList ? { energy_points_list: energyPointsList } : {}),
+    };
+
+    const operatorUserIds = parentSale.operator?.notification_user_ids;
+    let recipients = [];
+
+    if (operatorUserIds && Array.isArray(operatorUserIds) && operatorUserIds.length > 0) {
+      const { data: operatorUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('id', operatorUserIds)
+        .eq('email_alerts_enabled', true);
+      recipients = (operatorUsers || []).map(u => ({ email: u.email, name: u.name }));
+    } else {
+      const { data: adminBoUsers } = await supabase
+        .from('users')
+        .select('email, name')
+        .in('role', ['admin', 'bo'])
+        .eq('email_alerts_enabled', true);
+      recipients = adminBoUsers || [];
+    }
+
+    if (recipients.length === 0) {
+      return { success: true, to_count: 0, sent_count: 0, total_recipients: 0 };
+    }
+
+    const finalPayload = {
+      ...basePayload,
+      to_recipients: recipients,
+      show_partner: false,
+      include_attachments: true,
+    };
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-new-sale-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify(finalPayload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to send blocked sale email');
     }
 
     return {

@@ -196,54 +196,70 @@ const OperatorValidations = ({ user }) => {
       // Extract operator name from filename (e.g. "Iberdrola.xlsx" -> "Iberdrola")
       const baseName = file.name.replace(/\.[^.]+$/, '').trim();
 
-      // Fetch operators to find the one matching the filename
-      const { data: operators } = await supabase
+      // Fetch all operators whose name starts with the filename stem (case-insensitive)
+      // This catches sibling operators like "Endesa", "ENDESA GRD", "Endesa_Landing" when file is "Endesa.xlsx"
+      const { data: siblingOperators } = await supabase
         .from('operators')
         .select('id, name')
-        .ilike('name', baseName)
-        .limit(1);
+        .ilike('name', `${baseName}%`);
 
+      let operatorIds = [];
       let operatorFilter = null;
-      if (operators && operators.length > 0) {
-        operatorFilter = operators[0];
+
+      if (siblingOperators && siblingOperators.length > 0) {
+        operatorIds = siblingOperators.map(o => o.id);
+        // Prefer exact match as the primary operator for the validation record
+        operatorFilter = siblingOperators.find(o => o.name.toLowerCase() === baseName.toLowerCase()) || siblingOperators[0];
       } else {
-        // Try partial match
+        // Try partial match as fallback
         const { data: partialOps } = await supabase
           .from('operators')
           .select('id, name')
           .ilike('name', `%${baseName}%`);
-        if (partialOps && partialOps.length === 1) {
+        if (partialOps && partialOps.length > 0) {
+          operatorIds = partialOps.map(o => o.id);
           operatorFilter = partialOps[0];
         }
       }
 
-      if (!operatorFilter) {
+      if (!operatorFilter || operatorIds.length === 0) {
         toast.error(`Operadora nao encontrada para o ficheiro "${file.name}". O nome do ficheiro deve corresponder ao nome da operadora.`);
         setProcessing(false);
         return;
       }
 
-      const lookbackDate = new Date();
-      lookbackDate.setDate(lookbackDate.getDate() - 365);
-      const dateStr = lookbackDate.toISOString().split('T')[0];
-
-      const [salesResult, energyPointsResult] = await Promise.all([
-        supabase
+      // Fetch sales from ALL sibling operators with no date limit
+      const allSales = [];
+      let salesFrom = 0;
+      const SALE_PAGE = 1000;
+      while (true) {
+        const { data: pageData, error: pageError } = await supabase
           .from('sales')
           .select('id, sale_code, date, status, scope, energy_sale_type, cpe, cui, request_number, client_name, operator_validated, paid_to_operator, electricity_paid, gas_paid, operator_id')
-          .eq('operator_id', operatorFilter.id)
-          .gte('date', dateStr)
-          .limit(10000),
-        supabase
+          .in('operator_id', operatorIds)
+          .order('date', { ascending: false })
+          .range(salesFrom, salesFrom + SALE_PAGE - 1);
+        if (pageError) throw pageError;
+        if (!pageData || pageData.length === 0) break;
+        allSales.push(...pageData);
+        if (pageData.length < SALE_PAGE) break;
+        salesFrom += SALE_PAGE;
+      }
+      const sales = allSales;
+      const saleIds = new Set(sales.map(s => s.id));
+
+      // Fetch energy points only for the sales we found (filtered by sale_id set)
+      const energyPoints = [];
+      const saleIdArray = Array.from(saleIds);
+      for (let i = 0; i < saleIdArray.length; i += 200) {
+        const batch = saleIdArray.slice(i, i + 200);
+        const { data: epBatch, error: epError } = await supabase
           .from('sales_energy_points')
           .select('id, sale_id, point_type, point_code')
-          .limit(10000)
-      ]);
-
-      if (salesResult.error) throw salesResult.error;
-      if (energyPointsResult.error) throw energyPointsResult.error;
-      const sales = salesResult.data || [];
-      const energyPoints = (energyPointsResult.data || []).filter(ep => sales.some(s => s.id === ep.sale_id));
+          .in('sale_id', batch);
+        if (epError) throw epError;
+        if (epBatch) energyPoints.push(...epBatch);
+      }
 
       const pointsBySaleId = {};
       for (const ep of energyPoints) {

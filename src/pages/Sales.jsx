@@ -830,7 +830,9 @@ const Sales = ({ user }) => {
 
       if (createdSale && createdSale.id && !shouldSkipEmail) {
         try {
-          if (isPendingValidation && !isPartnerBlocked) {
+          if (isPendingValidation && isPartnerBlocked) {
+            await salesService.sendBlockedSaleEmail(createdSale.id);
+          } else if (isPendingValidation && !isPartnerBlocked) {
             await salesService.resendNewSaleEmail(createdSale.id, {
               message: `Venda pendente de validacao - ${allReasons.join('; ')}`,
             }, true);
