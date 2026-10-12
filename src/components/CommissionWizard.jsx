@@ -228,9 +228,9 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
       ]);
 
       const pts = ptData.length > 0 ? ptData : [
-        { slug: 'D2D', display_name: 'D2D', level_type: 'named', has_levels: true, max_levels: 10, default_level_names: ['Nv1'] },
-        { slug: 'REV', display_name: 'REV', level_type: 'numeric', has_levels: true, max_levels: 5, default_level_names: [] },
-        { slug: 'Rev+', display_name: 'Rev+', level_type: 'numeric', has_levels: true, max_levels: 5, default_level_names: [] },
+        { slug: 'D2D', display_name: 'D2D', level_type: 'named', has_levels: true, max_levels: 15, default_level_names: ['Nv1'] },
+        { slug: 'REV', display_name: 'REV', level_type: 'numeric', has_levels: true, max_levels: 15, default_level_names: [] },
+        { slug: 'Rev+', display_name: 'Rev+', level_type: 'numeric', has_levels: true, max_levels: 15, default_level_names: [] },
       ];
       setPartnerTypes(pts);
 
@@ -464,7 +464,7 @@ const CommissionWizard = ({ operator, onSave, onCancel }) => {
     if (!ptObj || !ptObj.has_levels) return;
     const currentLevels = levelsByType[ptSlug] || [];
     const isNamed = ptObj.level_type === 'named';
-    const maxLevels = ptObj.max_levels || 10;
+    const maxLevels = ptObj.max_levels || 15;
 
     if (currentLevels.length >= maxLevels) {
       toast.error(`Maximo de ${maxLevels} niveis`);
