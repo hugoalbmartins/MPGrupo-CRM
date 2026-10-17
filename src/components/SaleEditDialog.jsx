@@ -170,7 +170,7 @@ const SaleEditDialog = ({
   const isDualEnergy = editFormData.energy_sale_type === 'dual' || editFormData.scope === 'energia' || editFormData.scope === 'energias';
 
   React.useEffect(() => {
-    if (open && editingSale?.has_chargeback && editingSale?.id) {
+    if (open && editingSale?.id) {
       chargebackService.getChargebackForSale(editingSale.id).then(cb => {
         setExistingChargeback(cb);
       }).catch(() => setExistingChargeback(null));

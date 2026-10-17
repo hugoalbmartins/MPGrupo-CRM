@@ -4,30 +4,70 @@ export const chargebackService = {
   async create({ saleId, partnerId, reason, reasonDate, percentage, commissionAmount, createdBy, chargebackType = 'full' }) {
     const chargebackAmount = parseFloat((commissionAmount * percentage / 100).toFixed(2));
 
-    const insertData = {
-      sale_id: saleId,
-      partner_id: partnerId,
-      reason,
-      reason_date: reasonDate,
-      percentage,
-      commission_amount: commissionAmount,
-      chargeback_amount: chargebackAmount,
-      created_by: createdBy,
-      chargeback_type: chargebackType,
-    };
-
-    const { data, error } = await supabase
+    const { data: existing } = await supabase
       .from('chargebacks')
-      .insert(insertData)
-      .select()
-      .single();
+      .select('id, commission_report_id')
+      .eq('sale_id', saleId)
+      .maybeSingle();
 
-    if (error) throw error;
+    if (existing?.commission_report_id) {
+      throw new Error('Nao e possivel alterar um chargeback ja incluido num auto de comissoes pago');
+    }
 
-    await supabase
+    let data;
+    if (existing) {
+      const { data: updated, error } = await supabase
+        .from('chargebacks')
+        .update({
+          partner_id: partnerId,
+          reason,
+          reason_date: reasonDate,
+          percentage,
+          commission_amount: commissionAmount,
+          chargeback_amount: chargebackAmount,
+          created_by: createdBy,
+          chargeback_type: chargebackType,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+      if (error) throw error;
+      data = updated;
+    } else {
+      const insertData = {
+        sale_id: saleId,
+        partner_id: partnerId,
+        reason,
+        reason_date: reasonDate,
+        percentage,
+        commission_amount: commissionAmount,
+        chargeback_amount: chargebackAmount,
+        created_by: createdBy,
+        chargeback_type: chargebackType,
+      };
+
+      const { data: inserted, error } = await supabase
+        .from('chargebacks')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) {
+        // A concurrent registration may have won the race against the unique constraint
+        if (error.code === '23505') {
+          throw new Error('Esta venda ja tem um chargeback registado');
+        }
+        throw error;
+      }
+      data = inserted;
+    }
+
+    const { error: saleUpdateError } = await supabase
       .from('sales')
       .update({ has_chargeback: true, chargeback_id: data.id })
       .eq('id', saleId);
+
+    if (saleUpdateError) throw saleUpdateError;
 
     return data;
   },
