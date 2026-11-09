@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical, CheckCircle, PlayCircle, Lock } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical, CheckCircle, PlayCircle, Lock, Edit as Edit2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -1464,6 +1464,7 @@ const Sales = ({ user }) => {
       has_chargeback: Boolean(sale.has_chargeback),
       voltage_type: sale.voltage_type || "",
       additional_services: sale.additional_services || "",
+      oportunidade_number: sale.oportunidade_number || "",
     });
     setEditDialogOpen(true);
   };
@@ -1937,6 +1938,17 @@ const Sales = ({ user }) => {
                   >
                     <PlayCircle className="w-4 h-4" />
                     Iniciar Tratamento
+                  </Button>
+                )}
+                {sale.internal_treatment && sale.treatment_reserved_by && (user?.role === 'admin' || user?.role === 'bo') && (
+                  <Button
+                    onClick={() => openEditDialog(sale)}
+                    size="sm"
+                    className="gap-1 text-white font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Editar
                   </Button>
                 )}
                 {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
