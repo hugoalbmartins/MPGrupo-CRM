@@ -605,9 +605,10 @@ const Sales = ({ user }) => {
 
           const localeSales = [];
           for (const pt of cpePoints) {
+            const pairedCUI = cuiPoints.find(c => c.installation_address && pt.installation_address && c.installation_address === pt.installation_address);
             localeSales.push({
-              type: 'cpe', point: pt,
-              energy_sale_type: cuiPoints.find(c => c.installation_address && pt.installation_address && c.installation_address === pt.installation_address) ? 'dual' : 'eletricidade'
+              type: 'cpe', point: pt, pairedCUI,
+              energy_sale_type: pairedCUI ? 'dual' : 'eletricidade'
             });
           }
           for (const pt of cuiPoints) {
@@ -628,7 +629,7 @@ const Sales = ({ user }) => {
           let createdCount = 0;
 
           for (let i = 0; i < localeSales.length; i++) {
-            const { type, point, energy_sale_type } = localeSales[i];
+            const { type, point, energy_sale_type, pairedCUI } = localeSales[i];
             const salePayload = {
               ...submitData,
               cpe: type === 'cpe' ? (point.point_code?.toUpperCase() || '') : '',
@@ -637,8 +638,8 @@ const Sales = ({ user }) => {
               campaign: point.campaign || submitData.campaign || '',
               has_direct_debit: point.has_direct_debit ?? submitData.has_direct_debit ?? false,
               has_electronic_invoice: point.has_electronic_invoice ?? submitData.has_electronic_invoice ?? false,
-              cui: type === 'cui' ? (point.point_code?.toUpperCase() || '') : '',
-              tier: type === 'cui' ? (point.tier || '') : '',
+              cui: type === 'cui' ? (point.point_code?.toUpperCase() || '') : (pairedCUI?.point_code?.toUpperCase() || ''),
+              tier: type === 'cui' ? (point.tier || '') : (pairedCUI?.tier || ''),
               energy_sale_type,
               street: point.inst_street || '',
               postal_code: point.inst_postal_code || '',
@@ -667,28 +668,66 @@ const Sales = ({ user }) => {
             }
           }
 
-          const multilocalEmailPoints = localeSales.map(({ type, point, energy_sale_type }) => ({
-            point_type: type,
-            point_code: point.point_code?.toUpperCase() || '',
-            power_kva: type === 'cpe' ? (point.power_kva || null) : null,
-            tier: type === 'cui' ? (point.tier || null) : null,
-            tariff_schedule: point.tariff_schedule || null,
-            campaign: point.campaign || null,
-            has_direct_debit: point.has_direct_debit || false,
-            has_electronic_invoice: point.has_electronic_invoice || false,
-            inst_street: point.inst_street || null,
-            inst_postal_code: point.inst_postal_code || null,
-            inst_locality: point.inst_locality || null,
-            installation_address: point.installation_address || null,
-            billing_address: point.billing_address || null,
-            energy_type: energy_sale_type,
-            entry_type: point.entry_type || null,
-            voltage_type: point.voltage_type || null,
-            additional_services: point.additional_services || null,
-          }));
+          const multilocalEmailPoints = (() => {
+            const byLocation = new Map();
+            for (const pt of energyPoints) {
+              const key = pt.installation_address || `__no_addr_${pt.point_code}`;
+              if (!byLocation.has(key)) byLocation.set(key, { cpe: null, cui: null, addr: pt });
+              const entry = byLocation.get(key);
+              if (pt.point_type === 'cpe') entry.cpe = pt;
+              else if (pt.point_type === 'cui') entry.cui = pt;
+            }
+            const result = [];
+            for (const { cpe, cui, addr } of byLocation.values()) {
+              const isDual = cpe && cui;
+              if (isDual) {
+                result.push({
+                  cpe_code: cpe.point_code?.toUpperCase() || '',
+                  cpe_power: cpe.power_kva || null,
+                  cui_code: cui.point_code?.toUpperCase() || '',
+                  cui_tier: cui.tier || null,
+                  tariff_schedule: cpe.tariff_schedule || null,
+                  campaign: cpe.campaign || null,
+                  has_direct_debit: cpe.has_direct_debit || false,
+                  has_electronic_invoice: cpe.has_electronic_invoice || false,
+                  inst_street: cpe.inst_street || null,
+                  inst_postal_code: cpe.inst_postal_code || null,
+                  inst_locality: cpe.inst_locality || null,
+                  installation_address: cpe.installation_address || null,
+                  billing_address: cpe.billing_address || cui.billing_address || null,
+                  energy_type: 'dual',
+                  entry_type: cpe.entry_type || null,
+                  voltage_type: cpe.voltage_type || null,
+                  additional_services: cpe.additional_services || null,
+                });
+              } else {
+                const pt = cpe || cui;
+                result.push({
+                  point_type: pt.point_type,
+                  point_code: pt.point_code?.toUpperCase() || '',
+                  power_kva: pt.point_type === 'cpe' ? (pt.power_kva || null) : null,
+                  tier: pt.point_type === 'cui' ? (pt.tier || null) : null,
+                  tariff_schedule: pt.tariff_schedule || null,
+                  campaign: pt.campaign || null,
+                  has_direct_debit: pt.has_direct_debit || false,
+                  has_electronic_invoice: pt.has_electronic_invoice || false,
+                  inst_street: pt.inst_street || null,
+                  inst_postal_code: pt.inst_postal_code || null,
+                  inst_locality: pt.inst_locality || null,
+                  installation_address: pt.installation_address || null,
+                  billing_address: pt.billing_address || null,
+                  energy_type: pt.point_type === 'cpe' ? 'eletricidade' : 'gas',
+                  entry_type: pt.entry_type || null,
+                  voltage_type: pt.voltage_type || null,
+                  additional_services: pt.additional_services || null,
+                });
+              }
+            }
+            return result;
+          })();
 
-          if (parentSaleId && multilocalEmailPoints.length > 0) {
-            energyPointsService.replacePointsForSale(parentSaleId, multilocalEmailPoints).catch(() => {});
+          if (parentSaleId && energyPoints.length > 0) {
+            energyPointsService.replacePointsForSale(parentSaleId, energyPoints).catch(() => {});
           }
 
           toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multilocal)!`);
@@ -728,8 +767,8 @@ const Sales = ({ user }) => {
         }
 
         if (saleType === 'gas') {
-          submitData.cui = firstCPE?.point_code || '';
-          submitData.tier = firstCPE?.tier || '';
+          submitData.cui = firstCUI?.point_code || energyPoints[0]?.point_code || '';
+          submitData.tier = firstCUI?.tier || energyPoints[0]?.tier || '';
         } else if (saleType === 'dual') {
           submitData.cui = firstCUI?.point_code || '';
           submitData.tier = firstCUI?.tier || '';
