@@ -1273,6 +1273,7 @@ const SaleEditDialog = ({
                 </Button>
             </div>
           </div>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
