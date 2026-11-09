@@ -809,10 +809,10 @@ const Sales = ({ user }) => {
         allReasons.push('Parceiro com vendas bloqueadas para validacao');
       }
 
-      const isPendingValidation = allReasons.length > 0 && !isInternalTreatment;
-
       const selectedOperator = operators.find(o => o.id === submitData.operator_id);
       const isInternalTreatment = selectedOperator?.requires_internal_treatment === true;
+
+      const isPendingValidation = allReasons.length > 0 && !isInternalTreatment;
 
       if (isPendingValidation) {
         submitData.pending_validation = true;

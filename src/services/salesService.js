@@ -470,7 +470,7 @@ export const salesService = {
       tratar_oop: saleData.scope === 'telecomunicacoes' ? (saleData.tratar_oop || false) : false,
       calculated_commission: commission,
       attachments: [],
-      is_bulk_import: true,
+      is_bulk_import: saleData.is_bulk_import !== undefined ? saleData.is_bulk_import : true,
       sale_type: saleData.sale_type || 'normal',
       parent_sale_id: saleData.parent_sale_id || null,
       billing_address: saleData.billing_address || null,
