@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { X, LocationEdit as Edit2, Save, History, MessageSquare, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Upload, FileText, Download, Paperclip } from "lucide-react";
+import { X, LocationEdit as Edit2, Save, History, MessageSquare, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Upload, FileText, Download, Paperclip, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -306,17 +306,17 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
             </div>
             {(user?.role === 'admin' || user?.role === 'bo') && sale && (
               <div className="flex gap-2">
-                {sale.internal_treatment && (
+                {sale.internal_treatment && sale.treatment_reserved_by && (
                   <Button
                     size="sm"
                     onClick={() => {
-                      setOportunidadeNumber("");
+                      setOportunidadeNumber(sale.oportunidade_number || "");
                       setShowTratamentoDialog(true);
                     }}
                     className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white"
                   >
                     <CheckCircle className="w-4 h-4" />
-                    <span>Tratado Interno</span>
+                    <span>Enviar para Operadora</span>
                   </Button>
                 )}
                 <Button
@@ -868,6 +868,29 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                         <div>
                           <Label className="text-slate-500 text-xs uppercase">Requisição</Label>
                           <p className="font-semibold text-white mt-1">{sale.request_number}</p>
+                        </div>
+                      )}
+
+                      {sale.internal_treatment && !sale.oportunidade_number && (
+                        <div className="col-span-2 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+                          <div className="flex items-center gap-2 text-amber-400">
+                            <Lock className="w-5 h-5" />
+                            <span className="font-bold">Venda em Tratamento Interno</span>
+                          </div>
+                          <p className="text-sm text-slate-300 mt-1">
+                            {sale.treatment_reserved_by
+                              ? 'Esta venda está reservada para tratamento. Use "Enviar para Operadora" para registar o nº de oportunidade e enviar os emails.'
+                              : 'Clique em "Iniciar Tratamento" na lista de vendas para reservar esta venda.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {sale.internal_treatment && sale.validation_reason && (
+                        <div className="col-span-2 bg-orange-500/10 border border-orange-500/20 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-orange-400">
+                            <AlertTriangle className="w-4 h-4" />
+                            <span className="font-semibold text-sm">Dados Duplicados: {sale.validation_reason}</span>
+                          </div>
                         </div>
                       )}
 
@@ -1434,9 +1457,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
       {showTratamentoDialog && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
           <div className="bg-dark-850 border border-amber-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">Tratado Interno</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Enviar para Operadora</h3>
             <p className="text-sm text-slate-400 mb-4">
-              Insira o número de oportunidade/registo. Ao confirmar, a venda será movida para "Para registo" e os emails normais de venda serão enviados.
+              Insira o número de oportunidade (OPP). Ao confirmar, a venda será movida para "Para registo" e os emails de venda serão enviados para a operadora.
             </p>
             <div className="mb-4">
               <Label className="text-slate-300 mb-1 block">Número de Oportunidade/Registo *</Label>

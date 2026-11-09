@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical, CheckCircle } from "lucide-react";
+import { Plus, Download, ArrowUpDown, Trash2, Paperclip, TriangleAlert as AlertTriangle, ListFilter as Filter, X as XIcon, Search, Upload, Mail, MoveVertical as MoreVertical, CheckCircle, PlayCircle, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -770,7 +770,7 @@ const Sales = ({ user }) => {
         allReasons.push('Parceiro com vendas bloqueadas para validacao');
       }
 
-      const isPendingValidation = allReasons.length > 0;
+      const isPendingValidation = allReasons.length > 0 && !isInternalTreatment;
 
       const selectedOperator = operators.find(o => o.id === submitData.operator_id);
       const isInternalTreatment = selectedOperator?.requires_internal_treatment === true;
@@ -778,14 +778,17 @@ const Sales = ({ user }) => {
       if (isPendingValidation) {
         submitData.pending_validation = true;
         submitData.validation_reason = allReasons.join('; ');
-        if (!isPartnerBlocked && !isInternalTreatment) {
+        if (!isPartnerBlocked) {
           submitData.is_bulk_import = true;
         }
       }
 
-      if (isInternalTreatment && !isPendingValidation) {
+      if (isInternalTreatment) {
         submitData.internal_treatment = true;
         submitData.is_bulk_import = true;
+        if (allReasons.length > 0) {
+          submitData.validation_reason = allReasons.join('; ');
+        }
       }
 
       if (!pendingSubmit) {
@@ -1714,6 +1717,17 @@ const Sales = ({ user }) => {
     );
   };
 
+  const handleStartTreatment = async (sale) => {
+    if (user?.role !== 'admin' && user?.role !== 'bo') return;
+    try {
+      await salesService.startTreatment(sale.id);
+      toast.success("Tratamento iniciado. Venda reservada e alertas removidos.");
+      fetchData();
+    } catch (error) {
+      toast.error("Erro ao iniciar tratamento: " + error.message);
+    }
+  };
+
   const handleApprovePendingSale = async (sale) => {
     try {
       await salesService.update(sale.id, {
@@ -1887,9 +1901,20 @@ const Sales = ({ user }) => {
                     Validacao Pendente{sale.validation_reason ? `: ${sale.validation_reason}` : ''}
                   </span>
                 )}
-                {sale.internal_treatment && (
+                {sale.internal_treatment && !sale.treatment_reserved_by && (
                   <span className="text-xs font-semibold text-purple-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
                     Para Tratamento
+                  </span>
+                )}
+                {sale.internal_treatment && sale.treatment_reserved_by && (
+                  <span className="text-xs font-semibold text-amber-400 px-2 py-0.5 rounded flex items-center gap-1" style={{ backgroundColor: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.25)' }}>
+                    <Lock className="w-3 h-3" />
+                    Em Tratamento
+                  </span>
+                )}
+                {sale.internal_treatment && sale.validation_reason && (
+                  <span className="text-xs font-semibold text-orange-400 px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.25)' }} title={sale.validation_reason}>
+                    Dados duplicados
                   </span>
                 )}
                 {sale.paid_in_report_id && (
@@ -1903,6 +1928,17 @@ const Sales = ({ user }) => {
                 >
                   Ver
                 </Button>
+                {sale.internal_treatment && !sale.treatment_reserved_by && (user?.role === 'admin' || user?.role === 'bo') && (
+                  <Button
+                    onClick={() => handleStartTreatment(sale)}
+                    size="sm"
+                    className="gap-1 text-white font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', border: 'none' }}
+                  >
+                    <PlayCircle className="w-4 h-4" />
+                    Iniciar Tratamento
+                  </Button>
+                )}
                 {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
                   <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700/40">
                     Notas ({sale.notes?.length || 0})

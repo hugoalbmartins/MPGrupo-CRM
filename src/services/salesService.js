@@ -1590,6 +1590,16 @@ export const salesService = {
     };
   },
 
+  async startTreatment(saleId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { error } = await supabase.rpc('start_treatment', { p_sale_id: saleId });
+    if (error) throw new Error(error.message);
+
+    return { success: true };
+  },
+
   async markInternalTreatmentDone(saleId, oportunidadeNumber) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
@@ -1608,12 +1618,11 @@ export const salesService = {
       throw new Error('O número de oportunidade/registo é obrigatório');
     }
 
-    await this.update(saleId, {
-      internal_treatment: false,
-      oportunidade_number: oportunidadeNumber.trim(),
-      status: 'Para registo',
-      is_bulk_import: false,
+    const { error: rpcError } = await supabase.rpc('complete_treatment', {
+      p_sale_id: saleId,
+      p_oportunidade_number: oportunidadeNumber.trim(),
     });
+    if (rpcError) throw new Error(rpcError.message);
 
     await this.resendNewSaleEmail(saleId, {
       oportunidade_number: oportunidadeNumber.trim(),

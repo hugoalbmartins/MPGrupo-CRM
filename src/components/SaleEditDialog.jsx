@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { TriangleAlert as AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap, Paperclip, Upload, X, Download, RotateCcw, Ban } from "lucide-react";
+import { TriangleAlert as AlertTriangle, Clock, Building2, User, Phone, MapPin, CreditCard, FileText, DollarSign, Zap, Paperclip, Upload, X, Download, RotateCcw, Ban, CircleCheck as CheckCircle, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { chargebackService } from "@/services/chargebackService";
+import { salesService } from "@/services/salesService";
 import { processFilesForUpload } from "@/lib/imageCompression";
 
 const CVP_REGEX = /^(\d{7}[A-Za-z]{4}\d{1}|\d{12})$/;
@@ -166,6 +167,8 @@ const SaleEditDialog = ({
   const [existingChargeback, setExistingChargeback] = useState(null);
   const [annulChargebackOpen, setAnnulChargebackOpen] = useState(false);
   const [annulling, setAnnulling] = useState(false);
+  const [oppNumber, setOppNumber] = useState(editingSale?.oportunidade_number || "");
+  const [sendingToOperator, setSendingToOperator] = useState(false);
 
   const isDualEnergy = editFormData.energy_sale_type === 'dual' || editFormData.scope === 'energia' || editFormData.scope === 'energias';
 
@@ -178,6 +181,10 @@ const SaleEditDialog = ({
       setExistingChargeback(null);
     }
   }, [open, editingSale?.has_chargeback, editingSale?.id]);
+
+  React.useEffect(() => {
+    setOppNumber(editingSale?.oportunidade_number || "");
+  }, [editingSale?.oportunidade_number, open]);
 
   const saleOperator = operators.find(op => op.id === editFormData.operator_id);
   const canEditCommission = user?.role === 'admin';
@@ -265,6 +272,25 @@ const SaleEditDialog = ({
     while (updated.length < count) updated.push({ number: '', ported: false, novo: false, cvp: '' });
     setEditFormData(prev => ({ ...prev, mobile_count: count, mobile_numbers: updated.slice(0, count) }));
   };
+
+  const handleSendToOperator = async () => {
+    if (!oppNumber.trim()) {
+      toast.error("O número de oportunidade (OPP) é obrigatório");
+      return;
+    }
+    setSendingToOperator(true);
+    try {
+      await salesService.markInternalTreatmentDone(editingSale.id, oppNumber.trim());
+      toast.success("Venda enviada para operadora. Emails enviados com sucesso.");
+      onOpenChange(false);
+    } catch (err) {
+      toast.error("Erro ao enviar para operadora: " + err.message);
+    } finally {
+      setSendingToOperator(false);
+    }
+  };
+
+  const isReservedTreatment = editingSale?.internal_treatment && editingSale?.treatment_reserved_by;
 
   return (
     <>
@@ -1206,6 +1232,38 @@ const SaleEditDialog = ({
                   </div>
                 )}
               </div>
+              {isReservedTreatment && (user?.role === 'admin' || user?.role === 'bo') && (
+                <div className="col-span-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-amber-400">
+                    <Lock className="w-4 h-4" />
+                    <span className="font-bold text-sm">Enviar para Operadora</span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Insira o número de oportunidade (OPP) e clique em enviar. A venda será movida para "Para registo" e os emails de venda serão enviados.
+                  </p>
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <Label className="text-slate-300 text-xs mb-1 block">Número de Oportunidade (OPP) *</Label>
+                      <Input
+                        type="text"
+                        value={oppNumber}
+                        onChange={(e) => setOppNumber(e.target.value)}
+                        placeholder="Ex: OPP-12345"
+                        className="bg-dark-900 border-dark-700 focus:border-amber-500 focus:ring-amber-500/20 text-white"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleSendToOperator}
+                      disabled={sendingToOperator || !oppNumber.trim()}
+                      className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold whitespace-nowrap"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      {sendingToOperator ? "A enviar..." : "Enviar para Operadora"}
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800">
                   Cancelar
@@ -1213,7 +1271,6 @@ const SaleEditDialog = ({
                 <Button type="submit" className="bg-gradient-to-r from-cyber-500 to-cyber-600 text-white font-semibold hover:shadow-lg hover:shadow-cyber-500/25">
                   Guardar Alteracoes
                 </Button>
-              </div>
             </div>
           </div>
         </form>
