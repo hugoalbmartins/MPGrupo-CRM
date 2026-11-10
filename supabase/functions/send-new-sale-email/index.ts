@@ -71,6 +71,7 @@ interface SaleEmailPayload {
   from_smtp_pass?: string | null;
   operator_requires_additional_services?: boolean;
   campaign?: string;
+  campaign_gas?: string;
   tariff_schedule?: string;
   tratar_oop?: boolean;
   sale_type?: string;
@@ -99,7 +100,7 @@ interface SaleEmailPayload {
     additional_services?: string | null;
     tariff_schedule?: string | null;
     campaign?: string | null;
-    has_direct_debit?: boolean | null;
+    campaign_gas?: string | null;
     has_electronic_invoice?: boolean | null;
   }>;
   include_attachments?: boolean;
@@ -241,6 +242,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">CPE / Potência:</td><td style="font-size:13px;">${pt.point_code}${pt.power_kva ? ` / ${pt.power_kva}kVA` : ''}</td></tr>
               ${pt.tariff_schedule ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tarifa Horária:</td><td style="font-size:13px;">${pt.tariff_schedule}</td></tr>` : ''}
               ${pt.campaign ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Campanha:</td><td style="font-size:13px;">${pt.campaign}</td></tr>` : ''}
+              ${pt.campaign_gas ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Campanha (Gás):</td><td style="font-size:13px;">${pt.campaign_gas}</td></tr>` : ''}
               ${instAddr ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Instalação:</td><td style="font-size:13px;">${instAddr}</td></tr>` : ''}
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
             `}).join('')}
@@ -263,6 +265,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
               <tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Morada Faturação:</td><td style="font-size:13px;">${pt.billing_address || 'Mesma'}</td></tr>
               ${pt.tariff_schedule ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tarifa Horária:</td><td style="font-size:13px;">${pt.tariff_schedule}</td></tr>` : ''}
               ${pt.campaign ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Campanha:</td><td style="font-size:13px;">${pt.campaign}</td></tr>` : ''}
+              ${pt.campaign_gas ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Campanha (Gás):</td><td style="font-size:13px;">${pt.campaign_gas}</td></tr>` : ''}
               ${pt.entry_type ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tipo de Entrada:</td><td style="font-size:13px;">${pt.entry_type}</td></tr>` : ''}
               ${pt.voltage_type ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Tipo de Tensão:</td><td style="font-size:13px;">${pt.voltage_type}</td></tr>` : ''}
               ${pt.additional_services ? `<tr><td style="padding-left:12px; color:#6b7280; font-size:13px;">Serviços Adicionais:</td><td style="font-size:13px;">${pt.additional_services}</td></tr>` : ''}
@@ -276,6 +279,7 @@ function buildEmailTemplate(payload: SaleEmailPayload, showPartner = true, attac
           ` : ""}
           ${(payload.operator_requires_additional_services || (hasField(payload, 'additional_services') && payload.additional_services)) ? `<tr><td>Servicos Adicionais:</td><td>${payload.additional_services || "Nenhum"}</td></tr>` : ""}
           ${payload.campaign ? `<tr><td>Campanha:</td><td>${payload.campaign}</td></tr>` : ""}
+          ${payload.campaign_gas ? `<tr><td>Campanha (Gás):</td><td>${payload.campaign_gas}</td></tr>` : ""}
           ${payload.tariff_schedule ? `<tr><td>Tarifa Horária:</td><td>${payload.tariff_schedule}</td></tr>` : ""}
           ` : ""}
 

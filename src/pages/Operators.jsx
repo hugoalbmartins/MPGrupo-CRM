@@ -1529,15 +1529,37 @@ const Operators = ({ user }) => {
                     Campanhas
                   </Label>
                   <p className="text-xs text-slate-500 mb-3">
-                    Campanhas ativas para esta operadora. Aparecem como dropdown na criacao de venda (energia). Clique na estrela para definir a campanha pre-selecionada por defeito.
+                    Campanhas ativas para esta operadora. Aparecem como dropdown na criacao de venda (energia). Indique o tipo (Eletricidade, Gas ou Ambos) para cada campanha. Clique na estrela para definir a campanha pre-selecionada por defeito.
                   </p>
                   <div className="space-y-2">
                     {(editOperatorData.campaigns || []).map((campaign, idx) => {
                       const cName = typeof campaign === 'string' ? campaign : campaign.name;
                       const isDefault = typeof campaign === 'object' && campaign.is_default === true;
+                      const cType = typeof campaign === 'object' ? (campaign.type || 'ambos') : 'ambos';
+                      const typeLabel = cType === 'eletricidade' ? 'Elet.' : cType === 'gas' ? 'Gás' : 'Ambos';
+                      const typeColor = cType === 'eletricidade' ? 'text-amber-400' : cType === 'gas' ? 'text-blue-400' : 'text-slate-400';
                       return (
                         <div key={idx} className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${isDefault ? 'bg-cyber-500/10 border-cyber-500/40' : 'bg-dark-900 border-dark-700'}`}>
                           <span className="text-sm text-white flex-1 truncate">{cName}</span>
+                          <Select
+                            value={cType}
+                            onValueChange={(v) => setEditOperatorData(prev => ({
+                              ...prev,
+                              campaigns: (prev.campaigns || []).map((c, i) => {
+                                const base = typeof c === 'string' ? { name: c } : { ...c };
+                                return i === idx ? { ...base, type: v } : base;
+                              })
+                            }))}
+                          >
+                            <SelectTrigger className="h-7 w-20 text-xs bg-dark-900 border-dark-700 text-white px-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ambos">Ambos</SelectItem>
+                              <SelectItem value="eletricidade">Elet.</SelectItem>
+                              <SelectItem value="gas">Gás</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <button
                             type="button"
                             title="Definir como campanha por defeito"
@@ -1579,7 +1601,7 @@ const Operators = ({ user }) => {
                             if (name && !existing.includes(name)) {
                               setEditOperatorData(prev => ({
                                 ...prev,
-                                campaigns: [...(prev.campaigns || []), { name }]
+                                campaigns: [...(prev.campaigns || []), { name, type: 'ambos' }]
                               }));
                               setNewCampaignName('');
                             }
@@ -1596,7 +1618,7 @@ const Operators = ({ user }) => {
                           if (name && !existing.includes(name)) {
                             setEditOperatorData(prev => ({
                               ...prev,
-                              campaigns: [...(prev.campaigns || []), { name }]
+                              campaigns: [...(prev.campaigns || []), { name, type: 'ambos' }]
                             }));
                             setNewCampaignName('');
                           }

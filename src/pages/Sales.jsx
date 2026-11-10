@@ -127,6 +127,7 @@ const Sales = ({ user }) => {
     power: "",
     tariff_schedule: "",
     campaign: "",
+    campaign_gas: "",
     entry_type: "",
     cui: "",
     tier: "",
@@ -583,6 +584,7 @@ const Sales = ({ user }) => {
               power: formatPowerForEdit(pt.power_kva) || '',
               tariff_schedule: pt.tariff_schedule || submitData.tariff_schedule || '',
               campaign: pt.campaign || submitData.campaign || '',
+              campaign_gas: pt.campaign_gas || null,
               energy_sale_type: 'eletricidade',
               sale_type: 'multiponto',
               parent_sale_id: parentSaleId,
@@ -629,6 +631,7 @@ const Sales = ({ user }) => {
                   power_kva: p.power_kva || null,
                   tariff_schedule: p.tariff_schedule || null,
                   campaign: p.campaign || null,
+                  campaign_gas: p.campaign_gas || null,
                   inst_street: p.inst_street || null,
                   inst_postal_code: p.inst_postal_code || null,
                   inst_locality: p.inst_locality || null,
@@ -681,6 +684,7 @@ const Sales = ({ user }) => {
               power: type === 'cpe' ? (formatPowerForEdit(point.power_kva) || '') : '',
               tariff_schedule: point.tariff_schedule || submitData.tariff_schedule || '',
               campaign: point.campaign || submitData.campaign || '',
+              campaign_gas: point.campaign_gas || submitData.campaign_gas || '',
               has_direct_debit: point.has_direct_debit ?? submitData.has_direct_debit ?? false,
               has_electronic_invoice: point.has_electronic_invoice ?? submitData.has_electronic_invoice ?? false,
               cui: type === 'cui' ? (point.point_code?.toUpperCase() || '') : (pairedCUI?.point_code?.toUpperCase() || ''),
@@ -733,7 +737,7 @@ const Sales = ({ user }) => {
                   cui_tier: cui.tier || null,
                   tariff_schedule: cpe.tariff_schedule || null,
                   campaign: cpe.campaign || null,
-                  has_direct_debit: cpe.has_direct_debit || false,
+                  campaign_gas: cpe.campaign_gas || null,
                   has_electronic_invoice: cpe.has_electronic_invoice || false,
                   inst_street: cpe.inst_street || null,
                   inst_postal_code: cpe.inst_postal_code || null,
@@ -754,7 +758,7 @@ const Sales = ({ user }) => {
                   tier: pt.point_type === 'cui' ? (pt.tier || null) : null,
                   tariff_schedule: pt.tariff_schedule || null,
                   campaign: pt.campaign || null,
-                  has_direct_debit: pt.has_direct_debit || false,
+                  campaign_gas: pt.campaign_gas || null,
                   has_electronic_invoice: pt.has_electronic_invoice || false,
                   inst_street: pt.inst_street || null,
                   inst_postal_code: pt.inst_postal_code || null,
@@ -817,6 +821,11 @@ const Sales = ({ user }) => {
           submitData.power = formatPowerForEdit(firstCPE?.power_kva) || '';
           if (firstCPE?.tariff_schedule) submitData.tariff_schedule = firstCPE.tariff_schedule;
           if (firstCPE?.campaign) submitData.campaign = firstCPE.campaign;
+        }
+
+        if (saleType === 'gas' || saleType === 'dual') {
+          const firstGasPoint = firstCUI || energyPoints.find(p => p.point_type === 'cui');
+          if (firstGasPoint?.campaign_gas) submitData.campaign_gas = firstGasPoint.campaign_gas;
         }
 
         if (saleType === 'gas') {
@@ -1001,6 +1010,7 @@ const Sales = ({ user }) => {
       power: "",
       tariff_schedule: "",
       campaign: "",
+    campaign_gas: "",
       entry_type: "",
       cui: "",
       tier: "",
@@ -1350,6 +1360,7 @@ const Sales = ({ user }) => {
           })(),
           'Tipo Venda Energia': sale.energy_sale_type || '',
           'Campanha': sale.campaign || '',
+          'Campanha (Gás)': sale.campaign_gas || '',
           'Servicos Adicionais': sale.additional_services || '',
           ...((user?.role === 'admin' || user?.role === 'bo') ? {
             'Paga Operador': sale.paid_to_operator ? 'Sim' : 'Nao',
@@ -1532,6 +1543,8 @@ const Sales = ({ user }) => {
       cui: sale.cui || "",
       tier: sale.tier || "",
       entry_type: sale.entry_type || "",
+      campaign: sale.campaign || "",
+      campaign_gas: sale.campaign_gas || "",
       has_direct_debit: Boolean(sale.has_direct_debit),
       has_electronic_invoice: Boolean(sale.has_electronic_invoice),
       has_tv: Boolean(sale.has_tv),

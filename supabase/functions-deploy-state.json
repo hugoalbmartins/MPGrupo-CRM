@@ -1,0 +1,69 @@
+{
+  "projectId": "61238282",
+  "functions": {
+    "check-proposal-alerts": {
+      "hasChanged": false,
+      "hash": "6e7520f938977a4388e5cef102800229931c74d79292703480ac098ed0f7b427"
+    },
+    "cleanup-expired-attachments": {
+      "hasChanged": false,
+      "hash": "478304fb27f7ce9724be48e6c3ed7c253c554c52a9944771a8190bebf8ae7b09"
+    },
+    "cleanup-orphaned-storage": {
+      "hasChanged": false,
+      "hash": "d3540443b674ab57cb2af897cca3b48a998f297d126e8a385218c94a76216a5f"
+    },
+    "create-user": {
+      "hasChanged": false,
+      "hash": "2ff2773d674920a47d7a67f51211c6370b7c8c04a5cf0c1d23946ca404d84ce0"
+    },
+    "delete-partner": {
+      "hasChanged": false,
+      "hash": "44d7478ed1a4c5c8c4f5be1745284475d6f62ec50f955b79e38764a5bcce44ad"
+    },
+    "delete-user": {
+      "hasChanged": false,
+      "hash": "4192ecd1fc04742634c44e7d4dc2158d68d9a5c4d0183f2c152125830f058bc9"
+    },
+    "recalculate-commissions": {
+      "hasChanged": false,
+      "hash": "9a49445810ad7b80e92cf5a0e28726562fa87451df9f1912e18a38510e433f90"
+    },
+    "reset-user-password": {
+      "hasChanged": false,
+      "hash": "ac4749b7fad4965b347b181afa2b1f1d5b56328278ef037a84f9a05115ccadc0"
+    },
+    "send-alert-email": {
+      "hasChanged": false,
+      "hash": "2c6547b74eed9b04f96242d8484ec0088d1b569e8c86963ff292db2fd31f5429"
+    },
+    "send-alert-notifications": {
+      "hasChanged": false,
+      "hash": "50e237214a95f2027c7ed5a5ead5fdd92423e1508dad3f3a822cf626337a70d8f99f53511f573c8947c2cf6958da87cc63332617cc1a7a6e9c816eaed31336f4"
+    },
+    "send-commission-report-email": {
+      "hasChanged": false,
+      "hash": "aa2e654f76a30ccdba77e0c1b3238d510da0505265b9cd1a1e1f1829d14c6798f99f53511f573c8947c2cf6958da87cc63332617cc1a7a6e9c816eaed31336f4"
+    },
+    "send-new-sale-email": {
+      "hasChanged": false,
+      "hash": "084367548bb22579caa2852f4ea4c0e024ae0a9ceb7c8de4902482f37fca0990"
+    },
+    "send-push-notification": {
+      "hasChanged": false,
+      "hash": "be1c83fdc6a37fba3681b3225d9c550a00c3ade66977b4c3fde4a0308d2fe9d2"
+    },
+    "send-simulator-contact": {
+      "hasChanged": false,
+      "hash": "1feb43f84c0cb40b98872015c9ebc3e8ff8d0e8f69d9d7381d56683663b01e30"
+    },
+    "smtp-settings": {
+      "hasChanged": false,
+      "hash": "ef8073e61ae1cbed2e8c1a6e06d5d61f8dbd84cae014fc42226fea97133b8bfc"
+    },
+    "update-user": {
+      "hasChanged": false,
+      "hash": "53a33d57b3c3ba438dc15a856b905551b1905b78b439bf4474eb05d02e90656c"
+    }
+  }
+}

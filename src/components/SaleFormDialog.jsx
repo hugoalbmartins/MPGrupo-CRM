@@ -405,6 +405,16 @@ const SaleFormDialog = ({
                             }
                             return '';
                           })(),
+                          campaign_gas: (() => {
+                            const camps = operator?.campaigns || [];
+                            for (const c of camps) {
+                              if (typeof c === 'object' && c.is_default) {
+                                const t = c.type || 'ambos';
+                                if (t === 'ambos' || t === 'gas') return c.name;
+                              }
+                            }
+                            return '';
+                          })(),
                           technology: 'Fibra'
                         });
 
@@ -1337,27 +1347,67 @@ const SaleFormDialog = ({
 
                             <div className="mt-4">
                               {(currentOperator?.campaigns || []).length > 0 && (
-                                <div>
-                                  <Label className="text-sm font-semibold mb-2 text-slate-400 flex items-center gap-1">
-                                    <Star className="w-3.5 h-3.5" />
-                                    Campanha
-                                  </Label>
-                                  <Select
-                                    value={formData.campaign || "__none__"}
-                                    onValueChange={(v) => setFormData({...formData, campaign: v === '__none__' ? '' : v})}
-                                  >
-                                    <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
-                                      <SelectValue placeholder="Sem campanha" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="__none__">Sem campanha</SelectItem>
-                                      {(currentOperator.campaigns || []).map((c, idx) => {
-                                        const name = typeof c === 'string' ? c : c.name;
-                                        const isDefault = typeof c === 'object' ? c.is_default : false;
-                                        return <SelectItem key={idx} value={name}>{name}{isDefault ? ' ★' : ''}</SelectItem>;
-                                      })}
-                                    </SelectContent>
-                                  </Select>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  {(currentOperator?.campaigns || []).filter(c => {
+                                    const t = typeof c === 'object' ? (c.type || 'ambos') : 'ambos';
+                                    return t === 'ambos' || t === 'eletricidade';
+                                  }).length > 0 && (
+                                    <div>
+                                      <Label className="text-sm font-semibold mb-2 text-slate-400 flex items-center gap-1">
+                                        <Star className="w-3.5 h-3.5" />
+                                        Campanha (Eletricidade)
+                                      </Label>
+                                      <Select
+                                        value={formData.campaign || "__none__"}
+                                        onValueChange={(v) => setFormData({...formData, campaign: v === '__none__' ? '' : v})}
+                                      >
+                                        <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                          <SelectValue placeholder="Sem campanha" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="__none__">Sem campanha</SelectItem>
+                                          {(currentOperator.campaigns || []).filter(c => {
+                                            const t = typeof c === 'object' ? (c.type || 'ambos') : 'ambos';
+                                            return t === 'ambos' || t === 'eletricidade';
+                                          }).map((c, idx) => {
+                                            const name = typeof c === 'string' ? c : c.name;
+                                            const isDefault = typeof c === 'object' ? c.is_default : false;
+                                            return <SelectItem key={idx} value={name}>{name}{isDefault ? ' ★' : ''}</SelectItem>;
+                                          })}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                  {(formData.energy_sale_type === 'gas' || formData.energy_sale_type === 'dual') && (currentOperator?.campaigns || []).filter(c => {
+                                    const t = typeof c === 'object' ? (c.type || 'ambos') : 'ambos';
+                                    return t === 'ambos' || t === 'gas';
+                                  }).length > 0 && (
+                                    <div>
+                                      <Label className="text-sm font-semibold mb-2 text-slate-400 flex items-center gap-1">
+                                        <Star className="w-3.5 h-3.5" />
+                                        Campanha (Gás)
+                                      </Label>
+                                      <Select
+                                        value={formData.campaign_gas || "__none__"}
+                                        onValueChange={(v) => setFormData({...formData, campaign_gas: v === '__none__' ? '' : v})}
+                                      >
+                                        <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white">
+                                          <SelectValue placeholder="Sem campanha" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="__none__">Sem campanha</SelectItem>
+                                          {(currentOperator.campaigns || []).filter(c => {
+                                            const t = typeof c === 'object' ? (c.type || 'ambos') : 'ambos';
+                                            return t === 'ambos' || t === 'gas';
+                                          }).map((c, idx) => {
+                                            const name = typeof c === 'string' ? c : c.name;
+                                            const isDefault = typeof c === 'object' ? c.is_default : false;
+                                            return <SelectItem key={idx} value={name}>{name}{isDefault ? ' ★' : ''}</SelectItem>;
+                                          })}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>

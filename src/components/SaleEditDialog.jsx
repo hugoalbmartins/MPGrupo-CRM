@@ -1014,6 +1014,44 @@ const SaleEditDialog = ({
                       </FieldGroup>
                     </>
                   )}
+
+                  {(() => {
+                    const currentOp = operators.find(op => op.id === editFormData.operator_id);
+                    const allCampaigns = currentOp?.campaigns || [];
+                    const filterByType = (fuelType) => allCampaigns.filter(c => {
+                      const t = c.type || 'ambos';
+                      return t === 'ambos' || t === fuelType;
+                    });
+                    const elecCampaigns = filterByType('eletricidade');
+                    const gasCampaigns = filterByType('gas');
+                    if (allCampaigns.length === 0) return null;
+                    return (
+                      <>
+                        {(editFormData.energy_sale_type === 'eletricidade' || editFormData.energy_sale_type === 'dual') && elecCampaigns.length > 0 && (
+                          <FieldGroup label="Campanha (Eletricidade)">
+                            <Select value={editFormData.campaign || ""} onValueChange={(v) => update('campaign', v === "__none__" ? "" : v)}>
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Sem campanha" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">Sem campanha</SelectItem>
+                                {elecCampaigns.map((c, i) => <SelectItem key={i} value={c.name}>{c.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FieldGroup>
+                        )}
+                        {(editFormData.energy_sale_type === 'gas' || editFormData.energy_sale_type === 'dual') && gasCampaigns.length > 0 && (
+                          <FieldGroup label="Campanha (Gás)">
+                            <Select value={editFormData.campaign_gas || ""} onValueChange={(v) => update('campaign_gas', v === "__none__" ? "" : v)}>
+                              <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Sem campanha" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">Sem campanha</SelectItem>
+                                {gasCampaigns.map((c, i) => <SelectItem key={i} value={c.name}>{c.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FieldGroup>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {(() => {

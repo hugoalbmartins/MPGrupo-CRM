@@ -31,6 +31,15 @@ const getDefaultCampaign = (operator) => {
 };
 
 const getCampaignName = (c) => (typeof c === 'string' ? c : c.name);
+const getCampaignType = (c) => (typeof c === 'string' ? 'ambos' : (c.type || 'ambos'));
+
+const filterCampaignsByFuel = (campaigns, fuelType) => {
+  if (!campaigns || campaigns.length === 0) return [];
+  return campaigns.filter(c => {
+    const t = getCampaignType(c);
+    return t === 'ambos' || t === fuelType;
+  });
+};
 
 const parsePowerKva = (value) => {
   if (!value) return null;
@@ -74,6 +83,7 @@ const createEmptyMultilocalLocation = (operator) => ({
   power_kva: '',
   tariff_schedule: 'Simples',
   campaign: getDefaultCampaign(operator),
+  campaign_gas: '',
   cui: '',
   tier: '',
   inst_street: '',
@@ -113,15 +123,18 @@ const TariffScheduleSelect = ({ value, power, onChange, compact = false }) => {
   );
 };
 
-const CampaignSelect = ({ value, operator, onChange, compact = false }) => {
-  const campaigns = operator?.campaigns || [];
+const CampaignSelect = ({ value, operator, onChange, compact = false, fuelType = 'eletricidade' }) => {
+  const allCampaigns = operator?.campaigns || [];
+  const campaigns = filterCampaignsByFuel(allCampaigns, fuelType);
   if (campaigns.length === 0) return null;
+
+  const label = fuelType === 'gas' ? 'Campanha (Gás)' : 'Campanha';
 
   return (
     <div>
       <Label className={`text-slate-400 ${compact ? 'text-xs' : ''} flex items-center gap-1`}>
         <Star className="w-3 h-3" />
-        Campanha
+        {label}
       </Label>
       <Select
         value={value || '__none__'}
@@ -172,6 +185,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       power_kva: '',
       tariff_schedule: 'Simples',
       campaign: getDefaultCampaign(currentOperator),
+      campaign_gas: '',
       tier: '',
       activation_status: 'pending',
       activation_date: null,
@@ -245,7 +259,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       expanded = pts.map(p => ({
         id: p.id, point_type: 'cui', point_code: p.point_code,
         power_kva: null, tier: p.tier || null,
-        tariff_schedule: null, campaign: p.campaign || null,
+        tariff_schedule: null, campaign: null, campaign_gas: p.campaign_gas || null,
         activation_status: p.activation_status || 'pending',
         activation_date: p.activation_date || null, operator_paid: p.operator_paid || false,
       }));
@@ -254,6 +268,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
         id: p.id, point_type: 'cpe', point_code: p.point_code,
         power_kva: parsePowerKva(p.power_kva), tier: null,
         tariff_schedule: p.tariff_schedule || null, campaign: p.campaign || null,
+        campaign_gas: null,
         activation_status: p.activation_status || 'pending',
         activation_date: p.activation_date || null, operator_paid: p.operator_paid || false,
       }));
@@ -272,7 +287,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
           expanded.push({
             id: point.cui_id || crypto.randomUUID(), point_type: 'cui', point_code: point.cui_code,
             power_kva: null, tier: point.tier || null,
-            tariff_schedule: null, campaign: point.campaign || null,
+            tariff_schedule: null, campaign: null, campaign_gas: point.campaign_gas || null,
             activation_status: point.activation_status || 'pending',
             activation_date: point.activation_date || null, operator_paid: point.operator_paid || false,
           });
@@ -287,6 +302,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
       id: p.id, point_type: 'cpe', point_code: p.point_code,
       power_kva: parsePowerKva(p.power_kva), tier: null,
       tariff_schedule: p.tariff_schedule || null, campaign: p.campaign || null,
+      campaign_gas: null,
       installation_address: buildInstallationAddress(p.inst_street, p.inst_postal_code, p.inst_locality) || null,
       inst_street: p.inst_street || null,
       inst_postal_code: p.inst_postal_code || null,
@@ -312,6 +328,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
         additional_services: loc.additional_services || null,
         tariff_schedule: loc.tariff_schedule || null,
         campaign: loc.campaign || null,
+        campaign_gas: loc.campaign_gas || null,
         has_direct_debit: loc.has_direct_debit || false,
         has_electronic_invoice: loc.has_electronic_invoice || false,
         activation_status: 'pending', activation_date: null, operator_paid: false,
@@ -427,6 +444,7 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
                   <CampaignSelect
                     value={point.campaign}
                     operator={currentOperator}
+                    fuelType="eletricidade"
                     onChange={(v) => {
                       const updated = [...localPoints];
                       updated[index] = { ...updated[index], campaign: v === '__none__' ? '' : v };
@@ -439,6 +457,19 @@ const EnergyPointsManager = ({ saleType, points, onChange, isNew = true, user, e
 
               {needsCUI && (
                 <>
+                  {(currentOperator?.campaigns || []).filter(c => { const t = getCampaignType(c); return t === 'ambos' || t === 'gas'; }).length > 0 && (
+                    <CampaignSelect
+                      value={point.campaign_gas}
+                      operator={currentOperator}
+                      fuelType="gas"
+                      onChange={(v) => {
+                        const updated = [...localPoints];
+                        updated[index] = { ...updated[index], campaign_gas: v === '__none__' ? '' : v };
+                        setLocalPoints(updated);
+                        emitNormalChange(updated);
+                      }}
+                    />
+                  )}
                   <div>
                     <Label className="text-slate-400">CUI {!needsCPE && '*'}</Label>
                     <Input
@@ -634,6 +665,7 @@ const MultipuntoManager = ({ points, setPoints, canSeeOperatorPaid, isNew, curre
               <CampaignSelect
                 value={point.campaign}
                 operator={currentOperator}
+                fuelType="eletricidade"
                 compact
                 onChange={(v) => handlePointChange(index, 'campaign', v === '__none__' ? '' : v)}
               />
@@ -706,6 +738,7 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
       updated[index].tariff_schedule = '';
       updated[index].cui = '';
       updated[index].tier = '';
+      updated[index].campaign_gas = '';
     }
     setLocations(updated);
   };
@@ -807,6 +840,7 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
                 <CampaignSelect
                   value={loc.campaign}
                   operator={currentOperator}
+                  fuelType="eletricidade"
                   compact
                   onChange={(v) => handleLocationChange(index, 'campaign', v === '__none__' ? '' : v)}
                 />
@@ -815,6 +849,15 @@ const MultiLocalManager = ({ locations, setLocations, isNew, currentOperator }) 
 
             {(loc.energy_type === 'gas' || loc.energy_type === 'dual') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(currentOperator?.campaigns || []).filter(c => { const t = getCampaignType(c); return t === 'ambos' || t === 'gas'; }).length > 0 && (
+                  <CampaignSelect
+                    value={loc.campaign_gas}
+                    operator={currentOperator}
+                    fuelType="gas"
+                    compact
+                    onChange={(v) => handleLocationChange(index, 'campaign_gas', v === '__none__' ? '' : v)}
+                  />
+                )}
                 <div>
                   <Label className="text-slate-400 text-xs">CUI *</Label>
                   <Input
