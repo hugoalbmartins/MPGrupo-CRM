@@ -2043,6 +2043,17 @@ const Sales = ({ user }) => {
                     Editar
                   </Button>
                 )}
+                {sale.pending_validation && (user?.role === 'admin' || user?.role === 'bo') && (
+                  <Button
+                    onClick={() => openEditDialog(sale)}
+                    size="sm"
+                    className="gap-1 text-white font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #06b6d4, #0891b2)', border: 'none' }}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Editar
+                  </Button>
+                )}
                 {(user?.role === 'admin' || user?.role === 'bo' || user?.role === 'partner') && (
                   <Button onClick={() => openNotesDialog(sale)} size="sm" variant="ghost" className="text-slate-400 hover:bg-slate-700/40">
                     Notas ({sale.notes?.length || 0})

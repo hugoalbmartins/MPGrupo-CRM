@@ -169,6 +169,13 @@ const SaleEditDialog = ({
   const [annulling, setAnnulling] = useState(false);
   const [oppNumber, setOppNumber] = useState(editingSale?.oportunidade_number || "");
   const [sendingToOperator, setSendingToOperator] = useState(false);
+  const [operatorChangeConfirm, setOperatorChangeConfirm] = useState(null);
+
+  const originalOperator = operators.find(op => op.id === editingSale?.operator_id);
+  const originalRequiresTreatment = originalOperator?.requires_internal_treatment === true;
+  const currentOperatorInForm = operators.find(op => op.id === editFormData.operator_id);
+  const newOperatorRequiresTreatment = currentOperatorInForm?.requires_internal_treatment === true;
+  const operatorChangedFromTreatment = isReservedTreatment && originalRequiresTreatment && !newOperatorRequiresTreatment && editFormData.operator_id !== editingSale?.operator_id;
 
   const isDualEnergy = editFormData.energy_sale_type === 'dual' || editFormData.scope === 'energia' || editFormData.scope === 'energias';
 
@@ -280,7 +287,11 @@ const SaleEditDialog = ({
     }
     setSendingToOperator(true);
     try {
-      await salesService.markInternalTreatmentDone(editingSale.id, oppNumber.trim());
+      const options = {};
+      if (operatorChangedFromTreatment) {
+        options.operator_changed = true;
+      }
+      await salesService.markInternalTreatmentDone(editingSale.id, oppNumber.trim(), options);
       toast.success("Venda enviada para operadora. Emails enviados com sucesso.");
       onOpenChange(false);
     } catch (err) {
@@ -459,12 +470,31 @@ const SaleEditDialog = ({
               <FormSection icon={Building2} title="Operadora" gradient="from-cyber-500 to-cyber-600">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <FieldGroup label="Operadora *" colSpan={2}>
-                    <Select value={editFormData.operator_id} onValueChange={(v) => update('operator_id', v)}>
+                    <Select value={editFormData.operator_id} onValueChange={(v) => {
+                      if (isReservedTreatment && originalRequiresTreatment) {
+                        const newOp = operators.find(op => op.id === v);
+                        if (newOp && !newOp.requires_internal_treatment && v !== editingSale?.operator_id) {
+                          setOperatorChangeConfirm({ newOperatorId: v, newOperatorName: newOp.name });
+                          return;
+                        }
+                      }
+                      update('operator_id', v);
+                    }}>
                       <SelectTrigger className="bg-dark-900 border-dark-700 focus:border-cyber-500 focus:ring-cyber-500/20 text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>
                         {operators.map(op => <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    {operatorChangedFromTreatment && (
+                      <div className="mt-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                          <p className="text-amber-400 text-xs">
+                            <strong>Operadora alterada para uma que nao exige tratamento interno.</strong> Ao finalizar o tratamento, os emails serao enviados para a nova operadora ({currentOperatorInForm?.name}).
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </FieldGroup>
                 </div>
               </FormSection>
@@ -1402,6 +1432,41 @@ const SaleEditDialog = ({
             className="bg-red-600 hover:bg-red-500 text-white font-semibold gap-2"
           >
             {annulling ? 'A anular...' : 'Confirmar Anulacao'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={!!operatorChangeConfirm} onOpenChange={(open) => { if (!open) setOperatorChangeConfirm(null); }}>
+      <DialogContent className="max-w-md bg-dark-850 border border-amber-500/20">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            Confirmar alteracao de operadora
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Esta venda esta em tratamento interno. A nova operadora ({operatorChangeConfirm?.newOperatorName}) nao exige tratamento interno.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-sm text-amber-300">
+            Tem a certeza que pretende alterar a operadora? Ao finalizar o tratamento, os emails de venda serao enviados para a nova operadora em vez da original.
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <Button variant="outline" onClick={() => setOperatorChangeConfirm(null)} className="bg-dark-900 border-dark-700 text-slate-300 hover:bg-dark-800">
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => {
+              if (operatorChangeConfirm) {
+                update('operator_id', operatorChangeConfirm.newOperatorId);
+                setOperatorChangeConfirm(null);
+              }
+            }}
+            className="bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold gap-2"
+          >
+            Sim, alterar operadora
           </Button>
         </div>
       </DialogContent>

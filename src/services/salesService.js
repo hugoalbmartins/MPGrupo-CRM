@@ -1631,7 +1631,7 @@ export const salesService = {
     return { success: true };
   },
 
-  async markInternalTreatmentDone(saleId, oportunidadeNumber) {
+  async markInternalTreatmentDone(saleId, oportunidadeNumber, options = {}) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 

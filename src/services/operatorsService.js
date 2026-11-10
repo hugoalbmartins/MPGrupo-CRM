@@ -195,6 +195,9 @@ export const operatorsService = {
     if (settingsData.hasOwnProperty('requires_internal_treatment')) {
       updateData.requires_internal_treatment = settingsData.requires_internal_treatment;
     }
+    if (settingsData.hasOwnProperty('campaigns')) {
+      updateData.campaigns = settingsData.campaigns || [];
+    }
 
     const { data, error } = await supabase
       .from('operators')
