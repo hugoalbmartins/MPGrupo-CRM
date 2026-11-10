@@ -1129,6 +1129,36 @@ export const salesService = {
       ? parentSale.operator.email_envio_password
       : null;
 
+    let energyPointsList = null;
+    if (parentSale.sale_type === 'multiponto' || parentSale.sale_type === 'multilocal') {
+      const { data: points } = await supabase
+        .from('sales_energy_points')
+        .select('point_type, point_code, power_kva, tier, inst_street, inst_postal_code, inst_locality, installation_address, billing_address, energy_type, entry_type, voltage_type, additional_services, tariff_schedule, campaign, has_direct_debit, has_electronic_invoice')
+        .eq('sale_id', parentSaleIdForPoints)
+        .order('created_at', { ascending: true });
+      if (points && points.length > 0) {
+        energyPointsList = points.map(pt => ({
+          point_type: pt.point_type,
+          point_code: pt.point_code || '',
+          power_kva: pt.power_kva || null,
+          tier: pt.tier || null,
+          inst_street: pt.inst_street || null,
+          inst_postal_code: pt.inst_postal_code || null,
+          inst_locality: pt.inst_locality || null,
+          installation_address: pt.installation_address || null,
+          billing_address: pt.billing_address || null,
+          energy_type: pt.energy_type || null,
+          entry_type: pt.entry_type || null,
+          voltage_type: pt.voltage_type || null,
+          additional_services: pt.additional_services || null,
+          tariff_schedule: pt.tariff_schedule || null,
+          campaign: pt.campaign || null,
+          has_direct_debit: pt.has_direct_debit || false,
+          has_electronic_invoice: pt.has_electronic_invoice || false,
+        }));
+      }
+    }
+
     const basePayload = {
       sale_code: parentSale.sale_code,
       customer_name: parentSale.client_name,
@@ -1177,6 +1207,7 @@ export const salesService = {
       from_email: fromEmail,
       from_smtp_user: fromEmail,
       from_smtp_pass: fromSmtpPass,
+      ...(energyPointsList ? { energy_points_list: energyPointsList } : {}),
     };
 
     const operatorUserIds = parentSale.operator?.notification_user_ids;

@@ -529,6 +529,43 @@ const Sales = ({ user }) => {
       if (formData.scope === 'energia' && (energySaleMode === 'multiponto' || energySaleMode === 'multilocal')) {
         const selectedOperator = operators.find(op => op.id === formData.operator_id);
         const energyType = selectedOperator?.energy_type;
+        const isInternalTreatmentMulti = selectedOperator?.requires_internal_treatment === true;
+
+        const dupReasonsMulti = await clientsService.checkDuplicates({
+          contact: submitData.client_contact,
+          email: submitData.client_email,
+          iban: submitData.client_iban,
+          excludeNif: submitData.client_nif,
+        });
+        const existingClientMulti = formData._existing_client;
+        const mismatchReasonsMulti = [];
+        if (existingClientMulti) {
+          if (existingClientMulti.client_name && submitData.client_name && existingClientMulti.client_name.trim().toLowerCase() !== submitData.client_name.trim().toLowerCase()) {
+            mismatchReasonsMulti.push('Nome do cliente diferente do registado');
+          }
+          if (existingClientMulti.client_contact && submitData.client_contact && existingClientMulti.client_contact.trim() !== submitData.client_contact.trim()) {
+            mismatchReasonsMulti.push('Contacto diferente do registado');
+          }
+          if (existingClientMulti.client_email && submitData.client_email && existingClientMulti.client_email.trim().toLowerCase() !== submitData.client_email.trim().toLowerCase()) {
+            mismatchReasonsMulti.push('Email diferente do registado');
+          }
+          if (existingClientMulti.client_iban && submitData.client_iban && existingClientMulti.client_iban.trim().replace(/\s/g, '') !== submitData.client_iban.trim().replace(/\s/g, '')) {
+            mismatchReasonsMulti.push('IBAN diferente do registado');
+          }
+        }
+        const allReasonsMulti = [...dupReasonsMulti, ...mismatchReasonsMulti];
+        const selectedPartnerMulti = partners.find(p => p.id === submitData.partner_id);
+        const isPartnerBlockedMulti = selectedPartnerMulti?.sales_blocked === true;
+        if (isPartnerBlockedMulti && !allReasonsMulti.includes('Parceiro com vendas bloqueadas para validacao')) {
+          allReasonsMulti.push('Parceiro com vendas bloqueadas para validacao');
+        }
+
+        if (isInternalTreatmentMulti) {
+          submitData.internal_treatment = true;
+          if (allReasonsMulti.length > 0) {
+            submitData.validation_reason = allReasonsMulti.join('; ');
+          }
+        }
 
         let allPointsForEmail = [...energyPoints];
 
@@ -575,26 +612,34 @@ const Sales = ({ user }) => {
             energyPointsService.replacePointsForSale(parentSaleId, allPointsForEmail).catch(() => {});
           }
 
-          toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multiponto)!`);
+          if (isInternalTreatmentMulti) {
+            toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} em Para Tratamento (Multiponto)!`);
+          } else {
+            toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multiponto)!`);
+          }
 
           if (parentSaleId && !shouldSkipEmail) {
-            const emailPoints = cpePoints.map(p => ({
-              point_type: 'cpe',
-              point_code: p.point_code?.toUpperCase() || '',
-              power_kva: p.power_kva || null,
-              tariff_schedule: p.tariff_schedule || null,
-              campaign: p.campaign || null,
-              inst_street: p.inst_street || null,
-              inst_postal_code: p.inst_postal_code || null,
-              inst_locality: p.inst_locality || null,
-              installation_address: p.installation_address || null,
-              billing_address: p.billing_address || null,
-            }));
             try {
-              await salesService.resendNewSaleEmail(parentSaleId, {
-                sale_type: 'multiponto',
-                energy_points_list: emailPoints,
-              }, true);
+              if (isInternalTreatmentMulti) {
+                await salesService.sendInternalTreatmentEmail(parentSaleId);
+              } else {
+                const emailPoints = cpePoints.map(p => ({
+                  point_type: 'cpe',
+                  point_code: p.point_code?.toUpperCase() || '',
+                  power_kva: p.power_kva || null,
+                  tariff_schedule: p.tariff_schedule || null,
+                  campaign: p.campaign || null,
+                  inst_street: p.inst_street || null,
+                  inst_postal_code: p.inst_postal_code || null,
+                  inst_locality: p.inst_locality || null,
+                  installation_address: p.installation_address || null,
+                  billing_address: p.billing_address || null,
+                }));
+                await salesService.resendNewSaleEmail(parentSaleId, {
+                  sale_type: 'multiponto',
+                  energy_points_list: emailPoints,
+                }, true);
+              }
             } catch (emailErr) {
               toast.warning("Vendas criadas, mas o email de notificação falhou. Pode reenviar manualmente.");
             }
@@ -730,14 +775,22 @@ const Sales = ({ user }) => {
             energyPointsService.replacePointsForSale(parentSaleId, energyPoints).catch(() => {});
           }
 
-          toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multilocal)!`);
+          if (isInternalTreatmentMulti) {
+            toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} em Para Tratamento (Multilocal)!`);
+          } else {
+            toast.success(`${createdCount} ${createdCount === 1 ? 'venda criada' : 'vendas criadas'} com sucesso (Multilocal)!`);
+          }
 
           if (parentSaleId && !shouldSkipEmail) {
             try {
-              await salesService.resendNewSaleEmail(parentSaleId, {
-                sale_type: 'multilocal',
-                energy_points_list: multilocalEmailPoints,
-              }, true);
+              if (isInternalTreatmentMulti) {
+                await salesService.sendInternalTreatmentEmail(parentSaleId);
+              } else {
+                await salesService.resendNewSaleEmail(parentSaleId, {
+                  sale_type: 'multilocal',
+                  energy_points_list: multilocalEmailPoints,
+                }, true);
+              }
             } catch (emailErr) {
               toast.warning("Vendas criadas, mas o email de notificação falhou. Pode reenviar manualmente.");
             }
