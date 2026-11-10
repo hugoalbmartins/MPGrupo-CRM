@@ -170,6 +170,7 @@ const SaleEditDialog = ({
   const [oppNumber, setOppNumber] = useState(editingSale?.oportunidade_number || "");
   const [sendingToOperator, setSendingToOperator] = useState(false);
   const [operatorChangeConfirm, setOperatorChangeConfirm] = useState(null);
+  const isReservedTreatment = editingSale?.internal_treatment && editingSale?.treatment_reserved_by;
 
   const originalOperator = operators.find(op => op.id === editingSale?.operator_id);
   const originalRequiresTreatment = originalOperator?.requires_internal_treatment === true;
@@ -300,8 +301,6 @@ const SaleEditDialog = ({
       setSendingToOperator(false);
     }
   };
-
-  const isReservedTreatment = editingSale?.internal_treatment && editingSale?.treatment_reserved_by;
 
   return (
     <>
