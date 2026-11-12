@@ -120,59 +120,44 @@ export async function generateSaleCode(partnerId, saleDate, supabase) {
   if (partnerId) {
     const { data: partner } = await supabase
       .from('partners')
-      .select('name, created_at')
+      .select('id, name, created_at')
       .eq('id', partnerId)
       .maybeSingle();
 
     if (partner) {
-      const normalizedName = normalizeToAscii(partner.name);
+      const normalizedName = normalizeToAscii(partner.name).toLowerCase();
       const base3 = normalizedName.substring(0, 3).toUpperCase();
       const base2 = normalizedName.substring(0, 2).toUpperCase();
 
-      const { data: conflicting } = await supabase
+      const { data: partners } = await supabase
         .from('partners')
-        .select('id, created_at')
-        .ilike('name', `${partner.name.substring(0, 3)}%`)
-        .order('created_at', { ascending: true });
+        .select('id, name, created_at')
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true });
 
-      if (!conflicting || conflicting.length <= 1) {
-        namePrefix = base3;
-      } else {
-        const index = conflicting.findIndex(p => p.id === partnerId);
-        if (index <= 0) {
-          namePrefix = base3;
-        } else {
-          namePrefix = `${base2}${index}`;
-        }
-      }
+      const sameNamePartners = (partners || []).filter(item =>
+        normalizeToAscii(item.name || '').toLowerCase() === normalizedName
+      );
+      const partnerIndex = sameNamePartners.findIndex(item => item.id === partnerId);
+      namePrefix = partnerIndex > 0 ? `${base2}${partnerIndex}` : base3;
     }
   }
 
   const date = new Date(saleDate);
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = String(date.getFullYear()).slice(-2);
-
-  const query = partnerId
-    ? supabase.from('sales').select('sale_code').eq('partner_id', partnerId)
-    : supabase.from('sales').select('sale_code').is('partner_id', null);
-
-  const { data: allSales } = await query;
+  const { data: allSales } = await supabase
+    .from('sales')
+    .select('sale_code')
+    .ilike('sale_code', `${namePrefix}%`);
 
   let maxSequence = 0;
-  if (allSales && allSales.length > 0) {
-    for (const sale of allSales) {
-      let code = sale.sale_code || '';
-      const underscoreIdx = code.lastIndexOf('_');
-      if (underscoreIdx > 0) {
-        code = code.substring(0, underscoreIdx);
-      }
-      if (code.length >= 9) {
-        const seqStr = code.substring(3, 7);
-        const seq = parseInt(seqStr, 10);
-        if (!isNaN(seq) && seq > maxSequence) {
-          maxSequence = seq;
-        }
-      }
+  for (const sale of allSales || []) {
+    const code = (sale.sale_code || '').split('_')[0];
+    if (!code.startsWith(namePrefix)) continue;
+    const sequence = Number(code.substring(namePrefix.length, namePrefix.length + 4));
+    if (Number.isInteger(sequence) && sequence > maxSequence) {
+      maxSequence = sequence;
     }
   }
 
