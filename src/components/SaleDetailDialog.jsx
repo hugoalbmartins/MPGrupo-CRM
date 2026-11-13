@@ -1475,45 +1475,51 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
         )}
       </DialogContent>
 
-      {showTratamentoDialog && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
-          <div className="bg-dark-850 border border-amber-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">Enviar para Operadora</h3>
-            <p className="text-sm text-slate-400 mb-4">
+      <Dialog
+        open={showTratamentoDialog}
+        onOpenChange={(open) => {
+          setShowTratamentoDialog(open);
+          if (!open) setOportunidadeNumber("");
+        }}
+      >
+        <DialogContent className="bg-dark-850 border border-amber-500/30 max-w-md shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-white">Enviar para Operadora</DialogTitle>
+            <DialogDescription className="text-sm text-slate-400">
               Insira o número de oportunidade (OPP). Ao confirmar, a venda será movida para "Para registo" e os emails de venda serão enviados para a operadora.
-            </p>
-            <div className="mb-4">
-              <Label className="text-slate-300 mb-1 block">Número de Oportunidade/Registo *</Label>
-              <Input
-                type="text"
-                value={oportunidadeNumber}
-                onChange={(e) => setOportunidadeNumber(e.target.value)}
-                placeholder="Ex: OPP-12345"
-                className="bg-dark-900 border-dark-700 focus:border-amber-500 focus:ring-amber-500/20 text-white"
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { setShowTratamentoDialog(false); setOportunidadeNumber(""); }}
-                className="text-slate-400 hover:bg-dark-800"
-              >
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleMarkTratadoInterno}
-                disabled={savingTratamento || !oportunidadeNumber.trim()}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 text-white"
-              >
-                {savingTratamento ? "A processar..." : "Confirmar e Enviar Emails"}
-              </Button>
-            </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mb-2">
+            <Label className="text-slate-300 mb-1 block">Número de Oportunidade/Registo *</Label>
+            <Input
+              type="text"
+              value={oportunidadeNumber}
+              onChange={(e) => setOportunidadeNumber(e.target.value)}
+              placeholder="Ex: OPP-12345"
+              className="bg-dark-900 border-dark-700 focus:border-amber-500 focus:ring-amber-500/20 text-white"
+              autoFocus
+            />
           </div>
-        </div>
-      )}
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowTratamentoDialog(false); setOportunidadeNumber(""); }}
+              className="text-slate-400 hover:bg-dark-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleMarkTratadoInterno}
+              disabled={savingTratamento || !oportunidadeNumber.trim()}
+              className="bg-gradient-to-r from-amber-500 to-amber-600 text-white"
+            >
+              {savingTratamento ? "A processar..." : "Confirmar e Enviar Emails"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
