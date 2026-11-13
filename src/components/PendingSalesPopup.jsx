@@ -23,14 +23,17 @@ const PendingSalesPopup = ({ user }) => {
     try {
       const { data, error } = await supabase
         .from('sales')
-        .select('id, sale_code, client_name, client_nif, operator_name, partner_name, scope, date, pending_validation, internal_treatment, validation_reason, partner_id, operator_id')
+        .select('id, sale_code, client_name, client_nif, operator_name, partner_name, scope, date, pending_validation, internal_treatment, treatment_reserved_by, validation_reason, partner_id, operator_id')
         .or('pending_validation.eq.true,internal_treatment.eq.true')
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      setPendingSales(data || []);
-      setVisible((data || []).length > 0);
+      const availableSales = (data || []).filter((sale) => (
+        !sale.internal_treatment || !sale.treatment_reserved_by
+      ));
+      setPendingSales(availableSales);
+      setVisible(availableSales.length > 0);
     } catch (err) {
       console.error('Error fetching pending sales:', err);
     } finally {
@@ -44,7 +47,6 @@ const PendingSalesPopup = ({ user }) => {
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'bo')) return;
-    if (visible) return;
 
     const interval = setInterval(() => {
       fetchPendingSales();
@@ -58,6 +60,7 @@ const PendingSalesPopup = ({ user }) => {
   };
 
   const handleView = (saleId) => {
+    setVisible(false);
     setDetailSaleId(saleId);
     setDetailOpen(true);
   };
@@ -90,8 +93,7 @@ const PendingSalesPopup = ({ user }) => {
   };
 
   const handleOpenTratamento = (sale) => {
-    setOportunidadeModal(sale);
-    setOportunidadeNumber("");
+    handleView(sale.id);
   };
 
   const handleConfirmTratamento = async () => {

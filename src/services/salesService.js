@@ -1625,10 +1625,11 @@ export const salesService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    const { error } = await supabase.rpc('start_treatment', { p_sale_id: saleId });
+    const { data, error } = await supabase.rpc('start_treatment', { p_sale_id: saleId });
     if (error) throw new Error(error.message);
+    if (!data?.success) throw new Error('Esta venda já está reservada para outro utilizador.');
 
-    return { success: true };
+    return data;
   },
 
   async markInternalTreatmentDone(saleId, oportunidadeNumber, options = {}) {

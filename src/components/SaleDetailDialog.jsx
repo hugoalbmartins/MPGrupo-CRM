@@ -254,6 +254,17 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
     }
   };
 
+  const handleStartTratamento = async () => {
+    try {
+      await salesService.startTreatment(sale.id);
+      toast.success("Tratamento iniciado. Esta venda ficou reservada para si.");
+      await fetchSaleDetails();
+      if (onSaleUpdated) onSaleUpdated();
+    } catch (error) {
+      toast.error("Não foi possível reservar esta venda: " + error.message);
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       "Pendente": "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
@@ -306,6 +317,16 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
             </div>
             {(user?.role === 'admin' || user?.role === 'bo') && sale && (
               <div className="flex gap-2">
+                {sale.internal_treatment && !sale.treatment_reserved_by && (
+                  <Button
+                    size="sm"
+                    onClick={handleStartTratamento}
+                    className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>Iniciar Tratamento</span>
+                  </Button>
+                )}
                 {sale.internal_treatment && sale.treatment_reserved_by && (
                   <Button
                     size="sm"
