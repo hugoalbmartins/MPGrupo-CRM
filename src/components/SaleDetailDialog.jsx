@@ -1015,6 +1015,9 @@ const SaleDetailDialog = ({ open, onOpenChange, saleId, user, onSaleUpdated, onE
                                         <span className="text-red-400 font-semibold">{cb.percentage}%</span> da comissao = <span className="font-bold text-red-300">{parseFloat(cb.chargeback_amount || 0).toFixed(2)} EUR</span>
                                       </p>
                                       <p className="text-xs text-slate-400">Motivo: {cb.reason || 'N/A'}</p>
+                                      {cb.reason_date && (
+                                        <p className="text-xs text-slate-400">Data motivo: {new Date(cb.reason_date).toLocaleDateString('pt-PT')}</p>
+                                      )}
                                       <p className="text-xs text-slate-500">
                                         Criado em {new Date(cb.created_at).toLocaleDateString('pt-PT')}
                                         {cb.commission_report_id ? (

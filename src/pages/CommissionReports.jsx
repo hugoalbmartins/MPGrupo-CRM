@@ -263,16 +263,18 @@ const CommissionReports = ({ user }) => {
     const chargebacksCatA = pendingChargebacks.filter(cb => cb.sale?.paid_in_report_id != null);
     const chargebacksCatB = pendingChargebacks.filter(cb => cb.sale?.paid_in_report_id == null);
 
-    // Category B: sales that were never paid but have chargebacks - include both payment + deduction
+    // Category B: sales that were never paid but have chargebacks - show net commission on single row
     const catBSalesData = chargebacksCatB.map(cb => {
       const sale = cb.sale;
       if (!sale) return null;
       const commission = parseFloat(sale.manual_commission || sale.calculated_commission || 0);
       const ddValue = sale.has_direct_debit ? parseFloat(sale.direct_debit_value || 0) : 0;
       const feValue = sale.has_electronic_invoice ? parseFloat(sale.electronic_invoice_value || 0) : 0;
-      const totalComm = commission + ddValue + feValue;
-      totalCommissions += totalComm;
-      return { sale, totalComm, retentionValue: 0, isChargebackSale: true };
+      const grossComm = commission + ddValue + feValue;
+      const cbAmount = parseFloat(cb.chargeback_amount || 0);
+      const netComm = Math.max(0, grossComm - cbAmount);
+      totalCommissions += netComm;
+      return { sale, totalComm: netComm, grossComm, cbAmount, retentionValue: 0, isChargebackSale: true, chargebackPct: cb.percentage, chargebackReason: cb.reason };
     }).filter(Boolean);
 
     const salesRowsData = finalSales.map(sale => {
@@ -299,8 +301,9 @@ const CommissionReports = ({ user }) => {
     }
     pendingRetentionEntries.forEach(entry => { totalRefunds += parseFloat(entry.amount || 0); });
 
-    // All chargebacks count as deductions
-    pendingChargebacks.forEach(cb => { totalChargebacks += parseFloat(cb.chargeback_amount || 0); });
+    // Only Category A chargebacks (already paid in previous report) are deducted from the total.
+    // Category B chargebacks are already netted in the sale row itself.
+    chargebacksCatA.forEach(cb => { totalChargebacks += parseFloat(cb.chargeback_amount || 0); });
 
     const totalAdvancesSettled = (settledAdvances || []).reduce((sum, a) => sum + a.settle_amount, 0);
 
@@ -326,12 +329,17 @@ const CommissionReports = ({ user }) => {
           : '';
       const commDisplay = isCanceled
         ? `<span style="color:#991b1b;font-weight:bold;">\u20AC0.00</span>`
-        : `\u20AC${totalComm.toFixed(2)}`;
+        : isChargebackSale
+          ? `<span style="color:#92400e;font-weight:bold;">\u20AC${totalComm.toFixed(2)}</span>`
+          : `\u20AC${totalComm.toFixed(2)}`;
       const obsText = (sale.observations || '').toString().replace(/</g, '&lt;').replace(/>/g, '&gt;') || '-';
+      const cbNote = isChargebackSale
+        ? `<span style="color:#7f1d1d;font-weight:bold;">[Chargeback ${chargebackPct}% - ${chargebackReason || 'N/A'}]</span>`
+        : '';
       const statusNote = isCanceled
         ? `<span style="color:#991b1b;font-weight:bold;">[${sale.status}]</span> ${obsText}`
         : isChargebackSale
-          ? `<span style="color:#92400e;font-weight:bold;">[Chargeback]</span> ${obsText}`
+          ? `${cbNote} <span style="color:#92400e;font-weight:bold;">[CB]</span> ${obsText}`
           : obsText;
       return `
       <tr style="${rowStyle}">
@@ -388,7 +396,7 @@ const CommissionReports = ({ user }) => {
           <tbody>
             ${pendingChargebacks.map(cb => {
               const isPreviouslyPaid = cb.sale?.paid_in_report_id != null;
-              const typeLabel = isPreviouslyPaid ? 'Pago em auto anterior' : 'Pago neste auto';
+              const typeLabel = isPreviouslyPaid ? 'Descontado do total (pago em auto anterior)' : 'Liquidado na linha da venda';
               return `
               <tr>
                 <td style="padding:5px 4px;border:1px solid #ddd;">${cb.sale?.client_name || '-'}</td>
@@ -398,15 +406,17 @@ const CommissionReports = ({ user }) => {
                 <td style="padding:5px 4px;border:1px solid #ddd;">${cb.reason_date ? new Date(cb.reason_date).toLocaleDateString('pt-PT') : '-'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;">\u20AC${parseFloat(cb.commission_amount || 0).toFixed(2)}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;">${parseFloat(cb.percentage || 0).toFixed(0)}%</td>
-                <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#b91c1c;font-weight:bold;">-\u20AC${parseFloat(cb.chargeback_amount || 0).toFixed(2)}</td>
+                <td style="padding:5px 4px;border:1px solid #ddd;text-align:right;color:#b91c1c;font-weight:bold;">${isPreviouslyPaid ? '-\u20AC' + parseFloat(cb.chargeback_amount || 0).toFixed(2) : 'liquidado'}</td>
                 <td style="padding:5px 4px;border:1px solid #ddd;font-size:7px;">${typeLabel}</td>
               </tr>
             `;}).join('')}
+            ${chargebacksCatA.length > 0 ? `
             <tr style="background:#fee2e2;font-weight:bold;">
-              <td colspan="7" style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">TOTAL CHARGEBACKS:</td>
+              <td colspan="7" style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">TOTAL A DESCONTAR:</td>
               <td style="text-align:right;border-top:2px solid #b91c1c;color:#7f1d1d;">-\u20AC${totalChargebacks.toFixed(2)}</td>
               <td></td>
             </tr>
+            ` : ''}
           </tbody>
         </table>
       </div>
