@@ -70,6 +70,7 @@ const OperatorRow = ({ op, stats }) => {
           <AlertTriangle className="w-4 h-4 text-amber-400 mx-auto mb-1" />
           <p className="text-xl font-bold text-white">{s.chargeback || 0}</p>
           <p className="text-[10px] text-slate-500">Chargeback</p>
+          <p className="text-[9px] text-amber-500/60">total acumulado</p>
         </div>
       </div>
     </div>
@@ -98,17 +99,28 @@ const OperatorEvaluation = ({ user }) => {
   const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
+      // Main query: filtered by date range and operator (for Eletricidade/Gas/Dual/Ativos/Cancelados)
       let query = supabase
         .from('sales')
-        .select('operator_id, scope, energy_sale_type, status, has_chargeback, date')
+        .select('operator_id, scope, energy_sale_type, status, date')
         .eq('scope', 'energia');
 
       if (useDateRange && startDate) query = query.gte('date', startDate);
       if (useDateRange && endDate) query = query.lte('date', endDate);
       if (selectedOperatorId !== 'all') query = query.eq('operator_id', selectedOperatorId);
 
-      const { data, error } = await query;
+      // Chargeback query: no date filter — chargebacks are permanent facts on a sale
+      let cbQuery = supabase
+        .from('sales')
+        .select('operator_id')
+        .eq('scope', 'energia')
+        .eq('has_chargeback', true);
+
+      if (selectedOperatorId !== 'all') cbQuery = cbQuery.eq('operator_id', selectedOperatorId);
+
+      const [{ data, error }, { data: cbData, error: cbError }] = await Promise.all([query, cbQuery]);
       if (error) throw error;
+      if (cbError) throw cbError;
 
       const byOp = {};
       const tot = { eletricidade: 0, gas: 0, dual: 0, other: 0, ativos: 0, cancelados: 0, chargeback: 0 };
@@ -126,7 +138,15 @@ const OperatorEvaluation = ({ user }) => {
 
         if (row.status === 'Ativo') { o.ativos++; tot.ativos++; }
         if (row.status === 'Cancelado' || row.status === 'Recusado') { o.cancelados++; tot.cancelados++; }
-        if (row.has_chargeback) { o.chargeback++; tot.chargeback++; }
+      }
+
+      // Add chargebacks (from the unfiltered query)
+      for (const row of (cbData || [])) {
+        if (!byOp[row.operator_id]) {
+          byOp[row.operator_id] = { eletricidade: 0, gas: 0, dual: 0, other: 0, ativos: 0, cancelados: 0, chargeback: 0 };
+        }
+        byOp[row.operator_id].chargeback++;
+        tot.chargeback++;
       }
 
       setStats(byOp);
@@ -236,7 +256,7 @@ const OperatorEvaluation = ({ user }) => {
         <StatCard label="Dual" value={totals.dual || 0} icon={BarChart3} color="#a855f7" sub={`${totalSales} total`} />
         <StatCard label="Ativos" value={totals.ativos || 0} icon={CheckCircle2} color="#10b981" />
         <StatCard label="Cancelados" value={totals.cancelados || 0} icon={XCircle} color="#ef4444" />
-        <StatCard label="Chargeback" value={totals.chargeback || 0} icon={AlertTriangle} color="#f59e0b" />
+        <StatCard label="Chargeback" value={totals.chargeback || 0} icon={AlertTriangle} color="#f59e0b" sub="Total acumulado" />
       </div>
 
       {/* Per-operator breakdown */}

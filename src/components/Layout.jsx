@@ -97,6 +97,7 @@ const Layout = ({ children, user, onLogout }) => {
   if (user?.role === "admin") {
     menuItems.push(
       { path: "/operators", label: "Operadoras", icon: Building2, roles: ["admin"], section: "SISTEMA" },
+      { path: "/operator-evaluation", label: "Avaliacao Operadoras", icon: TrendingUp, roles: ["admin"], section: "SISTEMA" },
       { path: "/operator-validations", label: "Validacoes", icon: CheckSquare, roles: ["admin"], section: "SISTEMA" },
       { path: "/objectives", label: "Objetivos", icon: Target, roles: ["admin"], section: "SISTEMA" },
       { path: "/users", label: "Utilizadores", icon: Settings, roles: ["admin"], section: "SISTEMA" },
@@ -106,8 +107,7 @@ const Layout = ({ children, user, onLogout }) => {
       { path: "/simulador-energia-admin", label: "Admin Simulador Energia", icon: Settings, roles: ["admin"], section: "SISTEMA" },
       { path: "/scopes-management", label: "Ambitos", icon: Layers, roles: ["admin"], section: "SISTEMA" },
       { path: "/partner-types", label: "Tipos de Parceiro", icon: UsersRound, roles: ["admin"], section: "SISTEMA" },
-      { path: "/email-settings", label: "Config. Email", icon: Mail, roles: ["admin"], section: "SISTEMA" },
-      { path: "/operator-evaluation", label: "Avaliacao Operadoras", icon: TrendingUp, roles: ["admin"], section: "SISTEMA" }
+      { path: "/email-settings", label: "Config. Email", icon: Mail, roles: ["admin"], section: "SISTEMA" }
     );
   } else if (user?.role === "bo") {
     menuItems.push(
