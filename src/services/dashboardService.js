@@ -155,28 +155,31 @@ function buildByScope(sales, scopesMetaMap = {}) {
   return byScope;
 }
 
-async function calculateRetentions(year, month, partnerId = null) {
+async function calculateRetentions(year, month, partnerId = null, existingConfigMap = null) {
   const { start, end } = getMonthRange(year, month);
 
   let currentQuery = supabase
     .from('sales')
-    .select('*, operator_id')
+    .select('calculated_commission, scope, energy_sale_type, service_type, operator_id')
     .gte('date', start.split('T')[0])
     .lt('date', end.split('T')[0])
     .eq('is_mirror_copy', false);
   if (partnerId) currentQuery = currentQuery.eq('partner_id', partnerId);
   const { data: currentSales } = await currentQuery;
 
-  const { data: allCommissionConfigs } = await supabase
-    .from('commission_configurations')
-    .select('operator_id, service_type, has_retention, retention_percentage');
+  let configMap = existingConfigMap;
+  if (!configMap) {
+    const { data: allCommissionConfigs } = await supabase
+      .from('commission_configurations')
+      .select('operator_id, service_type, has_retention, retention_percentage');
 
-  const configMap = {};
-  if (allCommissionConfigs) {
-    allCommissionConfigs.forEach(config => {
-      const key = `${config.operator_id}_${config.service_type}`;
-      configMap[key] = config;
-    });
+    configMap = {};
+    if (allCommissionConfigs) {
+      allCommissionConfigs.forEach(config => {
+        const key = `${config.operator_id}_${config.service_type}`;
+        configMap[key] = config;
+      });
+    }
   }
 
   let currentMonthRetentions = 0;
@@ -209,7 +212,7 @@ async function calculateRetentions(year, month, partnerId = null) {
 
   let returnQuery = supabase
     .from('sales')
-    .select('*, operator_id')
+    .select('calculated_commission, scope, energy_sale_type, service_type, operator_id')
     .gte('date', formatLocalDate(returnStartDate))
     .lt('date', formatLocalDate(returnEndDate))
     .eq('is_mirror_copy', false);
@@ -250,7 +253,7 @@ async function calculateRetentions(year, month, partnerId = null) {
   };
 }
 
-async function calculateNetCommission(sales) {
+async function calculateNetCommission(sales, existingConfigMap = null) {
   let totalGross = 0;
   let totalRetention = 0;
 
@@ -258,16 +261,19 @@ async function calculateNetCommission(sales) {
     return { gross: 0, retention: 0, net: 0 };
   }
 
-  const { data: allCommissionConfigs } = await supabase
-    .from('commission_configurations')
-    .select('operator_id, service_type, has_retention, retention_percentage');
+  let configMap = existingConfigMap;
+  if (!configMap) {
+    const { data: allCommissionConfigs } = await supabase
+      .from('commission_configurations')
+      .select('operator_id, service_type, has_retention, retention_percentage');
 
-  const configMap = {};
-  if (allCommissionConfigs) {
-    allCommissionConfigs.forEach(config => {
-      const key = `${config.operator_id}_${config.service_type}`;
-      configMap[key] = config;
-    });
+    configMap = {};
+    if (allCommissionConfigs) {
+      allCommissionConfigs.forEach(config => {
+        const key = `${config.operator_id}_${config.service_type}`;
+        configMap[key] = config;
+      });
+    }
   }
 
   for (const sale of sales) {
@@ -369,7 +375,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
   const [salesResult, partnerCountResult, last12Months, allCommissionConfigs, scopesResult] = await Promise.all([
     supabase
       .from('sales')
-      .select('*')
+      .select('id, date, partner_id, operator_id, scope, status, monthly_value, calculated_commission, manual_commission, paid_to_operator, energy_sale_type, service_type, has_direct_debit, has_electronic_invoice, created_by_user_id, is_mirror_copy, ev_outlet_count, custom_fields')
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
@@ -378,7 +384,7 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
       .eq('is_mirror_copy', false),
     supabase
       .from('partners')
-      .select('*', { count: 'exact', head: true }),
+      .select('id', { count: 'exact', head: true }),
     getLast12MonthsData(),
     supabase
       .from('commission_configurations')
@@ -404,8 +410,8 @@ async function getAdminDashboard(year, month, adminId, isCommissioned, adminPart
   const scopesMeta = scopesResult.data || [];
   const scopesMetaMap = {};
   scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
-  const retentions = await calculateRetentions(year, month);
-  const netCommissions = await calculateNetCommission(sales);
+  const retentions = await calculateRetentions(year, month, null, configMap);
+  const netCommissions = await calculateNetCommission(sales, configMap);
 
   const stats = {
     total_sales: 0,
@@ -534,7 +540,7 @@ async function getBODashboard(year, month) {
   const [salesResult, last12Months, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
-      .select('*')
+      .select('id, date, partner_id, operator_id, scope, status, monthly_value, calculated_commission, manual_commission, paid_to_operator, energy_sale_type, service_type, has_direct_debit, has_electronic_invoice, is_mirror_copy, ev_outlet_count, custom_fields')
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
       .neq('status', 'Em proposta')
@@ -615,10 +621,10 @@ async function getBODashboard(year, month) {
 async function getPartnerDashboard(partnerId, year, month) {
   const { start, end } = getMonthRange(year, month);
 
-  const [salesResult, last12Months, operatorsResult, scopesMeta] = await Promise.all([
+  const [salesResult, last12Months, operatorsResult, allCommissionConfigs, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
-      .select('*')
+      .select('id, date, partner_id, operator_id, scope, status, monthly_value, calculated_commission, manual_commission, paid_to_operator, energy_sale_type, service_type, has_direct_debit, has_electronic_invoice, is_mirror_copy, ev_outlet_count, custom_fields')
       .eq('partner_id', partnerId)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
@@ -631,6 +637,9 @@ async function getPartnerDashboard(partnerId, year, month) {
       .from('operators')
       .select('id, name')
       .eq('hidden', false),
+    supabase
+      .from('commission_configurations')
+      .select('operator_id, service_type, has_retention, retention_percentage'),
     fetchScopesMeta()
   ]);
 
@@ -638,8 +647,17 @@ async function getPartnerDashboard(partnerId, year, month) {
   const operators = operatorsResult.data || [];
   const scopesMetaMap = {};
   scopesMeta.forEach(s => { scopesMetaMap[s.slug] = s; });
-  const retentions = await calculateRetentions(year, month, partnerId);
-  const netCommissions = await calculateNetCommission(sales);
+
+  const configMap = {};
+  if (allCommissionConfigs.data) {
+    allCommissionConfigs.data.forEach(config => {
+      const key = `${config.operator_id}_${config.service_type}`;
+      configMap[key] = config;
+    });
+  }
+
+  const retentions = await calculateRetentions(year, month, partnerId, configMap);
+  const netCommissions = await calculateNetCommission(sales, configMap);
 
   const stats = {
     total_sales: 0,
@@ -732,7 +750,7 @@ async function getCommercialDashboard(userId, year, month) {
   const [salesResult, last12Months, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
-      .select('*')
+      .select('id, date, scope, status, monthly_value, energy_sale_type, has_direct_debit, has_electronic_invoice, is_mirror_copy, ev_outlet_count, custom_fields')
       .eq('created_by_user_id', userId)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
@@ -804,7 +822,7 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
   const [salesResult, ownSalesResult, managerUserResult, objectivesResult, last12Months, allCommissionConfigs, scopesMeta] = await Promise.all([
     supabase
       .from('sales')
-      .select('*')
+      .select('id, date, partner_id, operator_id, scope, status, monthly_value, calculated_commission, manual_commission, paid_to_operator, energy_sale_type, service_type, has_direct_debit, has_electronic_invoice, is_mirror_copy, ev_outlet_count, custom_fields, has_tv, has_net, has_lr, client_type, created_by_user_id')
       .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
@@ -814,7 +832,7 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
       .eq('is_mirror_copy', false),
     supabase
       .from('sales')
-      .select('*')
+      .select('id, date, partner_id, operator_id, scope, status, monthly_value, calculated_commission, manual_commission, paid_to_operator, energy_sale_type, service_type, has_direct_debit, has_electronic_invoice, is_mirror_copy, ev_outlet_count, custom_fields, has_tv, has_net, has_lr, client_type, created_by_user_id')
       .eq('created_by_user_id', managerId)
       .gte('date', start.split('T')[0])
       .lt('date', end.split('T')[0])
@@ -839,7 +857,7 @@ async function getManagerLevel1Dashboard(managerId, year, month) {
     getLast12MonthsData(),
     supabase
       .from('commission_configurations')
-      .select('*'),
+      .select('operator_id, partner_type, client_type, service_type, commission_mode, commission_value, has_retention, retention_percentage, service_types'),
     fetchScopesMeta()
   ]);
 
@@ -1007,7 +1025,7 @@ async function getAdminProposalStats(adminId, isCommissioned, adminPartnerId = n
   const [proposalsResult, adminUserResult] = await Promise.all([
     supabase
       .from('sales')
-      .select('*, partners!sales_partner_id_fkey(name)')
+      .select('id, created_at, partner_id, scope, manual_commission, calculated_commission, created_by_user_id, partners!sales_partner_id_fkey(name)')
       .eq('status', 'Em proposta'),
     supabase
       .from('users')
@@ -1088,7 +1106,7 @@ async function getAdminProposalStats(adminId, isCommissioned, adminPartnerId = n
 async function getBOProposalStats() {
   const { data: proposals } = await supabase
     .from('sales')
-    .select('*, partners!sales_partner_id_fkey(name)')
+    .select('id, created_at, partner_id, scope, manual_commission, calculated_commission, created_by_user_id, partners!sales_partner_id_fkey(name)')
     .eq('status', 'Em proposta');
 
   const now = new Date();
@@ -1142,7 +1160,7 @@ async function getBOProposalStats() {
 async function getPartnerProposalStats(partnerId) {
   const { data: proposals } = await supabase
     .from('sales')
-    .select('*')
+    .select('id, created_at, scope, manual_commission, calculated_commission')
     .eq('partner_id', partnerId)
     .eq('status', 'Em proposta');
 
@@ -1189,7 +1207,7 @@ async function getPartnerProposalStats(partnerId) {
 async function getManagerProposalStats(managerId) {
   const { data: proposals } = await supabase
     .from('sales')
-    .select('*, partners!sales_partner_id_fkey(name)')
+    .select('id, created_at, partner_id, scope, manual_commission, calculated_commission, created_by_user_id, partners!sales_partner_id_fkey(name)')
     .eq('status', 'Em proposta')
     .or(`created_by_user_id.eq.${managerId},partner_id.in.(SELECT id FROM partners WHERE manager_id = '${managerId}')`);
 

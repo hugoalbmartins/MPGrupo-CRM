@@ -50,7 +50,7 @@ const PendingSalesPopup = ({ user }) => {
 
     const interval = setInterval(() => {
       fetchPendingSales();
-    }, 60000);
+    }, 120000);
 
     return () => clearInterval(interval);
   }, [user, visible, fetchPendingSales]);
@@ -165,7 +165,7 @@ const PendingSalesPopup = ({ user }) => {
               <div className="flex-1 overflow-y-auto scrollbar-premium p-4 space-y-3">
                 <div className="text-xs text-slate-500 px-1 pb-1 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
-                  <span>Se ignorado, este aviso reaparecerá em 1 minuto.</span>
+                  <span>Se ignorado, este aviso reaparecerá em 2 minutos.</span>
                 </div>
                 {pendingSales.map((sale) => (
                   <div

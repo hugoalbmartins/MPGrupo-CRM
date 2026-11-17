@@ -17,6 +17,23 @@ export const energyPointsService = {
     }
   },
 
+  async getPointsForSales(saleIds) {
+    if (!saleIds || saleIds.length === 0) return [];
+    try {
+      const { data, error } = await supabase
+        .from("sales_energy_points")
+        .select("sale_id, point_type, point_code, power_kva, tier, energy_type, inst_street, inst_postal_code, inst_locality, installation_address, billing_address, entry_type, voltage_type, additional_services, activation_status, activation_date, operator_paid, id")
+        .in("sale_id", saleIds)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error("Erro ao buscar pontos de energia em lote:", error);
+      throw error;
+    }
+  },
+
   async createPoint(pointData) {
     try {
       const { data, error } = await supabase

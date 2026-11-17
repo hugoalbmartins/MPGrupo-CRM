@@ -51,6 +51,11 @@ const Sales = ({ user }) => {
   const [partners, setPartners] = useState([]);
   const [operators, setOperators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [serverSales, setServerSales] = useState([]);
+  const [serverTotalCount, setServerTotalCount] = useState(0);
+  const [salesLoading, setSalesLoading] = useState(false);
+  const [validationCount, setValidationCount] = useState(0);
+  const [treatmentCount, setTreatmentCount] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const openNewSaleHandled = useRef(false);
   const [viewMode, setViewMode] = useState("sales");
@@ -199,15 +204,13 @@ const Sales = ({ user }) => {
     }).catch(() => setDynamicScopeFields([]));
   }, [formData.scope]);
 
-  const fetchData = async () => {
+  const fetchReferenceData = async () => {
     try {
-      const [salesData, partnersData, operatorsData, scopesData] = await Promise.all([
-        salesService.getAll(),
+      const [partnersData, operatorsData, scopesData] = await Promise.all([
         partnersService.getAll(),
         operatorsService.getAll(),
         scopesService.getAll(true).catch(() => [])
       ]);
-      setSales(salesData);
       setPartners(partnersData);
       setOperators(operatorsData);
       setDynamicScopes(scopesData);
@@ -217,11 +220,61 @@ const Sales = ({ user }) => {
       } else if (user?.role === 'admin' && user?.is_commissioned && user?.partner_id) {
         setFormData(prev => ({ ...prev, partner_id: user.partner_id }));
       }
+
+      // Fetch badge counts for validation/treatment tabs (lightweight count queries)
+      try {
+        const valResult = await salesService.getPaginated({
+          page: 1, pageSize: 1, viewMode: 'validation'
+        });
+        const treatResult = await salesService.getPaginated({
+          page: 1, pageSize: 1, viewMode: 'treatment'
+        });
+        setValidationCount(valResult.totalCount);
+        setTreatmentCount(treatResult.totalCount);
+      } catch (countErr) {
+        console.error('Error fetching badge counts:', countErr);
+      }
     } catch (error) {
       toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchServerSales = async () => {
+    setSalesLoading(true);
+    try {
+      const result = await salesService.getPaginated({
+        page: currentPage,
+        pageSize: itemsPerPage,
+        status: selectedStatus,
+        partnerId: selectedPartner,
+        operatorId: selectedOperator,
+        scope: selectedScope,
+        dateFrom: filterStartDate,
+        dateTo: filterEndDate,
+        searchQuery,
+        viewMode,
+        sortField,
+        sortDirection,
+        chargebackFilter: filterChargeback,
+        paidPartnerFilter: filterPaidPartner,
+      });
+      setServerSales(result.data);
+      setServerTotalCount(result.totalCount);
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+      toast.error("Erro ao carregar vendas");
+      setServerSales([]);
+      setServerTotalCount(0);
+    } finally {
+      setSalesLoading(false);
+    }
+  };
+
+  const fetchData = async () => {
+    await fetchReferenceData();
+    await fetchServerSales();
   };
 
   const handleSubmit = async (e, forceSkipEmail = false) => {
@@ -1183,84 +1236,15 @@ const Sales = ({ user }) => {
     setCurrentPage(1);
   }, [searchQuery, selectedStatus, selectedPartner, selectedOperator, selectedScope, filterStartDate, filterEndDate, filterChargeback, filterPaidPartner, viewMode]);
 
-  const filteredSales = sales.filter(sale => {
-    if (viewMode === "proposals") {
-      if (sale.status !== "Em proposta") return false;
-    } else if (viewMode === "validation") {
-      if (!sale.pending_validation) return false;
-    } else if (viewMode === "treatment") {
-      if (!sale.internal_treatment) return false;
-    } else {
-      if (sale.status === "Em proposta") return false;
-      if (sale.pending_validation) return false;
-      if (sale.internal_treatment) return false;
+  useEffect(() => {
+    if (!loading) {
+      fetchServerSales();
     }
-    if (selectedStatus && sale.status !== selectedStatus) return false;
-    if (selectedPartner && selectedPartner !== "all" && sale.partner_id !== selectedPartner) return false;
-    if (selectedOperator && selectedOperator !== "all" && sale.operator_id !== selectedOperator) return false;
-    if (selectedScope && selectedScope !== "all" && sale.scope !== selectedScope) return false;
-    if (filterStartDate && new Date(sale.date) < new Date(filterStartDate)) return false;
-    if (filterEndDate && new Date(sale.date) > new Date(filterEndDate)) return false;
-    if (filterChargeback === "yes" && !sale.has_chargeback) return false;
-    if (filterChargeback === "pending" && sale.chargeback_status !== 'pending') return false;
-    if (filterChargeback === "settled" && sale.chargeback_status !== 'settled') return false;
-    if (filterChargeback === "no" && sale.has_chargeback) return false;
-    if (filterPaidPartner === "yes" && !sale.paid_in_report_id) return false;
-    if (filterPaidPartner === "no" && sale.paid_in_report_id) return false;
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.trim().toLowerCase();
-      const haystack = [
-        sale.sale_code,
-        sale.client_name,
-        sale.customer_name,
-        sale.client_nif,
-        sale.client_contact,
-        sale.client_email,
-        sale.cpe,
-        sale.cui,
-        sale.request_number,
-      ]
-        .filter(v => v !== null && v !== undefined)
-        .map(v => String(v).toLowerCase())
-        .join(' | ');
-      if (!haystack.includes(query)) return false;
-    }
-    return true;
-  });
+  }, [currentPage, itemsPerPage, sortField, sortDirection, searchQuery, selectedStatus, selectedPartner, selectedOperator, selectedScope, filterStartDate, filterEndDate, filterChargeback, filterPaidPartner, viewMode]);
 
-  const sortedSales = [...filteredSales].sort((a, b) => {
-    let aValue = a[sortField];
-    let bValue = b[sortField];
-
-    if (sortField === 'partner_name') {
-      aValue = partners.find(p => p.id === a.partner_id)?.name || '';
-      bValue = partners.find(p => p.id === b.partner_id)?.name || '';
-    }
-    if (sortField === 'operator_name') {
-      aValue = operators.find(o => o.id === a.operator_id)?.name || '';
-      bValue = operators.find(o => o.id === b.operator_id)?.name || '';
-    }
-
-    if (aValue == null) aValue = '';
-    if (bValue == null) bValue = '';
-
-    if (sortField === 'created_at' || sortField === 'date') {
-      const aTime = aValue ? new Date(aValue).getTime() : 0;
-      const bTime = bValue ? new Date(bValue).getTime() : 0;
-      return sortDirection === 'asc' ? aTime - bTime : bTime - aTime;
-    }
-    if (typeof aValue === 'string') {
-      return sortDirection === 'asc'
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    }
-    return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-  });
-
-  const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
+  const totalPages = Math.ceil(serverTotalCount / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedSales = sortedSales.slice(startIndex, endIndex);
 
   const goToFirstPage = () => setCurrentPage(1);
   const goToLastPage = () => setCurrentPage(totalPages);
@@ -1280,7 +1264,8 @@ const Sales = ({ user }) => {
 
   const handleExportExcel = async () => {
     try {
-      let dataToExport = [...sales];
+      const allSales = await salesService.getAll();
+      let dataToExport = [...allSales];
 
       if (exportStartDate) {
         dataToExport = dataToExport.filter(sale => new Date(sale.date) >= new Date(exportStartDate));
@@ -1305,6 +1290,16 @@ const Sales = ({ user }) => {
       }
 
       const excelData = [];
+
+      const multipointSaleIds = dataToExport.filter(s => s.scope === 'energia' && s.is_multipoint).map(s => s.id);
+      const allEnergyPoints = multipointSaleIds.length > 0
+        ? await energyPointsService.getPointsForSales(multipointSaleIds)
+        : [];
+      const energyPointsBySale = {};
+      allEnergyPoints.forEach(pt => {
+        if (!energyPointsBySale[pt.sale_id]) energyPointsBySale[pt.sale_id] = [];
+        energyPointsBySale[pt.sale_id].push(pt);
+      });
 
       for (const sale of dataToExport) {
         const partner = partners.find(p => p.id === sale.partner_id);
@@ -1380,7 +1375,7 @@ const Sales = ({ user }) => {
 
         if (sale.scope === 'energia' && sale.is_multipoint) {
           try {
-            const points = await energyPointsService.getPointsBySaleId(sale.id);
+            const points = energyPointsBySale[sale.id] || [];
 
             if (points && points.length > 0) {
               // Group by location for dual points (multilocal) or push individual rows
@@ -2390,9 +2385,9 @@ const Sales = ({ user }) => {
           style={viewMode === "validation" ? { background: 'linear-gradient(135deg, #f97316, #ea580c)' } : {}}
         >
           Validação
-          {sales.filter(s => s.pending_validation).length > 0 && (
+          {validationCount > 0 && (
             <span className="ml-2 text-white text-[10px] rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center font-bold" style={{ background: '#f97316' }}>
-              {sales.filter(s => s.pending_validation).length}
+              {validationCount}
             </span>
           )}
         </Button>
@@ -2407,9 +2402,9 @@ const Sales = ({ user }) => {
           style={viewMode === "treatment" ? { background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' } : {}}
         >
           Para Tratamento
-          {sales.filter(s => s.internal_treatment).length > 0 && (
+          {treatmentCount > 0 && (
             <span className="ml-2 text-white text-[10px] rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center font-bold" style={{ background: '#8b5cf6' }}>
-              {sales.filter(s => s.internal_treatment).length}
+              {treatmentCount}
             </span>
           )}
         </Button>
@@ -2723,7 +2718,7 @@ const Sales = ({ user }) => {
           </div>
 
           <div className="text-sm pt-2 text-slate-500" style={{ borderTopWidth: '1px', borderTopColor: 'rgba(255,255,255,0.06)' }}>
-            {filteredSales.length} venda(s) encontrada(s) {filteredSales.length !== sales.length && `de ${sales.length} total`}
+            {serverTotalCount} venda(s) encontrada(s)
           </div>
         </motion.div>
       )}
@@ -2731,7 +2726,7 @@ const Sales = ({ user }) => {
       {/* Sort Controls */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-slate-500">
-          {filteredSales.length} venda(s)
+          {serverTotalCount} venda(s)
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500">Ordenar por:</span>
@@ -2770,24 +2765,24 @@ const Sales = ({ user }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 0.4 }}
       >
-        {paginatedSales.length === 0 ? (
+        {serverSales.length === 0 ? (
           <div className="p-12 text-center rounded-xl" style={{ backgroundColor: '#111d2e', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-sm font-medium text-slate-400">Nenhuma venda encontrada</p>
+            <p className="text-sm font-medium text-slate-400">{salesLoading ? 'Carregando vendas...' : 'Nenhuma venda encontrada'}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {paginatedSales.map((sale, index) => renderSaleCard(sale, index))}
+            {serverSales.map((sale, index) => renderSaleCard(sale, index))}
           </div>
         )}
 
         {/* Pagination */}
-        {filteredSales.length > 0 && (
+        {serverTotalCount > 0 && (
           <div
             className="mt-6 p-4 flex flex-col md:flex-row items-center justify-between gap-4 rounded-xl"
             style={{ backgroundColor: '#111d2e', border: '1px solid rgba(255,255,255,0.06)' }}
           >
             <div className="text-sm text-slate-500">
-              A mostrar {startIndex + 1} a {Math.min(endIndex, sortedSales.length)} de {sortedSales.length} vendas
+              A mostrar {startIndex + 1} a {Math.min(endIndex, serverTotalCount)} de {serverTotalCount} vendas
             </div>
             <div className="flex items-center gap-2">
               <Button

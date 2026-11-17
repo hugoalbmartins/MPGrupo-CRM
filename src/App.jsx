@@ -266,14 +266,6 @@ function App() {
           });
 
           if (userData.role === 'admin') {
-            queryClient.prefetchQuery({
-              queryKey: ['users'],
-              queryFn: () => import('./services/usersService').then(mod => mod.usersService.getAll()),
-            });
-            queryClient.prefetchQuery({
-              queryKey: ['partners'],
-              queryFn: () => import('./services/partnersService').then(mod => mod.partnersService.getAll()),
-            });
           }
 
           notificationService.subscribeToPush();

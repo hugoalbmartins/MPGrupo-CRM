@@ -210,19 +210,11 @@ const CommissionReports = ({ user }) => {
   };
 
   const openPrintWindow = async (partnerId, settledAdvances) => {
-    const allSales = await salesService.getAll(null, true);
-    const activePaidSales = allSales.filter(sale => sale.status === 'Ativo' && sale.paid_to_operator === true);
-    const filteredByMonth = filterSalesByMonth(activePaidSales);
-    let finalSales = filteredByMonth.filter(s => s.partner_id === partnerId);
-    if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
-      finalSales = finalSales.filter(s => s.operator_id === selectedOperatorFilter);
-    }
+    const { activePaid: allActivePaid, cancelled: allCancelled } = await salesService.getForCommissionReport(partnerId, selectedOperatorFilter);
+    const filteredByMonth = filterSalesByMonth(allActivePaid);
+    let finalSales = filteredByMonth;
 
-    const canceledSalesAll = allSales.filter(sale => sale.status === 'Cancelado' || sale.status === 'Anulado' || sale.status === 'Recusado');
-    let canceledSales = filterCancelledSalesByMonth(canceledSalesAll).filter(s => s.partner_id === partnerId);
-    if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
-      canceledSales = canceledSales.filter(s => s.operator_id === selectedOperatorFilter);
-    }
+    let canceledSales = filterCancelledSalesByMonth(allCancelled);
 
     const partner = partners.find(p => p.id === partnerId);
     if (!partner) { toast.error("Parceiro nao encontrado"); return; }
@@ -835,11 +827,7 @@ const CommissionReports = ({ user }) => {
   const generateCommissionReport = async (partnerIds = null) => {
     setLoading(true);
     try {
-      const allSales = await salesService.getAll(null, true);
-      let paidSales = allSales.filter(sale => sale.paid_to_operator === true);
-      if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
-        paidSales = paidSales.filter(s => s.operator_id === selectedOperatorFilter);
-      }
+      const paidSales = await salesService.getPaidSalesForReport(selectedOperatorFilter);
       const filteredByMonth = filterSalesByMonth(paidSales);
       let finalSales;
       if (Array.isArray(partnerIds) && partnerIds.length > 0) {
@@ -926,11 +914,7 @@ const CommissionReports = ({ user }) => {
 
     setLoading(true);
     try {
-      const allSales = await salesService.getAll(null, true);
-      let paidSales = allSales.filter(sale => sale.paid_to_operator === true);
-      if (selectedOperatorFilter && selectedOperatorFilter !== 'all') {
-        paidSales = paidSales.filter(s => s.operator_id === selectedOperatorFilter);
-      }
+      const paidSales = await salesService.getPaidSalesForReport(selectedOperatorFilter);
       const filteredByPeriod = filterSalesByMonth(paidSales);
 
       const filteredPartners = getFilteredPartners();

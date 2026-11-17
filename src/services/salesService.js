@@ -79,6 +79,260 @@ export const salesService = {
     return all;
   },
 
+  async getPaginated({ page = 1, pageSize = 25, status, partnerId, operatorId, scope, dateFrom, dateTo, searchQuery, viewMode, sortField = 'date', sortDirection = 'desc', chargebackFilter = 'all', paidPartnerFilter = 'all' } = {}) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!currentUser) throw new Error('User not found');
+
+    let currentPartnerId = null;
+    if (currentUser.role === 'partner') {
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!partner) return { data: [], totalCount: 0 };
+      currentPartnerId = partner.id;
+    }
+
+    // Select only columns needed for the list view — exclude heavy JSONB fields
+    const listColumns = [
+      'id', 'sale_code', 'date', 'partner_id', 'partner_name', 'created_by_user_id',
+      'operator_id', 'operator_name', 'scope', 'client_type', 'client_name', 'client_nif',
+      'client_contact', 'client_email', 'status', 'request_number', 'monthly_value',
+      'calculated_commission', 'manual_commission', 'paid_to_operator', 'payment_date',
+      'has_chargeback', 'chargeback_id', 'chargeback_status', 'paid_in_report_id',
+      'pending_validation', 'internal_treatment', 'created_at', 'updated_at',
+      'sale_type', 'energy_sale_type', 'is_multipoint', 'service_type', 'technology',
+      'has_direct_debit', 'has_electronic_invoice', 'activation_date', 'activation_type',
+      'cpe', 'cui', 'power', 'tier', 'entry_type', 'campaign', 'campaign_gas',
+      'additional_services', 'observations', 'parent_sale_id', 'is_mirror_copy',
+      'ev_outlet_count', 'ev_monthly_fee', 'ev_margin', 'ev_fidelization_months',
+      'mobile_count', 'has_tv', 'has_net', 'has_lr', 'fix_ported', 'fix_number',
+      'fix_operator', 'fix_cvp', 'retention_percentage', 'retention_value',
+      'retention_months', 'retention_end_date', 'retention_paid', 'electricity_paid',
+      'gas_paid', 'electricity_activation_date', 'gas_activation_date',
+      'notes'
+    ].join(', ');
+
+    const buildQuery = (countMode = false) => {
+      let q = supabase
+        .from('sales')
+        .select(countMode ? 'id' : listColumns, { count: countMode ? 'exact' : undefined });
+
+      // Role-based scoping
+      if (currentUser.role === 'partner') {
+        q = q.eq('partner_id', currentPartnerId);
+      } else if (currentUser.role === 'partner_commercial') {
+        q = q.eq('created_by_user_id', user.id);
+      }
+
+      // View mode filtering (mirrors Sales.jsx client-side logic)
+      if (viewMode === 'proposals') {
+        q = q.eq('status', 'Em proposta');
+      } else if (viewMode === 'validation') {
+        q = q.eq('pending_validation', true);
+      } else if (viewMode === 'treatment') {
+        q = q.eq('internal_treatment', true);
+      } else {
+        // Default "sales" view: exclude proposals, validation, treatment
+        q = q.neq('status', 'Em proposta')
+          .neq('pending_validation', true)
+          .neq('internal_treatment', true);
+      }
+
+      // Status filter
+      if (status && status !== 'all') {
+        q = q.eq('status', status);
+      }
+
+      // Partner filter
+      if (partnerId && partnerId !== 'all') {
+        q = q.eq('partner_id', partnerId);
+      }
+
+      // Operator filter
+      if (operatorId && operatorId !== 'all') {
+        q = q.eq('operator_id', operatorId);
+      }
+
+      // Scope filter
+      if (scope && scope !== 'all') {
+        q = q.eq('scope', scope);
+      }
+
+      // Date range
+      if (dateFrom) {
+        q = q.gte('date', dateFrom);
+      }
+      if (dateTo) {
+        q = q.lte('date', dateTo);
+      }
+
+      // Search query — use ilike on key text fields via OR
+      if (searchQuery && searchQuery.trim()) {
+        const term = searchQuery.trim();
+        q = q.or(
+          `sale_code.ilike.%${term}%,client_name.ilike.%${term}%,client_nif.ilike.%${term}%,client_contact.ilike.%${term}%,client_email.ilike.%${term}%,cpe.ilike.%${term}%,cui.ilike.%${term}%,request_number.ilike.%${term}%`
+        );
+      }
+
+      // Chargeback filter
+      if (chargebackFilter === 'yes') {
+        q = q.eq('has_chargeback', true);
+      } else if (chargebackFilter === 'no') {
+        q = q.eq('has_chargeback', false);
+      } else if (chargebackFilter === 'pending') {
+        q = q.eq('chargeback_status', 'pending');
+      } else if (chargebackFilter === 'settled') {
+        q = q.eq('chargeback_status', 'settled');
+      }
+
+      // Paid partner filter
+      if (paidPartnerFilter === 'yes') {
+        q = q.not('paid_in_report_id', 'is', null);
+      } else if (paidPartnerFilter === 'no') {
+        q = q.is('paid_in_report_id', null);
+      }
+
+      return q;
+    };
+
+    // Get count first
+    const { count, error: countError } = await buildQuery(true);
+    if (countError) throw countError;
+
+    const totalCount = count || 0;
+
+    if (totalCount === 0) {
+      return { data: [], totalCount: 0 };
+    }
+
+    // Get data with pagination and sorting
+    const validSortFields = ['date', 'created_at', 'sale_code', 'client_name', 'status', 'monthly_value', 'calculated_commission', 'partner_name', 'operator_name', 'scope', 'updated_at'];
+    const safeSortField = validSortFields.includes(sortField) ? sortField : 'date';
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error } = await buildQuery(false)
+      .order(safeSortField, { ascending: sortDirection === 'asc' })
+      .order('created_at', { ascending: sortDirection === 'asc' })
+      .range(from, to);
+
+    if (error) throw error;
+
+    return { data: data || [], totalCount };
+  },
+
+  async getForCommissionReport(partnerId, operatorId = null) {
+    const reportColumns = [
+      'id', 'sale_code', 'date', 'partner_id', 'operator_id', 'operator_name',
+      'scope', 'client_name', 'client_nif', 'client_contact', 'client_email',
+      'status', 'request_number', 'monthly_value', 'calculated_commission',
+      'manual_commission', 'paid_to_operator', 'payment_date', 'has_direct_debit',
+      'has_electronic_invoice', 'direct_debit_value', 'electronic_invoice_value',
+      'retention_value', 'retention_percentage', 'retention_months',
+      'retention_end_date', 'retention_paid', 'paid_in_report_id',
+      'has_chargeback', 'chargeback_id', 'chargeback_status', 'activation_date',
+      'cpe', 'cui', 'power', 'tier', 'entry_type', 'observations',
+      'service_type', 'energy_sale_type', 'sale_type', 'is_multipoint',
+      'cancelled_at', 'created_at'
+    ].join(', ');
+
+    const buildActiveQuery = () => {
+      let q = supabase
+        .from('sales')
+        .select(reportColumns)
+        .eq('partner_id', partnerId)
+        .eq('status', 'Ativo')
+        .eq('paid_to_operator', true);
+      if (operatorId && operatorId !== 'all') {
+        q = q.eq('operator_id', operatorId);
+      }
+      return q;
+    };
+
+    const buildCancelledQuery = () => {
+      let q = supabase
+        .from('sales')
+        .select(reportColumns)
+        .eq('partner_id', partnerId)
+        .in('status', ['Cancelado', 'Anulado', 'Recusado']);
+      if (operatorId && operatorId !== 'all') {
+        q = q.eq('operator_id', operatorId);
+      }
+      return q;
+    };
+
+    const PAGE_SIZE = 1000;
+    const fetchAll = async (buildQuery) => {
+      const all = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return all;
+    };
+
+    const [activePaid, cancelled] = await Promise.all([
+      fetchAll(buildActiveQuery),
+      fetchAll(buildCancelledQuery)
+    ]);
+
+    return { activePaid, cancelled };
+  },
+
+  async getPaidSalesForReport(operatorId = null) {
+    const reportColumns = [
+      'id', 'sale_code', 'date', 'partner_id', 'operator_id', 'operator_name',
+      'scope', 'client_name', 'client_nif', 'status', 'request_number',
+      'monthly_value', 'calculated_commission', 'manual_commission',
+      'paid_to_operator', 'payment_date', 'activation_date', 'cpe', 'cui',
+      'paid_in_report_id', 'has_direct_debit', 'has_electronic_invoice',
+      'direct_debit_value', 'electronic_invoice_value', 'retention_value',
+      'has_chargeback', 'chargeback_status', 'observations', 'service_type',
+      'energy_sale_type', 'sale_type', 'is_multipoint', 'cancelled_at',
+      'created_at'
+    ].join(', ');
+
+    const buildQuery = () => {
+      let q = supabase
+        .from('sales')
+        .select(reportColumns)
+        .eq('paid_to_operator', true);
+      if (operatorId && operatorId !== 'all') {
+        q = q.eq('operator_id', operatorId);
+      }
+      return q;
+    };
+
+    const PAGE_SIZE = 1000;
+    const all = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      all.push(...data);
+      if (data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+    return all;
+  },
+
   async getById(id) {
     const { data, error } = await supabase
       .from('sales')
