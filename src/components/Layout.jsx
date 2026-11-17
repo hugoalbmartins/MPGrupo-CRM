@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet, SquareCheck as CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus, Banknote, RotateCcw, Layers, UsersRound, Mail } from "lucide-react";
+import { LayoutDashboard, Users, ShoppingCart, Building2, Settings, LogOut, Menu, X, Bell, FileText, FileSpreadsheet, SquareCheck as CheckSquare, User, Target, Globe, ChevronLeft, Zap, BellRing, Download, Plus, Banknote, RotateCcw, Layers, UsersRound, Mail, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { alertsService } from "../services/alertsService";
@@ -106,7 +106,8 @@ const Layout = ({ children, user, onLogout }) => {
       { path: "/simulador-energia-admin", label: "Admin Simulador Energia", icon: Settings, roles: ["admin"], section: "SISTEMA" },
       { path: "/scopes-management", label: "Ambitos", icon: Layers, roles: ["admin"], section: "SISTEMA" },
       { path: "/partner-types", label: "Tipos de Parceiro", icon: UsersRound, roles: ["admin"], section: "SISTEMA" },
-      { path: "/email-settings", label: "Config. Email", icon: Mail, roles: ["admin"], section: "SISTEMA" }
+      { path: "/email-settings", label: "Config. Email", icon: Mail, roles: ["admin"], section: "SISTEMA" },
+      { path: "/operator-evaluation", label: "Avaliacao Operadoras", icon: TrendingUp, roles: ["admin"], section: "SISTEMA" }
     );
   } else if (user?.role === "bo") {
     menuItems.push(

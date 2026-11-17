@@ -34,7 +34,8 @@ const Refidelizacoes = lazy(() => import("./pages/Refidelizacoes.jsx"));
 const Clients = lazy(() => import("./pages/Clients.jsx"));
 const ScopesManagement = lazy(() => import("./pages/ScopesManagement.jsx"));
 const PartnerTypesManagement = lazy(() => import("./pages/PartnerTypesManagement.jsx"));
-const EmailSettings = lazy(() => import("./pages/EmailSettings.jsx"));
+const EmailSettings = lazy(() => import('./pages/EmailSettings.jsx'));
+const OperatorEvaluation = lazy(() => import('./pages/OperatorEvaluation.jsx'));
 
 export { supabase };
 
@@ -393,6 +394,7 @@ function App() {
                     <Route path="/scopes-management" element={<ScopesManagement user={user} />} />
                     <Route path="/partner-types" element={<PartnerTypesManagement user={user} />} />
                     <Route path="/email-settings" element={<EmailSettings user={user} />} />
+                    <Route path="/operator-evaluation" element={<OperatorEvaluation user={user} />} />
                   </>
                 )}
                 {user?.role === "bo" && (

@@ -1311,9 +1311,19 @@ const Sales = ({ user }) => {
         const operator = operators.find(o => o.id === sale.operator_id);
         const commission = sale.manual_commission || sale.calculated_commission || 0;
 
+        const toExcelDate = (dateStr) => {
+          if (!dateStr) return '';
+          const d = new Date(dateStr);
+          if (isNaN(d)) return '';
+          // Excel serial date: days since 1900-01-00, with Lotus 1900 leap-year bug
+          const epoch = new Date(Date.UTC(1900, 0, 0));
+          const days = Math.floor((d - epoch) / 86400000) + 1;
+          return days;
+        };
+
         const baseData = {
           'Codigo Venda': sale.sale_code || '',
-          'Data': formatDateExtended(sale.date),
+          'Data': toExcelDate(sale.date),
           'ID Parceiro': partner?.code || partner?.name || sale.partner_id || '',
           'Ambito': sale.scope,
           'Tipo Cliente': sale.client_type,
@@ -1373,24 +1383,36 @@ const Sales = ({ user }) => {
             const points = await energyPointsService.getPointsBySaleId(sale.id);
 
             if (points && points.length > 0) {
-              for (let i = 0; i < points.length; i++) {
-                const point = points[i];
+              // Group by location for dual points (multilocal) or push individual rows
+              const grouped = {};
+              for (const pt of points) {
+                const key = pt.installation_address || pt.inst_street || pt.id;
+                if (!grouped[key]) grouped[key] = { cpe: null, cui: null, raw: pt };
+                if (pt.point_type === 'cpe') grouped[key].cpe = pt;
+                else if (pt.point_type === 'cui') grouped[key].cui = pt;
+                else grouped[key].raw = pt;
+              }
+              const rows = Object.values(grouped);
+              for (let i = 0; i < rows.length; i++) {
+                const { cpe, cui, raw } = rows[i];
+                const pt = cpe || cui || raw;
                 excelData.push({
                   ...baseData,
-                  'Ponto': `${i + 1}/${points.length}`,
-                  'Tipo Ponto': point.point_type.toUpperCase(),
-                  'CPE': point.point_type === 'cpe' ? point.point_code : '',
-                  'Potencia': point.power_kva || '',
-                  'CUI': point.point_type === 'cui' ? point.point_code : '',
-                  'Escalao': point.tier || '',
-                  'Estado Ativacao': point.activation_status,
-                  'Data Ativacao Ponto': formatDateExtended(point.activation_date),
-                  ...((user?.role === 'admin' || user?.role === 'bo') ? { 'Pago Operador Ponto': point.operator_paid ? 'Sim' : 'Nao' } : {}),
+                  'Ponto': `${i + 1}/${rows.length}`,
+                  'Tipo Ponto': cpe && cui ? 'DUAL' : (pt.point_type || '').toUpperCase(),
+                  'CPE': cpe ? cpe.point_code : '',
+                  'Potencia': cpe ? (cpe.power_kva || '') : '',
+                  'CUI': cui ? cui.point_code : '',
+                  'Escalao': cui ? (cui.tier || '') : '',
+                  'Estado Ativacao': pt.activation_status || '',
+                  'Data Ativacao Ponto': toExcelDate(pt.activation_date),
+                  ...((user?.role === 'admin' || user?.role === 'bo') ? { 'Pago Operador Ponto': pt.operator_paid ? 'Sim' : 'Nao' } : {}),
                   'Tipo Entrada': sale.entry_type || '',
                   'Status': sale.status,
-                  'Data Ativacao': formatDateExtended(sale.activation_date),
+                  'Data Ativacao': toExcelDate(sale.activation_date),
                   'Nr Requisicao': sale.request_number || '',
                   'Comissao': `EUR${commission.toFixed(2)}`,
+                  'Chargeback': sale.has_chargeback ? 'Sim' : 'Nao',
                   'Observacoes': sale.observations || ''
                 });
               }
@@ -1404,9 +1426,10 @@ const Sales = ({ user }) => {
                 'Escalao': showCUI ? (sale.tier || '') : '',
                 'Tipo Entrada': sale.entry_type || '',
                 'Status': sale.status,
-                'Data Ativacao': formatDateExtended(sale.activation_date),
+                'Data Ativacao': toExcelDate(sale.activation_date),
                 'Nr Requisicao': sale.request_number || '',
                 'Comissao': `EUR${commission.toFixed(2)}`,
+                'Chargeback': sale.has_chargeback ? 'Sim' : 'Nao',
                 'Observacoes': sale.observations || ''
               });
             }
@@ -1421,9 +1444,10 @@ const Sales = ({ user }) => {
               'Escalao': showCUI ? (sale.tier || '') : '',
               'Tipo Entrada': sale.entry_type || '',
               'Status': sale.status,
-              'Data Ativacao': formatDateExtended(sale.activation_date),
+              'Data Ativacao': toExcelDate(sale.activation_date),
               'Nr Requisicao': sale.request_number || '',
               'Comissao': `EUR${commission.toFixed(2)}`,
+              'Chargeback': sale.has_chargeback ? 'Sim' : 'Nao',
               'Observacoes': sale.observations || ''
             });
           }
@@ -1436,9 +1460,10 @@ const Sales = ({ user }) => {
             'Escalao': sale.tier || '',
             'Tipo Entrada': sale.entry_type || '',
             'Status': sale.status,
-            'Data Ativacao': formatDateExtended(sale.activation_date),
+            'Data Ativacao': toExcelDate(sale.activation_date),
             'Nr Requisicao': sale.request_number || '',
             'Comissao': `EUR${commission.toFixed(2)}`,
+            'Chargeback': sale.has_chargeback ? 'Sim' : 'Nao',
             'Observacoes': sale.observations || ''
           });
         }
@@ -1446,6 +1471,25 @@ const Sales = ({ user }) => {
 
       const XLSX = await import('xlsx');
       const ws = XLSX.utils.json_to_sheet(excelData);
+      // Format date columns so Excel renders them as dates filterable by month/year
+      const dateCols = ['Data', 'Data Ativacao', 'Data Ativacao Ponto', 'Data Pagamento'];
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      const headers = [];
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+        headers[c] = cell ? cell.v : '';
+      }
+      for (let r = range.s.r + 1; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          if (dateCols.includes(headers[c])) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            if (ws[addr] && ws[addr].v) {
+              ws[addr].t = 'n';
+              ws[addr].z = 'DD/MM/YYYY';
+            }
+          }
+        }
+      }
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Vendas');
 
